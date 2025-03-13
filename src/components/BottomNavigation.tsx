@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, ShoppingBag, User, Zap, Video } from "lucide-react";
+import { Home, Plus, ShoppingBag, User, Video } from "lucide-react";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -14,11 +14,8 @@ const BottomNavigation = () => {
       <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <Home className={`nav-icon h-5 w-5 ${isActive('/') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <Link to="/battles" className={`group nav-item ${isActive('/battles') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <Video className={`nav-icon h-5 w-5 ${isActive('/battles') ? 'text-app-yellow' : ''}`} />
-      </Link>
-      <Link to="/live" className={`group nav-item ${isActive('/live') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <Zap className={`nav-icon h-5 w-5 ${isActive('/live') ? 'text-app-yellow' : ''}`} />
+      <Link to="/videos" className={`group nav-item ${isActive('/videos') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <Video className={`nav-icon h-5 w-5 ${isActive('/videos') ? 'text-app-yellow' : ''}`} />
       </Link>
       <button 
         className="bg-app-yellow text-app-black rounded-full p-3 -mt-5 shadow-lg"
