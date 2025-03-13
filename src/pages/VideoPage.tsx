@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import VideoPlayer from "@/components/VideoPlayer";
 import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Video {
   id: string;
@@ -185,7 +185,13 @@ const VideoPage = () => {
             
             {/* Video overlay with user info */}
             <div className="absolute bottom-24 left-4 z-20 max-w-[70%]">
-              <h3 className="text-white font-bold text-lg">{video.user.username}</h3>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-10 w-10 border-2 border-app-yellow">
+                  <AvatarImage src={video.user.avatar} alt={video.user.username} />
+                  <AvatarFallback>{video.user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <h3 className="text-white font-bold text-lg">{video.user.username}</h3>
+              </div>
               <p className="text-white text-sm mt-1">{video.description}</p>
             </div>
           </div>
