@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Trophy, User, ShoppingBag, Wallet } from "lucide-react";
+import { Heart, Home, ShoppingBag, User, Zap } from "lucide-react";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -10,23 +10,21 @@ const BottomNavigation = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black/70 backdrop-blur-md border-t border-white/10 h-16 flex items-center justify-around z-40">
-      <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <Home className={`nav-icon ${isActive('/') ? 'text-app-yellow' : ''}`} />
-        <span className="mt-1">Home</span>
+    <div className="fixed bottom-0 left-0 right-0 bg-white rounded-full mx-4 mb-4 h-14 flex items-center justify-between px-8 z-40 shadow-lg">
+      <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
+        <Home className={`nav-icon h-5 w-5 ${isActive('/') ? 'text-app-yellow' : ''}`} />
       </Link>
       <Link to="/battles" className={`group nav-item ${isActive('/battles') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <Trophy className={`nav-icon ${isActive('/battles') ? 'text-app-yellow' : ''}`} />
-        <span className="mt-1">Battles</span>
+        <Zap className={`nav-icon h-5 w-5 ${isActive('/battles') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <div className="w-12"></div> {/* Spacer for the center button */}
       <Link to="/shop" className={`group nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <ShoppingBag className={`nav-icon ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
-        <span className="mt-1">Shop</span>
+        <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
+      </Link>
+      <Link to="/favorites" className={`group nav-item ${isActive('/favorites') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <Heart className={`nav-icon h-5 w-5 ${isActive('/favorites') ? 'text-app-yellow' : ''}`} />
       </Link>
       <Link to="/profile" className={`group nav-item ${isActive('/profile') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <User className={`nav-icon ${isActive('/profile') ? 'text-app-yellow' : ''}`} />
-        <span className="mt-1">Profile</span>
+        <User className={`nav-icon h-5 w-5 ${isActive('/profile') ? 'text-app-yellow' : ''}`} />
       </Link>
     </div>
   );
