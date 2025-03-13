@@ -112,10 +112,12 @@ const Index = () => {
 
   return (
     <div className="h-full w-full overflow-hidden">
-      {/* Component-based layout */}
+      {/* Component-based layout - these components are positioned absolutely */}
       <PopularLiveSection creators={liveCreators} />
       <TrendingVideosSection videos={trendingVideos} />
       <UserVideosCarousel videos={userCreatedVideos} />
+      
+      {/* The VideoFeed is the main background content with z-index below the UI components */}
       <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} />
     </div>
   );
