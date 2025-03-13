@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Categories } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 
 // Categories
 const CATEGORIES = ["ALL", "MEN", "WOMEN", "DRESS", "KURTA", "SHOES", "WATCHES"];
@@ -15,7 +15,7 @@ const ShopCategories = ({ activeCategory, setActiveCategory }: ShopCategoriesPro
     <div className="px-4 mb-6">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
-          <Categories className="w-4 h-4 text-app-yellow mr-1" />
+          <LayoutGrid className="w-4 h-4 text-app-yellow mr-1" />
           <h3 className="text-white font-medium">Categories</h3>
         </div>
         <button className="text-app-yellow text-xs font-medium">See All</button>
