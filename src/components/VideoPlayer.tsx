@@ -71,7 +71,7 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
         </div>
       </div>
       
-      <div className="video-overlay flex flex-col">
+      <div className="video-overlay flex flex-col mb-16">
         <div className="flex justify-between items-end">
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -168,29 +168,7 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
         </div>
       </div>
       
-      {/* Bottom navigation bar matching the image */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-around items-center z-10 bg-gradient-to-t from-black/50 to-transparent">
-        <button className="flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
-            <Home className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-white text-xs mt-1">Home</span>
-        </button>
-        
-        <button className="flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full bg-app-yellow flex items-center justify-center">
-            <Zap className="h-6 w-6 text-app-black" />
-          </div>
-          <span className="text-white text-xs mt-1">Live</span>
-        </button>
-        
-        <button className="flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
-            <User className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-white text-xs mt-1">Profile</span>
-        </button>
-      </div>
+      {/* Remove this bottom navigation section which was duplicating the main BottomNavigation component */}
     </div>
   );
 };

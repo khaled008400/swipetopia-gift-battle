@@ -10,7 +10,7 @@ const BottomNavigation = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-app-gray-dark border-t border-app-gray-light h-16 flex items-center justify-around z-50 animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 bg-app-gray-dark/90 backdrop-blur-md border-t border-app-gray-light h-16 flex items-center justify-around z-50 animate-slide-up">
       <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <Home className={`nav-icon ${isActive('/') ? 'text-app-yellow' : ''}`} />
         <span className="mt-1">Home</span>

@@ -16,7 +16,7 @@ const Layout = () => {
 
   return (
     <div className="flex flex-col h-screen w-full bg-app-black">
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden pb-20">
         <Outlet />
       </main>
       
