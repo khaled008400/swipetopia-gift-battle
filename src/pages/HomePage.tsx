@@ -118,31 +118,14 @@ const HomePage = () => {
 
       {/* Categories section */}
       <div className="px-4 mb-4">
-        <h3 className="text-white font-medium mb-2 flex items-center">
-          <span className="grid grid-cols-2 grid-rows-2 gap-0.5 w-4 h-4 mr-1">
-            <span className="bg-white w-1.5 h-1.5"></span>
-            <span className="bg-white w-1.5 h-1.5"></span>
-            <span className="bg-white w-1.5 h-1.5"></span>
-            <span className="bg-white w-1.5 h-1.5"></span>
-          </span>
-          New Categories
-        </h3>
+        
         <div className="flex overflow-x-auto no-scrollbar space-x-2 py-1">
-          {CATEGORIES.map(category => <button key={category} className={`py-1 px-4 rounded-full text-sm font-medium min-w-max ${activeCategory === category ? "bg-app-yellow text-app-black" : "bg-app-gray-dark text-white"}`} onClick={() => setActiveCategory(category)}>
-              {category}
-            </button>)}
+          {CATEGORIES.map(category => {})}
         </div>
       </div>
 
       {/* Products grid */}
-      <div className="px-4 mb-4 grid grid-cols-2 gap-3">
-        {PRODUCTS.map(product => <div key={product.id} className="relative rounded-xl overflow-hidden bg-orange-100">
-            <img src={product.image} alt={product.name} className="w-full h-52 object-cover" />
-            <button className="absolute top-2 right-2 bg-white rounded-full p-1.5" onClick={() => toggleLike(product.id)}>
-              <Heart className={`w-4 h-4 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : "text-gray-800"}`} />
-            </button>
-          </div>)}
-      </div>
+      
     </div>;
 };
 export default HomePage;
