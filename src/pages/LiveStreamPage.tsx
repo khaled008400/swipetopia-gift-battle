@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
 import VideoActions from "@/components/video/VideoActions";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Zap } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import BattleModeSelector from "@/components/live/BattleModeSelector";
 import ActiveStreamers from "@/components/live/ActiveStreamers";
 import { useToast } from "@/hooks/use-toast";
@@ -129,7 +130,6 @@ const LiveStreamPage = () => {
 
       {filteredVideos.length === 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Zap className="w-16 h-16 text-gray-500 mb-4" />
           <h2 className="text-white text-xl font-bold mb-2">No Live Streams</h2>
           <p className="text-gray-400 text-center px-8">
             There are no live streams at the moment. Please check back later or select a streamer.
@@ -246,8 +246,8 @@ const LiveBattleFeed = ({
       
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-full">
-          <span className="text-white font-bold animate-pulse flex items-center">
-            <Zap className="text-red-500 mr-1 h-5 w-5" /> LIVE BATTLE
+          <span className="text-white font-bold animate-pulse">
+            LIVE BATTLE
           </span>
         </div>
       </div>

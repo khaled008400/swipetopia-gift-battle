@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Zap, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 interface ActiveStreamer {
   id: string;
@@ -72,10 +71,7 @@ const ActiveStreamers = ({ onStreamerSelect, selectedStreamerId }: ActiveStreame
   
   return (
     <div className="absolute top-4 left-0 right-0 px-4 z-30">
-      <div className="flex items-center mb-2">
-        <Zap className="w-4 h-4 text-white mr-1" />
-        <h3 className="text-white font-medium">Live Now</h3>
-      </div>
+      <h3 className="text-white font-medium mb-2">Live Now</h3>
       <div className="flex overflow-x-auto no-scrollbar space-x-3 py-1">
         {streamers.map((streamer) => (
           <div 
