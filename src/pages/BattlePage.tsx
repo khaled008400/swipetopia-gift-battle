@@ -5,6 +5,7 @@ import BattleProgressIndicators from "@/components/battle/BattleProgressIndicato
 import { useBattleVideos } from "@/hooks/useBattleVideos";
 import VideoActions from "@/components/video/VideoActions";
 import { ArrowLeft } from "lucide-react";
+import BattleHeader from "@/components/battle/BattleHeader";
 
 const BattlePage = () => {
   const {
@@ -60,15 +61,37 @@ const BattlePage = () => {
       {/* Videos container */}
       <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
       
+      {/* Battle header with title */}
+      {filteredVideos[activeVideoIndex] && (
+        <BattleHeader title={filteredVideos[activeVideoIndex].description} />
+      )}
+      
       {/* Progress indicators */}
       <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
 
-      {/* Header title */}
+      {/* Back button and page title */}
       <div className="absolute top-4 left-4 z-30 flex items-center">
         <button className="mr-3 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
-        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-[#9b87f5] to-[#D946EF] bg-clip-text text-transparent">Battle Videos</h1>
+        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-[#9b87f5] to-[#D946EF] bg-clip-text text-transparent">
+          Battle Videos
+        </h1>
+      </div>
+      
+      {/* Video actions */}
+      <div className="absolute bottom-20 right-3 z-30">
+        {filteredVideos[activeVideoIndex] && (
+          <VideoActions 
+            likes={filteredVideos[activeVideoIndex].likes} 
+            comments={filteredVideos[activeVideoIndex].comments} 
+            shares={filteredVideos[activeVideoIndex].shares}
+            isLiked={filteredVideos[activeVideoIndex].isLiked || false}
+            onLike={() => {
+              console.log('Video liked:', filteredVideos[activeVideoIndex]);
+            }}
+          />
+        )}
       </div>
     </div>
   );

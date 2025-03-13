@@ -15,7 +15,7 @@ const BattleHeader = ({ title }: BattleHeaderProps) => {
         <h3 className="text-white font-bold text-lg">{title}</h3>
         <div className="ml-auto flex items-center bg-black/40 backdrop-blur-sm text-[#F97316] text-xs px-3 py-1.5 rounded-full">
           <div className="w-2 h-2 bg-[#F97316] rounded-full mr-1.5 animate-pulse"></div>
-          LIVE
+          BATTLE
         </div>
       </div>
     </div>
