@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
@@ -6,7 +7,7 @@ import { Link } from "react-router-dom";
 import { Zap } from "lucide-react";
 import VideoActions from "@/components/video/VideoActions";
 
-const LiveStreamPage = () => {
+const VideoPage = () => {
   const {
     activeVideoIndex,
     setActiveVideoIndex,
@@ -76,7 +77,7 @@ const LiveStreamPage = () => {
       <div className="absolute top-4 left-4 z-30">
         <h1 className="text-white font-bold text-lg flex items-center gap-2">
           <Zap className="h-5 w-5 text-app-yellow animate-pulse" />
-          Live Streams
+          Videos
         </h1>
       </div>
 
@@ -108,4 +109,4 @@ const LiveStreamPage = () => {
   );
 };
 
-export default LiveStreamPage;
+export default VideoPage;
