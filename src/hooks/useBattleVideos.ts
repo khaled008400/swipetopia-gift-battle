@@ -15,7 +15,7 @@ export interface BattleVideo {
   comments: number;
   shares: number;
   isLive?: boolean;
-  isLiked?: boolean; // Added isLiked property
+  isLiked?: boolean;
 }
 
 // More reliable video sources
@@ -118,21 +118,32 @@ const BATTLES: BattleVideo[] = [
 
 export const useBattleVideos = (liveVideosOnly: boolean = false) => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [streamerFilter, setStreamerFilter] = useState<string[]>([]);
   const { toast } = useToast();
 
-  // Function to generate a filtered feed of videos based on live status
+  // Function to generate a filtered feed of videos based on live status and streamer
   const getFilteredVideos = (): BattleVideo[] => {
+    let videos = [...BATTLES];
+    
+    // Filter by live status if requested
     if (liveVideosOnly) {
-      return BATTLES.filter(video => video.isLive);
+      videos = videos.filter(video => video.isLive);
     } else {
-      return BATTLES.filter(video => !video.isLive);
+      videos = videos.filter(video => !video.isLive);
     }
+    
+    // Apply streamer filter if present
+    if (streamerFilter.length > 0) {
+      videos = videos.filter(video => streamerFilter.includes(video.id));
+    }
+    
+    return videos;
   };
   
   // Get filtered videos based on current settings
   const filteredVideos = getFilteredVideos();
 
-  // Reset active index when component mounts
+  // Reset active index when component mounts or filters change
   useEffect(() => {
     setActiveVideoIndex(0);
     
@@ -149,12 +160,13 @@ export const useBattleVideos = (liveVideosOnly: boolean = false) => {
         duration: 2000,
       });
     }
-  }, [liveVideosOnly, toast]);
+  }, [liveVideosOnly, streamerFilter.length, toast]);
 
   return {
     activeVideoIndex,
     setActiveVideoIndex,
     liveVideosOnly,
-    filteredVideos
+    filteredVideos,
+    setStreamerFilter
   };
 };
