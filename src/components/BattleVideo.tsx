@@ -5,78 +5,59 @@ import BattleHeader from "./battle/BattleHeader";
 import ActionButtons from "./battle/ActionButtons";
 import BattleVoteButtons from "./battle/BattleVoteButtons";
 import BattleDetails from "./battle/BattleDetails";
-
-interface User {
-  name: string;
-  avatar: string;
-}
+import { BattleVideo as BattleVideoType } from "@/hooks/useBattleVideos";
 
 interface BattleVideoProps {
-  battle: {
-    id: number;
-    title: string;
-    participants: number;
-    viewers?: number;
-    user1: User;
-    user2: User;
-    videoUrl1?: string;
-    videoUrl2?: string;
-  };
+  video: BattleVideoType;
   isActive: boolean;
 }
 
-const BattleVideo = ({ battle, isActive }: BattleVideoProps) => {
+const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [votedFor, setVotedFor] = useState<'user1' | 'user2' | null>(null);
 
   const handleVideoTap = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-    }
+    setIsPlaying(prev => !prev);
   };
 
   const handleVote = (user: 'user1' | 'user2') => {
     setVotedFor(user);
   };
 
-  // Placeholder video URLs if none provided
-  const videoUrl1 = battle.videoUrl1 || "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4";
-  const videoUrl2 = battle.videoUrl2 || "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4";
-
+  // For battle video, we'll use the same URL but create a split screen effect
+  // In a real app, we would have two different video URLs
   return (
     <div className="h-full w-full relative overflow-hidden bg-app-black">
       {/* Split screen for the two battling videos */}
       <div className="h-full w-full flex flex-col">
         <BattleVideoPlayer 
-          videoUrl={videoUrl1}
+          videoUrl={video.url}
           isActive={isActive}
           onVideoTap={handleVideoTap}
-          userName={battle.user1.name}
+          userName={`${video.user.username}_1`}
           isVoted={votedFor === 'user1'}
         />
         <BattleVideoPlayer 
-          videoUrl={videoUrl2}
+          videoUrl={video.url}
           isActive={isActive}
           onVideoTap={handleVideoTap}
-          userName={battle.user2.name}
+          userName={`${video.user.username}_2`}
           isVoted={votedFor === 'user2'}
         />
       </div>
 
-      <BattleHeader title={battle.title} />
+      <BattleHeader title={video.description} />
       <ActionButtons />
       <BattleVoteButtons 
-        user1Name={battle.user1.name}
-        user2Name={battle.user2.name}
+        user1Name={`${video.user.username}_1`}
+        user2Name={`${video.user.username}_2`}
         votedFor={votedFor}
         onVote={handleVote}
       />
       <BattleDetails 
-        title={battle.title}
-        participants={battle.participants}
+        title={video.description}
+        participants={video.likes} // Using likes as a proxy for participants
         showDetails={showDetails}
         setShowDetails={setShowDetails}
       />

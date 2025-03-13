@@ -54,7 +54,7 @@ const BattlePage = () => {
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
   return <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
       {/* Videos container */}
-      <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
+      <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
       
       {/* Progress indicators */}
       <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />

@@ -1,38 +1,35 @@
 
-import { CSSProperties } from "react";
+import { BattleVideo as BattleVideoType } from "@/hooks/useBattleVideos";
+import BattleVideo from "./BattleVideo";
 import VideoPlayer from "./VideoPlayer";
 
-interface Video {
-  id: string;
-  url: string;
-  user: {
-    username: string;
-    avatar: string;
-  };
-  description: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  isLive?: boolean;
-}
-
 interface VideoFeedProps {
-  videos: Video[];
+  videos: BattleVideoType[];
   activeVideoIndex: number;
+  isBattlePage?: boolean;
 }
 
-const VideoFeed = ({ videos, activeVideoIndex }: VideoFeedProps) => {
+const VideoFeed = ({ videos, activeVideoIndex, isBattlePage = false }: VideoFeedProps) => {
   return (
-    <div 
-      className="h-full flex flex-col transition-transform duration-500 ease-in-out"
-      style={{ transform: `translateY(-${activeVideoIndex * 100}%)` } as CSSProperties}
-    >
+    <div className="h-full w-full">
       {videos.map((video, index) => (
-        <div key={video.id} className="h-full w-full flex-shrink-0">
-          <VideoPlayer 
-            video={video} 
-            isActive={index === activeVideoIndex}
-          />
+        <div
+          key={video.id}
+          className={`absolute top-0 left-0 h-full w-full transition-opacity duration-300 ${
+            index === activeVideoIndex ? "opacity-100 z-10" : "opacity-0 -z-10"
+          }`}
+        >
+          {isBattlePage ? (
+            <BattleVideo 
+              video={video} 
+              isActive={index === activeVideoIndex} 
+            />
+          ) : (
+            <VideoPlayer 
+              video={video} 
+              isActive={index === activeVideoIndex} 
+            />
+          )}
         </div>
       ))}
     </div>
