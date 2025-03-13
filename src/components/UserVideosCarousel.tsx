@@ -21,7 +21,7 @@ interface UserVideosCarouselProps {
 
 const UserVideosCarousel = ({ videos }: UserVideosCarouselProps) => {
   return (
-    <div className="absolute top-80 left-0 right-0 px-4 z-20">
+    <div>
       <div className="flex items-center mb-2">
         <Zap className="w-4 h-4 text-white mr-1" />
         <h3 className="text-white font-medium">User Videos</h3>

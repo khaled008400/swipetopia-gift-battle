@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Search, Bell, Heart, Home, ShoppingBag, User, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem } from "../components/ui/carousel";
+import UserVideosCarousel from "../components/UserVideosCarousel";
 
 // Mock data for the live selling profiles
 const LIVE_SELLERS = [{
@@ -57,10 +58,35 @@ const PRODUCTS = [{
   liked: false
 }];
 
-// Categories
-const CATEGORIES = ["ALL", "MEN", "WOMEN", "DRESS", "KURTA"];
+// User-created videos for swappable section
+const USER_VIDEOS = [
+  {
+    id: "4",
+    url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
+    username: "runner_girl"
+  },
+  {
+    id: "5",
+    url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
+    username: "dance_king"
+  },
+  {
+    id: "6",
+    url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
+    username: "travel_vlogger"
+  },
+  {
+    id: "7",
+    url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
+    username: "chef_master"
+  }
+];
+
 const HomePage = () => {
-  const [activeCategory, setActiveCategory] = useState("ALL");
   const [likedProducts, setLikedProducts] = useState<string[]>([]);
   const toggleLike = (productId: string) => {
     if (likedProducts.includes(productId)) {
@@ -117,23 +143,9 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Categories section */}
+      {/* User Videos Carousel - Replacing Categories section */}
       <div className="px-4 mb-4">
-        <div className="flex overflow-x-auto no-scrollbar space-x-2 py-1">
-          {CATEGORIES.map(category => (
-            <button
-              key={category}
-              className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                activeCategory === category 
-                  ? "bg-app-yellow text-black font-medium" 
-                  : "bg-gray-800 text-white"
-              }`}
-              onClick={() => setActiveCategory(category)}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        <UserVideosCarousel videos={USER_VIDEOS} />
       </div>
 
       {/* Products grid */}
