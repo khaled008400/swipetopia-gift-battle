@@ -1,7 +1,5 @@
-
 import { useRef, useState, useEffect } from "react";
 import { Heart, MessageCircle, Share2, Coins, ChevronUp } from "lucide-react";
-
 interface VideoPlayerProps {
   video: {
     id: string;
@@ -18,13 +16,14 @@ interface VideoPlayerProps {
   };
   isActive?: boolean;
 }
-
-const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
+const VideoPlayer = ({
+  video,
+  isActive = false
+}: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-
   useEffect(() => {
     if (isActive) {
       videoRef.current?.play();
@@ -34,7 +33,6 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
       setIsPlaying(false);
     }
   }, [isActive]);
-
   const handleVideoPress = () => {
     if (isPlaying) {
       videoRef.current?.pause();
@@ -44,58 +42,36 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
       setIsPlaying(true);
     }
   };
-
   const handleLike = () => {
     setIsLiked(!isLiked);
   };
-
-  return (
-    <div className="h-full w-full relative overflow-hidden">
-      <video
-        ref={videoRef}
-        src={video.url}
-        className="h-full w-full object-cover"
-        loop
-        muted
-        playsInline
-        onClick={handleVideoPress}
-      />
+  return <div className="h-full w-full relative overflow-hidden">
+      <video ref={videoRef} src={video.url} className="h-full w-full object-cover" loop muted playsInline onClick={handleVideoPress} />
       
       {/* Video overlay with user info and actions */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
         <div className="flex justify-between items-end">
-          <div className="flex-1">
+          <div className="flex-1 py-0 my--10">
             <div className="flex items-center gap-2">
-              <h3 className="text-white font-semibold text-lg">@{video.user.username}</h3>
-              {video.isLive && (
-                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              
+              {video.isLive && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
                   LIVE
-                </span>
-              )}
+                </span>}
             </div>
             
             <p className="text-gray-300 text-sm mt-1 line-clamp-1">{video.description}</p>
             
-            {showDetails && (
-              <div className="mt-2 animate-fade-in">
+            {showDetails && <div className="mt-2 animate-fade-in">
                 <p className="text-gray-300 text-sm">{video.description}</p>
-              </div>
-            )}
+              </div>}
             
-            <button 
-              className="text-gray-400 text-xs flex items-center mt-1"
-              onClick={() => setShowDetails(!showDetails)}
-            >
+            <button className="text-gray-400 text-xs flex items-center mt-1" onClick={() => setShowDetails(!showDetails)}>
               {showDetails ? "Less" : "More"} <ChevronUp className={`ml-1 w-4 h-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
             </button>
             
             {/* User info */}
             <div className="mt-3 flex items-center">
-              <img 
-                src={video.user.avatar} 
-                alt={video.user.username} 
-                className="w-10 h-10 rounded-full border-2 border-app-yellow"
-              />
+              <img src={video.user.avatar} alt={video.user.username} className="w-10 h-10 rounded-full border-2 border-app-yellow" />
               <div className="ml-2">
                 <p className="text-white text-sm font-bold">@{video.user.username}</p>
               </div>
@@ -137,8 +113,6 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default VideoPlayer;
