@@ -1,11 +1,9 @@
-
 import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
 import { Link } from "react-router-dom";
 import { Zap } from "lucide-react";
-
 const BattlePage = () => {
   const {
     activeVideoIndex,
@@ -54,9 +52,7 @@ const BattlePage = () => {
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
-
-  return (
-    <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
+  return <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
       {/* Navigation to live streams page */}
       <Link to="/live" className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-black/60 p-2 rounded-full backdrop-blur-sm border border-white/10 transition-all duration-300 hover:bg-black/70">
         <div className="text-app-yellow animate-pulse transition-colors duration-300">
@@ -73,10 +69,8 @@ const BattlePage = () => {
 
       {/* Header title */}
       <div className="absolute top-4 left-4 z-30">
-        <h1 className="text-white font-bold text-lg">Battle Videos</h1>
+        
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default BattlePage;
