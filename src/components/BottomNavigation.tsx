@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, ShoppingBag, User, Zap } from "lucide-react";
+import { Home, Plus, ShoppingBag, User, Zap } from "lucide-react";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -17,9 +17,12 @@ const BottomNavigation = () => {
       <Link to="/battles" className={`group nav-item ${isActive('/battles') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <Zap className={`nav-icon h-5 w-5 ${isActive('/battles') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <Link to="/shop" className={`group nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
-        <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
-      </Link>
+      <button 
+        className="bg-app-yellow text-app-black rounded-full p-3 -mt-5 shadow-lg"
+        onClick={() => window.dispatchEvent(new CustomEvent('toggle-create-menu'))}
+      >
+        <Plus className="h-6 w-6" />
+      </button>
       <Link to="/shop" className={`group nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
       </Link>
