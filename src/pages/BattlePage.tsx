@@ -1,9 +1,7 @@
-
 import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
-
 const BattlePage = () => {
   const {
     activeVideoIndex,
@@ -52,7 +50,6 @@ const BattlePage = () => {
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
-  
   return <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
       {/* Videos container */}
       <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
@@ -62,9 +59,8 @@ const BattlePage = () => {
 
       {/* Header title */}
       <div className="absolute top-4 left-4 z-30">
-        <h1 className="text-white font-bold text-lg">Battle Videos</h1>
+        
       </div>
     </div>;
 };
-
 export default BattlePage;
