@@ -2,7 +2,7 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BottomNavigation from "./BottomNavigation";
-import { Plus } from "lucide-react";
+import { Plus, VideoIcon } from "lucide-react";
 import { useState } from "react";
 import CreateContentMenu from "./CreateContentMenu";
 

@@ -1,6 +1,6 @@
 
 import { useRef, useState, useEffect } from "react";
-import { Heart, MessageCircle, Share2, Coins, ChevronUp, VideoIcon } from "lucide-react";
+import { Heart, MessageCircle, Share2, Coins, ChevronUp, VideoIcon, Home, Zap, User } from "lucide-react";
 
 interface VideoPlayerProps {
   video: {
@@ -61,6 +61,16 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
         onClick={handleVideoPress}
       />
       
+      {/* Status bar */}
+      <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-10">
+        <div className="text-xl font-bold text-white">9:41</div>
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 bg-white rounded-full"></div>
+          <div className="w-4 h-4 bg-white rounded-full"></div>
+          <div className="w-4 h-4 bg-white rounded-full"></div>
+        </div>
+      </div>
+      
       <div className="video-overlay flex flex-col">
         <div className="flex justify-between items-end">
           <div className="flex-1">
@@ -84,6 +94,39 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
             >
               {showDetails ? "Less" : "More"} <ChevronUp className={`ml-1 w-4 h-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
             </button>
+            
+            {/* Following button */}
+            <div className="mt-2">
+              <button className="bg-app-yellow text-app-black text-xs font-bold px-3 py-1 rounded-full">
+                Follow
+              </button>
+            </div>
+            
+            {/* User stats */}
+            <div className="mt-2 flex items-center">
+              <img 
+                src={video.user.avatar} 
+                alt={video.user.username} 
+                className="w-10 h-10 rounded-full border-2 border-app-yellow"
+              />
+              <div className="ml-2">
+                <p className="text-white text-sm font-bold">New Fashion Store</p>
+                <p className="text-gray-300 text-xs">890 People Online Now</p>
+              </div>
+            </div>
+            
+            <div className="mt-2">
+              <p className="text-white text-xs">
+                It is a long established fact that a reader will be distracted by the readable content during...
+              </p>
+            </div>
+            
+            {/* Viewer count */}
+            <div className="mt-2 bg-black/50 rounded-full px-2 py-1 inline-flex items-center">
+              <p className="text-white text-xs">
+                <span className="text-app-yellow font-bold">1,200,023</span> viewers
+              </p>
+            </div>
           </div>
           
           <div className="flex flex-col space-y-4">
@@ -125,8 +168,28 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
         </div>
       </div>
       
-      <div className="absolute top-4 left-4 z-10 flex items-center">
-        <div className="text-xl font-bold text-white">SWIPETOPIA</div>
+      {/* Bottom navigation bar matching the image */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-around items-center z-10 bg-gradient-to-t from-black/50 to-transparent">
+        <button className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
+            <Home className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs mt-1">Home</span>
+        </button>
+        
+        <button className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full bg-app-yellow flex items-center justify-center">
+            <Zap className="h-6 w-6 text-app-black" />
+          </div>
+          <span className="text-white text-xs mt-1">Live</span>
+        </button>
+        
+        <button className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
+            <User className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs mt-1">Profile</span>
+        </button>
       </div>
     </div>
   );

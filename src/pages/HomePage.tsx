@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import VideoPlayer from "../components/VideoPlayer";
 
+// Updated with better quality video and realistic user data
 const MOCK_VIDEOS = [
   {
     id: "1",
@@ -74,12 +75,12 @@ const HomePage = () => {
   return (
     <div 
       ref={containerRef}
-      className="h-[calc(100vh-64px)] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+      className="h-screen overflow-y-scroll snap-y snap-mandatory no-scrollbar"
     >
       {MOCK_VIDEOS.map((video, index) => (
         <div 
           key={video.id} 
-          className="snap-start h-[calc(100vh-64px)]"
+          className="snap-start h-screen"
         >
           <VideoPlayer 
             video={video} 
