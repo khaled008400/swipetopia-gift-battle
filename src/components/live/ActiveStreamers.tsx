@@ -60,9 +60,9 @@ const ActiveStreamers = ({
     // For now, we'll use the mock data
     setStreamers(ACTIVE_STREAMERS);
   }, []);
-  return <div className="absolute top-4 left-0 right-0 px-4 z-30">
+  return <div className="absolute top-4 left-0 right-0 z-30 py-0 px-0 bg-[#93aeb7]/[0.46] my-[-08px] rounded-full">
       
-      <div className="flex overflow-x-auto no-scrollbar space-x-3 py-[48px]">
+      <div className="flex overflow-x-auto no-scrollbar space-x-3 py-0 px-0 my-0">
         {streamers.map(streamer => <div key={streamer.id} className={`flex flex-col items-center cursor-pointer transition-all ${selectedStreamerId === streamer.id ? "scale-110" : ""}`} onClick={() => onStreamerSelect(streamer.id)}>
             <div className={`relative w-16 h-16 rounded-full p-0.5 ${selectedStreamerId === streamer.id ? "border-2 border-app-yellow" : "border border-red-500 animate-pulse"}`}>
               <img src={streamer.avatar} alt={streamer.username} className="w-full h-full rounded-full object-scale-down" />
