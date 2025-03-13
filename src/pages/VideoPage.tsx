@@ -1,8 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, MessageCircle, Share2 } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import VideoOverlay from "@/components/video/VideoOverlay";
 
 interface Video {
   id: string;
@@ -10,6 +8,7 @@ interface Video {
   user: {
     username: string;
     avatar: string;
+    isFollowing?: boolean;
   };
   description: string;
   likes: number;
@@ -24,7 +23,8 @@ const VIDEOS: Video[] = [
     url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     user: {
       username: "dancequeen",
-      avatar: "https://i.pravatar.cc/150?img=1"
+      avatar: "https://i.pravatar.cc/150?img=1",
+      isFollowing: false
     },
     description: "Dance Battle Finals 🏆 #dance #competition #finals",
     likes: 1432,
@@ -37,7 +37,8 @@ const VIDEOS: Video[] = [
     url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     user: {
       username: "groovyking",
-      avatar: "https://i.pravatar.cc/150?img=2"
+      avatar: "https://i.pravatar.cc/150?img=2",
+      isFollowing: true
     },
     description: "My entry for the dance battle! Vote if you like it 🔥 #dancebattle #hiphop",
     likes: 2651,
@@ -147,6 +148,27 @@ const VideoPage = () => {
     });
   };
 
+  const handleFollow = () => {
+    const updatedVideos = [...videos];
+    const video = updatedVideos[activeVideoIndex];
+    
+    if (video.user.isFollowing === undefined) {
+      video.user.isFollowing = true;
+    } else {
+      video.user.isFollowing = !video.user.isFollowing;
+    }
+    
+    setVideos(updatedVideos);
+    
+    toast({
+      title: video.user.isFollowing ? "Followed" : "Unfollowed",
+      description: video.user.isFollowing 
+        ? `You are now following ${video.user.username}` 
+        : `You unfollowed ${video.user.username}`,
+      duration: 2000,
+    });
+  };
+
   // Video progress indicators
   const renderProgressIndicators = () => {
     return (
@@ -183,50 +205,18 @@ const VideoPage = () => {
               playsInline
             />
             
-            {/* Video overlay with user info */}
-            <div className="absolute bottom-24 left-4 z-20 max-w-[70%]">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-10 w-10 border-2 border-app-yellow">
-                  <AvatarImage src={video.user.avatar} alt={video.user.username} />
-                  <AvatarFallback>{video.user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <h3 className="text-white font-bold text-lg">{video.user.username}</h3>
-              </div>
-              <p className="text-white text-sm mt-1">{video.description}</p>
-            </div>
+            <VideoOverlay 
+              video={video} 
+              isLiked={video.isLiked || false} 
+              onLike={handleLike}
+              onFollow={handleFollow}
+            />
           </div>
         ))}
       </div>
       
       {/* Progress indicators */}
       {renderProgressIndicators()}
-      
-      {/* Action buttons */}
-      <div className="absolute bottom-24 right-4 z-20 flex flex-col items-center gap-6">
-        <button 
-          onClick={handleLike}
-          className="flex flex-col items-center"
-        >
-          <div className={`p-2 rounded-full ${videos[activeVideoIndex]?.isLiked ? 'text-red-500' : 'text-white'}`}>
-            <Heart className="w-7 h-7" fill={videos[activeVideoIndex]?.isLiked ? "currentColor" : "none"} />
-          </div>
-          <span className="text-white text-xs mt-1">{videos[activeVideoIndex]?.likes}</span>
-        </button>
-        
-        <button className="flex flex-col items-center">
-          <div className="p-2 rounded-full text-white">
-            <MessageCircle className="w-7 h-7" />
-          </div>
-          <span className="text-white text-xs mt-1">{videos[activeVideoIndex]?.comments}</span>
-        </button>
-        
-        <button className="flex flex-col items-center">
-          <div className="p-2 rounded-full text-white">
-            <Share2 className="w-7 h-7" />
-          </div>
-          <span className="text-white text-xs mt-1">{videos[activeVideoIndex]?.shares}</span>
-        </button>
-      </div>
     </div>
   );
 };

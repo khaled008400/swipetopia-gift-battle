@@ -1,6 +1,7 @@
 
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, UserPlus, UserCheck } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface VideoInfoProps {
   description: string;
@@ -8,10 +9,13 @@ interface VideoInfoProps {
   user: {
     username: string;
     avatar: string;
+    isFollowing?: boolean;
   };
+  isFollowing?: boolean;
+  onFollow: () => void;
 }
 
-const VideoInfo = ({ description, isLive, user }: VideoInfoProps) => {
+const VideoInfo = ({ description, isLive, user, isFollowing, onFollow }: VideoInfoProps) => {
   const [showDetails, setShowDetails] = useState(false);
   
   return (
@@ -42,7 +46,7 @@ const VideoInfo = ({ description, isLive, user }: VideoInfoProps) => {
         />
       </button>
       
-      {/* User info */}
+      {/* User info with follow button */}
       <div className="mt-3 flex items-center my-0 py-0">
         <img 
           src={user.avatar} 
@@ -52,9 +56,28 @@ const VideoInfo = ({ description, isLive, user }: VideoInfoProps) => {
         <div className="ml-2">
           <p className="text-white text-sm font-bold">@{user.username}</p>
         </div>
-        <button className="ml-auto bg-app-yellow text-app-black text-xs font-bold px-3 py-1 rounded-full mx-[8px]">
-          Follow
-        </button>
+        <Button 
+          onClick={onFollow}
+          variant={isFollowing ? "outline" : "default"} 
+          size="sm"
+          className={`ml-3 gap-1 rounded-full px-3 py-1 text-xs ${
+            isFollowing 
+              ? "border-app-yellow text-app-yellow bg-transparent hover:bg-app-yellow/10" 
+              : "bg-app-yellow text-app-black hover:bg-app-yellow/90"
+          }`}
+        >
+          {isFollowing ? (
+            <>
+              <UserCheck className="h-3 w-3" />
+              Following
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-3 w-3" />
+              Follow
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
