@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import VideoPlayer from "@/components/VideoPlayer";
 
@@ -69,6 +70,7 @@ const BATTLES = [{
   comments: 187,
   shares: 105
 }];
+
 const BattlePage = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
@@ -113,20 +115,38 @@ const BattlePage = () => {
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [activeVideoIndex]);
-  return <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
+  
+  return (
+    <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
       {/* Videos container */}
-      <div className="h-full flex flex-col transition-transform duration-500 ease-in-out" style={{
-      transform: `translateY(-${activeVideoIndex * 100}%)`
-    }}>
-        {BATTLES.map((video, index) => <div key={video.id} className="h-full w-full flex-shrink-0">
+      <div 
+        className="h-full flex flex-col transition-transform duration-500 ease-in-out" 
+        style={{
+          transform: `translateY(-${activeVideoIndex * 100}%)`
+        }}
+      >
+        {BATTLES.map((video, index) => (
+          <div key={video.id} className="h-full w-full flex-shrink-0">
             <VideoPlayer video={video} isActive={index === activeVideoIndex} />
-          </div>)}
+          </div>
+        ))}
       </div>
       
       {/* Progress indicators */}
       <div className="absolute top-20 right-3 flex flex-col space-y-1 z-10">
-        {BATTLES.map((_, index) => {})}
+        {BATTLES.map((_, index) => (
+          <div 
+            key={index}
+            className={`w-1 h-4 rounded-full ${
+              index === activeVideoIndex 
+                ? 'bg-app-yellow' 
+                : 'bg-gray-500/50'
+            }`}
+          />
+        ))}
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default BattlePage;
