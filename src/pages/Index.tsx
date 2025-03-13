@@ -4,7 +4,7 @@ import VideoPlayer from "../components/VideoPlayer";
 import { Zap } from "lucide-react";
 import { 
   Carousel, 
-  CarouselContent, 
+  CarouselContent,
   CarouselItem, 
   CarouselPrevious, 
   CarouselNext 
@@ -51,6 +51,34 @@ const Index = () => {
       likes: 5698,
       comments: 241,
       shares: 178
+    }
+  ];
+
+  // User-created videos for swappable section
+  const userCreatedVideos = [
+    {
+      id: "4",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
+      username: "runner_girl"
+    },
+    {
+      id: "5",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
+      username: "dance_king"
+    },
+    {
+      id: "6",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
+      username: "travel_vlogger"
+    },
+    {
+      id: "7",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
+      username: "chef_master"
     }
   ];
 
@@ -133,24 +161,24 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Swipeable Videos Carousel */}
+      {/* User Created Videos - Swappable Carousel */}
       <div className="absolute top-80 left-0 right-0 px-4 z-20">
         <div className="flex items-center mb-2">
           <Zap className="w-4 h-4 text-white mr-1" />
-          <h3 className="text-white font-medium">Videos</h3>
+          <h3 className="text-white font-medium">User Videos</h3>
         </div>
         <Carousel className="w-full">
           <CarouselContent>
-            {videos.map((video) => (
+            {userCreatedVideos.map((video) => (
               <CarouselItem key={video.id} className="basis-2/3">
                 <div className="relative h-40 rounded-xl overflow-hidden">
                   <video 
                     src={video.url}
                     className="h-full w-full object-cover" 
-                    poster="/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+                    poster={video.thumbnail}
                   />
                   <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-                    <span className="text-white text-xs">@{video.user.username}</span>
+                    <span className="text-white text-xs">@{video.username}</span>
                   </div>
                 </div>
               </CarouselItem>
