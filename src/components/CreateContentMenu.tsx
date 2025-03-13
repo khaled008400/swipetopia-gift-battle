@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { VideoIcon, Upload, X, Camera } from "lucide-react";
-import { Button } from "./ui/button";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -20,7 +19,7 @@ const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center animate-fade-in">
+    <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
       {/* Status bar */}
       <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-10">
         <div className="text-xl font-bold text-white">9:41</div>
@@ -73,7 +72,7 @@ const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
 // Component for the recording options screen
 const RecordingOptions = ({ onClose }: { onClose: () => void }) => {
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center animate-fade-in">
+    <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
       {/* Status bar */}
       <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-10">
         <div className="text-xl font-bold text-white">9:41</div>
@@ -97,7 +96,7 @@ const RecordingOptions = ({ onClose }: { onClose: () => void }) => {
       <img 
         src="/lovable-uploads/6e1ca44a-92c2-4481-b1c7-e8099c0df6a9.png" 
         alt="Background" 
-        className="absolute inset-0 w-full h-full object-cover" 
+        className="absolute inset-0 w-full h-full object-cover opacity-70" 
       />
       
       {/* Content area */}

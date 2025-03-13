@@ -2,7 +2,7 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BottomNavigation from "./BottomNavigation";
-import { Plus, VideoIcon } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import CreateContentMenu from "./CreateContentMenu";
 
@@ -16,7 +16,7 @@ const Layout = () => {
 
   return (
     <div className="flex flex-col h-screen w-full bg-app-black">
-      <main className="flex-1 overflow-hidden pb-20">
+      <main className="flex-1 overflow-hidden">
         <Outlet />
       </main>
       

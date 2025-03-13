@@ -76,11 +76,12 @@ const HomePage = () => {
     <div 
       ref={containerRef}
       className="h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+      style={{ height: 'calc(100vh - 64px)' }}
     >
       {MOCK_VIDEOS.map((video, index) => (
         <div 
           key={video.id} 
-          className="snap-start h-full w-full relative"
+          className="snap-start h-full w-full"
         >
           <VideoPlayer 
             video={video} 
