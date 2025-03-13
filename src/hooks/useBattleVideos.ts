@@ -109,60 +109,45 @@ const BATTLES: BattleVideo[] = [
   }
 ];
 
-export const useBattleVideos = () => {
+export const useBattleVideos = (liveVideosOnly: boolean = false) => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
-  const [liveOnly, setLiveOnly] = useState(false);
   const { toast } = useToast();
 
-  // Function to generate a mixed feed of videos
-  const generateMixedFeed = (): BattleVideo[] => {
-    if (liveOnly) {
+  // Function to generate a filtered feed of videos based on live status
+  const getFilteredVideos = (): BattleVideo[] => {
+    if (liveVideosOnly) {
       return BATTLES.filter(video => video.isLive);
+    } else {
+      return BATTLES.filter(video => !video.isLive);
     }
-    
-    // For demonstration, since we have a small dataset, we'll just sort them to ensure 
-    // live videos are distributed (we'd use a more sophisticated algorithm with real data)
-    const allVideos = [...BATTLES].sort((a, b) => {
-      // This ensures live videos are more evenly distributed
-      if (a.isLive && !b.isLive) return 1;
-      if (!a.isLive && b.isLive) return -1;
-      return 0;
-    });
-    
-    return allVideos;
   };
   
   // Get filtered videos based on current settings
-  const filteredVideos = generateMixedFeed();
+  const filteredVideos = getFilteredVideos();
 
-  // Reset active index when filter changes to avoid out of bounds
+  // Reset active index when component mounts
   useEffect(() => {
     setActiveVideoIndex(0);
-    if (liveOnly) {
+    
+    if (liveVideosOnly) {
       toast({
-        title: "Live streams only",
+        title: "Live Streams",
         description: "Showing only live streams",
         duration: 2000,
       });
     } else {
       toast({
-        title: "Mixed feed",
-        description: "Showing a mix of videos and live streams",
+        title: "Battle Videos",
+        description: "Showing battle videos",
         duration: 2000,
       });
     }
-  }, [liveOnly, toast]);
-
-  // Toggle live streams only
-  const handleToggleLive = () => {
-    setLiveOnly(!liveOnly);
-  };
+  }, [liveVideosOnly, toast]);
 
   return {
     activeVideoIndex,
     setActiveVideoIndex,
-    liveOnly,
-    handleToggleLive,
+    liveVideosOnly,
     filteredVideos
   };
 };

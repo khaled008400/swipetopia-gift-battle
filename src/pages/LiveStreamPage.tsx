@@ -6,12 +6,13 @@ import { useBattleVideos } from "@/hooks/useBattleVideos";
 import { Link } from "react-router-dom";
 import { Zap } from "lucide-react";
 
-const BattlePage = () => {
+const LiveStreamPage = () => {
   const {
     activeVideoIndex,
     setActiveVideoIndex,
+    liveVideosOnly,
     filteredVideos
-  } = useBattleVideos(false); // false = regular videos only
+  } = useBattleVideos(true); // true = live streams only
 
   // Handle swipe/scroll to change videos
   useEffect(() => {
@@ -57,12 +58,12 @@ const BattlePage = () => {
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
-      {/* Navigation to live streams page */}
-      <Link to="/live" className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-black/60 p-2 rounded-full backdrop-blur-sm border border-white/10 transition-all duration-300 hover:bg-black/70">
-        <div className="text-app-yellow animate-pulse transition-colors duration-300">
+      {/* Navigation to battles page */}
+      <Link to="/battles" className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-black/60 p-2 rounded-full backdrop-blur-sm border border-white/10 transition-all duration-300 hover:bg-black/70">
+        <div className="text-white transition-colors duration-300">
           <Zap className="h-5 w-5" />
         </div>
-        <span className="text-xs mr-1 text-app-yellow font-semibold transition-colors duration-300">Live Streams</span>
+        <span className="text-xs mr-1 text-white transition-colors duration-300">All Videos</span>
       </Link>
 
       {/* Videos container */}
@@ -73,10 +74,13 @@ const BattlePage = () => {
 
       {/* Header title */}
       <div className="absolute top-4 left-4 z-30">
-        <h1 className="text-white font-bold text-lg">Battle Videos</h1>
+        <h1 className="text-white font-bold text-lg flex items-center gap-2">
+          <Zap className="h-5 w-5 text-app-yellow animate-pulse" />
+          Live Streams
+        </h1>
       </div>
     </div>
   );
 };
 
-export default BattlePage;
+export default LiveStreamPage;

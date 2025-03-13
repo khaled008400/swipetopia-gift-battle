@@ -9,6 +9,7 @@ import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import BattlePage from "./pages/BattlePage";
+import LiveStreamPage from "./pages/LiveStreamPage";
 import WalletPage from "./pages/WalletPage";
 import ShopPage from "./pages/ShopPage";
 import LoginPage from "./pages/LoginPage";
@@ -31,6 +32,7 @@ const App = () => (
               <Route index element={<HomePage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="battles" element={<BattlePage />} />
+              <Route path="live" element={<LiveStreamPage />} />
               <Route path="wallet" element={<WalletPage />} />
               <Route path="shop" element={<ShopPage />} />
             </Route>
