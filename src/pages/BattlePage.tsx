@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Cast } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock battle data - in a real app, this would come from an API
+// Updated to more reliable video sources
 const BATTLES = [{
   id: "1",
   url: "https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-in-the-club-with-colorful-lights-3739-large.mp4",

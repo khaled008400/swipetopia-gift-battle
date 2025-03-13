@@ -1,5 +1,7 @@
+
 import { useRef, useState, useEffect } from "react";
 import { Heart, MessageCircle, Share2, Coins, ChevronUp } from "lucide-react";
+
 interface VideoPlayerProps {
   video: {
     id: string;
@@ -16,6 +18,7 @@ interface VideoPlayerProps {
   };
   isActive?: boolean;
 }
+
 const VideoPlayer = ({
   video,
   isActive = false
@@ -24,29 +27,81 @@ const VideoPlayer = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
   useEffect(() => {
-    if (isActive) {
-      videoRef.current?.play();
-      setIsPlaying(true);
+    if (isActive && !videoError) {
+      const playVideo = async () => {
+        try {
+          if (videoRef.current) {
+            // Reset video error state on new attempt
+            setVideoError(false);
+            await videoRef.current.play();
+            setIsPlaying(true);
+          }
+        } catch (err) {
+          console.error("Error playing video:", err);
+          setVideoError(true);
+          setIsPlaying(false);
+        }
+      };
+      
+      playVideo();
     } else {
-      videoRef.current?.pause();
-      setIsPlaying(false);
+      if (videoRef.current) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
     }
-  }, [isActive]);
+  }, [isActive, videoError]);
+
   const handleVideoPress = () => {
+    if (videoError) return;
+    
     if (isPlaying) {
       videoRef.current?.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current?.play();
+      videoRef.current?.play().catch(err => {
+        console.error("Error on manual play:", err);
+        setVideoError(true);
+      });
       setIsPlaying(true);
     }
   };
+
   const handleLike = () => {
     setIsLiked(!isLiked);
   };
-  return <div className="h-full w-full relative overflow-hidden">
-      <video ref={videoRef} src={video.url} className="h-full w-full object-cover" loop muted playsInline onClick={handleVideoPress} />
+
+  const handleVideoError = () => {
+    console.error("Video failed to load:", video.url);
+    setVideoError(true);
+  };
+
+  return (
+    <div className="h-full w-full relative overflow-hidden">
+      {videoError ? (
+        <div className="h-full w-full flex items-center justify-center bg-gray-900 text-white">
+          <div className="text-center p-4">
+            <p className="text-xl mb-2">Video unavailable</p>
+            <p className="text-sm text-gray-400">
+              {video.isLive ? "Live stream" : "Video"} could not be loaded
+            </p>
+          </div>
+        </div>
+      ) : (
+        <video 
+          ref={videoRef} 
+          src={video.url} 
+          className="h-full w-full object-cover" 
+          loop 
+          muted 
+          playsInline 
+          onClick={handleVideoPress}
+          onError={handleVideoError}
+        />
+      )}
       
       {/* Video overlay with user info and actions */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
@@ -113,6 +168,8 @@ const VideoPlayer = ({
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default VideoPlayer;
