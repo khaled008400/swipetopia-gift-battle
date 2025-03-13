@@ -1,10 +1,10 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { X, Send, Heart } from "lucide-react";
-import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState, useRef, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Comment {
   id: string;
@@ -24,6 +24,8 @@ interface VideoCommentsProps {
 
 const VideoComments = ({ isOpen, onClose, videoId }: VideoCommentsProps) => {
   const [commentText, setCommentText] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
   // Demo comments - in a real app, these would come from an API
   const [comments, setComments] = useState<Comment[]>([
@@ -53,6 +55,15 @@ const VideoComments = ({ isOpen, onClose, videoId }: VideoCommentsProps) => {
     }
   ]);
 
+  // Focus the input field when the comments sheet opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 300);
+    }
+  }, [isOpen]);
+
   const handleSubmitComment = () => {
     if (!commentText.trim()) return;
     
@@ -68,6 +79,12 @@ const VideoComments = ({ isOpen, onClose, videoId }: VideoCommentsProps) => {
     
     setComments([newComment, ...comments]);
     setCommentText("");
+    
+    toast({
+      title: "Comment posted",
+      description: "Your comment has been added",
+      duration: 2000,
+    });
   };
 
   const handleLikeComment = (commentId: string) => {
@@ -86,63 +103,72 @@ const VideoComments = ({ isOpen, onClose, videoId }: VideoCommentsProps) => {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="h-[80vh] p-0 rounded-t-xl bg-black border-t border-app-yellow/20">
+      <SheetContent 
+        side="bottom" 
+        className="h-[80vh] p-0 rounded-t-xl bg-black border-t border-app-yellow/20 max-w-full"
+      >
         <SheetHeader className="p-4 border-b border-app-yellow/20 bg-gradient-to-r from-[#9b87f5]/10 to-[#D946EF]/10">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-app-yellow text-xl font-bold">Comments ({comments.length})</SheetTitle>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-app-yellow/10">
-              <X className="h-5 w-5 text-app-yellow" />
+            <SheetTitle className="text-white text-xl font-bold">Comments ({comments.length})</SheetTitle>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose} 
+              className="h-8 w-8 rounded-full hover:bg-white/10 text-white"
+            >
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </SheetHeader>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black to-[#1a1a1a]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black to-[#1a1a1a] h-[calc(80vh-150px)]">
           {comments.map((comment) => (
             <div key={comment.id} className="flex space-x-3 animate-in fade-in slide-in-from-bottom-5 duration-300">
               <img 
                 src={comment.avatar} 
                 alt={comment.username} 
-                className="w-10 h-10 rounded-full border border-app-yellow/20"
+                className="w-10 h-10 rounded-full border border-white/20"
               />
               <div className="flex-1">
-                <div className="glass-panel p-3">
+                <div className="bg-black/40 backdrop-blur-sm p-3 rounded-lg border border-white/10">
                   <div className="flex justify-between items-start">
-                    <p className="font-semibold text-sm text-app-yellow">@{comment.username}</p>
+                    <p className="font-semibold text-sm text-white">@{comment.username}</p>
                     <span className="text-xs text-gray-400">{comment.timestamp}</span>
                   </div>
                   <p className="mt-1 text-sm text-white">{comment.text}</p>
                 </div>
                 <div className="mt-2 flex items-center space-x-4 text-xs text-gray-400">
                   <button 
-                    className="flex items-center space-x-1 hover:text-app-yellow transition-colors"
+                    className="flex items-center space-x-1 hover:text-white transition-colors"
                     onClick={() => handleLikeComment(comment.id)}
                   >
-                    <Heart className={`h-3.5 w-3.5 ${comment.isLiked ? 'fill-app-yellow text-app-yellow' : ''}`} />
+                    <Heart className={`h-3.5 w-3.5 ${comment.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                     <span>{comment.likes > 0 && comment.likes}</span>
                   </button>
-                  <button className="hover:text-app-yellow transition-colors">Reply</button>
+                  <button className="hover:text-white transition-colors">Reply</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
         
-        <div className="p-4 border-t border-app-yellow/20 bg-black">
+        <div className="p-4 border-t border-white/20 bg-black">
           <div className="flex items-center space-x-2">
             <Input 
+              ref={inputRef}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Add a comment..."
-              className="flex-1 bg-app-gray-dark border-app-yellow/20 focus:border-app-yellow focus-visible:ring-app-yellow/20 text-white"
+              className="flex-1 bg-[#1a1a1a] border-white/20 focus:border-white focus-visible:ring-white/20 text-white h-12"
               onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
             />
             <Button 
               onClick={handleSubmitComment}
               size="icon"
               disabled={!commentText.trim()}
-              className="bg-gradient-to-r from-[#9b87f5] to-[#D946EF] hover:opacity-90 text-white"
+              className="bg-gradient-to-r from-[#9b87f5] to-[#D946EF] hover:opacity-90 text-white h-12 w-12"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
         </div>
