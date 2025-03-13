@@ -1,14 +1,9 @@
 
 import { useEffect, useState } from "react";
-import VideoPlayer from "../components/VideoPlayer";
-import { Zap } from "lucide-react";
-import { 
-  Carousel, 
-  CarouselContent,
-  CarouselItem, 
-  CarouselPrevious, 
-  CarouselNext 
-} from "../components/ui/carousel";
+import PopularLiveSection from "../components/PopularLiveSection";
+import TrendingVideosSection from "../components/TrendingVideosSection";
+import UserVideosCarousel from "../components/UserVideosCarousel";
+import VideoFeed from "../components/VideoFeed";
 
 const Index = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
@@ -117,92 +112,11 @@ const Index = () => {
 
   return (
     <div className="h-full w-full overflow-hidden">
-      {/* Popular Live Section */}
-      <div className="absolute top-4 left-0 right-0 px-4 z-20">
-        <div className="flex items-center mb-2">
-          <Zap className="w-4 h-4 text-white mr-1" />
-          <h3 className="text-white font-medium">Popular Live</h3>
-        </div>
-        <div className="flex overflow-x-auto no-scrollbar space-x-3 py-1">
-          {liveCreators.map((creator) => (
-            <div key={creator.id} className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full border-2 border-dashed border-app-yellow p-1">
-                <img 
-                  src={creator.avatar} 
-                  alt={creator.name} 
-                  className="w-full h-full rounded-full object-cover"
-                />
-              </div>
-              <span className="text-white text-xs mt-1">{creator.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Trending Videos Section */}
-      <div className="absolute top-32 left-0 right-0 px-4 z-20">
-        <div className="flex items-center mb-2">
-          <Zap className="w-4 h-4 text-white mr-1" />
-          <h3 className="text-white font-medium">Trending Videos</h3>
-        </div>
-        <div className="flex overflow-x-auto no-scrollbar space-x-3">
-          {trendingVideos.map((video) => (
-            <div key={video.id} className="relative min-w-28 h-40 rounded-xl overflow-hidden">
-              <img 
-                src={video.thumbnail} 
-                alt={video.username} 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-                <span className="text-white text-xs">@{video.username}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* User Created Videos - Swappable Carousel */}
-      <div className="absolute top-80 left-0 right-0 px-4 z-20">
-        <div className="flex items-center mb-2">
-          <Zap className="w-4 h-4 text-white mr-1" />
-          <h3 className="text-white font-medium">User Videos</h3>
-        </div>
-        <Carousel className="w-full">
-          <CarouselContent>
-            {userCreatedVideos.map((video) => (
-              <CarouselItem key={video.id} className="basis-2/3">
-                <div className="relative h-40 rounded-xl overflow-hidden">
-                  <video 
-                    src={video.url}
-                    className="h-full w-full object-cover" 
-                    poster={video.thumbnail}
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-                    <span className="text-white text-xs">@{video.username}</span>
-                  </div>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 bg-app-yellow/80 text-app-black" />
-          <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 bg-app-yellow/80 text-app-black" />
-        </Carousel>
-      </div>
-
-      {/* Video Feed */}
-      <div 
-        className="h-full flex flex-col transition-transform duration-500 ease-in-out"
-        style={{ transform: `translateY(-${activeVideoIndex * 100}%)` }}
-      >
-        {videos.map((video, index) => (
-          <div key={video.id} className="h-full w-full flex-shrink-0">
-            <VideoPlayer 
-              video={video} 
-              isActive={index === activeVideoIndex}
-            />
-          </div>
-        ))}
-      </div>
+      {/* Component-based layout */}
+      <PopularLiveSection creators={liveCreators} />
+      <TrendingVideosSection videos={trendingVideos} />
+      <UserVideosCarousel videos={userCreatedVideos} />
+      <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} />
     </div>
   );
 };
