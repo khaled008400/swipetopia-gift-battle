@@ -16,7 +16,7 @@ const LiveSelling = () => {
     <div className="px-4 mb-4">
       <div className="flex items-center mb-2">
         <Zap className="w-4 h-4 text-white mr-1" />
-        <h3 className="text-white font-medium">Popular Lives</h3>
+        <h3 className="text-white font-medium">Popular Live</h3>
       </div>
       <div className="flex overflow-x-auto no-scrollbar space-x-3 py-1">
         {LIVE_SELLERS.map((seller) => (
