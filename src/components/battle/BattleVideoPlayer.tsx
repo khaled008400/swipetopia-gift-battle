@@ -41,7 +41,7 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
   }, [videoUrl, resetError]);
 
   return (
-    <div className="flex-1 relative overflow-hidden border-b-2 border-app-yellow">
+    <div className="h-full w-full relative overflow-hidden">
       {videoError ? (
         <VideoErrorDisplay 
           onRetry={loadAttempts < 3 ? () => handleRetry(videoRef) : undefined}
@@ -62,11 +62,11 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
       
       {!videoError && (
         <>
-          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded-full">
-            <p className="text-white text-xs">@{userName}</p>
+          <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-[#9b87f5]/80 backdrop-blur-sm rounded-full">
+            <p className="text-white text-sm font-medium">@{userName}</p>
           </div>
           {isVoted && (
-            <div className="absolute top-2 right-2 bg-app-yellow text-app-black px-2 py-1 rounded-full text-xs font-bold">
+            <div className="absolute top-4 right-4 bg-gradient-to-r from-[#9b87f5] to-[#D946EF] text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
               Voted
             </div>
           )}

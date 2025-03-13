@@ -25,26 +25,20 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
     setVotedFor(user);
   };
 
-  // For battle video, we'll use the same URL but create a split screen effect
-  // In a real app, we would have two different video URLs
   return (
-    <div className="h-full w-full relative overflow-hidden bg-app-black">
-      {/* Split screen for the two battling videos */}
-      <div className="h-full w-full flex flex-col">
-        <BattleVideoPlayer 
-          videoUrl={video.url}
-          isActive={isActive}
-          onVideoTap={handleVideoTap}
-          userName={`${video.user.username}_1`}
-          isVoted={votedFor === 'user1'}
-        />
-        <BattleVideoPlayer 
-          videoUrl={video.url}
-          isActive={isActive}
-          onVideoTap={handleVideoTap}
-          userName={`${video.user.username}_2`}
-          isVoted={votedFor === 'user2'}
-        />
+    <div className="h-full w-full relative overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-[#000000]">
+      {/* Main video player */}
+      <BattleVideoPlayer 
+        videoUrl={video.url}
+        isActive={isActive}
+        onVideoTap={handleVideoTap}
+        userName={video.user.username}
+        isVoted={votedFor !== null}
+      />
+
+      {/* UI Overlays */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="h-full w-full bg-gradient-to-t from-black/60 via-transparent to-black/40" />
       </div>
 
       <BattleHeader title={video.description} />
@@ -57,7 +51,7 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
       />
       <BattleDetails 
         title={video.description}
-        participants={video.likes} // Using likes as a proxy for participants
+        participants={video.likes}
         showDetails={showDetails}
         setShowDetails={setShowDetails}
       />

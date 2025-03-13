@@ -7,12 +7,14 @@ interface BattleHeaderProps {
 
 const BattleHeader = ({ title }: BattleHeaderProps) => {
   return (
-    <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/80 to-transparent">
+    <div className="absolute top-0 left-0 right-0 p-4 z-10">
       <div className="flex items-center">
-        <Trophy className="w-5 h-5 text-app-yellow mr-2" />
+        <div className="bg-[#9b87f5]/80 backdrop-blur-sm p-2 rounded-full mr-3">
+          <Trophy className="w-5 h-5 text-white" />
+        </div>
         <h3 className="text-white font-bold text-lg">{title}</h3>
-        <div className="ml-auto flex items-center text-red-500 text-xs">
-          <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
+        <div className="ml-auto flex items-center bg-black/40 backdrop-blur-sm text-[#F97316] text-xs px-3 py-1.5 rounded-full">
+          <div className="w-2 h-2 bg-[#F97316] rounded-full mr-1.5 animate-pulse"></div>
           LIVE
         </div>
       </div>

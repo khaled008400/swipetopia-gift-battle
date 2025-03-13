@@ -1,8 +1,10 @@
+
 import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
 import VideoActions from "@/components/video/VideoActions";
+import { ArrowLeft } from "lucide-react";
 
 const BattlePage = () => {
   const {
@@ -52,7 +54,9 @@ const BattlePage = () => {
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
-  return <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
+  
+  return (
+    <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {/* Videos container */}
       <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
       
@@ -60,8 +64,11 @@ const BattlePage = () => {
       <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
 
       {/* Header title */}
-      <div className="absolute top-4 left-4 z-30">
-        <h1 className="text-white font-bold text-lg">Battle Videos</h1>
+      <div className="absolute top-4 left-4 z-30 flex items-center">
+        <button className="mr-3 p-2 bg-black/30 backdrop-blur-sm rounded-full border border-white/10">
+          <ArrowLeft className="w-5 h-5 text-white" />
+        </button>
+        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Battle Videos</h1>
       </div>
 
       {/* Action buttons */}
@@ -88,7 +95,8 @@ const BattlePage = () => {
           />
         )}
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default BattlePage;
