@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import VideoPlayer from "@/components/VideoPlayer";
 import { Switch } from "@/components/ui/switch";
 import { Cast } from "lucide-react";
-import { Toast } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 
 // Mock battle data - in a real app, this would come from an API
@@ -86,10 +85,30 @@ const BattlePage = () => {
   const [liveOnly, setLiveOnly] = useState(false);
   const { toast } = useToast();
 
-  // Filter videos based on liveOnly state
-  const filteredVideos = liveOnly 
-    ? BATTLES.filter(video => video.isLive) 
-    : BATTLES;
+  // Function to generate a mixed feed of videos where a live video appears approximately every 10 videos
+  const generateMixedFeed = () => {
+    if (liveOnly) {
+      return BATTLES.filter(video => video.isLive);
+    }
+    
+    // For demonstration, since we have a small dataset, we'll just sort them to ensure 
+    // live videos are distributed (we'd use a more sophisticated algorithm with real data)
+    const liveVideos = BATTLES.filter(video => video.isLive);
+    const nonLiveVideos = BATTLES.filter(video => !video.isLive);
+    
+    // Sort all videos to get a varied mix
+    const allVideos = [...BATTLES].sort((a, b) => {
+      // This ensures live videos are more evenly distributed
+      if (a.isLive && !b.isLive) return 1;
+      if (!a.isLive && b.isLive) return -1;
+      return 0;
+    });
+    
+    return allVideos;
+  };
+  
+  // Get filtered videos based on current settings
+  const filteredVideos = generateMixedFeed();
 
   // Reset active index when filter changes to avoid out of bounds
   useEffect(() => {
@@ -98,6 +117,12 @@ const BattlePage = () => {
       toast({
         title: "Live streams only",
         description: "Showing only live streams",
+        duration: 2000,
+      });
+    } else {
+      toast({
+        title: "Mixed feed",
+        description: "Showing a mix of videos and live streams",
         duration: 2000,
       });
     }
@@ -178,13 +203,15 @@ const BattlePage = () => {
       
       {/* Progress indicators */}
       <div className="absolute top-20 right-3 flex flex-col space-y-1 z-10">
-        {filteredVideos.map((_, index) => (
+        {filteredVideos.map((video, index) => (
           <div 
             key={index}
             className={`w-1 h-4 rounded-full ${
               index === activeVideoIndex 
                 ? 'bg-app-yellow' 
                 : 'bg-gray-500/50'
+            } ${
+              video.isLive ? 'border border-red-500' : ''
             }`}
           />
         ))}
