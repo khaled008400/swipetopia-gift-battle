@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Search, Bell, Heart, Home, ShoppingBag, User, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -118,9 +119,20 @@ const HomePage = () => {
 
       {/* Categories section */}
       <div className="px-4 mb-4">
-        
         <div className="flex overflow-x-auto no-scrollbar space-x-2 py-1">
-          {CATEGORIES.map(category => {})}
+          {CATEGORIES.map(category => (
+            <button
+              key={category}
+              className={`px-4 py-2 rounded-full text-sm ${
+                activeCategory === category 
+                  ? "bg-app-yellow text-app-black" 
+                  : "bg-app-gray-light text-white"
+              }`}
+              onClick={() => setActiveCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
         </div>
       </div>
 
