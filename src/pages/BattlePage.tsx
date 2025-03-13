@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
+import VideoActions from "@/components/video/VideoActions";
+
 const BattlePage = () => {
   const {
     activeVideoIndex,
@@ -59,8 +61,34 @@ const BattlePage = () => {
 
       {/* Header title */}
       <div className="absolute top-4 left-4 z-30">
-        
+        <h1 className="text-white font-bold text-lg">Battle Videos</h1>
+      </div>
+
+      {/* Action buttons */}
+      <div className="absolute bottom-20 right-3 z-30">
+        {filteredVideos[activeVideoIndex] && (
+          <VideoActions 
+            likes={filteredVideos[activeVideoIndex].likes} 
+            comments={filteredVideos[activeVideoIndex].comments} 
+            shares={filteredVideos[activeVideoIndex].shares}
+            isLiked={filteredVideos[activeVideoIndex].isLiked || false}
+            onLike={() => {
+              // Update the active video's isLiked status
+              const updatedVideos = [...filteredVideos];
+              updatedVideos[activeVideoIndex] = {
+                ...updatedVideos[activeVideoIndex],
+                isLiked: !updatedVideos[activeVideoIndex].isLiked,
+                likes: updatedVideos[activeVideoIndex].isLiked 
+                  ? updatedVideos[activeVideoIndex].likes - 1 
+                  : updatedVideos[activeVideoIndex].likes + 1
+              };
+              // We would dispatch this to a state management system in a real app
+              console.log('Video liked:', updatedVideos[activeVideoIndex]);
+            }}
+          />
+        )}
       </div>
     </div>;
 };
+
 export default BattlePage;
