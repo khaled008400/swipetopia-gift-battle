@@ -1,6 +1,6 @@
 
 import { useRef, useState, useEffect } from "react";
-import { Heart, MessageCircle, Share2, Coins, ChevronUp, VideoIcon } from "lucide-react";
+import { Heart, MessageCircle, Share2, Coins, ChevronUp } from "lucide-react";
 
 interface VideoPlayerProps {
   video: {
@@ -61,16 +61,6 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
         onClick={handleVideoPress}
       />
       
-      {/* Status bar */}
-      <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-10">
-        <div className="text-xl font-bold text-white">9:41</div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-white rounded-full"></div>
-          <div className="w-4 h-4 bg-white rounded-full"></div>
-          <div className="w-4 h-4 bg-white rounded-full"></div>
-        </div>
-      </div>
-      
       {/* Video overlay with user info and actions */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
         <div className="flex justify-between items-end">
@@ -78,8 +68,8 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
             <div className="flex items-center gap-2">
               <h3 className="text-white font-semibold text-lg">@{video.user.username}</h3>
               {video.isLive && (
-                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <VideoIcon className="h-3 w-3" /> LIVE
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  LIVE
                 </span>
               )}
             </div>
@@ -107,29 +97,11 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
                 className="w-10 h-10 rounded-full border-2 border-app-yellow"
               />
               <div className="ml-2">
-                <p className="text-white text-sm font-bold">New Fashion Store</p>
-                <div className="flex items-center">
-                  <span className="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                  <p className="text-gray-300 text-xs">890 People Online Now</p>
-                </div>
+                <p className="text-white text-sm font-bold">@{video.user.username}</p>
               </div>
               <button className="ml-auto bg-app-yellow text-app-black text-xs font-bold px-3 py-1 rounded-full">
                 Follow
               </button>
-            </div>
-            
-            {/* Product info */}
-            <div className="mt-3 bg-black/40 rounded-lg p-2">
-              <p className="text-white text-xs">
-                It is a long established fact that a reader will be distracted by the readable content...
-              </p>
-            </div>
-            
-            {/* Viewer count */}
-            <div className="mt-2 bg-black/50 rounded-full px-2 py-1 inline-flex items-center">
-              <p className="text-white text-xs">
-                <span className="text-app-yellow font-bold">1,200,023</span> viewers
-              </p>
             </div>
           </div>
           
@@ -163,14 +135,6 @@ const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
               <span className="text-white text-xs mt-1">Gift</span>
             </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Coins display */}
-      <div className="absolute top-10 right-4 z-10">
-        <div className="flex items-center bg-black/50 rounded-full px-3 py-1">
-          <Coins className="h-4 w-4 text-app-yellow mr-1" />
-          <span className="text-white text-xs">1000</span>
         </div>
       </div>
     </div>

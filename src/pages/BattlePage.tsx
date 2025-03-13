@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Zap } from "lucide-react";
 import VideoFeed from "@/components/VideoFeed";
 
 // Mock video data - in a real app, this would come from an API
@@ -12,11 +11,10 @@ const VIDEOS = [
       username: "dancequeen",
       avatar: "https://i.pravatar.cc/150?img=1"
     },
-    description: "Dance battle semi-finals! Who's your favorite? #dance #battle",
+    description: "Dance videos! Who's your favorite? #dance #viral",
     likes: 1243,
     comments: 89,
-    shares: 56,
-    isLive: true
+    shares: 56
   },
   {
     id: "2",
@@ -25,7 +23,7 @@ const VIDEOS = [
       username: "lipqueen",
       avatar: "https://i.pravatar.cc/150?img=3"
     },
-    description: "Lip sync battle! Rate my performance 1-10 in the comments #lipsync #trending",
+    description: "City views and vibes! Rate my vlog 1-10 in the comments #vlog #trending",
     likes: 2467,
     comments: 134,
     shares: 89
@@ -37,11 +35,10 @@ const VIDEOS = [
       username: "fashionista",
       avatar: "https://i.pravatar.cc/150?img=5"
     },
-    description: "Fashion showdown! Vote for your favorite look in the comments! #fashion #style #competition",
+    description: "Silver look for tonight's party! What do you think? #fashion #style #makeup",
     likes: 5698,
     comments: 241,
-    shares: 178,
-    isLive: true
+    shares: 178
   },
   {
     id: "4",
@@ -50,7 +47,7 @@ const VIDEOS = [
       username: "styleicon",
       avatar: "https://i.pravatar.cc/150?img=6"
     },
-    description: "Model battle! Which walk is better? Let me know in the comments! #model #fashion #battle",
+    description: "Minimal vibes today! Less is more #model #fashion #minimal",
     likes: 3254,
     comments: 187,
     shares: 92
@@ -62,7 +59,7 @@ const VIDEOS = [
       username: "groovyking",
       avatar: "https://i.pravatar.cc/150?img=2"
     },
-    description: "Street dance battle! Rate my moves in the comments #dance #street #battle",
+    description: "Friday night moves! Can you do this? #dance #nightlife #weekend",
     likes: 7429,
     comments: 312,
     shares: 145
