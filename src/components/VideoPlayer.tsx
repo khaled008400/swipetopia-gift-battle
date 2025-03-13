@@ -14,6 +14,7 @@ interface VideoPlayerProps {
     user: {
       username: string;
       avatar: string;
+      isFollowing?: boolean;
     };
     description: string;
     likes: number;
@@ -105,6 +106,16 @@ const VideoPlayer = ({
     });
   };
 
+  const handleFollow = () => {
+    toast({
+      title: video.user.isFollowing ? "Unfollowed" : "Followed",
+      description: video.user.isFollowing 
+        ? `You unfollowed ${video.user.username}` 
+        : `You are now following ${video.user.username}`,
+      duration: 2000,
+    });
+  };
+
   return (
     <div className="h-full w-full relative overflow-hidden">
       {/* Video playback controller */}
@@ -148,6 +159,7 @@ const VideoPlayer = ({
           video={{...video, isLiked}}
           isLiked={isLiked} 
           onLike={handleLike}
+          onFollow={handleFollow}
         />
       )}
     </div>
