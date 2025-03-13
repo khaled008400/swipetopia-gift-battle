@@ -12,18 +12,18 @@ interface ProductsTabsProps {
 
 const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: ProductsTabsProps) => {
   return (
-    <div className="px-4 mb-4">
+    <div className="px-4 mb-20">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full grid grid-cols-2 mb-6 bg-app-gray-dark">
           <TabsTrigger 
             value="featured" 
-            className="data-[state=active]:bg-app-yellow data-[state=active]:text-app-black"
+            className="data-[state=active]:bg-app-yellow data-[state=active]:text-app-black py-2.5"
           >
             Featured
           </TabsTrigger>
           <TabsTrigger 
             value="new" 
-            className="data-[state=active]:bg-app-yellow data-[state=active]:text-app-black"
+            className="data-[state=active]:bg-app-yellow data-[state=active]:text-app-black py-2.5"
           >
             New Arrivals
           </TabsTrigger>

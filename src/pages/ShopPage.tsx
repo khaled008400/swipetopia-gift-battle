@@ -6,18 +6,28 @@ import LiveSelling from "../components/shop/LiveSelling";
 import ShopShorts from "../components/shop/ShopShorts";
 import ShopCategories from "../components/shop/ShopCategories";
 import ProductsTabs from "../components/shop/ProductsTabs";
+import { useToast } from "@/components/ui/use-toast";
 
 const ShopPage = () => {
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [activeTab, setActiveTab] = useState("featured");
   const [likedProducts, setLikedProducts] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
   const toggleLike = (productId: string) => {
     if (likedProducts.includes(productId)) {
       setLikedProducts(likedProducts.filter(id => id !== productId));
+      toast({
+        description: "Removed from favorites",
+        duration: 2000,
+      });
     } else {
       setLikedProducts([...likedProducts, productId]);
+      toast({
+        description: "Added to favorites",
+        duration: 2000,
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Search, Bell } from "lucide-react";
+import { ShoppingCart, Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const ShopHeader = () => {
   return (
@@ -12,17 +13,23 @@ const ShopHeader = () => {
           className="w-10 h-10 rounded-full border-2 border-app-yellow"
         />
         <div className="ml-3">
-          <h2 className="text-white font-semibold text-lg">Shop</h2>
+          <h2 className="text-white font-semibold text-lg">Fashion Shop</h2>
           <p className="text-gray-400 text-xs">Find the best products</p>
         </div>
       </div>
       <div className="flex items-center space-x-4">
-        <button className="text-white">
-          <Search className="w-5 h-5" />
-        </button>
-        <button className="text-white">
-          <Bell className="w-5 h-5" />
-        </button>
+        <div className="relative">
+          <button className="text-white p-1">
+            <ShoppingCart className="w-5 h-5" />
+          </button>
+          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-app-yellow text-app-black text-[10px]">3</Badge>
+        </div>
+        <div className="relative">
+          <button className="text-white p-1">
+            <Bell className="w-5 h-5" />
+          </button>
+          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-red-500 text-white text-[10px]">2</Badge>
+        </div>
       </div>
     </div>
   );
