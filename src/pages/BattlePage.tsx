@@ -1,24 +1,19 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Users, User, Calendar, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Trophy } from "lucide-react";
+import BattleVideo from "@/components/BattleVideo";
 
-// Mock battle data
-const UPCOMING_BATTLES = [
-  { id: 1, title: "Dance Battle Finals", participants: 12, time: "Today, 8:00 PM", prize: 5000 },
-  { id: 2, title: "Fashion Week Special", participants: 8, time: "Tomorrow, 7:30 PM", prize: 3000 },
-  { id: 3, title: "Singing Competition", participants: 10, time: "Aug 25, 9:00 PM", prize: 4000 },
-];
-
-const LIVE_BATTLES = [
+// Mock battle data - in a real app, this would come from an API
+const BATTLE_VIDEOS = [
   { 
     id: 1, 
     title: "Dance Battle Semi-finals", 
     participants: 8, 
     viewers: 1250, 
     user1: { name: "dancequeen", avatar: "https://i.pravatar.cc/150?img=1" },
-    user2: { name: "groovyking", avatar: "https://i.pravatar.cc/150?img=2" }
+    user2: { name: "groovyking", avatar: "https://i.pravatar.cc/150?img=2" },
+    videoUrl1: "https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-in-the-club-with-colorful-lights-3739-large.mp4",
+    videoUrl2: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4"
   },
   { 
     id: 2, 
@@ -26,104 +21,98 @@ const LIVE_BATTLES = [
     participants: 6, 
     viewers: 875, 
     user1: { name: "lipqueen", avatar: "https://i.pravatar.cc/150?img=3" },
-    user2: { name: "syncmaster", avatar: "https://i.pravatar.cc/150?img=4" }
+    user2: { name: "syncmaster", avatar: "https://i.pravatar.cc/150?img=4" },
+    videoUrl1: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+    videoUrl2: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-video-call-with-smartphone-43796-large.mp4"
+  },
+  { 
+    id: 3, 
+    title: "Fashion Showdown", 
+    participants: 12, 
+    viewers: 2431, 
+    user1: { name: "fashionista", avatar: "https://i.pravatar.cc/150?img=5" },
+    user2: { name: "styleicon", avatar: "https://i.pravatar.cc/150?img=6" },
+    videoUrl1: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
+    videoUrl2: "https://assets.mixkit.co/videos/preview/mixkit-woman-modeling-in-an-empty-room-by-the-wall-42376-large.mp4"
   },
 ];
 
 const BattlePage = () => {
-  const [activeTab, setActiveTab] = useState("live");
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+
+  // Handle swipe/scroll to change videos
+  useEffect(() => {
+    const handleScroll = (e: WheelEvent) => {
+      if (e.deltaY > 0 && activeVideoIndex < BATTLE_VIDEOS.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+
+    window.addEventListener('wheel', handleScroll);
+    
+    return () => {
+      window.removeEventListener('wheel', handleScroll);
+    };
+  }, [activeVideoIndex]);
+
+  // Handle touch swipe for mobile
+  useEffect(() => {
+    let touchStartY = 0;
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      const diff = touchStartY - touchEndY;
+      
+      // Swipe up - go to next video
+      if (diff > 50 && activeVideoIndex < BATTLE_VIDEOS.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } 
+      // Swipe down - go to previous video
+      else if (diff < -50 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+    
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [activeVideoIndex]);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-app-black p-4">
-      <h1 className="text-2xl font-bold mb-6 flex items-center">
-        <Trophy className="w-6 h-6 mr-2" /> Battles
-      </h1>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-6">
-          <TabsTrigger value="live">Live Now</TabsTrigger>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="live" className="space-y-4 animate-fade-in">
-          {LIVE_BATTLES.map((battle) => (
-            <div key={battle.id} className="p-4 bg-app-gray-dark rounded-xl overflow-hidden">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold">{battle.title}</h3>
-                <div className="flex items-center text-red-500 text-xs">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
-                  LIVE
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 mr-1 text-gray-400" />
-                  <span className="text-xs text-gray-400">{battle.viewers} watching</span>
-                </div>
-                <div className="bg-app-yellow text-app-black text-xs font-bold py-1 px-2 rounded-full">
-                  VS
-                </div>
-              </div>
-
-              <div className="relative flex justify-between mb-4">
-                <div className="text-center flex-1">
-                  <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-app-yellow">
-                    <img src={battle.user1.avatar} alt={battle.user1.name} className="w-full h-full object-cover" />
-                  </div>
-                  <p className="mt-1 font-medium text-sm">@{battle.user1.name}</p>
-                </div>
-
-                <div className="text-center flex-1">
-                  <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-app-yellow">
-                    <img src={battle.user2.avatar} alt={battle.user2.name} className="w-full h-full object-cover" />
-                  </div>
-                  <p className="mt-1 font-medium text-sm">@{battle.user2.name}</p>
-                </div>
-              </div>
-
-              <Button className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover">
-                Join Battle
-              </Button>
-            </div>
-          ))}
-
-          <div className="mt-6 text-center">
-            <Button variant="outline" className="border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black">
-              Create a Battle
-            </Button>
+    <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
+      <div 
+        className="h-full flex flex-col transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateY(-${activeVideoIndex * 100}%)` }}
+      >
+        {BATTLE_VIDEOS.map((battle, index) => (
+          <div key={battle.id} className="h-full w-full flex-shrink-0">
+            <BattleVideo 
+              battle={battle} 
+              isActive={index === activeVideoIndex}
+            />
           </div>
-        </TabsContent>
-
-        <TabsContent value="upcoming" className="animate-fade-in">
-          <div className="space-y-4">
-            {UPCOMING_BATTLES.map((battle) => (
-              <div key={battle.id} className="p-4 bg-app-gray-dark rounded-lg flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold mb-1">{battle.title}</h3>
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    <span>{battle.time}</span>
-                    <span className="mx-2">•</span>
-                    <Users className="w-4 h-4 mr-1" />
-                    <span>{battle.participants} participants</span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end">
-                  <div className="text-xs text-gray-400 mb-1">Prize pool</div>
-                  <div className="text-app-yellow font-bold">{battle.prize} coins</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6">
-            <Button variant="outline" className="w-full border-dashed border-app-gray-light text-gray-400 hover:text-app-yellow hover:border-app-yellow">
-              Show More
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
+      
+      {/* Progress indicators */}
+      <div className="absolute top-20 right-3 flex flex-col space-y-1">
+        {BATTLE_VIDEOS.map((_, index) => (
+          <div 
+            key={index} 
+            className={`w-1 h-${index === activeVideoIndex ? '6' : '3'} rounded-full ${index === activeVideoIndex ? 'bg-app-yellow' : 'bg-gray-500'}`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
