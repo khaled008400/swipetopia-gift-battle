@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingBag, Search, Filter, ArrowRight, Heart, Star } from "lucide-react";
+import { ShoppingBag, Search, Filter, ArrowRight, Heart, Star, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 
 // Mock product data
 const FEATURED_PRODUCTS = [
@@ -24,120 +25,177 @@ const CATEGORIES = ["Clothing", "Accessories", "Shoes", "Electronics", "Beauty"]
 const ShopPage = () => {
   const [activeTab, setActiveTab] = useState("featured");
   const [searchQuery, setSearchQuery] = useState("");
+  const [likedProducts, setLikedProducts] = useState<number[]>([]);
+
+  const toggleLike = (productId: number) => {
+    if (likedProducts.includes(productId)) {
+      setLikedProducts(likedProducts.filter(id => id !== productId));
+    } else {
+      setLikedProducts([...likedProducts, productId]);
+    }
+  };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-app-black p-4">
-      <h1 className="text-2xl font-bold mb-4 flex items-center">
-        <ShoppingBag className="w-6 h-6 mr-2" /> Shop
-      </h1>
+    <div className="h-full w-full bg-app-black overflow-y-auto pb-16">
+      {/* Header with user greeting */}
+      <div className="px-4 pt-3 pb-4 flex justify-between items-center">
+        <div className="flex items-center">
+          <img 
+            src="/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png" 
+            alt="User" 
+            className="w-10 h-10 rounded-full border-2 border-app-yellow"
+          />
+          <div className="ml-3">
+            <h2 className="text-white font-semibold text-lg">Shop</h2>
+            <p className="text-gray-400 text-xs">Find the best products</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <button className="text-white">
+            <Search className="w-5 h-5" />
+          </button>
+          <button className="text-white">
+            <Bell className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      {/* Search bar */}
+      <div className="relative px-4 mb-4">
+        <Search className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-400" />
         <Input
           placeholder="Search products..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-app-gray-dark pl-10 pr-10 border-app-gray-light text-white"
+          className="bg-app-gray-dark pl-10 pr-10 border-app-gray-light text-white rounded-full"
         />
-        <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <Filter className="absolute right-7 top-1/2 transform -translate-y-1/2 text-gray-400" />
       </div>
 
-      <div className="mb-6 overflow-x-auto">
-        <div className="flex space-x-2 w-max">
+      {/* Categories section */}
+      <div className="px-4 mb-4">
+        <h3 className="text-white font-medium mb-2 flex items-center">
+          <span className="grid grid-cols-2 grid-rows-2 gap-0.5 w-4 h-4 mr-1">
+            <span className="bg-white w-1.5 h-1.5"></span>
+            <span className="bg-white w-1.5 h-1.5"></span>
+            <span className="bg-white w-1.5 h-1.5"></span>
+            <span className="bg-white w-1.5 h-1.5"></span>
+          </span>
+          Categories
+        </h3>
+        <div className="flex overflow-x-auto no-scrollbar space-x-2 py-1">
           {CATEGORIES.map((category) => (
-            <Button
+            <button
               key={category}
-              variant="outline" 
-              className="border-app-gray-light bg-app-gray-dark hover:bg-app-gray-light text-white whitespace-nowrap"
+              className="py-1 px-4 rounded-full text-sm font-medium min-w-max bg-app-gray-dark text-white hover:bg-app-yellow hover:text-app-black transition-colors"
             >
               {category}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-6">
-          <TabsTrigger value="featured">Featured</TabsTrigger>
-          <TabsTrigger value="new">New Arrivals</TabsTrigger>
-        </TabsList>
+      {/* Tabs sections */}
+      <div className="px-4 mb-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-2 mb-6 bg-app-gray-dark">
+            <TabsTrigger 
+              value="featured" 
+              className="data-[state=active]:bg-app-yellow data-[state=active]:text-app-black"
+            >
+              Featured
+            </TabsTrigger>
+            <TabsTrigger 
+              value="new" 
+              className="data-[state=active]:bg-app-yellow data-[state=active]:text-app-black"
+            >
+              New Arrivals
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="featured" className="animate-fade-in">
-          <div className="space-y-6">
-            {FEATURED_PRODUCTS.map((product) => (
-              <div key={product.id} className="relative bg-app-gray-dark rounded-xl overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold">{product.name}</h3>
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-app-yellow mr-1 fill-current" />
-                      <span className="text-sm">{product.rating}</span>
+          <TabsContent value="featured" className="animate-fade-in">
+            <div className="grid grid-cols-2 gap-3">
+              {FEATURED_PRODUCTS.map((product) => (
+                <div key={product.id} className="relative rounded-xl overflow-hidden bg-app-gray-dark">
+                  <div className="h-48 overflow-hidden">
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-white">{product.name}</h3>
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 text-app-yellow mr-1 fill-current" />
+                        <span className="text-sm text-white">{product.rating}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-white">${product.price}</span>
+                      <Button size="sm" className="rounded-full bg-app-yellow text-app-black hover:bg-app-yellow-hover">
+                        <ShoppingBag className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-lg">${product.price}</span>
-                    <Button className="rounded-full h-10 w-10 p-0 bg-app-yellow text-app-black hover:bg-app-yellow-hover">
-                      <ShoppingBag className="h-5 w-5" />
-                    </Button>
-                  </div>
+                  {product.featured && (
+                    <div className="absolute top-2 left-2 bg-app-yellow text-app-black text-xs font-bold py-1 px-2 rounded-full">
+                      FEATURED
+                    </div>
+                  )}
+                  <button 
+                    className="absolute top-2 right-2 bg-black/50 p-2 rounded-full"
+                    onClick={() => toggleLike(product.id)}
+                  >
+                    <Heart className={`h-4 w-4 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : "text-white"}`} />
+                  </button>
                 </div>
-                {product.featured && (
-                  <div className="absolute top-2 left-2 bg-app-yellow text-app-black text-xs font-bold py-1 px-2 rounded-full">
-                    FEATURED
+              ))}
+            </div>
+
+            <Button variant="outline" className="w-full mt-6 border-app-gray-light text-gray-400 hover:text-app-yellow hover:border-app-yellow">
+              View All <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="new" className="animate-fade-in">
+            <div className="grid grid-cols-2 gap-3">
+              {NEW_ARRIVALS.map((product) => (
+                <div key={product.id} className="relative rounded-xl overflow-hidden bg-app-gray-dark">
+                  <div className="h-48 overflow-hidden">
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                   </div>
-                )}
-                <button className="absolute top-2 right-2 bg-black/50 p-2 rounded-full">
-                  <Heart className="h-5 w-5 text-white" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <Button variant="outline" className="w-full mt-6 border-app-gray-light text-gray-400 hover:text-app-yellow hover:border-app-yellow">
-            View All <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
-        </TabsContent>
-
-        <TabsContent value="new" className="animate-fade-in">
-          <div className="space-y-6">
-            {NEW_ARRIVALS.map((product) => (
-              <div key={product.id} className="relative bg-app-gray-dark rounded-xl overflow-hidden">
-                <div className="h-48 overflow-hidden">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold">{product.name}</h3>
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-app-yellow mr-1 fill-current" />
-                      <span className="text-sm">{product.rating}</span>
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-white">{product.name}</h3>
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 text-app-yellow mr-1 fill-current" />
+                        <span className="text-sm text-white">{product.rating}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-white">${product.price}</span>
+                      <Button size="sm" className="rounded-full bg-app-yellow text-app-black hover:bg-app-yellow-hover">
+                        <ShoppingBag className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-lg">${product.price}</span>
-                    <Button className="rounded-full h-10 w-10 p-0 bg-app-yellow text-app-black hover:bg-app-yellow-hover">
-                      <ShoppingBag className="h-5 w-5" />
-                    </Button>
+                  <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-full">
+                    NEW
                   </div>
+                  <button 
+                    className="absolute top-2 right-2 bg-black/50 p-2 rounded-full"
+                    onClick={() => toggleLike(product.id)}
+                  >
+                    <Heart className={`h-4 w-4 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : "text-white"}`} />
+                  </button>
                 </div>
-                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-full">
-                  NEW
-                </div>
-                <button className="absolute top-2 right-2 bg-black/50 p-2 rounded-full">
-                  <Heart className="h-5 w-5 text-white" />
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <Button variant="outline" className="w-full mt-6 border-app-gray-light text-gray-400 hover:text-app-yellow hover:border-app-yellow">
-            View All <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
-        </TabsContent>
-      </Tabs>
+            <Button variant="outline" className="w-full mt-6 border-app-gray-light text-gray-400 hover:text-app-yellow hover:border-app-yellow">
+              View All <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
