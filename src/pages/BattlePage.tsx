@@ -1,5 +1,10 @@
+
 import { useState, useEffect } from "react";
 import VideoPlayer from "@/components/VideoPlayer";
+import { Switch } from "@/components/ui/switch";
+import { Cast } from "lucide-react";
+import { Toast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock battle data - in a real app, this would come from an API
 const BATTLES = [{
@@ -12,7 +17,8 @@ const BATTLES = [{
   description: "Dance Battle Finals 🏆 #dance #competition #finals",
   likes: 1432,
   comments: 87,
-  shares: 34
+  shares: 34,
+  isLive: true
 }, {
   id: "2",
   url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
@@ -23,7 +29,8 @@ const BATTLES = [{
   description: "My entry for the dance battle! Vote if you like it 🔥 #dancebattle #hiphop",
   likes: 2651,
   comments: 132,
-  shares: 76
+  shares: 76,
+  isLive: false
 }, {
   id: "3",
   url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
@@ -34,7 +41,8 @@ const BATTLES = [{
   description: "Freestyle Rap Challenge - Round 1 🎤 #rap #freestyle #competition",
   likes: 3219,
   comments: 201,
-  shares: 97
+  shares: 97,
+  isLive: true
 }, {
   id: "4",
   url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
@@ -45,7 +53,8 @@ const BATTLES = [{
   description: "Responding to @lipqueen's challenge. Let's go! 🔥 #rapbattle #bars",
   likes: 2876,
   comments: 143,
-  shares: 87
+  shares: 87,
+  isLive: false
 }, {
   id: "5",
   url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
@@ -56,7 +65,8 @@ const BATTLES = [{
   description: "Fashion Face-Off Entry 👗 #fashion #style #competition",
   likes: 4532,
   comments: 234,
-  shares: 123
+  shares: 123,
+  isLive: false
 }, {
   id: "6",
   url: "https://assets.mixkit.co/videos/preview/mixkit-woman-modeling-in-an-empty-room-by-the-wall-42376-large.mp4",
@@ -67,15 +77,36 @@ const BATTLES = [{
   description: "My fashion battle submission - vintage inspired 💫 #fashionbattle #vintage",
   likes: 3965,
   comments: 187,
-  shares: 105
+  shares: 105,
+  isLive: true
 }];
+
 const BattlePage = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [liveOnly, setLiveOnly] = useState(false);
+  const { toast } = useToast();
+
+  // Filter videos based on liveOnly state
+  const filteredVideos = liveOnly 
+    ? BATTLES.filter(video => video.isLive) 
+    : BATTLES;
+
+  // Reset active index when filter changes to avoid out of bounds
+  useEffect(() => {
+    setActiveVideoIndex(0);
+    if (liveOnly) {
+      toast({
+        title: "Live streams only",
+        description: "Showing only live streams",
+        duration: 2000,
+      });
+    }
+  }, [liveOnly, toast]);
 
   // Handle swipe/scroll to change videos
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
-      if (e.deltaY > 0 && activeVideoIndex < BATTLES.length - 1) {
+      if (e.deltaY > 0 && activeVideoIndex < filteredVideos.length - 1) {
         setActiveVideoIndex(prev => prev + 1);
       } else if (e.deltaY < 0 && activeVideoIndex > 0) {
         setActiveVideoIndex(prev => prev - 1);
@@ -85,7 +116,7 @@ const BattlePage = () => {
     return () => {
       window.removeEventListener('wheel', handleScroll);
     };
-  }, [activeVideoIndex]);
+  }, [activeVideoIndex, filteredVideos.length]);
 
   // Handle touch swipe for mobile
   useEffect(() => {
@@ -98,7 +129,7 @@ const BattlePage = () => {
       const diff = touchStartY - touchEndY;
 
       // Swipe up - go to next video
-      if (diff > 50 && activeVideoIndex < BATTLES.length - 1) {
+      if (diff > 50 && activeVideoIndex < filteredVideos.length - 1) {
         setActiveVideoIndex(prev => prev + 1);
       }
       // Swipe down - go to previous video
@@ -112,19 +143,53 @@ const BattlePage = () => {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [activeVideoIndex]);
+  }, [activeVideoIndex, filteredVideos.length]);
+
+  // Toggle live streams only
+  const handleToggleLive = () => {
+    setLiveOnly(!liveOnly);
+  };
+
   return <div className="h-[calc(100vh-64px)] overflow-hidden bg-app-black relative">
+      {/* Live toggle button */}
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-black/60 p-2 rounded-full">
+        <Cast className="h-5 w-5 text-white" />
+        <span className="text-white text-xs mr-1">Live only</span>
+        <Switch 
+          checked={liveOnly} 
+          onCheckedChange={handleToggleLive} 
+          className="data-[state=checked]:bg-app-yellow" 
+        />
+      </div>
+
       {/* Videos container */}
-      <div className="h-full flex flex-col transition-transform duration-500 ease-in-out" style={{
-      transform: `translateY(-${activeVideoIndex * 100}%)`
-    }}>
-        {BATTLES.map((video, index) => <div key={video.id} className="h-full w-full flex-shrink-0">
+      <div 
+        className="h-full flex flex-col transition-transform duration-500 ease-in-out" 
+        style={{
+          transform: `translateY(-${activeVideoIndex * 100}%)`
+        }}
+      >
+        {filteredVideos.map((video, index) => (
+          <div key={video.id} className="h-full w-full flex-shrink-0">
             <VideoPlayer video={video} isActive={index === activeVideoIndex} />
-          </div>)}
+          </div>
+        ))}
       </div>
       
       {/* Progress indicators */}
-      
+      <div className="absolute top-20 right-3 flex flex-col space-y-1 z-10">
+        {filteredVideos.map((_, index) => (
+          <div 
+            key={index}
+            className={`w-1 h-4 rounded-full ${
+              index === activeVideoIndex 
+                ? 'bg-app-yellow' 
+                : 'bg-gray-500/50'
+            }`}
+          />
+        ))}
+      </div>
     </div>;
 };
+
 export default BattlePage;
