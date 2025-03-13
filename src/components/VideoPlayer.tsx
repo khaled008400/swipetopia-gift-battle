@@ -51,7 +51,7 @@ const VideoPlayer = ({
       {/* Video overlay with user info and actions */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
         <div className="flex justify-between items-end">
-          <div className="flex-1 py-0 my--14 mx-0 px-[16px]">
+          <div className="flex-1 py-0 my--14 mx-0 px-[16px] my--1">
             <div className="flex items-center gap-2">
               
               {video.isLive && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
