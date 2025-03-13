@@ -64,7 +64,7 @@ const Index = () => {
   }, [activeVideoIndex, videos.length]);
 
   return (
-    <div className="h-full w-full bg-app-black overflow-hidden">
+    <div className="h-full w-full overflow-hidden">
       <div 
         className="h-full flex flex-col transition-transform duration-500 ease-in-out"
         style={{ transform: `translateY(-${activeVideoIndex * 100}%)` }}

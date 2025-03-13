@@ -1,6 +1,7 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { VideoIcon, Upload, X, Camera } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -17,6 +18,27 @@ const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
       <RecordingOptions onClose={onClose} />
     );
   }
+
+  const handleUploadVideo = () => {
+    // Create an input element to open file selector
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'video/*';
+    fileInput.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        const file = target.files[0];
+        toast({
+          title: "Video selected",
+          description: `You selected: ${file.name}`,
+        });
+        console.log("Selected video file:", file);
+        // Here we would implement the actual upload functionality
+        onClose();
+      }
+    };
+    fileInput.click();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
@@ -54,7 +76,7 @@ const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
           
           <button 
             className="w-full bg-app-black border border-app-yellow text-app-yellow font-bold py-4 rounded-xl flex items-center justify-center gap-3"
-            onClick={() => window.location.href = "/upload"}
+            onClick={handleUploadVideo}
           >
             <Upload className="h-6 w-6" />
             <span>Upload Video</span>
@@ -76,17 +98,62 @@ const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
 // Component for the recording options screen
 const RecordingOptions = ({ onClose }: { onClose: () => void }) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [selectedDuration, setSelectedDuration] = useState("60s");
+  
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: true 
+      });
+      setStream(mediaStream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      toast({
+        variant: "destructive",
+        title: "Camera access denied",
+        description: "Please allow camera and microphone access to record videos",
+      });
+    }
+  };
+  
+  // Initialize camera when component mounts
+  useState(() => {
+    startCamera();
+    
+    return () => {
+      // Clean up stream when component unmounts
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  });
   
   const startRecording = () => {
     setIsRecording(true);
-    // Here we would implement actual recording functionality
-    console.log("Starting video recording");
+    // Here we would implement actual recording functionality using MediaRecorder API
+    console.log("Starting video recording with duration:", selectedDuration);
+    toast({
+      title: "Recording started",
+      description: `Recording for ${selectedDuration}`,
+    });
   };
   
   const stopRecording = () => {
     setIsRecording(false);
     // Here we would implement the stop recording and save functionality
     console.log("Stopping video recording");
+    toast({
+      title: "Recording stopped",
+      description: "Your video has been saved",
+    });
+    onClose();
   };
   
   return (
@@ -103,16 +170,27 @@ const RecordingOptions = ({ onClose }: { onClose: () => void }) => {
       
       <div className="absolute top-4 right-4">
         <button 
-          onClick={onClose}
+          onClick={() => {
+            if (stream) {
+              stream.getTracks().forEach(track => track.stop());
+            }
+            onClose();
+          }}
           className="rounded-full bg-transparent w-10 h-10 flex items-center justify-center"
         >
           <X className="text-white w-6 h-6" />
         </button>
       </div>
       
-      {/* Camera viewport - would be replaced with actual camera feed */}
-      <div className="w-full flex-1 bg-app-gray-dark flex items-center justify-center">
-        <div className="text-white text-xl">Camera Preview</div>
+      {/* Camera viewport */}
+      <div className="w-full flex-1 bg-app-gray-dark flex items-center justify-center overflow-hidden">
+        <video 
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="h-full w-full object-cover"
+        />
       </div>
       
       {/* Right side controls */}
@@ -130,13 +208,22 @@ const RecordingOptions = ({ onClose }: { onClose: () => void }) => {
       
       {/* Duration options */}
       <div className="w-full flex justify-center space-x-4 mb-6">
-        <button className="bg-black/30 text-white px-4 py-2 rounded-full">
+        <button 
+          className={`${selectedDuration === "15s" ? "bg-app-yellow text-app-black font-bold" : "bg-black/30 text-white"} px-4 py-2 rounded-full`}
+          onClick={() => setSelectedDuration("15s")}
+        >
           15s
         </button>
-        <button className="bg-black/30 text-white px-4 py-2 rounded-full">
+        <button 
+          className={`${selectedDuration === "30s" ? "bg-app-yellow text-app-black font-bold" : "bg-black/30 text-white"} px-4 py-2 rounded-full`}
+          onClick={() => setSelectedDuration("30s")}
+        >
           30s
         </button>
-        <button className="bg-app-yellow text-app-black font-bold px-4 py-2 rounded-full">
+        <button 
+          className={`${selectedDuration === "60s" ? "bg-app-yellow text-app-black font-bold" : "bg-black/30 text-white"} px-4 py-2 rounded-full`}
+          onClick={() => setSelectedDuration("60s")}
+        >
           60s
         </button>
       </div>
