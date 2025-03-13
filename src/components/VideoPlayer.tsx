@@ -2,6 +2,8 @@
 import { useRef, useState, useEffect } from "react";
 import VideoOverlay from "./video/VideoOverlay";
 import VideoErrorDisplay from "./video/VideoErrorDisplay";
+import DoubleTapHandler from "./video/DoubleTapHandler";
+import VideoPlaybackController from "./video/VideoPlaybackController";
 import { useToast } from "@/hooks/use-toast";
 
 interface VideoPlayerProps {
@@ -31,35 +33,10 @@ const VideoPlayer = ({
   const [isLiked, setIsLiked] = useState(video.isLiked || false);
   const [videoError, setVideoError] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
-  const [doubleTapTimer, setDoubleTapTimer] = useState<number | null>(null);
   const [tapPosition, setTapPosition] = useState({ x: 0, y: 0 });
   const [showHeart, setShowHeart] = useState(false);
+  const [doubleTapTimer, setDoubleTapTimer] = useState<number | null>(null);
   const { toast } = useToast();
-
-  const tryPlayVideo = async () => {
-    if (!videoRef.current || !isActive) return;
-    
-    try {
-      setVideoError(false);
-      await videoRef.current.play();
-      setIsPlaying(true);
-    } catch (err) {
-      console.error("Error playing video:", err);
-      setVideoError(true);
-      setIsPlaying(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isActive && !videoError) {
-      tryPlayVideo();
-    } else {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      }
-    }
-  }, [isActive, videoError]);
 
   // Reset error state when video changes
   useEffect(() => {
@@ -129,22 +106,6 @@ const VideoPlayer = ({
     });
   };
 
-  const handleComment = () => {
-    toast({
-      title: "Comments",
-      description: "Comment feature will be implemented soon",
-      duration: 2000,
-    });
-  };
-
-  const handleShare = () => {
-    toast({
-      title: "Share",
-      description: "Share feature will be implemented soon",
-      duration: 2000,
-    });
-  };
-
   const handleVideoError = () => {
     console.error("Video failed to load:", video.url);
     setVideoError(true);
@@ -157,12 +118,19 @@ const VideoPlayer = ({
     // Force reload the video element
     if (videoRef.current) {
       videoRef.current.load();
-      tryPlayVideo();
     }
   };
 
   return (
     <div className="h-full w-full relative overflow-hidden">
+      {/* Video playback controller */}
+      <VideoPlaybackController
+        videoRef={videoRef}
+        isActive={isActive && !videoError}
+        onError={() => setVideoError(true)}
+        setIsPlaying={setIsPlaying}
+      />
+
       {videoError ? (
         <VideoErrorDisplay 
           isLive={video.isLive} 
@@ -183,22 +151,10 @@ const VideoPlayer = ({
           />
           
           {/* Heart animation on double tap */}
-          {showHeart && (
-            <div 
-              className="absolute z-20 animate-scale-in" 
-              style={{ 
-                top: tapPosition.y - 40, 
-                left: tapPosition.x - 40,
-                animation: "scale-in 0.5s ease-out forwards, fade-out 0.5s ease-out 0.3s forwards" 
-              }}
-            >
-              <div className="text-red-500 opacity-80">
-                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                </svg>
-              </div>
-            </div>
-          )}
+          <DoubleTapHandler 
+            showHeart={showHeart} 
+            tapPosition={tapPosition} 
+          />
         </>
       )}
       
