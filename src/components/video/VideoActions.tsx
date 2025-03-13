@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Heart, MessageCircle, Share2, Coins } from "lucide-react";
 import VideoComments from "./VideoComments";
@@ -31,10 +30,14 @@ const VideoActions = ({
 
   const handleCommentClick = () => {
     setIsCommentsOpen(true);
+    toast({
+      title: "Comments opened",
+      description: "Join the conversation!",
+      duration: 1500
+    });
   };
 
   const handleShare = () => {
-    // In a real app, this would open a share dialog with various platforms
     if (navigator.share) {
       navigator.share({
         title: 'Check out this video!',
@@ -42,20 +45,17 @@ const VideoActions = ({
         url: window.location.href
       }).then(() => console.log('Successful share')).catch(error => console.log('Error sharing:', error));
     } else {
-      // Fallback for browsers that don't support Web Share API
       toast({
         title: "Link copied",
         description: "Video link copied to clipboard!",
         duration: 2000
       });
 
-      // Copy to clipboard
       navigator.clipboard.writeText(window.location.href).catch(err => console.error('Failed to copy:', err));
     }
   };
 
   const handleTipClick = () => {
-    // Toggle tip options panel
     setShowTipOptions(!showTipOptions);
     
     if (!showTipOptions) {
@@ -68,7 +68,6 @@ const VideoActions = ({
   };
 
   const sendTip = (amount: number) => {
-    // In a real app, this would connect to a payment provider
     toast({
       title: "Thank you!",
       description: `You sent a ${amount} coin tip to the creator!`,
@@ -94,9 +93,9 @@ const VideoActions = ({
       <div className="flex flex-col items-center">
         <button 
           onClick={handleCommentClick}
-          className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+          className={`w-12 h-12 rounded-full ${isCommentsOpen ? 'bg-gradient-to-r from-[#9b87f5]/80 to-[#D946EF]/80' : 'bg-black/40 backdrop-blur-md'} flex items-center justify-center transition-all duration-300`}
         >
-          <MessageCircle className="h-6 w-6 text-white" />
+          <MessageCircle className={`h-6 w-6 ${isCommentsOpen ? 'text-white' : 'text-white'}`} />
         </button>
         <span className="text-white text-xs mt-1">{comments}</span>
       </div>
@@ -120,7 +119,6 @@ const VideoActions = ({
         </button>
         <span className="text-white text-xs mt-1">Tip</span>
         
-        {/* Tip amount options */}
         {showTipOptions && (
           <div className="absolute bottom-16 right-0 bg-black/80 backdrop-blur-md rounded-lg p-3 w-32 shadow-lg animate-in fade-in slide-in-from-bottom-5 z-50">
             <div className="flex flex-col space-y-2">
@@ -153,7 +151,6 @@ const VideoActions = ({
         )}
       </div>
       
-      {/* Comments dialog */}
       {isCommentsOpen && (
         <VideoComments 
           isOpen={isCommentsOpen} 
