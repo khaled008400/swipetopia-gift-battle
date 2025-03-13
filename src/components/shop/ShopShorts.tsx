@@ -2,7 +2,7 @@
 import React from "react";
 import { Zap } from "lucide-react";
 
-// Mock data for shorts
+// Mock data for trending videos
 const SHORTS = [
   { id: "1", thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a", username: "fashionista" },
   { id: "2", thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a", username: "styleguru" },
@@ -14,7 +14,7 @@ const ShopShorts = () => {
     <div className="px-4 mb-4">
       <div className="flex items-center mb-2">
         <Zap className="w-4 h-4 text-white mr-1" />
-        <h3 className="text-white font-medium">Short</h3>
+        <h3 className="text-white font-medium">Trending Videos</h3>
       </div>
       <div className="flex overflow-x-auto no-scrollbar space-x-3">
         {SHORTS.map((short) => (
