@@ -15,6 +15,7 @@ export interface BattleVideo {
   comments: number;
   shares: number;
   isLive?: boolean;
+  isLiked?: boolean; // Added isLiked property
 }
 
 // More reliable video sources
@@ -40,7 +41,8 @@ const BATTLES: BattleVideo[] = [
     likes: 1432,
     comments: 87,
     shares: 34,
-    isLive: true
+    isLive: true,
+    isLiked: false
   },
   {
     id: "2",
@@ -53,7 +55,8 @@ const BATTLES: BattleVideo[] = [
     likes: 2651,
     comments: 132,
     shares: 76,
-    isLive: false
+    isLive: false,
+    isLiked: false
   },
   {
     id: "3",
@@ -66,7 +69,8 @@ const BATTLES: BattleVideo[] = [
     likes: 3219,
     comments: 201,
     shares: 97,
-    isLive: true
+    isLive: true,
+    isLiked: false
   },
   {
     id: "4",
@@ -79,7 +83,8 @@ const BATTLES: BattleVideo[] = [
     likes: 2876,
     comments: 143,
     shares: 87,
-    isLive: false
+    isLive: false,
+    isLiked: false
   },
   {
     id: "5",
@@ -92,7 +97,8 @@ const BATTLES: BattleVideo[] = [
     likes: 4532,
     comments: 234,
     shares: 123,
-    isLive: false
+    isLive: false,
+    isLiked: false
   },
   {
     id: "6",
@@ -105,7 +111,8 @@ const BATTLES: BattleVideo[] = [
     likes: 3965,
     comments: 187,
     shares: 105,
-    isLive: true
+    isLive: true,
+    isLiked: false
   }
 ];
 

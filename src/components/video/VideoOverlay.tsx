@@ -9,6 +9,7 @@ interface VideoOverlayProps {
     comments: number;
     shares: number;
     isLive?: boolean;
+    isLiked?: boolean; // Added isLiked property
     user: {
       username: string;
       avatar: string;
