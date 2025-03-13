@@ -13,7 +13,8 @@ const MOCK_VIDEOS = [
     description: "Check out this amazing new outfit! #fashion #style #trending",
     likes: 1245,
     comments: 42,
-    shares: 15
+    shares: 15,
+    isLive: false
   },
   {
     id: "2",
@@ -25,7 +26,8 @@ const MOCK_VIDEOS = [
     description: "New makeup tutorial! This silver look is perfect for parties #makeup #beauty",
     likes: 3782,
     comments: 128,
-    shares: 84
+    shares: 84,
+    isLive: true
   },
   {
     id: "3",
@@ -37,7 +39,8 @@ const MOCK_VIDEOS = [
     description: "Trying out this new dance routine! What do you think? #dance #viral #fun",
     likes: 5921,
     comments: 230,
-    shares: 103
+    shares: 103,
+    isLive: false
   }
 ];
 
@@ -45,6 +48,7 @@ const HomePage = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Handle swipe gesture for videos
   useEffect(() => {
     const handleScroll = () => {
       if (containerRef.current) {
@@ -70,11 +74,17 @@ const HomePage = () => {
   return (
     <div 
       ref={containerRef}
-      className="h-[calc(100vh-64px)] overflow-y-scroll snap-y snap-mandatory"
+      className="h-[calc(100vh-64px)] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
     >
-      {MOCK_VIDEOS.map((video) => (
-        <div key={video.id} className="snap-start h-[calc(100vh-64px)]">
-          <VideoPlayer video={video} />
+      {MOCK_VIDEOS.map((video, index) => (
+        <div 
+          key={video.id} 
+          className="snap-start h-[calc(100vh-64px)]"
+        >
+          <VideoPlayer 
+            video={video} 
+            isActive={index === activeVideoIndex} 
+          />
         </div>
       ))}
     </div>

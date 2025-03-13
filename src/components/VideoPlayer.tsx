@@ -1,6 +1,6 @@
 
 import { useRef, useState, useEffect } from "react";
-import { Heart, MessageCircle, Share2, Coins, ChevronUp } from "lucide-react";
+import { Heart, MessageCircle, Share2, Coins, ChevronUp, VideoIcon } from "lucide-react";
 
 interface VideoPlayerProps {
   video: {
@@ -14,44 +14,26 @@ interface VideoPlayerProps {
     likes: number;
     comments: number;
     shares: number;
+    isLive?: boolean;
   };
+  isActive?: boolean;
 }
 
-const VideoPlayer = ({ video }: VideoPlayerProps) => {
+const VideoPlayer = ({ video, isActive = false }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: "0px",
-      threshold: 0.8,
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          videoRef.current?.play();
-          setIsPlaying(true);
-        } else {
-          videoRef.current?.pause();
-          setIsPlaying(false);
-        }
-      });
-    }, options);
-
-    if (videoRef.current) {
-      observer.observe(videoRef.current);
+    if (isActive) {
+      videoRef.current?.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current?.pause();
+      setIsPlaying(false);
     }
-
-    return () => {
-      if (videoRef.current) {
-        observer.unobserve(videoRef.current);
-      }
-    };
-  }, []);
+  }, [isActive]);
 
   const handleVideoPress = () => {
     if (isPlaying) {
@@ -82,7 +64,14 @@ const VideoPlayer = ({ video }: VideoPlayerProps) => {
       <div className="video-overlay flex flex-col">
         <div className="flex justify-between items-end">
           <div className="flex-1">
-            <h3 className="text-white font-semibold text-lg">@{video.user.username}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-white font-semibold text-lg">@{video.user.username}</h3>
+              {video.isLive && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <VideoIcon className="h-3 w-3" /> LIVE
+                </span>
+              )}
+            </div>
             <p className="text-gray-300 text-sm line-clamp-1">{video.description}</p>
             {showDetails && (
               <div className="mt-2 animate-fade-in">
