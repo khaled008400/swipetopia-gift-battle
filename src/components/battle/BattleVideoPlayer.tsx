@@ -1,6 +1,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import VideoErrorDisplay from "../video/VideoErrorDisplay";
+import { useVideoError } from "@/hooks/useVideoError";
 
 interface BattleVideoPlayerProps {
   videoUrl: string;
@@ -12,8 +13,7 @@ interface BattleVideoPlayerProps {
 
 const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }: BattleVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoError, setVideoError] = useState(false);
-  const [loadAttempts, setLoadAttempts] = useState(0);
+  const { videoError, loadAttempts, handleVideoError, handleRetry, resetError, setVideoError } = useVideoError();
 
   const tryPlayVideo = async () => {
     if (!videoRef.current || !isActive) return;
@@ -23,7 +23,7 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
       await videoRef.current.play();
     } catch (err) {
       console.error("Error playing battle video:", err);
-      setVideoError(true);
+      handleVideoError(videoUrl);
     }
   };
 
@@ -33,35 +33,18 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
     } else if (!isActive && videoRef.current) {
       videoRef.current.pause();
     }
-  }, [isActive, videoError]);
+  }, [isActive, videoError, videoUrl]);
 
   // Reset error state when video changes
   useEffect(() => {
-    setVideoError(false);
-    setLoadAttempts(0);
-  }, [videoUrl]);
-
-  const handleVideoError = () => {
-    console.error("Battle video failed to load:", videoUrl);
-    setVideoError(true);
-  };
-
-  const handleRetry = () => {
-    setLoadAttempts(prev => prev + 1);
-    setVideoError(false);
-    
-    // Force reload the video element
-    if (videoRef.current) {
-      videoRef.current.load();
-      tryPlayVideo();
-    }
-  };
+    resetError();
+  }, [videoUrl, resetError]);
 
   return (
     <div className="flex-1 relative overflow-hidden border-b-2 border-app-yellow">
       {videoError ? (
         <VideoErrorDisplay 
-          onRetry={loadAttempts < 3 ? handleRetry : undefined}
+          onRetry={loadAttempts < 3 ? () => handleRetry(videoRef) : undefined}
           message={loadAttempts >= 3 ? "Unable to load video after multiple attempts" : undefined}
         />
       ) : (
@@ -73,7 +56,7 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
           muted
           playsInline
           onClick={onVideoTap}
-          onError={handleVideoError}
+          onError={() => handleVideoError(videoUrl)}
         />
       )}
       

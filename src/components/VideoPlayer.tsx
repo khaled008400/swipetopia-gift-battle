@@ -5,6 +5,7 @@ import VideoErrorDisplay from "./video/VideoErrorDisplay";
 import DoubleTapHandler from "./video/DoubleTapHandler";
 import VideoPlaybackController from "./video/VideoPlaybackController";
 import { useToast } from "@/hooks/use-toast";
+import { useVideoError } from "@/hooks/useVideoError";
 
 interface VideoPlayerProps {
   video: {
@@ -31,19 +32,17 @@ const VideoPlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(video.isLiked || false);
-  const [videoError, setVideoError] = useState(false);
-  const [loadAttempts, setLoadAttempts] = useState(0);
   const [tapPosition, setTapPosition] = useState({ x: 0, y: 0 });
   const [showHeart, setShowHeart] = useState(false);
   const [doubleTapTimer, setDoubleTapTimer] = useState<number | null>(null);
   const { toast } = useToast();
+  const { videoError, loadAttempts, handleVideoError, handleRetry, resetError } = useVideoError();
 
   // Reset error state when video changes
   useEffect(() => {
-    setVideoError(false);
-    setLoadAttempts(0);
+    resetError();
     setIsLiked(video.isLiked || false);
-  }, [video.id, video.isLiked]);
+  }, [video.id, video.isLiked, resetError]);
 
   const handleVideoPress = (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
     if (videoError) return;
@@ -71,7 +70,7 @@ const VideoPlayer = ({
         } else {
           videoRef.current?.play().catch(err => {
             console.error("Error on manual play:", err);
-            setVideoError(true);
+            handleVideoError(video.url);
           });
           setIsPlaying(true);
         }
@@ -106,35 +105,20 @@ const VideoPlayer = ({
     });
   };
 
-  const handleVideoError = () => {
-    console.error("Video failed to load:", video.url);
-    setVideoError(true);
-  };
-
-  const handleRetry = () => {
-    setLoadAttempts(prev => prev + 1);
-    setVideoError(false);
-    
-    // Force reload the video element
-    if (videoRef.current) {
-      videoRef.current.load();
-    }
-  };
-
   return (
     <div className="h-full w-full relative overflow-hidden">
       {/* Video playback controller */}
       <VideoPlaybackController
         videoRef={videoRef}
         isActive={isActive && !videoError}
-        onError={() => setVideoError(true)}
+        onError={() => handleVideoError(video.url)}
         setIsPlaying={setIsPlaying}
       />
 
       {videoError ? (
         <VideoErrorDisplay 
           isLive={video.isLive} 
-          onRetry={loadAttempts < 3 ? handleRetry : undefined}
+          onRetry={loadAttempts < 3 ? () => handleRetry(videoRef) : undefined}
           message={loadAttempts >= 3 ? "Unable to load video after multiple attempts" : undefined}
         />
       ) : (
@@ -147,7 +131,7 @@ const VideoPlayer = ({
             muted 
             playsInline 
             onClick={handleVideoPress}
-            onError={handleVideoError}
+            onError={() => handleVideoError(video.url)}
           />
           
           {/* Heart animation on double tap */}
