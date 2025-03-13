@@ -65,35 +65,10 @@ const BattlePage = () => {
 
       {/* Header title */}
       <div className="absolute top-4 left-4 z-30 flex items-center">
-        <button className="mr-3 p-2 bg-black/30 backdrop-blur-sm rounded-full border border-white/10">
+        <button className="mr-3 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
-        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Battle Videos</h1>
-      </div>
-
-      {/* Action buttons */}
-      <div className="absolute bottom-20 right-3 z-30">
-        {filteredVideos[activeVideoIndex] && (
-          <VideoActions 
-            likes={filteredVideos[activeVideoIndex].likes} 
-            comments={filteredVideos[activeVideoIndex].comments} 
-            shares={filteredVideos[activeVideoIndex].shares}
-            isLiked={filteredVideos[activeVideoIndex].isLiked || false}
-            onLike={() => {
-              // Update the active video's isLiked status
-              const updatedVideos = [...filteredVideos];
-              updatedVideos[activeVideoIndex] = {
-                ...updatedVideos[activeVideoIndex],
-                isLiked: !updatedVideos[activeVideoIndex].isLiked,
-                likes: updatedVideos[activeVideoIndex].isLiked 
-                  ? updatedVideos[activeVideoIndex].likes - 1 
-                  : updatedVideos[activeVideoIndex].likes + 1
-              };
-              // We would dispatch this to a state management system in a real app
-              console.log('Video liked:', updatedVideos[activeVideoIndex]);
-            }}
-          />
-        )}
+        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-[#9b87f5] to-[#D946EF] bg-clip-text text-transparent">Battle Videos</h1>
       </div>
     </div>
   );

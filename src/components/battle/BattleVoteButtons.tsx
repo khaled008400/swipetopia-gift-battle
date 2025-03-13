@@ -16,24 +16,24 @@ const BattleVoteButtons = ({ user1Name, user2Name, votedFor, onVote }: BattleVot
         <Button 
           className={`flex-1 ${
             votedFor === 'user1' 
-              ? 'bg-gradient-to-r from-[#9b87f5] to-[#7E69AB] text-white border-none' 
-              : 'bg-black/30 backdrop-blur-sm text-white border border-white/10'
+              ? 'bg-gradient-to-r from-[#9b87f5] to-[#D946EF] text-white border-none shadow-lg shadow-purple-500/30' 
+              : 'bg-black/40 backdrop-blur-md text-white border border-white/20'
           } rounded-xl py-6 hover:shadow-lg transition-all duration-300`}
           onClick={() => onVote('user1')}
         >
-          <span className="flex-1">Vote {user1Name}</span>
-          {votedFor === 'user1' && <ArrowRight className="w-5 h-5 ml-2" />}
+          <span className="flex-1 font-medium">Vote {user1Name}</span>
+          {votedFor === 'user1' && <ArrowRight className="w-5 h-5 ml-2 animate-pulse" />}
         </Button>
         <Button 
           className={`flex-1 ${
             votedFor === 'user2' 
-              ? 'bg-gradient-to-r from-[#9b87f5] to-[#7E69AB] text-white border-none' 
-              : 'bg-black/30 backdrop-blur-sm text-white border border-white/10'
+              ? 'bg-gradient-to-r from-[#9b87f5] to-[#D946EF] text-white border-none shadow-lg shadow-purple-500/30' 
+              : 'bg-black/40 backdrop-blur-md text-white border border-white/20'
           } rounded-xl py-6 hover:shadow-lg transition-all duration-300`}
           onClick={() => onVote('user2')}
         >
-          <span className="flex-1">Vote {user2Name}</span>
-          {votedFor === 'user2' && <ArrowRight className="w-5 h-5 ml-2" />}
+          <span className="flex-1 font-medium">Vote {user2Name}</span>
+          {votedFor === 'user2' && <ArrowRight className="w-5 h-5 ml-2 animate-pulse" />}
         </Button>
       </div>
     </div>

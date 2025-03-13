@@ -14,8 +14,8 @@ const BattleProgressIndicators = ({ videos, activeIndex }: BattleProgressIndicat
           key={index}
           className={`h-5 w-1.5 rounded-full transition-all duration-300 ${
             index === activeIndex 
-              ? 'bg-gradient-to-b from-[#9b87f5] to-[#D946EF] h-6' 
-              : 'bg-white/30'
+              ? 'bg-gradient-to-b from-[#9b87f5] to-[#D946EF] h-8 shadow-[0_0_8px_rgba(155,135,245,0.6)]' 
+              : 'bg-white/40 backdrop-blur-sm'
           } ${
             video.isLive ? 'border border-[#F97316] shadow-[0_0_4px_rgba(249,115,22,0.6)]' : ''
           }`}

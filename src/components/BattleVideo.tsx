@@ -38,7 +38,7 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
 
       {/* UI Overlays */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="h-full w-full bg-gradient-to-t from-black/60 via-transparent to-black/40" />
+        <div className="h-full w-full bg-gradient-to-t from-black/70 via-transparent to-black/40" />
       </div>
 
       <BattleHeader title={video.description} />

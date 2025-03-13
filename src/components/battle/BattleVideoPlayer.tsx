@@ -62,7 +62,7 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
       
       {!videoError && (
         <>
-          <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-[#9b87f5]/80 backdrop-blur-sm rounded-full">
+          <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-gradient-to-r from-[#9b87f5]/80 to-[#D946EF]/80 backdrop-blur-sm rounded-full shadow-lg">
             <p className="text-white text-sm font-medium">@{userName}</p>
           </div>
           {isVoted && (
