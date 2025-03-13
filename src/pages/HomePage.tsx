@@ -1,9 +1,9 @@
-
 import React, { useState } from "react";
 import { Search, Bell, Heart, Home, ShoppingBag, User, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem } from "../components/ui/carousel";
 import UserVideosCarousel from "../components/UserVideosCarousel";
+import { useAuth } from "../context/AuthContext";
 
 // Mock data for the live selling profiles
 const LIVE_SELLERS = [{
@@ -58,36 +58,42 @@ const PRODUCTS = [{
   liked: false
 }];
 
-// User-created videos for swappable section
+// User-created videos for swappable section, now with following info
 const USER_VIDEOS = [
   {
     id: "4",
     url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
     thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
-    username: "runner_girl"
+    username: "runner_girl",
+    isFollowing: true
   },
   {
     id: "5",
     url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
     thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
-    username: "dance_king"
+    username: "dance_king",
+    isFollowing: false
   },
   {
     id: "6",
     url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
     thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
-    username: "travel_vlogger"
+    username: "travel_vlogger",
+    isFollowing: true
   },
   {
     id: "7",
     url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
     thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
-    username: "chef_master"
+    username: "chef_master",
+    isFollowing: true
   }
 ];
 
 const HomePage = () => {
+  const { user } = useAuth();
   const [likedProducts, setLikedProducts] = useState<string[]>([]);
+  
   const toggleLike = (productId: string) => {
     if (likedProducts.includes(productId)) {
       setLikedProducts(likedProducts.filter(id => id !== productId));
@@ -95,13 +101,14 @@ const HomePage = () => {
       setLikedProducts([...likedProducts, productId]);
     }
   };
+  
   return <div className="h-full w-full bg-app-black overflow-y-auto pb-16">
       {/* Header with user greeting */}
       <div className="px-4 pt-3 pb-4 flex justify-between items-center">
         <div className="flex items-center">
           <img src="/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png" alt="User" className="w-10 h-10 rounded-full border-2 border-app-yellow" />
           <div className="ml-3">
-            <h2 className="text-white font-semibold text-lg">Hi, Andy</h2>
+            <h2 className="text-white font-semibold text-lg">Hi, {user ? user.username : "Guest"}</h2>
             <p className="text-gray-400 text-xs">How are you feeling today?</p>
           </div>
         </div>
@@ -143,9 +150,9 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* User Videos Carousel - Replacing Categories section */}
+      {/* User Videos Carousel - now showing followed creators */}
       <div className="px-4 mb-4">
-        <UserVideosCarousel videos={USER_VIDEOS} />
+        <UserVideosCarousel videos={USER_VIDEOS} title="Following" />
       </div>
 
       {/* Products grid */}

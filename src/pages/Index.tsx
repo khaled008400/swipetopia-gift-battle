@@ -1,12 +1,13 @@
-
 import { useEffect, useState } from "react";
 import PopularLiveSection from "../components/PopularLiveSection";
 import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
+import { useAuth } from "../context/AuthContext";
 
 const Index = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const { user } = useAuth();
   
   // Example video data - in a real app, this would come from an API
   const videos = [
@@ -49,31 +50,35 @@ const Index = () => {
     }
   ];
 
-  // User-created videos for swappable section
+  // User-created videos for swappable section, with following info
   const userCreatedVideos = [
     {
       id: "4",
       url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
       thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
-      username: "runner_girl"
+      username: "runner_girl",
+      isFollowing: true
     },
     {
       id: "5",
       url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
       thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
-      username: "dance_king"
+      username: "dance_king",
+      isFollowing: false
     },
     {
       id: "6",
       url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
       thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
-      username: "travel_vlogger"
+      username: "travel_vlogger",
+      isFollowing: true
     },
     {
       id: "7",
       url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
       thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
-      username: "chef_master"
+      username: "chef_master",
+      isFollowing: true
     }
   ];
 
@@ -115,7 +120,7 @@ const Index = () => {
       {/* Component-based layout - these components are positioned absolutely */}
       <PopularLiveSection creators={liveCreators} />
       <TrendingVideosSection videos={trendingVideos} />
-      <UserVideosCarousel videos={userCreatedVideos} />
+      <UserVideosCarousel videos={userCreatedVideos} title="Following" />
       
       {/* The VideoFeed is the main background content with z-index below the UI components */}
       <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} />
