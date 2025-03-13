@@ -17,11 +17,21 @@ export interface BattleVideo {
   isLive?: boolean;
 }
 
-// Battle videos data
+// More reliable video sources
+const FALLBACK_VIDEOS = [
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+];
+
+// Battle videos data with more reliable sources
 const BATTLES: BattleVideo[] = [
   {
     id: "1",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-in-the-club-with-colorful-lights-3739-large.mp4",
+    url: FALLBACK_VIDEOS[0],
     user: {
       username: "dancequeen",
       avatar: "https://i.pravatar.cc/150?img=1"
@@ -34,7 +44,7 @@ const BATTLES: BattleVideo[] = [
   },
   {
     id: "2",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
+    url: FALLBACK_VIDEOS[1],
     user: {
       username: "groovyking",
       avatar: "https://i.pravatar.cc/150?img=2"
@@ -47,7 +57,7 @@ const BATTLES: BattleVideo[] = [
   },
   {
     id: "3",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+    url: FALLBACK_VIDEOS[2],
     user: {
       username: "lipqueen",
       avatar: "https://i.pravatar.cc/150?img=3"
@@ -60,7 +70,7 @@ const BATTLES: BattleVideo[] = [
   },
   {
     id: "4",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
+    url: FALLBACK_VIDEOS[3],
     user: {
       username: "lyricalgenius",
       avatar: "https://i.pravatar.cc/150?img=4"
@@ -73,7 +83,7 @@ const BATTLES: BattleVideo[] = [
   },
   {
     id: "5",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
+    url: FALLBACK_VIDEOS[4],
     user: {
       username: "fashionista",
       avatar: "https://i.pravatar.cc/150?img=5"
@@ -86,7 +96,7 @@ const BATTLES: BattleVideo[] = [
   },
   {
     id: "6",
-    url: "https://assets.mixkit.co/videos/preview/mixkit-woman-modeling-in-an-empty-room-by-the-wall-42376-large.mp4",
+    url: FALLBACK_VIDEOS[5],
     user: {
       username: "styleicon",
       avatar: "https://i.pravatar.cc/150?img=6"

@@ -28,25 +28,25 @@ const VideoPlayer = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [loadAttempts, setLoadAttempts] = useState(0);
+
+  const tryPlayVideo = async () => {
+    if (!videoRef.current || !isActive) return;
+    
+    try {
+      setVideoError(false);
+      await videoRef.current.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.error("Error playing video:", err);
+      setVideoError(true);
+      setIsPlaying(false);
+    }
+  };
 
   useEffect(() => {
     if (isActive && !videoError) {
-      const playVideo = async () => {
-        try {
-          if (videoRef.current) {
-            // Reset video error state on new attempt
-            setVideoError(false);
-            await videoRef.current.play();
-            setIsPlaying(true);
-          }
-        } catch (err) {
-          console.error("Error playing video:", err);
-          setVideoError(true);
-          setIsPlaying(false);
-        }
-      };
-      
-      playVideo();
+      tryPlayVideo();
     } else {
       if (videoRef.current) {
         videoRef.current.pause();
@@ -54,6 +54,12 @@ const VideoPlayer = ({
       }
     }
   }, [isActive, videoError]);
+
+  // Reset error state when video changes
+  useEffect(() => {
+    setVideoError(false);
+    setLoadAttempts(0);
+  }, [video.id]);
 
   const handleVideoPress = () => {
     if (videoError) return;
@@ -79,10 +85,25 @@ const VideoPlayer = ({
     setVideoError(true);
   };
 
+  const handleRetry = () => {
+    setLoadAttempts(prev => prev + 1);
+    setVideoError(false);
+    
+    // Force reload the video element
+    if (videoRef.current) {
+      videoRef.current.load();
+      tryPlayVideo();
+    }
+  };
+
   return (
     <div className="h-full w-full relative overflow-hidden">
       {videoError ? (
-        <VideoErrorDisplay isLive={video.isLive} />
+        <VideoErrorDisplay 
+          isLive={video.isLive} 
+          onRetry={loadAttempts < 3 ? handleRetry : undefined}
+          message={loadAttempts >= 3 ? "Unable to load video after multiple attempts" : undefined}
+        />
       ) : (
         <video 
           ref={videoRef} 
