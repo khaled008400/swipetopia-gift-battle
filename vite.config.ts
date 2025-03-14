@@ -7,16 +7,11 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    // Using true instead of "::" for better cross-platform compatibility
     host: true,
     port: 8080,
-    // Adding strictPort to prevent fallback to other ports
     strictPort: false,
-    // Adding hmr configuration to help with connection issues
     hmr: {
-      // Using WebSockets for HMR
       protocol: 'ws',
-      // Setting timeout higher for more stability
       timeout: 5000,
     }
   },
@@ -30,10 +25,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Ensure environment variables have safe fallbacks
   define: {
-    // Provide explicit fallback values for env variables
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || 'DISCONNECTED'),
-    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || 'DISCONNECTED'),
+    // Simple fallbacks to prevent errors when env vars are missing
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('DISCONNECTED'),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('DISCONNECTED'),
   }
 }));

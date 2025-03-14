@@ -3,23 +3,24 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ifeuccpukdosoxtufxzi.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZXVjY3B1a2Rvc294dHVmeHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NDM2MjAsImV4cCI6MjA1NzMxOTYyMH0.I4wy6OFJY_zYNrhYWjw7xphFTBc5vT9sgNM3i2iPUqI";
+// Try to use environment variables with basic fallbacks
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'DISCONNECTED';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'DISCONNECTED';
 
-// Create a more comprehensive dummy client for when Supabase is disconnected
+// Create a simple dummy client for when Supabase is disconnected
 const createDummyClient = () => {
-  // Return an object with all the methods that might be used, but they'll all be no-ops
+  // Return a minimal object with required methods
   return {
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       getUser: () => Promise.resolve({ data: { user: null }, error: null }),
       signInWithPassword: () => Promise.resolve({ 
         data: { user: null, session: null }, 
-        error: { message: "Supabase is disconnected" } 
+        error: null
       }),
       signUp: () => Promise.resolve({ 
         data: { user: null, session: null }, 
-        error: { message: "Supabase is disconnected" } 
+        error: null
       }),
       signOut: () => Promise.resolve({ error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
@@ -32,31 +33,19 @@ const createDummyClient = () => {
         }),
         single: () => Promise.resolve({ data: null, error: null })
       }),
-      upsert: () => ({
-        select: () => ({
-          maybeSingle: () => Promise.resolve({ data: null, error: null }),
-          single: () => Promise.resolve({ data: null, error: null })
-        })
-      })
+      upsert: () => Promise.resolve({ data: null, error: null })
     })
   };
 };
 
-// Check if we should use a real or dummy client
-const shouldUseDummyClient = () => {
-  // In development mode, we can use the dummy client if needed
-  return import.meta.env.DEV && (
-    !SUPABASE_URL || 
-    !SUPABASE_PUBLISHABLE_KEY || 
-    SUPABASE_URL === "DISCONNECTED" || 
-    SUPABASE_PUBLISHABLE_KEY === "DISCONNECTED"
-  );
-};
+// Simplify the check to decide if we use a dummy client
+const isDummyMode = SUPABASE_URL === 'DISCONNECTED' || SUPABASE_PUBLISHABLE_KEY === 'DISCONNECTED';
 
-// Export the client - either real or dummy
-export const supabase = shouldUseDummyClient() 
+// Create either a real or dummy client
+const supabase = isDummyMode 
   ? createDummyClient() as any
   : createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Export a function to check if we're using the dummy client
-export const isSupabaseConnected = () => !shouldUseDummyClient();
+// Export the client and a helper function
+export { supabase };
+export const isSupabaseConnected = () => !isDummyMode;
