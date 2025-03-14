@@ -5,7 +5,7 @@ const DevelopmentInfo = () => {
   return (
     <div className="mt-4 p-3 bg-blue-900/30 rounded-md">
       <p className="text-xs text-blue-400">
-        Development mode: Demo email is demo@example.com with password "password"
+        Development mode: You can use any credentials for login, or use the demo email "demo@example.com" with password "password"
       </p>
     </div>
   );

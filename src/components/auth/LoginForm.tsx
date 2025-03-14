@@ -10,9 +10,10 @@ interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
   isLoading: boolean;
   isOnline: boolean;
+  isConnectedToApi: boolean;
 }
 
-const LoginForm = ({ onSubmit, isLoading, isOnline }: LoginFormProps) => {
+const LoginForm = ({ onSubmit, isLoading, isOnline, isConnectedToApi }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
@@ -29,7 +30,12 @@ const LoginForm = ({ onSubmit, isLoading, isOnline }: LoginFormProps) => {
       return;
     }
 
-    await onSubmit(email, password);
+    try {
+      await onSubmit(email, password);
+    } catch (error) {
+      // Error is handled in the parent component
+      console.log("Login error caught in form");
+    }
   };
 
   const fillDemoCredentials = () => {
@@ -41,6 +47,9 @@ const LoginForm = ({ onSubmit, isLoading, isOnline }: LoginFormProps) => {
       variant: "default",
     });
   };
+
+  // Allow login in dev mode even if offline
+  const isLoginDisabled = isLoading || (!import.meta.env.DEV && (!isOnline || !isConnectedToApi));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,7 +85,7 @@ const LoginForm = ({ onSubmit, isLoading, isOnline }: LoginFormProps) => {
 
       <Button 
         type="submit" 
-        disabled={isLoading || (!isOnline && !import.meta.env.DEV)}
+        disabled={isLoginDisabled}
         className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
       >
         {isLoading ? (

@@ -13,6 +13,7 @@ const NetworkStatusAlert = ({ isOnline, isConnectedToApi }: NetworkStatusAlertPr
         <WifiOff className="h-5 w-5 text-red-400 mr-2" />
         <p className="text-sm text-red-300">
           You are offline. Please check your internet connection.
+          {import.meta.env.DEV && " You can still use demo login in development mode."}
         </p>
       </div>
     );

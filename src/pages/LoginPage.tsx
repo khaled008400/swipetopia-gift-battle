@@ -27,7 +27,7 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate, user]);
 
-  // Check API connection on mount
+  // Check API connection on mount and when network status changes
   useEffect(() => {
     if (isOnline) {
       checkApiConnection();
@@ -36,39 +36,40 @@ const LoginPage = () => {
 
   const handleLogin = async (email: string, password: string) => {
     console.log("Form submitted with:", { email, password });
+    setIsLoading(true);
+    
+    try {
+      console.log("Attempting login with:", email);
+      
+      // Allow login in dev mode even if offline
+      if (!isOnline && !import.meta.env.DEV) {
+        toast({
+          title: "No internet connection",
+          description: "Cannot log in while offline. Please check your connection.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
-    if (!isOnline) {
-      toast({
-        title: "No internet connection",
-        description: "Cannot log in while offline. Please check your connection.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check API connection again before login attempt
-    if (isOnline) {
-      const apiReachable = await checkApiConnection();
-      if (!apiReachable && !import.meta.env.DEV) {
+      // Attempt login regardless of API connection in dev mode
+      if (isOnline && !isConnectedToApi && !import.meta.env.DEV) {
         toast({
           title: "Server unreachable",
           description: "Cannot reach authentication servers. Please try again later.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
-    }
 
-    setIsLoading(true);
-    try {
-      console.log("Attempting login with:", email);
       await login(email, password);
       console.log("Login call completed successfully");
       
       // Don't navigate here - let the useEffect handle it once authentication state updates
     } catch (error: any) {
       console.error("Login error in component:", error);
-      // Error toast is handled in AuthContext, but adding a fallback here
+      // Most errors are handled in AuthContext, but adding a fallback here
       if (error.message && !error.message.includes("Toast is handled")) {
         toast({
           title: "Login failed",
@@ -98,6 +99,7 @@ const LoginPage = () => {
           onSubmit={handleLogin}
           isLoading={isLoading}
           isOnline={isOnline}
+          isConnectedToApi={isConnectedToApi}
         />
         
         <DevelopmentInfo />
