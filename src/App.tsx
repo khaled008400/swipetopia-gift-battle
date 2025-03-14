@@ -16,6 +16,7 @@ import BattlePage from "./pages/BattlePage";
 import AdminPage from "./pages/AdminPage";
 import WalletPage from "./pages/WalletPage";
 import VideoPage from "./pages/VideoPage";
+import VideosPage from "./pages/VideosPage";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -47,6 +48,7 @@ function App() {
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="activity" element={<ActivityPage />} />
                 <Route path="wallet" element={<WalletPage />} />
+                <Route path="videos" element={<VideosPage />} />
                 <Route path="video/:videoId" element={<VideoPage />} />
                 <Route path="admin" element={<AdminPage />} />
                 <Route path="live/:streamId" element={<LiveStreamPage />} />
