@@ -79,7 +79,7 @@ const AdminProducts = () => {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: (productData: Omit<AdminProduct, 'id'>) => 
+    mutationFn: (productData: ProductFormData) => 
       AdminService.createProduct(productData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
@@ -100,7 +100,7 @@ const AdminProducts = () => {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<AdminProduct> }) => 
+    mutationFn: ({ id, data }: { id: string, data: ProductFormData }) => 
       AdminService.updateProduct(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
@@ -170,6 +170,18 @@ const AdminProducts = () => {
   const handleDeleteProduct = (productId: string) => {
     if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
       deleteProductMutation.mutate(productId);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (data?.pagination && page < data.pagination.last_page) {
+      setPage(prev => prev + 1);
     }
   };
 
@@ -293,8 +305,8 @@ const AdminProducts = () => {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious 
-                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                    disabled={page === 1}
+                    onClick={handlePrevPage}
+                    className={page === 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
                 
@@ -314,8 +326,8 @@ const AdminProducts = () => {
                 
                 <PaginationItem>
                   <PaginationNext 
-                    onClick={() => setPage(prev => Math.min(data.pagination.last_page, prev + 1))}
-                    disabled={page === data.pagination.last_page}
+                    onClick={handleNextPage}
+                    className={page === data.pagination.last_page ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
               </PaginationContent>

@@ -80,6 +80,18 @@ const AdminOrders = () => {
     }
   };
 
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (data?.pagination && page < data.pagination.last_page) {
+      setPage(prev => prev + 1);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -183,8 +195,8 @@ const AdminOrders = () => {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious 
-                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                    disabled={page === 1}
+                    onClick={handlePrevPage}
+                    className={page === 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
                 
@@ -204,8 +216,8 @@ const AdminOrders = () => {
                 
                 <PaginationItem>
                   <PaginationNext 
-                    onClick={() => setPage(prev => Math.min(data.pagination.last_page, prev + 1))}
-                    disabled={page === data.pagination.last_page}
+                    onClick={handleNextPage}
+                    className={page === data.pagination.last_page ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -252,14 +264,14 @@ const AdminOrders = () => {
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Products</h3>
                 <div className="border rounded-md divide-y">
                   {selectedOrder.products.map((item) => (
-                    <div key={item.product.id} className="p-3 flex justify-between items-center">
+                    <div key={item.id} className="p-3 flex justify-between items-center">
                       <div>
-                        <p className="font-medium">{item.product.name}</p>
+                        <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          ${item.product.price.toFixed(2)} x {item.quantity}
+                          ${item.price.toFixed(2)} x {item.quantity}
                         </p>
                       </div>
-                      <p className="font-bold">${(item.product.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-bold">${(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   ))}
                 </div>

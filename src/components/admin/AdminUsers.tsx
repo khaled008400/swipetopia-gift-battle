@@ -60,6 +60,18 @@ const AdminUsers = () => {
     updateStatusMutation.mutate({ userId, status });
   };
 
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (data?.pagination && page < data.pagination.last_page) {
+      setPage(prev => prev + 1);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -151,8 +163,8 @@ const AdminUsers = () => {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious 
-                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                    disabled={page === 1}
+                    onClick={handlePrevPage}
+                    className={page === 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
                 
@@ -172,8 +184,8 @@ const AdminUsers = () => {
                 
                 <PaginationItem>
                   <PaginationNext 
-                    onClick={() => setPage(prev => Math.min(data.pagination.last_page, prev + 1))}
-                    disabled={page === data.pagination.last_page}
+                    onClick={handleNextPage}
+                    className={page === data.pagination.last_page ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
               </PaginationContent>
