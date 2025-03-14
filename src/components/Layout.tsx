@@ -1,6 +1,6 @@
 
 import { Outlet, Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 import BottomNavigation from "./BottomNavigation";
 import { useEffect, useState } from "react";
 import CreateContentMenu from "./CreateContentMenu";

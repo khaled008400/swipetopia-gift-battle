@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import NetworkStatusAlert from "@/components/auth/NetworkStatusAlert";
@@ -18,7 +17,6 @@ const LoginPage = () => {
   console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "user:", user?.username);
   console.log("Network status:", { isOnline, isConnectedToApi });
 
-  // Redirect if already authenticated
   useEffect(() => {
     console.log("LoginPage useEffect - checking auth status:", isAuthenticated);
     if (isAuthenticated && user) {
@@ -27,7 +25,6 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate, user]);
 
-  // Check API connection on mount and when network status changes
   useEffect(() => {
     if (isOnline) {
       checkApiConnection();
@@ -41,7 +38,6 @@ const LoginPage = () => {
     try {
       console.log("Attempting login with:", email);
       
-      // Allow login in dev mode even if offline
       if (!isOnline && !import.meta.env.DEV) {
         toast({
           title: "No internet connection",
@@ -52,7 +48,6 @@ const LoginPage = () => {
         return;
       }
 
-      // Attempt login regardless of API connection in dev mode
       if (isOnline && !isConnectedToApi && !import.meta.env.DEV) {
         toast({
           title: "Server unreachable",
@@ -65,11 +60,8 @@ const LoginPage = () => {
 
       await login(email, password);
       console.log("Login call completed successfully");
-      
-      // Don't navigate here - let the useEffect handle it once authentication state updates
     } catch (error: any) {
       console.error("Login error in component:", error);
-      // Most errors are handled in AuthContext, but adding a fallback here
       if (error.message && !error.message.includes("Toast is handled")) {
         toast({
           title: "Login failed",

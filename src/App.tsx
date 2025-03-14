@@ -1,10 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/auth/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
@@ -19,7 +18,7 @@ import LiveStreamPage from "./pages/LiveStreamPage";
 import ActivityPage from "./pages/ActivityPage";
 import ExplorePage from "./pages/ExplorePage";
 import AdminPage from "./pages/AdminPage";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/auth/AuthContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
