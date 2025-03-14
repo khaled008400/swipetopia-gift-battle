@@ -15,6 +15,8 @@ interface Video {
   comments: number;
   shares: number;
   isLiked?: boolean;
+  isSaved?: boolean;
+  allowDownloads?: boolean;
 }
 
 const VIDEOS: Video[] = [
@@ -92,7 +94,6 @@ const VideoPage = () => {
   const [videos, setVideos] = useState<Video[]>(VIDEOS);
   const { toast } = useToast();
 
-  // Handle swipe/scroll to change videos
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
       if (e.deltaY > 0 && activeVideoIndex < videos.length - 1) {
@@ -107,7 +108,6 @@ const VideoPage = () => {
     };
   }, [activeVideoIndex, videos.length]);
 
-  // Handle touch swipe for mobile
   useEffect(() => {
     let touchStartY = 0;
     const handleTouchStart = (e: TouchEvent) => {
@@ -117,12 +117,9 @@ const VideoPage = () => {
       const touchEndY = e.changedTouches[0].clientY;
       const diff = touchStartY - touchEndY;
 
-      // Swipe up - go to next video
       if (diff > 50 && activeVideoIndex < videos.length - 1) {
         setActiveVideoIndex(prev => prev + 1);
-      }
-      // Swipe down - go to previous video
-      else if (diff < -50 && activeVideoIndex > 0) {
+      } else if (diff < -50 && activeVideoIndex > 0) {
         setActiveVideoIndex(prev => prev - 1);
       }
     };
@@ -148,6 +145,19 @@ const VideoPage = () => {
     });
   };
 
+  const handleSave = () => {
+    const updatedVideos = [...videos];
+    const video = updatedVideos[activeVideoIndex];
+    video.isSaved = !video.isSaved;
+    setVideos(updatedVideos);
+    
+    toast({
+      title: video.isSaved ? "Saved" : "Removed",
+      description: video.isSaved ? "Video saved to your collection" : "Video removed from your collection",
+      duration: 2000,
+    });
+  };
+
   const handleFollow = () => {
     const updatedVideos = [...videos];
     const video = updatedVideos[activeVideoIndex];
@@ -169,7 +179,6 @@ const VideoPage = () => {
     });
   };
 
-  // Video progress indicators
   const renderProgressIndicators = () => {
     return (
       <div className="absolute top-4 left-0 right-0 z-20 flex justify-center gap-1">
@@ -187,7 +196,6 @@ const VideoPage = () => {
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-black relative">
-      {/* Videos */}
       <div className="h-full w-full">
         {videos.map((video, index) => (
           <div
@@ -207,15 +215,16 @@ const VideoPage = () => {
             
             <VideoOverlay 
               video={video} 
-              isLiked={video.isLiked || false} 
+              isLiked={video.isLiked || false}
+              isSaved={video.isSaved || false}
               onLike={handleLike}
+              onSave={handleSave}
               onFollow={handleFollow}
             />
           </div>
         ))}
       </div>
       
-      {/* Progress indicators */}
       {renderProgressIndicators()}
     </div>
   );
