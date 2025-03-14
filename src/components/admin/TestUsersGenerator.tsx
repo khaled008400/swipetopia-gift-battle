@@ -15,17 +15,20 @@ const TestUsersGenerator = () => {
   const { toast } = useToast();
 
   const handleGenerateUsers = async () => {
+    if (!serviceKey) {
+      toast({
+        title: "Service Key Required",
+        description: "Please provide a Supabase service key to create test users.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setResults(null);
     
-    // Set the service key in environment if provided
-    if (serviceKey) {
-      // @ts-ignore - This is a workaround for Vite
-      import.meta.env.VITE_SUPABASE_SERVICE_KEY = serviceKey;
-    }
-    
     try {
-      const generationResults = await createTestUsers();
+      const generationResults = await createTestUsers(serviceKey);
       setResults(generationResults || []);
       
       const successCount = generationResults?.filter(r => r.success).length || 0;
@@ -53,7 +56,7 @@ const TestUsersGenerator = () => {
         <h3 className="text-lg font-medium">Test Users Generator</h3>
         <Button 
           onClick={handleGenerateUsers} 
-          disabled={isGenerating}
+          disabled={isGenerating || !serviceKey}
         >
           {isGenerating ? (
             <>
@@ -70,7 +73,9 @@ const TestUsersGenerator = () => {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="serviceKey">Supabase Service Key (optional)</Label>
+        <Label htmlFor="serviceKey">
+          Supabase Service Key <span className="text-red-500">*</span>
+        </Label>
         <div className="grid grid-cols-1 gap-2">
           <Input
             id="serviceKey"
@@ -79,9 +84,10 @@ const TestUsersGenerator = () => {
             value={serviceKey}
             onChange={(e) => setServiceKey(e.target.value)}
             className="font-mono"
+            required
           />
           <p className="text-xs text-muted-foreground">
-            For bypassing RLS policies, you can provide a service key.
+            <strong>Required</strong>: The Service Role Key is needed to bypass RLS policies.
             Get it from Supabase Dashboard &gt; Project Settings &gt; API &gt; Service Role Key.
           </p>
         </div>

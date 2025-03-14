@@ -12,7 +12,7 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // Create test users - only use this in development
-export const createTestUsers = async () => {
+export const createTestUsers = async (serviceKey: string) => {
   if (process.env.NODE_ENV === 'production') {
     console.warn('createTestUsers should not be used in production!');
     return;
@@ -31,13 +31,8 @@ export const createTestUsers = async () => {
 
   const results = [];
   
-  // First, get the service key from environment variables if available
-  const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
-  
-  // Create an admin client if service key is available
-  const adminClient = serviceKey ? 
-    createClient(SUPABASE_URL, serviceKey) : 
-    supabase;
+  // Create an admin client with the provided service key
+  const adminClient = createClient(SUPABASE_URL, serviceKey);
   
   for (const user of testUsers) {
     try {
@@ -73,7 +68,7 @@ export const createTestUsers = async () => {
             continue;
           }
           
-          // Create or update the profile using the obtained user ID
+          // Create or update the profile using the obtained user ID with admin client
           const { error: profileError } = await adminClient
             .from('profiles')
             .upsert({
@@ -104,7 +99,7 @@ export const createTestUsers = async () => {
         continue;
       }
 
-      // Create or update the profile
+      // Create or update the profile using admin client
       const { error: profileError } = await adminClient
         .from('profiles')
         .upsert({
