@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Session } from "@supabase/supabase-js";
@@ -38,20 +39,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       try {
         const currentSession = await getSession();
-        console.log("Current session:", currentSession);
+        console.log("AuthContext: Current session:", currentSession);
         
         if (currentSession) {
           setSession(currentSession);
           const profile = await fetchUserProfile(currentSession.user);
           if (profile) {
-            console.log("User profile loaded:", profile);
+            console.log("AuthContext: User profile loaded:", profile);
             setUser(profile);
           }
         } else {
           setUser(null);
         }
       } catch (error) {
-        console.error("Error retrieving session:", error);
+        console.error("AuthContext: Error retrieving session:", error);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -62,14 +63,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Set up auth state change listener
     const subscription = setupAuthListener(async (event, session) => {
-      console.log("Auth state changed:", event, session);
+      console.log("AuthContext: Auth state changed:", event, session);
       setSession(session);
       
       if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        const profile = await fetchUserProfile(session.user);
-        if (profile) {
-          console.log("Profile from auth listener:", profile);
-          setUser(profile);
+        try {
+          const profile = await fetchUserProfile(session.user);
+          if (profile) {
+            console.log("AuthContext: Profile from auth listener:", profile);
+            setUser(profile);
+          }
+        } catch (error) {
+          console.error("AuthContext: Error fetching profile after auth state change:", error);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -86,11 +91,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       const data = await loginUser(email, password);
       
+      if (!data.user) {
+        throw new Error("Login failed - user data not returned");
+      }
+      
       // Wait a moment for the auth state change to be processed
       // and profile to be loaded before returning
       const profile = await fetchUserProfile(data.user);
       if (profile) {
-        console.log("Profile after login:", profile);
+        console.log("AuthContext: Profile after login:", profile);
         setUser(profile);
       }
       
@@ -101,7 +110,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       return data;
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("AuthContext: Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Failed to login",
@@ -125,7 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // No need to set user here, will be handled by auth state change
     } catch (error: any) {
-      console.error("Signup error:", error);
+      console.error("AuthContext: Signup error:", error);
       toast({
         title: "Signup failed",
         description: error.message || "Failed to create account",
@@ -147,7 +156,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         description: "You have been successfully logged out.",
       });
     } catch (error: any) {
-      console.error("Logout error:", error);
+      console.error("AuthContext: Logout error:", error);
       toast({
         title: "Logout failed",
         description: error.message || "Failed to log out",
@@ -159,9 +168,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const isAdmin = () => {
-    console.log("Checking isAdmin. User:", user);
+    console.log("AuthContext: Checking isAdmin. User:", user);
     if (!user) return false;
-    console.log("User role:", user.role);
+    console.log("AuthContext: User role:", user.role);
     return user.role === 'admin';
   };
 

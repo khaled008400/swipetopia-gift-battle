@@ -12,17 +12,27 @@ import { useToast } from '@/components/ui/use-toast';
 const AdminPage = () => {
   const { user, login, isAdmin, isLoading: authLoading } = useAuth();
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Check if user has admin role
   useEffect(() => {
-    console.log("Auth state:", { user, isAdmin: isAdmin(), authLoading });
-    if (!authLoading) {
-      if (user && isAdmin()) {
-        console.log("User is admin, setting adminAuthenticated to true");
+    console.log("AdminPage: Auth state check:", { 
+      user, 
+      isAdmin: user ? isAdmin() : false, 
+      authLoading 
+    });
+    
+    if (!authLoading && user) {
+      const hasAdminRole = isAdmin();
+      console.log("AdminPage: Admin check result:", hasAdminRole);
+      
+      if (hasAdminRole) {
+        console.log("AdminPage: User is admin, setting adminAuthenticated to true");
         setAdminAuthenticated(true);
-      } else if (user) {
-        console.log("User is not admin:", user);
+      } else {
+        console.log("AdminPage: User is not admin:", user);
         setAdminAuthenticated(false);
       }
     }
@@ -30,32 +40,38 @@ const AdminPage = () => {
 
   const handleAdminLogin = async (email: string, password: string) => {
     try {
-      console.log("Attempting admin login with:", email);
+      setIsProcessing(true);
+      console.log("AdminPage: Attempting admin login with:", email);
       await login(email, password);
       
-      // Check admin status right after login
-      if (isAdmin()) {
-        console.log("Login successful, user is admin");
-        setAdminAuthenticated(true);
-        toast({
-          title: "Admin access granted",
-          description: "Welcome to the admin dashboard",
-        });
-      } else {
-        console.log("Login successful but not admin");
-        toast({
-          title: "Access denied",
-          description: "You don't have admin privileges",
-          variant: "destructive"
-        });
-      }
+      // We need a small delay to make sure the user state is updated
+      setTimeout(() => {
+        // Check admin status right after login
+        if (user && isAdmin()) {
+          console.log("AdminPage: Login successful, user is admin");
+          setAdminAuthenticated(true);
+          toast({
+            title: "Admin access granted",
+            description: "Welcome to the admin dashboard",
+          });
+        } else {
+          console.log("AdminPage: Login successful but not admin");
+          toast({
+            title: "Access denied",
+            description: "You don't have admin privileges",
+            variant: "destructive"
+          });
+        }
+        setIsProcessing(false);
+      }, 500);
     } catch (error: any) {
-      console.error("Admin login error:", error);
+      console.error("AdminPage: Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again",
         variant: "destructive"
       });
+      setIsProcessing(false);
     }
   };
 
@@ -78,12 +94,22 @@ const AdminPage = () => {
     revenueToday: 0
   };
 
+  console.log("AdminPage: Render state:", {
+    authLoading,
+    isProcessing,
+    user: !!user,
+    adminAuthenticated,
+    statsLoading
+  });
+
   // Show loading state only during initial authentication check
-  if (authLoading) {
+  if (authLoading || isProcessing) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin" />
-        <span className="ml-2">Checking authentication...</span>
+        <span className="ml-2">
+          {isProcessing ? "Verifying admin access..." : "Checking authentication..."}
+        </span>
       </div>
     );
   }
