@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -16,29 +16,121 @@ import { Loader2 } from 'lucide-react';
 import AdminCoupons from '@/components/admin/AdminCoupons';
 import AdminOffers from '@/components/admin/AdminOffers';
 import AdminShipping from '@/components/admin/AdminShipping';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
 
-  // Check if user has admin role (in a real app, you'd check admin status)
-  React.useEffect(() => {
-    if (!user || !user.id) {
-      navigate('/login');
+  // Check if user has admin role
+  useEffect(() => {
+    if (user) {
+      // In a real app, you would check if the user has admin permissions
+      // For demonstration, we'll consider any logged in user as having admin access
+      setAdminAuthenticated(true);
     }
-    
-    // Additional admin check would go here
-    // For example: if (!user.isAdmin) navigate('/');
-  }, [user, navigate]);
+  }, [user]);
 
-  const { data: stats, isLoading } = useQuery({
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      await login(username, password);
+      setAdminAuthenticated(true);
+    } catch (error) {
+      console.error("Admin login error:", error);
+      toast({
+        title: "Admin Access Failed",
+        description: "Unable to authenticate for admin access.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Display login form if not authenticated
+  if (!user || !adminAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+          <div className="mb-6 text-center">
+            <h1 className="text-3xl font-bold mb-2">Admin Access</h1>
+            <p className="text-gray-500">Login to access admin dashboard</p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="admin-username" className="text-sm font-medium">
+                Username
+              </label>
+              <Input
+                id="admin-username"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="admin-password" className="text-sm font-medium">
+                Password
+              </label>
+              <Input
+                id="admin-password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+          
+          {import.meta.env.DEV && (
+            <div className="mt-4 p-3 bg-blue-100 rounded-md">
+              <p className="text-xs text-blue-600">
+                Development mode: If the API is unavailable, you can still log in with any credentials.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => AdminService.getDashboardStats(),
     refetchInterval: 60000, // Refresh every minute
   });
 
-  if (isLoading) {
+  if (statsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin" />
