@@ -1,8 +1,9 @@
 
-import api from './api';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 export interface LoginCredentials {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -13,7 +14,7 @@ export interface RegisterData {
   password_confirmation: string;
 }
 
-export interface User {
+export interface AppUser {
   id: string;
   username: string;
   email: string;
@@ -24,7 +25,7 @@ export interface User {
 }
 
 // For development mode - simulates successful authentication
-const MOCK_USER: User = {
+const MOCK_USER: AppUser = {
   id: "mock-user-123",
   username: "demouser",
   email: "demo@example.com",
@@ -37,17 +38,48 @@ const MOCK_USER: User = {
 // Check if we're in development mode
 const isDevelopment = import.meta.env.DEV;
 
+const mapUser = (user: User | null, profile?: any): AppUser | null => {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    username: profile?.username || user.email?.split('@')[0] || 'user',
+    email: user.email || '',
+    avatar: profile?.avatar_url || '/placeholder.svg',
+    coins: profile?.coins || 0,
+    followers: profile?.followers || 0,
+    following: profile?.following || 0
+  };
+};
+
 const AuthService = {
   async login(credentials: LoginCredentials) {
     try {
-      // Try real login first
-      await api.get('/sanctum/csrf-cookie');
-      const response = await api.post('/login', credentials);
-      if (response.data.token) {
-        localStorage.setItem('auth_token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Try real login with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) throw error;
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user?.id)
+        .single();
+
+      const mappedUser = mapUser(data.user, profileData);
+      
+      // Store user data in localStorage
+      if (mappedUser) {
+        localStorage.setItem('user', JSON.stringify(mappedUser));
       }
-      return response.data;
+
+      return {
+        user: mappedUser,
+        token: data.session?.access_token
+      };
     } catch (error) {
       console.error('Login error:', error);
       
@@ -58,8 +90,7 @@ const AuthService = {
           token: "mock-token-for-development",
           user: MOCK_USER
         };
-        localStorage.setItem('auth_token', mockResponse.token);
-        localStorage.setItem('user', JSON.stringify(mockResponse.user));
+        localStorage.setItem('user', JSON.stringify(MOCK_USER));
         return mockResponse;
       }
       
@@ -69,13 +100,44 @@ const AuthService = {
 
   async register(data: RegisterData) {
     try {
-      await api.get('/sanctum/csrf-cookie');
-      const response = await api.post('/register', data);
-      if (response.data.token) {
-        localStorage.setItem('auth_token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Register with Supabase
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.username,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Create profile entry if it doesn't exist
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user?.id,
+          username: data.username,
+          avatar_url: '/placeholder.svg',
+          coins: 0
+        })
+        .select()
+        .single();
+
+      if (profileError) console.error('Profile creation error:', profileError);
+
+      const mappedUser = mapUser(authData.user, profileData);
+      
+      // Store user data in localStorage
+      if (mappedUser) {
+        localStorage.setItem('user', JSON.stringify(mappedUser));
       }
-      return response.data;
+
+      return {
+        user: mappedUser,
+        token: authData.session?.access_token
+      };
     } catch (error) {
       console.error('Register error:', error);
       
@@ -87,13 +149,11 @@ const AuthService = {
           username: data.username,
           email: data.email
         };
-        const mockResponse = {
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        return {
           token: "mock-token-for-development",
           user: mockUser
         };
-        localStorage.setItem('auth_token', mockResponse.token);
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        return mockResponse;
       }
       
       throw error;
@@ -102,11 +162,11 @@ const AuthService = {
 
   async logout() {
     try {
-      await api.post('/logout');
+      // Logout from Supabase
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
     }
   },
@@ -121,8 +181,22 @@ const AuthService = {
 
   async getProfile() {
     try {
-      const response = await api.get('/user/profile');
-      return response.data;
+      const user = supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', (await user).data.user?.id)
+        .single();
+
+      if (error) throw error;
+
+      return { 
+        user: mapUser((await user).data.user, data) 
+      };
     } catch (error) {
       console.error('Get profile error:', error);
       

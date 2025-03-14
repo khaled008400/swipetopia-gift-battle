@@ -1,12 +1,13 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import AuthService, { User } from "../services/auth.service";
+import AuthService, { AppUser } from "../services/auth.service";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   signup: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -26,20 +27,59 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const { toast } = useToast();
   
-  // Check if user is logged in on component mount
+  // Check if user is logged in on component mount and listen for auth changes
   useEffect(() => {
     const storedUser = AuthService.getCurrentUser();
     if (storedUser) {
       setUser(storedUser);
     }
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Get the user profile when signed in
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            // Update local user state
+            const updatedUser: AppUser = {
+              id: session.user.id,
+              username: profileData?.username || session.user.email?.split('@')[0] || 'user',
+              email: session.user.email || '',
+              avatar: profileData?.avatar_url || '/placeholder.svg',
+              coins: profileData?.coins || 0,
+              followers: profileData?.followers || 0,
+              following: profileData?.following || 0
+            };
+            
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          localStorage.removeItem('user');
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      const data = await AuthService.login({ username, password });
+      const data = await AuthService.login({ email, password });
       setUser(data.user);
       toast({
         title: "Login successful",
@@ -49,8 +89,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error: any) {
       let message = "Network error - unable to connect to the server";
       
-      if (error.response) {
-        message = error.response?.data?.message || 'Failed to login';
+      if (error.error_description) {
+        message = error.error_description;
+      } else if (error.message) {
+        message = error.message;
       }
       
       toast({
@@ -79,8 +121,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error: any) {
       let message = "Network error - unable to connect to the server";
       
-      if (error.response) {
-        message = error.response?.data?.message || 'Failed to create account';
+      if (error.error_description) {
+        message = error.error_description;
+      } else if (error.message) {
+        message = error.message;
       }
       
       toast({
