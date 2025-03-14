@@ -42,8 +42,9 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         role: userRole || data.role || 'viewer',
-        followers: data.followers || 0,
-        following: data.following || 0
+        // Add followers and following with default values if not present in the DB
+        followers: data.followers ?? 0,
+        following: data.following ?? 0
       };
       
       console.log("Constructed profile:", profile);
