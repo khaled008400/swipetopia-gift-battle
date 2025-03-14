@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
@@ -12,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStats from "@/components/profile/ProfileStats";
 import RolesDisplay from "@/components/profile/RolesDisplay";
+import ProfileEdit from "@/components/profile/ProfileEdit";
 import { UserRole } from "@/types/auth.types";
 
 const ProfilePage = () => {
@@ -20,6 +20,7 @@ const ProfilePage = () => {
   const [userVideos, setUserVideos] = useState<any[]>([]);
   const [likedVideos, setLikedVideos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const fetchUserContent = async () => {
@@ -27,7 +28,6 @@ const ProfilePage = () => {
       
       setIsLoading(true);
       try {
-        // Fetch videos created by user
         const { data: videos, error: videosError } = await supabase
           .from('short_videos')
           .select('*')
@@ -36,7 +36,6 @@ const ProfilePage = () => {
         if (videosError) throw videosError;
         setUserVideos(videos || []);
         
-        // Fetch videos liked by user
         const { data: likes, error: likesError } = await supabase
           .from('video_likes')
           .select('video_id')
@@ -105,7 +104,6 @@ const ProfilePage = () => {
     );
   };
 
-  // Get user's role-specific tabs
   const getRoleTabs = () => {
     const roleTabs = [];
     
@@ -128,7 +126,6 @@ const ProfilePage = () => {
     return roleTabs;
   };
 
-  // Get user's role-specific content tabs
   const getRoleContent = () => {
     const roleContent = [];
     
@@ -202,6 +199,24 @@ const ProfilePage = () => {
     return roleContent;
   };
 
+  if (editMode) {
+    return (
+      <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black p-4">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">Edit Profile</h2>
+          <Button 
+            variant="outline" 
+            onClick={() => setEditMode(false)}
+            className="border-app-yellow text-app-yellow"
+          >
+            Cancel
+          </Button>
+        </div>
+        <ProfileEdit />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black">
       <ProfileHeader user={user} />
@@ -209,7 +224,11 @@ const ProfilePage = () => {
       <ProfileStats user={user} />
 
       <div className="mt-4 flex gap-3 w-full justify-center px-4">
-        <Button variant="outline" className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black">
+        <Button 
+          variant="outline" 
+          className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black"
+          onClick={() => setEditMode(true)}
+        >
           <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
         </Button>
         <Button 
@@ -221,7 +240,6 @@ const ProfilePage = () => {
         </Button>
       </div>
       
-      {/* Link to Activity Page */}
       <Link to="/activity" className="mt-4 px-4">
         <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
           <div className="flex items-center">

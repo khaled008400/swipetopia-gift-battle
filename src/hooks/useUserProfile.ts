@@ -20,19 +20,19 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
       // Get roles from database if available, otherwise from metadata, or default to "user"
       let userRoles: UserRole[] = [];
       
-      // Handle case when data.roles exists (array)
+      // Check if roles exists in database (array format)
       if (data.roles && Array.isArray(data.roles)) {
         userRoles = data.roles as UserRole[];
       } 
-      // Handle case when data.role exists (string)
+      // Handle legacy single role field in database
       else if (data.role) {
         userRoles = [data.role as UserRole];
       } 
-      // Check in user metadata
+      // Check in user metadata for roles array
       else if (authUser.user_metadata?.roles && Array.isArray(authUser.user_metadata.roles)) {
         userRoles = authUser.user_metadata.roles as UserRole[];
       } 
-      // For backward compatibility with single role field in metadata
+      // Check in user metadata for single role
       else if (authUser.user_metadata?.role) {
         userRoles = [authUser.user_metadata.role as UserRole];
       } 
@@ -49,8 +49,8 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         roles: userRoles,
         bio: data.bio || undefined,
         location: data.location || undefined,
-        followers: 0, // Default value since it doesn't exist in the database yet
-        following: 0, // Default value since it doesn't exist in the database yet
+        followers: data.followers || 0,
+        following: data.following || 0,
         interests: data.interests || undefined,
         shop_name: data.shop_name || undefined,
         stream_key: data.stream_key || undefined
