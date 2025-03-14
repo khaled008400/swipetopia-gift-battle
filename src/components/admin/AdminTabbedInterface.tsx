@@ -30,6 +30,9 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
     );
   }
 
+  // Log stats to verify data 
+  console.log("Admin stats:", stats);
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8">
