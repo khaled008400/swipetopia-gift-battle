@@ -22,7 +22,7 @@ const GiftFilters = ({ categoryFilter, onCategoryFilterChange }: GiftFiltersProp
             <SelectValue placeholder="Filter by category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             <SelectItem value="general">General</SelectItem>
             <SelectItem value="celebration">Celebration</SelectItem>
             <SelectItem value="luxury">Luxury</SelectItem>
