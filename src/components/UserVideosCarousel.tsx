@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { 
@@ -7,10 +8,10 @@ import {
   CarouselPrevious, 
   CarouselNext 
 } from "./ui/carousel";
-import { useAuth } from "../context/auth/AuthContext";
+import { useAuth } from "@/context/auth/AuthContext";
 
 interface UserVideosCarouselProps {
-  videos: {
+  videos?: {
     id: string;
     title: string;
     thumbnailUrl: string;
@@ -21,9 +22,11 @@ interface UserVideosCarouselProps {
       avatarUrl: string;
     };
   }[];
+  userId?: string;
+  title?: string;
 }
 
-const UserVideosCarousel: React.FC<UserVideosCarouselProps> = ({ videos }) => {
+const UserVideosCarousel: React.FC<UserVideosCarouselProps> = ({ videos = [], title }) => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const { user } = useAuth();
 
@@ -39,8 +42,15 @@ const UserVideosCarousel: React.FC<UserVideosCarouselProps> = ({ videos }) => {
     );
   };
 
+  if (videos.length === 0) {
+    return null;
+  }
+
   return (
     <div className="relative">
+      {title && (
+        <h3 className="text-white font-medium mb-2">{title}</h3>
+      )}
       <Carousel className="w-full max-w-4xl mx-auto">
         <CarouselContent className="overflow-hidden">
           {videos.map((video, index) => (

@@ -4,12 +4,24 @@ import BattleVideo from "./BattleVideo";
 import VideoPlayer from "./VideoPlayer";
 
 interface VideoFeedProps {
-  videos: BattleVideoType[];
-  activeVideoIndex: number;
+  videos?: BattleVideoType[];
+  activeVideoIndex?: number;
   isBattlePage?: boolean;
 }
 
-const VideoFeed = ({ videos, activeVideoIndex, isBattlePage = false }: VideoFeedProps) => {
+const VideoFeed = ({ 
+  videos = [], 
+  activeVideoIndex = 0, 
+  isBattlePage = false 
+}: VideoFeedProps) => {
+  if (videos.length === 0) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <p className="text-white text-center">No videos available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full">
       {videos.map((video, index) => (

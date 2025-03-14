@@ -1,12 +1,50 @@
+
 import { useState } from "react";
 import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
-import { useAuth } from "../context/auth/AuthContext";
+import { useAuth } from "@/context/auth/AuthContext";
+
+// Mock data for trending videos
+const TRENDING_VIDEOS = [
+  {
+    id: "1",
+    thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a",
+    username: "fashion_creator"
+  },
+  {
+    id: "2",
+    thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a",
+    username: "travel_vlog"
+  },
+  {
+    id: "3",
+    thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a",
+    username: "cook_with_me"
+  }
+];
+
+// Mock data for video feed
+const FEED_VIDEOS = [
+  {
+    id: "feed1",
+    url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+    thumbnail: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+    description: "Running through nature",
+    likes: 1200,
+    comments: 85,
+    user: {
+      id: "user1",
+      name: "Runner",
+      avatar: "/placeholder.svg"
+    }
+  }
+];
 
 const IndexPage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("following");
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -41,8 +79,8 @@ const IndexPage = () => {
           <>
             {user ? (
               <>
-                <UserVideosCarousel userId={user.id} />
-                <VideoFeed />
+                <UserVideosCarousel />
+                <VideoFeed videos={FEED_VIDEOS} activeVideoIndex={activeVideoIndex} />
               </>
             ) : (
               <div className="text-white text-center p-4">
@@ -51,7 +89,7 @@ const IndexPage = () => {
             )}
           </>
         ) : (
-          <TrendingVideosSection />
+          <TrendingVideosSection videos={TRENDING_VIDEOS} />
         )}
       </div>
     </div>
