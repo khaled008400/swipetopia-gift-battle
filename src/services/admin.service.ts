@@ -1,12 +1,16 @@
 import api from './api';
 import { Coupon, Offer, ShippingMethod, PricingRules } from './pricing.service';
 
+// Added UserRole type for better type safety
+export type UserRole = 'viewer' | 'seller' | 'streamer' | 'admin';
+
 // Interfaces for admin models
 export interface AdminUser {
   id: string;
   username: string;
   email: string;
   status: 'active' | 'suspended' | 'pending';
+  role: UserRole; // Added role property
   createdAt: string;
   videosCount: number;
   ordersCount: number;
@@ -136,6 +140,11 @@ const AdminService = {
 
   async deleteUser(userId: string) {
     const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
+
+  async updateUserRole(userId: string, role: UserRole) {
+    const response = await api.patch(`/admin/users/${userId}/role`, { role });
     return response.data;
   },
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Table, TableBody, TableCaption, TableCell, 
@@ -8,15 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Pagination, PaginationContent, PaginationItem, 
   PaginationLink, PaginationNext, PaginationPrevious 
 } from '@/components/ui/pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { AdminUser } from '@/services/admin.service';
-import { CheckCircle, MoreHorizontal, Search, UserX, Loader2 } from 'lucide-react';
+import AdminService, { AdminUser, UserRole } from '@/services/admin.service';
+import { CheckCircle, MoreHorizontal, Search, UserX, Loader2, ShieldCheck, ShoppingBag, Video } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const AdminUsers = () => {
@@ -49,6 +57,25 @@ const AdminUsers = () => {
     },
   });
 
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string, role: UserRole }) => 
+      AdminService.updateUserRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      toast({
+        title: "Role updated",
+        description: "User role has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update user role.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
@@ -56,6 +83,10 @@ const AdminUsers = () => {
 
   const handleStatusChange = (userId: string, status: 'active' | 'suspended') => {
     updateStatusMutation.mutate({ userId, status });
+  };
+
+  const handleRoleChange = (userId: string, role: UserRole) => {
+    updateRoleMutation.mutate({ userId, role });
   };
 
   const handlePrevPage = () => {
@@ -80,6 +111,20 @@ const AdminUsers = () => {
         return <Badge className="bg-yellow-500">Pending</Badge>;
       default:
         return <Badge className="bg-gray-500">Unknown</Badge>;
+    }
+  };
+
+  const getRoleBadge = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return <Badge className="bg-purple-500 flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Admin</Badge>;
+      case 'seller':
+        return <Badge className="bg-blue-500 flex items-center gap-1"><ShoppingBag className="h-3 w-3" /> Seller</Badge>;
+      case 'streamer':
+        return <Badge className="bg-pink-500 flex items-center gap-1"><Video className="h-3 w-3" /> Streamer</Badge>;
+      case 'viewer':
+      default:
+        return <Badge className="bg-gray-500">Viewer</Badge>;
     }
   };
 
@@ -111,6 +156,7 @@ const AdminUsers = () => {
                 <TableHead>Email</TableHead>
                 <TableHead>Created At</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Videos</TableHead>
                 <TableHead>Orders</TableHead>
                 <TableHead>Actions</TableHead>
@@ -123,33 +169,53 @@ const AdminUsers = () => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>{getStatusBadge(user.status)}</TableCell>
+                  <TableCell>{getRoleBadge(user.role || 'viewer')}</TableCell>
                   <TableCell>{user.videosCount}</TableCell>
                   <TableCell>{user.ordersCount}</TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleStatusChange(user.id, 'active')}
-                          className="text-green-600"
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Activate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleStatusChange(user.id, 'suspended')}
-                          className="text-red-600"
-                        >
-                          <UserX className="mr-2 h-4 w-4" />
-                          Suspend
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-2">
+                      <Select 
+                        defaultValue={user.role || 'viewer'} 
+                        onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                          <SelectItem value="seller">Seller</SelectItem>
+                          <SelectItem value="streamer">Streamer</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(user.id, 'active')}
+                            className="text-green-600"
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Activate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(user.id, 'suspended')}
+                            className="text-red-600"
+                          >
+                            <UserX className="mr-2 h-4 w-4" />
+                            Suspend
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
