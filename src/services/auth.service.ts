@@ -60,6 +60,7 @@ const AuthService = {
   async login(credentials: LoginCredentials) {
     try {
       console.log("AuthService.login called with:", credentials.email);
+      
       // Try real login with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
@@ -74,16 +75,40 @@ const AuthService = {
       console.log("Supabase login successful, user data:", data.user);
       console.log("Session data:", data.session);
       
+      // Fetch the user profile from the profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user?.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no profile exists
 
       console.log("Profile fetch result:", profileData, profileError);
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         console.error("Profile fetch error:", profileError);
+      }
+
+      // If profile doesn't exist, create one
+      if (!profileData && data.user) {
+        console.log("No profile found, creating one");
+        const newProfile = {
+          id: data.user.id,
+          username: data.user.email?.split('@')[0] || 'user',
+          avatar_url: '/placeholder.svg',
+          coins: 0
+        };
+        
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .upsert(newProfile)
+          .select()
+          .maybeSingle();
+          
+        if (createError) {
+          console.error("Profile creation error:", createError);
+        } else {
+          console.log("Created profile:", createdProfile);
+        }
       }
 
       const mappedUser = mapUser(data.user, profileData);
@@ -207,6 +232,7 @@ const AuthService = {
         return JSON.parse(userStr);
       } catch (e) {
         console.error("Error parsing stored user:", e);
+        localStorage.removeItem('user'); // Remove invalid user data
         return null;
       }
     }

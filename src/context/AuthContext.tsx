@@ -36,6 +36,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     console.log("Running auth effect");
     
+    // Check for stored user first (for faster initial render)
+    const storedUser = AuthService.getCurrentUser();
+    if (storedUser) {
+      console.log("Found stored user:", storedUser.username);
+      setUser(storedUser);
+    }
+    
     const checkCurrentSession = async () => {
       try {
         console.log("Checking current session");
@@ -47,9 +54,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
             
-          console.log("Profile data:", profileData);
+          console.log("Profile data from session check:", profileData);
+            
+          // If no profile exists, create one
+          if (!profileData) {
+            console.log("No profile found, creating one");
+            const { data: newProfileData, error: createError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || 'user',
+                avatar_url: '/placeholder.svg',
+                coins: 0
+              })
+              .select()
+              .maybeSingle();
+              
+            if (createError) {
+              console.error("Profile creation error:", createError);
+            } else {
+              console.log("Created profile:", newProfileData);
+            }
+          }
             
           // Update local user state
           const updatedUser: AppUser = {
@@ -58,29 +86,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             email: session.user.email || '',
             avatar: profileData?.avatar_url || '/placeholder.svg',
             coins: profileData?.coins || 0,
-            // Set default values for followers and following since they might not exist in the database yet
+            // Set default values for followers and following since they don't exist in the database
             followers: 0,
             following: 0
           };
           
-          console.log("Setting user:", updatedUser.username);
+          console.log("Setting user from session:", updatedUser.username);
           setUser(updatedUser);
           localStorage.setItem('user', JSON.stringify(updatedUser));
-        } else {
-          // Check for stored user (for development mode)
-          const storedUser = AuthService.getCurrentUser();
-          if (storedUser) {
-            console.log("Using stored user:", storedUser.username);
-            setUser(storedUser);
-          } else {
-            console.log("No stored user found");
-          }
         }
       } catch (error) {
         console.error("Session check error:", error);
       }
     };
     
+    // Check the current session after checking for stored user
     checkCurrentSession();
     
     // Set up auth state listener
@@ -94,7 +114,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               .from('profiles')
               .select('*')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
+              
+            // If no profile exists, create one
+            if (!profileData) {
+              console.log("No profile found during auth state change, creating one");
+              const { data: newProfileData, error: createError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: session.user.id,
+                  username: session.user.email?.split('@')[0] || 'user',
+                  avatar_url: '/placeholder.svg',
+                  coins: 0
+                })
+                .select()
+                .maybeSingle();
+                
+              if (createError) {
+                console.error("Profile creation error:", createError);
+              } else {
+                console.log("Created profile:", newProfileData);
+              }
+            }
               
             // Update local user state
             const updatedUser: AppUser = {

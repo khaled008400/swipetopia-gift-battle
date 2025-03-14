@@ -15,7 +15,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "user:", user);
+  console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "user:", user?.username);
 
   // Redirect if already authenticated
   useEffect(() => {
