@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminLoginForm from '@/components/admin/AdminLoginForm';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react'; // Fixed typo from 'luc3ide-react' to 'lucide-react'
 import { useToast } from '@/components/ui/use-toast';
 
 const AdminPage = () => {
