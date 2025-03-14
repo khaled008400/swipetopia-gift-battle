@@ -44,9 +44,10 @@ serve(async (req: Request) => {
     }
     
     // Increment the follower count
-    const { data, error } = await supabaseClient.rpc('increment_followers', {
-      streamer_id: streamerId
-    });
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .update({ followers: supabaseClient.rpc('increment_counter', { row_id: streamerId, counter_name: 'followers' }) })
+      .eq('id', streamerId);
     
     if (error) throw error;
     

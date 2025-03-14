@@ -31,6 +31,7 @@ export function useRealtimeData<T>(
       filter = { [filterColumn]: filterValue };
     }
     
+    // Using channel.on with the proper type definition for postgres_changes
     channel = channel
       .on('postgres_changes', { 
         event: 'INSERT', 
