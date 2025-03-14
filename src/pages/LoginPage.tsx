@@ -5,14 +5,15 @@ import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, WifiOff } from "lucide-react";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [networkError, setNetworkError] = useState(false);
   const { login, isAuthenticated, user } = useAuth();
+  const { isOnline, isConnectedToApi } = useNetworkStatus();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -27,26 +28,6 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate, user]);
 
-  // Network error check
-  useEffect(() => {
-    const checkNetworkConnection = async () => {
-      try {
-        // Check if we can reach Supabase
-        const response = await fetch("https://ifeuccpukdosoxtufxzi.supabase.co/", {
-          method: "HEAD",
-          mode: "no-cors",
-          cache: "no-store",
-        });
-        setNetworkError(false);
-      } catch (error) {
-        console.error("Network connectivity issue:", error);
-        setNetworkError(true);
-      }
-    };
-
-    checkNetworkConnection();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted with:", { email, password });
@@ -59,6 +40,33 @@ const LoginPage = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    if (!isOnline) {
+      toast({
+        title: "No internet connection",
+        description: "Cannot log in while offline. Please check your connection.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isConnectedToApi) {
+      toast({
+        title: "Server unreachable",
+        description: "Cannot reach authentication servers. Please try again later.",
+        variant: "destructive",
+      });
+      
+      if (import.meta.env.DEV) {
+        toast({
+          title: "Development mode",
+          description: "Attempting to log in with mock credentials since you're in development mode.",
+          variant: "default",
+        });
+      } else {
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -91,11 +99,21 @@ const LoginPage = () => {
           <p className="text-gray-400">Sign in to continue</p>
         </div>
 
-        {networkError && (
+        {!isOnline && (
           <div className="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-md flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <WifiOff className="h-5 w-5 text-red-400 mr-2" />
             <p className="text-sm text-red-300">
-              Network connection issue detected. Please check your internet connection.
+              You are offline. Please check your internet connection.
+            </p>
+          </div>
+        )}
+
+        {isOnline && !isConnectedToApi && (
+          <div className="mb-4 p-3 bg-amber-900/30 border border-amber-800 rounded-md flex items-center">
+            <AlertCircle className="h-5 w-5 text-amber-400 mr-2" />
+            <p className="text-sm text-amber-300">
+              Cannot reach our servers. Some features may be unavailable.
+              {import.meta.env.DEV && " In development mode, you can still log in with any credentials."}
             </p>
           </div>
         )}
@@ -133,7 +151,7 @@ const LoginPage = () => {
 
           <Button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || (!isOnline && !import.meta.env.DEV)}
             className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
           >
             {isLoading ? (
