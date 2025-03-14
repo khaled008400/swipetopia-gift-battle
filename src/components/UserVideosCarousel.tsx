@@ -7,7 +7,7 @@ import {
   CarouselPrevious, 
   CarouselNext 
 } from "./ui/carousel";
-import { useAuth } from "@/context/auth/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 
 interface UserVideosCarouselProps {
   videos?: {
