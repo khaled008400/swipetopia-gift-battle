@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setSession(currentSession);
           const profile = await fetchUserProfile(currentSession.user);
           if (profile) {
+            console.log("User profile loaded:", profile);
             setUser(profile);
           }
         } else {
@@ -66,6 +67,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
         const profile = await fetchUserProfile(session.user);
         if (profile) {
+          console.log("Profile from auth listener:", profile);
           setUser(profile);
         }
       } else if (event === 'SIGNED_OUT') {
@@ -150,6 +152,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const isAdmin = () => {
     if (!user) return false;
+    console.log("Checking isAdmin. User role:", user.role);
     return user.role === 'admin';
   };
 

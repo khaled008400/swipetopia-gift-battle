@@ -5,6 +5,14 @@ import { UserProfile } from "@/types/auth.types";
 
 export const fetchUserProfile = async (authUser: User): Promise<UserProfile | null> => {
   try {
+    console.log("Fetching profile for user ID:", authUser.id);
+    
+    // Get user metadata from auth user object
+    const userRole = authUser.user_metadata?.role || authUser.app_metadata?.role;
+    
+    console.log("User metadata:", authUser.user_metadata);
+    console.log("App metadata:", authUser.app_metadata);
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -17,18 +25,32 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
     }
     
     if (data) {
-      return {
+      const profile: UserProfile = {
         id: data.id,
-        username: data.username,
+        username: data.username || authUser.email?.split('@')[0] || 'User',
         email: authUser.email || '',
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
-        role: authUser.user_metadata?.role,
+        role: userRole || data.role, // Try to get role from metadata first, then from profile
         followers: 0, // Default value for followers
         following: 0  // Default value for following
       };
+      
+      console.log("Constructed profile:", profile);
+      return profile;
     }
-    return null;
+    
+    // If no profile exists yet, return a basic profile with just the auth data
+    return {
+      id: authUser.id,
+      username: authUser.email?.split('@')[0] || 'User',
+      email: authUser.email || '',
+      avatar_url: null,
+      coins: 0,
+      role: userRole || 'viewer', // Default to viewer if no role specified
+      followers: 0,
+      following: 0
+    };
   } catch (error) {
     console.error("Unexpected error fetching profile:", error);
     return null;

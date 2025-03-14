@@ -23,6 +23,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin, message }) => 
     
     try {
       await onLogin(username, password);
+      // Note: Login result is handled in the parent component
     } catch (error) {
       console.error("Admin login error:", error);
       toast({

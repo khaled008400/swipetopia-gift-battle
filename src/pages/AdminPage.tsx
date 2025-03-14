@@ -16,6 +16,7 @@ const AdminPage = () => {
   // Check if user has admin role
   useEffect(() => {
     if (user && isAdmin()) {
+      console.log("User is an admin, setting adminAuthenticated to true");
       setAdminAuthenticated(true);
     } else if (user && !isAdmin()) {
       // If user is logged in but not an admin, show a message
@@ -26,6 +27,7 @@ const AdminPage = () => {
 
   const handleAdminLogin = async (email: string, password: string) => {
     try {
+      console.log("Attempting admin login with:", email);
       await login(email, password);
       // The useEffect above will check if the user is an admin after login
     } catch (error) {
