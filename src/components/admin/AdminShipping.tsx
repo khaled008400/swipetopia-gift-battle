@@ -178,7 +178,14 @@ const AdminShipping: React.FC = () => {
   // Handle form submission
   const onSubmit = (formData: ShippingMethodFormValues) => {
     if (dialogMode === 'create') {
-      createMethodMutation.mutate(formData);
+      // Ensure all required fields are provided for create operation
+      createMethodMutation.mutate({
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        estimated_days: formData.estimated_days,
+        is_active: formData.is_active
+      });
     } else if (dialogMode === 'edit' && selectedMethod) {
       updateMethodMutation.mutate({
         id: selectedMethod.id,
@@ -212,7 +219,7 @@ const AdminShipping: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data?.map((method: ShippingMethod) => (
+            {data?.map((method: AdminShippingMethod) => (
               <TableRow key={method.id}>
                 <TableCell className="font-medium">{method.name}</TableCell>
                 <TableCell>{method.description}</TableCell>
