@@ -34,54 +34,59 @@ export function useRealtimeData<T>(
     }
 
     // Create channel for realtime updates
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: tableName,
-          ...(Object.keys(filter).length > 0 ? { filter } : {})
-        },
-        (payload) => {
-          setData((prevData) => [...prevData, payload.new as T]);
-          toast({
-            title: "New data received",
-            description: `New update for ${tableName}`,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: tableName,
-          ...(Object.keys(filter).length > 0 ? { filter } : {})
-        },
-        (payload) => {
-          setData((prevData) =>
-            prevData.map((item: any) =>
-              item.id === (payload.new as any).id ? payload.new as T : item
-            )
-          );
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: tableName,
-          ...(Object.keys(filter).length > 0 ? { filter } : {})
-        },
-        (payload) => {
-          setData((prevData) =>
-            prevData.filter((item: any) => item.id !== (payload.old as any).id)
-          );
-        }
-      );
+    const channel = supabase.channel(channelName);
+    
+    // Add listeners for INSERT events
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: tableName,
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
+      },
+      (payload) => {
+        setData((prevData) => [...prevData, payload.new as T]);
+        toast({
+          title: "New data received",
+          description: `New update for ${tableName}`,
+        });
+      }
+    );
+    
+    // Add listeners for UPDATE events
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: tableName,
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
+      },
+      (payload) => {
+        setData((prevData) =>
+          prevData.map((item: any) =>
+            item.id === (payload.new as any).id ? payload.new as T : item
+          )
+        );
+      }
+    );
+    
+    // Add listeners for DELETE events
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: tableName,
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
+      },
+      (payload) => {
+        setData((prevData) =>
+          prevData.filter((item: any) => item.id !== (payload.old as any).id)
+        );
+      }
+    );
 
     // Subscribe to the channel
     channel.subscribe((status) => {
