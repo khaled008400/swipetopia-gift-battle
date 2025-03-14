@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Session } from "@supabase/supabase-js";
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     initializeAuth();
     
     // Set up auth state change listener
-    const { subscription } = setupAuthListener(async (event, newSession) => {
+    const { data } = setupAuthListener(async (event, newSession) => {
       console.log("AuthContext: Auth state changed:", event, newSession ? "session exists" : "no session");
       
       if (!isMounted) return;
@@ -109,7 +110,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      data.unsubscribe();
     };
   }, []);
 

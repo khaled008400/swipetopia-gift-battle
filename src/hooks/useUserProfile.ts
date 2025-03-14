@@ -43,9 +43,9 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         role: userRole || data.role || 'viewer',
-        // Type safe access to optional fields with fallback values
-        followers: typeof data.followers === 'number' ? data.followers : 0,
-        following: typeof data.following === 'number' ? data.following : 0
+        // Safely handle optional fields with fallback values
+        followers: data.followers || 0,
+        following: data.following || 0
       };
       
       console.log("Constructed profile:", profile);
