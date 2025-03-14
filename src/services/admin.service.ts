@@ -106,6 +106,32 @@ export interface AdminShippingMethod extends Omit<ShippingMethod, 'is_active'> {
   is_active?: boolean;
 }
 
+export interface LiveStream {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+  };
+  title: string;
+  durationMinutes: number;
+  plannedDurationMinutes?: number;
+  currentViewers: number;
+  peakViewers: number;
+  giftsReceived: number;
+  topGiftName: string;
+  revenue: number;
+  startedAt: string;
+  endedAt?: string;
+  scheduledFor?: string;
+  status: 'live' | 'ended' | 'scheduled';
+}
+
+export interface LiveStreamStats {
+  activeCount: number;
+  totalViewers: number;
+  totalGiftRevenue: number;
+}
+
 const AdminService = {
   async getDashboardStats() {
     const response = await api.get('/admin/dashboard/stats');
@@ -409,6 +435,38 @@ const AdminService = {
 
   async deletePricingRule(ruleId: string) {
     const response = await api.delete(`/admin/pricing-rules/${ruleId}`);
+    return response.data;
+  },
+
+  async getLiveStreams(type = 'current', search = '') {
+    const response = await api.get('/admin/live-streams', {
+      params: { type, search }
+    });
+    return response.data;
+  },
+
+  async getStreamDetails(streamId: string) {
+    const response = await api.get(`/admin/live-streams/${streamId}`);
+    return response.data;
+  },
+
+  async shutdownStream(streamId: string, reason: string) {
+    const response = await api.post(`/admin/live-streams/${streamId}/shutdown`, { reason });
+    return response.data;
+  },
+
+  async sendStreamMessage(streamId: string, message: string) {
+    const response = await api.post(`/admin/live-streams/${streamId}/message`, { message });
+    return response.data;
+  },
+
+  async getStreamGifts(streamId: string) {
+    const response = await api.get(`/admin/live-streams/${streamId}/gifts`);
+    return response.data;
+  },
+
+  async getStreamAnalytics(streamId: string) {
+    const response = await api.get(`/admin/live-streams/${streamId}/analytics`);
     return response.data;
   }
 };

@@ -11,6 +11,7 @@ import ProductAttributes from '@/components/admin/ProductAttributes';
 import AdminCoupons from '@/components/admin/AdminCoupons';
 import AdminOffers from '@/components/admin/AdminOffers';
 import AdminShipping from '@/components/admin/AdminShipping';
+import AdminLiveStreams from '@/components/admin/AdminLiveStreams';
 import { AdminStats } from '@/services/admin.service';
 import { Loader2 } from 'lucide-react';
 
@@ -41,10 +42,11 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-10 w-full">
+        <TabsList className="grid grid-cols-11 w-full">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="videos">Videos</TabsTrigger>
+          <TabsTrigger value="livestreams">Live Streams</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="attributes">Attributes</TabsTrigger>
@@ -64,6 +66,10 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="videos">
           <AdminVideos />
+        </TabsContent>
+        
+        <TabsContent value="livestreams">
+          <AdminLiveStreams />
         </TabsContent>
         
         <TabsContent value="orders">
