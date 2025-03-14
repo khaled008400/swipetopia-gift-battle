@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface GiftTransaction {
@@ -123,10 +122,9 @@ const StreamerService = {
       throw new Error('Authentication required to follow streamers');
     }
     
-    // In a real app, you would have a followers table
-    // For simplicity, we're just incrementing the follower count
-    const { error } = await supabase.rpc('increment_followers', {
-      streamer_id: streamerId
+    // Call the edge function to increment the follower count
+    const { data, error } = await supabase.functions.invoke('increment-followers', {
+      body: { streamerId }
     });
     
     if (error) throw error;

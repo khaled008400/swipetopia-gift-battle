@@ -36,7 +36,7 @@ export function useRealtimeData<T>(
         event: 'INSERT', 
         schema: 'public', 
         table: tableName,
-        filter: filter
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
       }, (payload) => {
         setData((prevData) => [...prevData, payload.new as T]);
         toast({
@@ -48,7 +48,7 @@ export function useRealtimeData<T>(
         event: 'UPDATE', 
         schema: 'public', 
         table: tableName,
-        filter: filter
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
       }, (payload) => {
         setData((prevData) => 
           prevData.map((item: any) => 
@@ -60,7 +60,7 @@ export function useRealtimeData<T>(
         event: 'DELETE', 
         schema: 'public', 
         table: tableName,
-        filter: filter
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
       }, (payload) => {
         setData((prevData) => 
           prevData.filter((item: any) => item.id !== (payload.old as any).id)
