@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { VirtualGift } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import GiftForm from './GiftForm';
 import GiftsTable from './GiftsTable';
 import GiftFilters from './GiftFilters';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface VirtualGift {
+  id: string;
+  name: string;
+  price: number;
+  icon: string;
+  color: string;
+  value: number;
+  available?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
 const VirtualGifts = () => {
   const [page, setPage] = useState(1);
@@ -21,12 +33,45 @@ const VirtualGifts = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['virtualGifts', page, categoryFilter],
-    queryFn: () => AdminService.getVirtualGifts(page, 10, categoryFilter),
+    queryFn: async () => {
+      let query = supabase.from('gifts').select('*');
+      
+      // Apply category filter if present
+      if (categoryFilter) {
+        query = query.eq('color', categoryFilter);
+      }
+      
+      // Apply pagination
+      const from = (page - 1) * 10;
+      const to = from + 9;
+      query = query.range(from, to);
+      
+      const { data, error, count } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return {
+        data: data,
+        pagination: {
+          page,
+          pageSize: 10,
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / 10)
+        }
+      };
+    }
   });
 
   const createGiftMutation = useMutation({
-    mutationFn: (giftData: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) => 
-      AdminService.createVirtualGift(giftData),
+    mutationFn: async (giftData: Omit<VirtualGift, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('gifts')
+        .insert([giftData])
+        .select();
+        
+      if (error) throw error;
+      return data[0];
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
       setShowGiftDialog(false);
@@ -35,7 +80,8 @@ const VirtualGifts = () => {
         description: "Virtual gift has been created successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error creating gift:", error);
       toast({
         title: "Error",
         description: "Failed to create virtual gift.",
@@ -45,8 +91,16 @@ const VirtualGifts = () => {
   });
 
   const updateGiftMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>> }) => 
-      AdminService.updateVirtualGift(id, data),
+    mutationFn: async ({ id, data }: { id: string, data: Partial<Omit<VirtualGift, 'id' | 'created_at' | 'updated_at'>> }) => {
+      const { data: updatedData, error } = await supabase
+        .from('gifts')
+        .update(data)
+        .eq('id', id)
+        .select();
+        
+      if (error) throw error;
+      return updatedData[0];
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
       setShowGiftDialog(false);
@@ -55,7 +109,8 @@ const VirtualGifts = () => {
         description: "Virtual gift has been updated successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error updating gift:", error);
       toast({
         title: "Error",
         description: "Failed to update virtual gift.",
@@ -65,7 +120,15 @@ const VirtualGifts = () => {
   });
 
   const deleteGiftMutation = useMutation({
-    mutationFn: (giftId: string) => AdminService.deleteVirtualGift(giftId),
+    mutationFn: async (giftId: string) => {
+      const { error } = await supabase
+        .from('gifts')
+        .delete()
+        .eq('id', giftId);
+        
+      if (error) throw error;
+      return giftId;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
       toast({
@@ -73,7 +136,8 @@ const VirtualGifts = () => {
         description: "Virtual gift has been deleted successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error deleting gift:", error);
       toast({
         title: "Error",
         description: "Failed to delete virtual gift.",
@@ -83,8 +147,16 @@ const VirtualGifts = () => {
   });
 
   const toggleAvailabilityMutation = useMutation({
-    mutationFn: ({ id, available }: { id: string, available: boolean }) => 
-      AdminService.toggleGiftAvailability(id, available),
+    mutationFn: async ({ id, available }: { id: string, available: boolean }) => {
+      const { data, error } = await supabase
+        .from('gifts')
+        .update({ available })
+        .eq('id', id)
+        .select();
+        
+      if (error) throw error;
+      return data[0];
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
       toast({
@@ -92,7 +164,8 @@ const VirtualGifts = () => {
         description: "Gift availability has been updated successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error updating availability:", error);
       toast({
         title: "Error",
         description: "Failed to update gift availability.",
@@ -120,10 +193,13 @@ const VirtualGifts = () => {
   };
 
   const handleToggleAvailability = (gift: VirtualGift) => {
-    toggleAvailabilityMutation.mutate({ id: gift.id, available: !gift.available });
+    toggleAvailabilityMutation.mutate({ 
+      id: gift.id, 
+      available: !gift.available 
+    });
   };
 
-  const handleFormSubmit = (data: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleFormSubmit = (data: Omit<VirtualGift, 'id' | 'created_at' | 'updated_at'>) => {
     if (dialogMode === 'create') {
       createGiftMutation.mutate(data);
     } else if (dialogMode === 'edit' && selectedGift) {
