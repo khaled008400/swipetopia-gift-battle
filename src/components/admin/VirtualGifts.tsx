@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,6 +119,10 @@ const VirtualGifts = () => {
     }
   };
 
+  const handleToggleAvailability = (id: string, available: boolean) => {
+    toggleGiftMutation.mutate({ id, available });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -130,7 +135,10 @@ const VirtualGifts = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <GiftFilters onCategoryChange={setCategoryFilter} />
+          <GiftFilters 
+            categoryFilter={categoryFilter} 
+            onCategoryChange={setCategoryFilter} 
+          />
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button>
@@ -146,13 +154,13 @@ const VirtualGifts = () => {
                 </DialogDescription>
               </DialogHeader>
               <GiftForm 
-                gift={currentGift}
+                initialData={currentGift}
                 isEditing={isEditing}
                 onSubmit={(data) => {
                   if (isEditing && currentGift) {
                     updateGiftMutation.mutate({ id: currentGift.id, data });
                   } else {
-                    addGiftMutation.mutate(data);
+                    addGiftMutation.mutate(data as Omit<VirtualGift, 'id' | 'createdAt'>);
                   }
                 }}
                 onCancel={() => setOpen(false)}
@@ -181,9 +189,7 @@ const VirtualGifts = () => {
                   deleteGiftMutation.mutate(id);
                 }
               }}
-              onToggleAvailability={(id, available) => {
-                toggleGiftMutation.mutate({ id, available });
-              }}
+              onToggleAvailability={handleToggleAvailability}
             />
           ) : (
             <Card>

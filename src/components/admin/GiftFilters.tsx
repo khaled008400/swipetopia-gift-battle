@@ -9,15 +9,15 @@ import {
 } from '@/components/ui/select';
 
 interface GiftFiltersProps {
-  categoryFilter: string;
-  onCategoryFilterChange: (value: string) => void;
+  categoryFilter?: string;
+  onCategoryChange: (value: string) => void;
 }
 
-const GiftFilters = ({ categoryFilter, onCategoryFilterChange }: GiftFiltersProps) => {
+const GiftFilters = ({ categoryFilter = '', onCategoryChange }: GiftFiltersProps) => {
   return (
     <div className="flex gap-4 items-center">
       <div className="w-60">
-        <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+        <Select value={categoryFilter} onValueChange={onCategoryChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Filter by category" />
           </SelectTrigger>

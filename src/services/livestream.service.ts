@@ -27,6 +27,10 @@ class LiveStreamService {
         config.appID, 
         config.appSign,
         {
+          logConfig: {
+            logPath: '',
+            logSize: 0,
+          },
           scenario: 0, // General scenario
           application: Platform.OS === 'ios' ? 1 : 0 // Platform specific setting
         }
@@ -149,6 +153,13 @@ class LiveStreamService {
       console.error('Failed to leave room:', error);
       throw error;
     }
+  }
+
+  async getEngine() {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+    return this.engine;
   }
 
   async getLocalVideoView(): Promise<any> {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Table, TableBody, TableCaption, TableCell, 
@@ -170,8 +169,8 @@ const AdminUsers = () => {
                   <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>{getStatusBadge(user.status)}</TableCell>
                   <TableCell>{getRoleBadge(user.role || 'viewer')}</TableCell>
-                  <TableCell>{user.videosCount}</TableCell>
-                  <TableCell>{user.ordersCount}</TableCell>
+                  <TableCell>{user.videoCount}</TableCell>
+                  <TableCell>{user.orderCount}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Select 

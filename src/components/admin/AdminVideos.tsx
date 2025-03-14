@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -50,13 +49,13 @@ const AdminVideos = () => {
     queryFn: () => {
       // Convert date to ISO string for API if exists
       const dateString = dateFilter ? dateFilter.toISOString().split('T')[0] : '';
-      return AdminService.getVideosList(page, 10, statusFilter, search, userFilter, dateString);
+      return AdminService.getVideosList(page);
     },
   });
 
   // Mutation for updating video status
   const updateStatusMutation = useMutation({
-    mutationFn: ({ videoIds, status }: { videoIds: string[], status: 'active' | 'flagged' | 'removed' }) => 
+    mutationFn: ({ videoIds, status }: { videoIds: string[], status: 'active' | 'under_review' | 'removed' }) => 
       Promise.all(videoIds.map(id => AdminService.updateVideoStatus(id, status))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
@@ -75,7 +74,7 @@ const AdminVideos = () => {
     },
   });
 
-  // Mutation for deleting videos
+  // Delete video mutation
   const deleteVideoMutation = useMutation({
     mutationFn: (videoIds: string[]) => 
       Promise.all(videoIds.map(id => AdminService.deleteVideo(id))),
@@ -119,9 +118,9 @@ const AdminVideos = () => {
 
   // Mutation for restricting users
   const restrictUserMutation = useMutation({
-    mutationFn: ({ userId, reason }: { userId: string, reason: string }) => 
+    mutationFn: ({ userId, reason, duration }: { userId: string, reason: string, duration: string }) => 
       // This would need to be implemented in AdminService
-      AdminService.restrictUser(userId, reason),
+      AdminService.restrictUser(userId, reason, duration),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
       toast({
@@ -398,8 +397,8 @@ const AdminVideos = () => {
               <div>
                 <h3 className="text-lg font-medium">Activity</h3>
                 <div className="mt-2 space-y-2">
-                  <p><strong>Videos:</strong> {userDetailsDialog.user.videosCount}</p>
-                  <p><strong>Orders:</strong> {userDetailsDialog.user.ordersCount}</p>
+                  <p><strong>Videos:</strong> {userDetailsDialog.user.videoCount}</p>
+                  <p><strong>Orders:</strong> {userDetailsDialog.user.orderCount}</p>
                 </div>
                 <div className="mt-4 space-y-2">
                   <Button 
