@@ -4,11 +4,18 @@ import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Loader2, Grid, Lock, Settings, Edit2, Activity, ChevronRight } from "lucide-react";
+import { 
+  Loader2, Grid, Lock, Settings, Edit2, Activity, ChevronRight, 
+  ShoppingBag, Video, Gift, Users, Calendar, Award
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileStats from "@/components/profile/ProfileStats";
+import RolesDisplay from "@/components/profile/RolesDisplay";
+import { UserRole } from "@/types/auth.types";
 
 const ProfilePage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState("videos");
   const [userVideos, setUserVideos] = useState<any[]>([]);
   const [likedVideos, setLikedVideos] = useState<any[]>([]);
@@ -98,86 +105,158 @@ const ProfilePage = () => {
     );
   };
 
+  // Get user's role-specific tabs
+  const getRoleTabs = () => {
+    const roleTabs = [];
+    
+    if (hasRole("seller")) {
+      roleTabs.push(
+        <TabsTrigger key="products" value="products" className="flex-1">
+          <ShoppingBag className="w-4 h-4 mr-1" /> Products
+        </TabsTrigger>
+      );
+    }
+    
+    if (hasRole("streamer")) {
+      roleTabs.push(
+        <TabsTrigger key="streams" value="streams" className="flex-1">
+          <Video className="w-4 h-4 mr-1" /> Streams
+        </TabsTrigger>
+      );
+    }
+    
+    return roleTabs;
+  };
+
+  // Get user's role-specific content tabs
+  const getRoleContent = () => {
+    const roleContent = [];
+    
+    if (hasRole("seller")) {
+      roleContent.push(
+        <TabsContent key="products" value="products" className="mt-4">
+          <div className="flex flex-col space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold">Your Products</h3>
+              <Button size="sm" variant="outline" className="border-app-yellow text-app-yellow">
+                + Add Product
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="bg-app-gray-dark rounded-lg p-2">
+                  <div className="aspect-square bg-app-gray-light rounded-md mb-2">
+                    <img 
+                      src={`https://picsum.photos/id/${20 + item}/200/200`} 
+                      alt="Product" 
+                      className="w-full h-full object-cover rounded-md" 
+                    />
+                  </div>
+                  <p className="text-white text-sm font-medium truncate">Product Name {item}</p>
+                  <p className="text-app-yellow text-xs">$19.99</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      );
+    }
+    
+    if (hasRole("streamer")) {
+      roleContent.push(
+        <TabsContent key="streams" value="streams" className="mt-4">
+          <div className="flex flex-col space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold">Your Streams</h3>
+              <Button size="sm" className="bg-app-yellow text-app-black">
+                Go Live
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="bg-app-gray-dark rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-md overflow-hidden">
+                      <img 
+                        src={`https://picsum.photos/id/${30 + item}/100/100`} 
+                        alt="Stream thumbnail" 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">Stream #{item}</p>
+                      <p className="text-gray-400 text-xs">2 hours ago • 1.2k views</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      );
+    }
+    
+    return roleContent;
+  };
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black">
-      <div className="relative">
-        <div className="h-32 bg-gradient-to-r from-app-gray-dark to-app-gray-light"></div>
-        <div className="absolute -bottom-16 w-full flex flex-col items-center">
-          <div className="w-32 h-32 rounded-full border-4 border-app-black overflow-hidden">
-            <img
-              src={user.avatar_url || "https://via.placeholder.com/150"}
-              alt={user.username}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
+      <ProfileHeader user={user} />
+      <RolesDisplay roles={user.roles} />
+      <ProfileStats user={user} />
+
+      <div className="mt-4 flex gap-3 w-full justify-center px-4">
+        <Button variant="outline" className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black">
+          <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
+        </Button>
+        <Button 
+          variant="outline" 
+          className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black" 
+          onClick={() => logout()}
+        >
+          <Settings className="w-4 h-4 mr-2" /> Logout
+        </Button>
       </div>
-
-      <div className="mt-20 flex flex-col items-center px-4">
-        <h1 className="text-2xl font-bold">@{user.username}</h1>
-        
-        <div className="flex justify-center gap-8 mt-4">
-          <div className="profile-stat">
-            <span className="text-xl font-bold">{user.followers || 0}</span>
-            <span className="text-sm text-gray-400">Followers</span>
+      
+      {/* Link to Activity Page */}
+      <Link to="/activity" className="mt-4 px-4">
+        <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+          <div className="flex items-center">
+            <Activity className="h-5 w-5 text-app-yellow mr-2" />
+            <span className="text-white">View Activity</span>
           </div>
-          <div className="profile-stat">
-            <span className="text-xl font-bold">{user.following || 0}</span>
-            <span className="text-sm text-gray-400">Following</span>
-          </div>
-          <div className="profile-stat">
-            <span className="text-xl font-bold">{user.coins || 0}</span>
-            <span className="text-sm text-gray-400">Coins</span>
-          </div>
+          <ChevronRight className="h-5 w-5 text-gray-400" />
         </div>
+      </Link>
 
-        <div className="flex gap-3 mt-4 w-full justify-center">
-          <Button variant="outline" className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black">
-            <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
-          </Button>
-          <Button 
-            variant="outline" 
-            className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black" 
-            onClick={() => logout()}
-          >
-            <Settings className="w-4 h-4 mr-2" /> Logout
-          </Button>
-        </div>
+      <Tabs defaultValue="videos" className="w-full mt-8">
+        <TabsList className="w-full bg-app-gray-dark">
+          <TabsTrigger value="videos" className="flex-1">Videos</TabsTrigger>
+          <TabsTrigger value="liked" className="flex-1">Liked</TabsTrigger>
+          {getRoleTabs()}
+          <TabsTrigger value="private" className="flex-1">Private</TabsTrigger>
+        </TabsList>
         
-        {/* Link to Activity Page */}
-        <Link to="/activity" className="mt-4 w-full">
-          <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
-            <div className="flex items-center">
-              <Activity className="h-5 w-5 text-app-yellow mr-2" />
-              <span className="text-white">View Activity</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+        <TabsContent value="videos" className="mt-4 px-4">
+          {renderVideoGrid(userVideos)}
+        </TabsContent>
+        
+        <TabsContent value="liked" className="mt-4 px-4">
+          {renderVideoGrid(likedVideos)}
+        </TabsContent>
+        
+        {getRoleContent()}
+        
+        <TabsContent value="private" className="mt-4 px-4">
+          <div className="h-48 flex flex-col items-center justify-center text-gray-400">
+            <Lock className="w-12 h-12 mb-2" />
+            <p>Your private videos are only visible to you</p>
           </div>
-        </Link>
-
-        <Tabs defaultValue="videos" className="w-full mt-8">
-          <TabsList className="w-full bg-app-gray-dark">
-            <TabsTrigger value="videos" className="flex-1">Videos</TabsTrigger>
-            <TabsTrigger value="liked" className="flex-1">Liked</TabsTrigger>
-            <TabsTrigger value="private" className="flex-1">Private</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="videos" className="mt-4">
-            {renderVideoGrid(userVideos)}
-          </TabsContent>
-          
-          <TabsContent value="liked" className="mt-4">
-            {renderVideoGrid(likedVideos)}
-          </TabsContent>
-          
-          <TabsContent value="private" className="mt-4">
-            <div className="h-48 flex flex-col items-center justify-center text-gray-400">
-              <Lock className="w-12 h-12 mb-2" />
-              <p>Your private videos are only visible to you</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

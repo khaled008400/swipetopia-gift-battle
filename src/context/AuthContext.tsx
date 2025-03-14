@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Session } from "@supabase/supabase-js";
-import { AuthContextType, UserProfile } from "@/types/auth.types";
+import { AuthContextType, UserProfile, UserRole } from "@/types/auth.types";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -26,9 +26,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     email: "admin@example.com",
     avatar_url: "https://i.pravatar.cc/150?u=admin",
     coins: 1000,
-    role: "admin",
+    roles: ["admin", "streamer"],
+    bio: "Admin account for development and testing",
+    location: "San Francisco, CA",
     followers: 120,
-    following: 45
+    following: 45,
+    interests: ["technology", "design", "gaming"]
   };
 
   const [user, setUser] = useState<UserProfile | null>(mockUser);
@@ -41,7 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return Promise.resolve();
   };
 
-  const signup = async (email: string, username: string, password: string) => {
+  const signup = async (email: string, username: string, password: string, roles: UserRole[] = ["user"]) => {
     return Promise.resolve();
   };
 
@@ -50,7 +53,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const isAdmin = () => {
-    return true; // Always return true
+    return user?.roles.includes("admin") || false;
+  };
+
+  const hasRole = (role: UserRole) => {
+    return user?.roles.includes(role) || false;
   };
 
   return (
@@ -63,7 +70,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         login,
         signup,
         logout,
-        isAdmin
+        isAdmin,
+        hasRole
       }}
     >
       {children}
