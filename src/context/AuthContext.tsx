@@ -41,9 +41,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const data = await AuthService.login({ username, password });
       setUser(data.user);
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${data.user.username}!`,
+      });
       return data;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to login';
+      let message = "Network error - unable to connect to the server";
+      
+      if (error.response) {
+        message = error.response?.data?.message || 'Failed to login';
+      }
+      
       toast({
         title: "Login failed",
         description: message,
@@ -62,9 +71,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         password_confirmation: password
       });
       setUser(data.user);
+      toast({
+        title: "Account created",
+        description: `Welcome, ${data.user.username}!`,
+      });
       return data;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to create account';
+      let message = "Network error - unable to connect to the server";
+      
+      if (error.response) {
+        message = error.response?.data?.message || 'Failed to create account';
+      }
+      
       toast({
         title: "Signup failed",
         description: message,
@@ -77,6 +95,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     AuthService.logout();
     setUser(null);
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
   };
 
   return (

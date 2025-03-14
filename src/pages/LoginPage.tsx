@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -55,6 +57,7 @@ const LoginPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading}
             />
           </div>
 
@@ -69,6 +72,7 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading}
             />
           </div>
 
@@ -77,7 +81,14 @@ const LoginPage = () => {
             disabled={isLoading}
             className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </form>
 
@@ -89,6 +100,14 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
+        
+        {import.meta.env.DEV && (
+          <div className="mt-4 p-3 bg-blue-900/30 rounded-md">
+            <p className="text-xs text-blue-400">
+              Development mode: If the API is unavailable, you can still log in with any credentials.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
