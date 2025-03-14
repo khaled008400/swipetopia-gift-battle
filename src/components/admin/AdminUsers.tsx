@@ -26,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService, { AdminUser, UserRole } from '@/services/admin.service';
 import { CheckCircle, MoreHorizontal, Search, UserX, Loader2, ShieldCheck, ShoppingBag, Video } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminUsers = () => {
   const [page, setPage] = useState(1);
@@ -33,9 +34,59 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Use a direct Supabase query to fetch users from profiles table
   const { data, isLoading } = useQuery({
     queryKey: ['adminUsers', page, search],
-    queryFn: () => AdminService.getUsersList(page, 10, search),
+    queryFn: async () => {
+      try {
+        // Start query from profiles table
+        let query = supabase.from('profiles').select('*');
+        
+        // Add search if provided
+        if (search) {
+          query = query.ilike('username', `%${search}%`);
+        }
+        
+        // Add pagination
+        query = query.range((page - 1) * 10, page * 10 - 1);
+        
+        const { data: profiles, error, count } = await query;
+        
+        if (error) {
+          console.error("Error fetching users:", error);
+          throw error;
+        }
+        
+        // Transform profiles to match AdminUser interface
+        const users = profiles.map(profile => ({
+          id: profile.id,
+          username: profile.username,
+          email: profile.email || 'No email available',
+          status: 'active', // Default status
+          role: profile.role || 'viewer',
+          createdAt: profile.created_at,
+          videosCount: 0, // Default values for now
+          ordersCount: 0, // Default values for now
+        }));
+        
+        return {
+          data: users,
+          pagination: {
+            total: count || users.length,
+            last_page: Math.ceil((count || users.length) / 10),
+            current_page: page
+          }
+        };
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        toast({
+          title: "Error fetching users",
+          description: "There was a problem fetching the user list.",
+          variant: "destructive",
+        });
+        return { data: [], pagination: { total: 0, last_page: 1, current_page: 1 } };
+      }
+    },
   });
 
   const updateStatusMutation = useMutation({
@@ -58,8 +109,21 @@ const AdminUsers = () => {
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string, role: UserRole }) => 
-      AdminService.updateUserRole(userId, role),
+    mutationFn: async ({ userId, role }: { userId: string, role: UserRole }) => {
+      try {
+        // Update user role directly in the profiles table
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: role })
+          .eq('id', userId);
+          
+        if (error) throw error;
+        return { success: true };
+      } catch (error) {
+        console.error("Error updating role:", error);
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast({
@@ -163,66 +227,74 @@ const AdminUsers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.data.map((user: AdminUser) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell>{getRoleBadge(user.role || 'viewer')}</TableCell>
-                  <TableCell>{user.videosCount}</TableCell>
-                  <TableCell>{user.ordersCount}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        defaultValue={user.role || 'viewer'} 
-                        onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
-                      >
-                        <SelectTrigger className="w-28">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="viewer">Viewer</SelectItem>
-                          <SelectItem value="seller">Seller</SelectItem>
-                          <SelectItem value="streamer">Streamer</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+              {data?.data && data.data.length > 0 ? (
+                data.data.map((user: AdminUser) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell>{getRoleBadge(user.role || 'viewer')}</TableCell>
+                    <TableCell>{user.videosCount}</TableCell>
+                    <TableCell>{user.ordersCount}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Select 
+                          defaultValue={user.role || 'viewer'} 
+                          onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
+                        >
+                          <SelectTrigger className="w-28">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="seller">Seller</SelectItem>
+                            <SelectItem value="streamer">Streamer</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(user.id, 'active')}
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Activate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(user.id, 'suspended')}
-                            className="text-red-600"
-                          >
-                            <UserX className="mr-2 h-4 w-4" />
-                            Suspend
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(user.id, 'active')}
+                              className="text-green-600"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Activate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(user.id, 'suspended')}
+                              className="text-red-600"
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              Suspend
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    No users found. Add users in Supabase or check connection.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
 
-          {data?.pagination && (
+          {data?.pagination && data.data.length > 0 && (
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
