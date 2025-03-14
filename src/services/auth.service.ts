@@ -77,7 +77,7 @@ const AuthService = {
       }
 
       return {
-        user: mappedUser,
+        user: mappedUser as AppUser,
         token: data.session?.access_token
       };
     } catch (error) {
@@ -135,7 +135,7 @@ const AuthService = {
       }
 
       return {
-        user: mappedUser,
+        user: mappedUser as AppUser,
         token: authData.session?.access_token
       };
     } catch (error) {
