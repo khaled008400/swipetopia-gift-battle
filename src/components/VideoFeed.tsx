@@ -1,4 +1,5 @@
 
+import { Video } from "@/types/video.types";
 import { BattleVideo as BattleVideoType } from "@/hooks/useBattleVideos";
 import BattleVideo from "./BattleVideo";
 import VideoPlayer from "./VideoPlayer";
@@ -7,9 +8,19 @@ interface VideoFeedProps {
   videos: any[]; // Make more generic to accept both BattleVideoType and Video
   activeVideoIndex: number;
   isBattlePage?: boolean;
+  onLike?: () => void;
+  onSave?: () => void;
+  onFollow?: () => void;
 }
 
-const VideoFeed = ({ videos, activeVideoIndex, isBattlePage = false }: VideoFeedProps) => {
+const VideoFeed = ({ 
+  videos, 
+  activeVideoIndex, 
+  isBattlePage = false,
+  onLike,
+  onSave,
+  onFollow
+}: VideoFeedProps) => {
   return (
     <div className="h-full w-full">
       {videos.map((video, index) => (
@@ -27,7 +38,10 @@ const VideoFeed = ({ videos, activeVideoIndex, isBattlePage = false }: VideoFeed
           ) : (
             <VideoPlayer 
               video={video} 
-              isActive={index === activeVideoIndex} 
+              isActive={index === activeVideoIndex}
+              onLike={onLike}
+              onSave={onSave}
+              onFollow={onFollow}
             />
           )}
         </div>

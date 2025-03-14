@@ -14,6 +14,7 @@ export interface Video {
   isLiked?: boolean;
   isSaved?: boolean;
   allowDownloads?: boolean;
+  isLive?: boolean;
 }
 
 export type VideoActionHandler = () => void;

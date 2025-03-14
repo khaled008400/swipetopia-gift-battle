@@ -27,16 +27,20 @@ interface VideoPlayerProps {
     isSaved?: boolean;
   };
   isActive?: boolean;
+  onLike?: () => void;
+  onSave?: () => void;
+  onFollow?: () => void;
 }
 
 const VideoPlayer = ({
   video,
-  isActive = false
+  isActive = false,
+  onLike,
+  onSave,
+  onFollow
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLiked, setIsLiked] = useState(video.isLiked || false);
-  const [isSaved, setIsSaved] = useState(video.isSaved || false);
   const [tapPosition, setTapPosition] = useState({ x: 0, y: 0 });
   const [showHeart, setShowHeart] = useState(false);
   const [doubleTapTimer, setDoubleTapTimer] = useState<number | null>(null);
@@ -46,9 +50,7 @@ const VideoPlayer = ({
   // Reset error state when video changes
   useEffect(() => {
     resetError();
-    setIsLiked(video.isLiked || false);
-    setIsSaved(video.isSaved || false);
-  }, [video.id, video.isLiked, video.isSaved, resetError]);
+  }, [video.id, resetError]);
 
   const handleVideoPress = (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
     if (videoError) return;
@@ -88,53 +90,13 @@ const VideoPlayer = ({
 
   const handleDoubleTap = () => {
     // Like/unlike the video
-    handleLike();
+    if (onLike) {
+      onLike();
+    }
     
     // Show heart animation
     setShowHeart(true);
     setTimeout(() => setShowHeart(false), 800);
-  };
-
-  const handleLike = async () => {
-    const wasLiked = isLiked;
-    setIsLiked(!wasLiked);
-    
-    try {
-      if (wasLiked) {
-        await VideoService.unlikeVideo(video.id);
-      } else {
-        await VideoService.likeVideo(video.id);
-      }
-      
-      toast({
-        title: wasLiked ? "Removed like" : "Added like",
-        description: wasLiked ? "You've removed your like from this video" : "You've liked this video",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error toggling like:", error);
-      setIsLiked(wasLiked); // Restore previous state on error
-      toast({
-        title: "Error",
-        description: "Failed to update like status",
-        variant: "destructive",
-        duration: 2000,
-      });
-    }
-  };
-
-  const handleSave = () => {
-    setIsSaved(!isSaved);
-  };
-
-  const handleFollow = () => {
-    toast({
-      title: video.user.isFollowing ? "Unfollowed" : "Followed",
-      description: video.user.isFollowing 
-        ? `You unfollowed ${video.user.username}` 
-        : `You are now following ${video.user.username}`,
-      duration: 2000,
-    });
   };
 
   return (
@@ -177,12 +139,12 @@ const VideoPlayer = ({
       {/* Video overlay with user info and actions */}
       {!videoError && (
         <VideoOverlay 
-          video={{...video, isLiked, isSaved}}
-          isLiked={isLiked} 
-          isSaved={isSaved}
-          onLike={handleLike}
-          onSave={handleSave}
-          onFollow={handleFollow}
+          video={video}
+          isLiked={video.isLiked || false} 
+          isSaved={video.isSaved || false}
+          onLike={onLike || (() => {})}
+          onSave={onSave || (() => {})}
+          onFollow={onFollow || (() => {})}
         />
       )}
     </div>

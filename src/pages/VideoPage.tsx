@@ -1,10 +1,9 @@
 
-import { Video } from "@/types/video.types";
-import VideoFeed from "@/components/VideoFeed";
-import ProgressIndicators from "@/components/video/ProgressIndicators";
 import { useVideoNavigation } from "@/hooks/useVideoNavigation";
 import { useVideoInteractions } from "@/hooks/useVideoInteractions";
 import { VIDEOS } from "@/data/videosMock";
+import VideoPlayer from "@/components/VideoPlayer";
+import ProgressIndicators from "@/components/video/ProgressIndicators";
 
 const VideoPage = () => {
   const { activeVideoIndex, videos, setVideos } = useVideoNavigation(VIDEOS);
@@ -16,10 +15,24 @@ const VideoPage = () => {
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-black relative">
-      <VideoFeed
-        videos={videos}
-        activeVideoIndex={activeVideoIndex}
-      />
+      <div className="h-full w-full">
+        {videos.map((video, index) => (
+          <div
+            key={video.id}
+            className={`absolute top-0 left-0 h-full w-full transition-opacity duration-300 ${
+              index === activeVideoIndex ? "opacity-100 z-10" : "opacity-0 -z-10"
+            }`}
+          >
+            <VideoPlayer 
+              video={video} 
+              isActive={index === activeVideoIndex}
+              onLike={() => handleLike()}
+              onSave={() => handleSave()}
+              onFollow={() => handleFollow()}
+            />
+          </div>
+        ))}
+      </div>
       
       <ProgressIndicators 
         totalVideos={videos.length} 
