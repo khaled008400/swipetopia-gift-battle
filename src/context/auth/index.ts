@@ -1,3 +1,3 @@
 
 // Export everything from AuthContext
-export * from './AuthContext';
+export * from './AuthContext.tsx';
