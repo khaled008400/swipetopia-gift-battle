@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Session } from "@supabase/supabase-js";
@@ -33,61 +32,83 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Check active session
+    let isMounted = true;
+    
     const initializeAuth = async () => {
-      setIsLoading(true);
       try {
+        console.log("AuthContext: Initializing auth state");
         const currentSession = await getSession();
-        console.log("AuthContext: Current session:", currentSession);
+        
+        if (!isMounted) return;
+        
+        console.log("AuthContext: Current session:", currentSession ? "exists" : "none");
         
         if (currentSession) {
           setSession(currentSession);
+          
           try {
             const profile = await fetchUserProfile(currentSession.user);
+            if (!isMounted) return;
+            
             if (profile) {
               console.log("AuthContext: User profile loaded:", profile);
               setUser(profile);
             }
           } catch (profileError) {
             console.error("AuthContext: Error fetching profile:", profileError);
-            // Continue even if profile fetch fails
           }
         } else {
           setUser(null);
+          setSession(null);
         }
       } catch (error) {
         console.error("AuthContext: Error retrieving session:", error);
-        setUser(null);
+        if (isMounted) {
+          setUser(null);
+          setSession(null);
+        }
       } finally {
         // Always set loading to false, even if there are errors
-        setIsLoading(false);
+        if (isMounted) {
+          console.log("AuthContext: Setting isLoading to false after initialization");
+          setIsLoading(false);
+        }
       }
     };
     
     initializeAuth();
     
     // Set up auth state change listener
-    const subscription = setupAuthListener(async (event, session) => {
-      console.log("AuthContext: Auth state changed:", event, session);
-      setSession(session);
+    const { subscription } = setupAuthListener(async (event, newSession) => {
+      console.log("AuthContext: Auth state changed:", event, newSession ? "session exists" : "no session");
       
-      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+      if (!isMounted) return;
+      
+      // Update session state immediately
+      setSession(newSession);
+      
+      if (newSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
         try {
-          const profile = await fetchUserProfile(session.user);
+          const profile = await fetchUserProfile(newSession.user);
+          if (!isMounted) return;
+          
           if (profile) {
             console.log("AuthContext: Profile from auth listener:", profile);
             setUser(profile);
           }
+          setIsLoading(false);
         } catch (error) {
           console.error("AuthContext: Error fetching profile after auth state change:", error);
-          // Continue even if profile fetch fails
+          setIsLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setIsLoading(false);
       }
     });
     
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -95,6 +116,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      console.log("AuthContext: Login attempt for:", email);
+      
       const data = await loginUser(email, password);
       
       if (!data.user) {
@@ -103,18 +126,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Set session immediately
       if (data.session) {
+        console.log("AuthContext: Setting session after login");
         setSession(data.session);
       }
       
-      try {
-        // Get profile data
-        const profile = await fetchUserProfile(data.user);
-        if (profile) {
-          console.log("AuthContext: Profile after login:", profile);
-          setUser(profile);
-        }
-      } catch (profileError) {
-        console.error("AuthContext: Error fetching profile after login:", profileError);
+      // Get profile data
+      const profile = await fetchUserProfile(data.user);
+      if (profile) {
+        console.log("AuthContext: Profile after login:", profile);
+        setUser(profile);
       }
       
       toast({
@@ -133,6 +153,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw error;
     } finally {
       // Always ensure loading state is reset
+      console.log("AuthContext: Setting isLoading to false after login attempt");
       setIsLoading(false);
     }
   };

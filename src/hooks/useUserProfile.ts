@@ -35,6 +35,7 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
     }
     
     if (data) {
+      // Create a type safe profile object
       const profile: UserProfile = {
         id: data.id,
         username: data.username || authUser.email?.split('@')[0] || 'User',
@@ -42,9 +43,9 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         role: userRole || data.role || 'viewer',
-        // Add followers and following with default values if not present in the DB
-        followers: data.followers ?? 0,
-        following: data.following ?? 0
+        // Type safe access to optional fields with fallback values
+        followers: typeof data.followers === 'number' ? data.followers : 0,
+        following: typeof data.following === 'number' ? data.following : 0
       };
       
       console.log("Constructed profile:", profile);
