@@ -28,7 +28,7 @@ class LiveStreamService {
       this.engine = ZegoExpressEngine.createEngine(
         config.appID, 
         config.appSign,
-        Platform.OS === 'ios' ? 1 : 0, // Platform specific setting
+        true, // Use boolean instead of number for the third parameter
         { 
           // Advanced config as last parameter
           logConfig: {
