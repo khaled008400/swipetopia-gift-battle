@@ -6,9 +6,10 @@ import { useQuery } from '@tanstack/react-query';
 import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminLoginForm from '@/components/admin/AdminLoginForm';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
+import { Loader2 } from 'lucide-react';
 
 const AdminPage = () => {
-  const { user, login, isAdmin } = useAuth();
+  const { user, login, isAdmin, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
 
@@ -51,6 +52,16 @@ const AdminPage = () => {
     revenueTotal: 0,
     revenueToday: 0
   };
+
+  // Show loading state while we check authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="ml-2">Checking authentication...</span>
+      </div>
+    );
+  }
 
   // Display login form if not authenticated as admin
   if (!user || !adminAuthenticated) {
