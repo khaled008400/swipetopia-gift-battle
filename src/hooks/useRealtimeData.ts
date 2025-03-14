@@ -23,51 +23,72 @@ export function useRealtimeData<T>(
     // Setup real-time subscription
     setIsLoading(true);
     
-    let channel = supabase.channel(`public:${tableName}`);
+    // Create a channel name based on table and filter if any
+    const channelName = filterColumn && filterValue 
+      ? `public:${tableName}:${filterColumn}:${filterValue}`
+      : `public:${tableName}`;
+    
+    const channel = supabase.channel(channelName);
     
     // Filter by column if provided
-    let filter = {};
+    let filterOptions = {};
     if (filterColumn && filterValue) {
-      filter = { [filterColumn]: filterValue };
+      filterOptions = { [filterColumn]: filterValue };
     }
     
-    // Using channel.on with the proper type definition for postgres_changes
-    channel = channel
-      .on('postgres_changes', { 
+    // Subscribe to INSERT events
+    channel.on(
+      'postgres_changes', 
+      { 
         event: 'INSERT', 
         schema: 'public', 
         table: tableName,
-        ...(Object.keys(filter).length > 0 ? { filter } : {})
-      }, (payload) => {
+        ...(Object.keys(filterOptions).length > 0 ? { filter: filterOptions } : {})
+      }, 
+      (payload) => {
         setData((prevData) => [...prevData, payload.new as T]);
         toast({
           title: "New data received",
           description: `New update for ${tableName}`,
         });
-      })
-      .on('postgres_changes', { 
+      }
+    );
+    
+    // Subscribe to UPDATE events
+    channel.on(
+      'postgres_changes', 
+      { 
         event: 'UPDATE', 
         schema: 'public', 
         table: tableName,
-        ...(Object.keys(filter).length > 0 ? { filter } : {})
-      }, (payload) => {
+        ...(Object.keys(filterOptions).length > 0 ? { filter: filterOptions } : {})
+      }, 
+      (payload) => {
         setData((prevData) => 
           prevData.map((item: any) => 
             item.id === (payload.new as any).id ? payload.new as T : item
           )
         );
-      })
-      .on('postgres_changes', { 
+      }
+    );
+    
+    // Subscribe to DELETE events
+    channel.on(
+      'postgres_changes', 
+      { 
         event: 'DELETE', 
         schema: 'public', 
         table: tableName,
-        ...(Object.keys(filter).length > 0 ? { filter } : {})
-      }, (payload) => {
+        ...(Object.keys(filterOptions).length > 0 ? { filter: filterOptions } : {})
+      }, 
+      (payload) => {
         setData((prevData) => 
           prevData.filter((item: any) => item.id !== (payload.old as any).id)
         );
-      });
+      }
+    );
 
+    // Subscribe to the channel
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         console.log(`Subscribed to real-time updates for ${tableName}`);
@@ -78,6 +99,7 @@ export function useRealtimeData<T>(
       }
     });
 
+    // Cleanup function
     return () => {
       supabase.removeChannel(channel);
     };

@@ -37,4 +37,5 @@ jwt_expiry = 3600
 enable_refresh_token_rotation = true
 
 [functions]
-enabled = true
+[functions.increment-followers]
+verify_jwt = true
