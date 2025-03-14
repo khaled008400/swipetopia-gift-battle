@@ -127,9 +127,9 @@ const AdminService = {
   },
 
   // Products management
-  async getProducts(page = 1, category = '', status = ''): Promise<{ data: AdminProduct[], pagination: Pagination }> {
+  async getProducts(page = 1, category = '', search = ''): Promise<{ data: AdminProduct[], pagination: Pagination }> {
     const response = await adminApi.get('/products', { 
-      params: { page, category, status } 
+      params: { page, category, search } 
     });
     return response.data;
   },
@@ -146,6 +146,14 @@ const AdminService = {
 
   async deleteProduct(productId: string): Promise<void> {
     await adminApi.delete(`/products/${productId}`);
+  },
+
+  // Product Analytics
+  async getProductSalesData(period: 'week' | 'month' | 'year', productId?: string): Promise<any> {
+    const response = await adminApi.get('/analytics/product-sales', { 
+      params: { period, product_id: productId } 
+    });
+    return response.data;
   },
 
   // Reports and Analytics
