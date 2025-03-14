@@ -31,6 +31,14 @@ export const createTestUsers = async () => {
 
   const results = [];
   
+  // First, get the service key from environment variables if available
+  const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+  
+  // Create an admin client if service key is available
+  const adminClient = serviceKey ? 
+    createClient(SUPABASE_URL, serviceKey) : 
+    supabase;
+  
   for (const user of testUsers) {
     try {
       // Sign up the user
@@ -46,6 +54,45 @@ export const createTestUsers = async () => {
       });
 
       if (signUpError) {
+        // If user already exists, try to sign in to get the user ID
+        if (signUpError.message.includes('already registered')) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: 'Password123!'
+          });
+          
+          if (signInError) {
+            console.error(`Error signing in user ${user.email}:`, signInError.message);
+            results.push({ email: user.email, success: false, error: signInError.message });
+            continue;
+          }
+          
+          if (!signInData.user) {
+            console.error(`No user returned for sign in ${user.email}`);
+            results.push({ email: user.email, success: false, error: 'No user returned for sign in' });
+            continue;
+          }
+          
+          // Create or update the profile using the obtained user ID
+          const { error: profileError } = await adminClient
+            .from('profiles')
+            .upsert({
+              id: signInData.user.id,
+              username: user.username,
+              coins: user.coins,
+              avatar_url: `https://i.pravatar.cc/150?u=${user.username}`
+            }, { onConflict: 'id' });
+  
+          if (profileError) {
+            console.error(`Error creating profile for ${user.email}:`, profileError.message);
+            results.push({ email: user.email, success: false, error: profileError.message });
+            continue;
+          }
+          
+          results.push({ email: user.email, success: true });
+          continue;
+        }
+        
         console.error(`Error creating user ${user.email}:`, signUpError.message);
         results.push({ email: user.email, success: false, error: signUpError.message });
         continue;
@@ -58,7 +105,7 @@ export const createTestUsers = async () => {
       }
 
       // Create or update the profile
-      const { error: profileError } = await supabase
+      const { error: profileError } = await adminClient
         .from('profiles')
         .upsert({
           id: authData.user.id,

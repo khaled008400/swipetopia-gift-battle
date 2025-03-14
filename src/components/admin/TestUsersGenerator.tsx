@@ -5,15 +5,24 @@ import { createTestUsers } from '@/integrations/supabase/client';
 import { Loader2, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const TestUsersGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState<any[] | null>(null);
+  const [serviceKey, setServiceKey] = useState('');
   const { toast } = useToast();
 
   const handleGenerateUsers = async () => {
     setIsGenerating(true);
     setResults(null);
+    
+    // Set the service key in environment if provided
+    if (serviceKey) {
+      // @ts-ignore - This is a workaround for Vite
+      import.meta.env.VITE_SUPABASE_SERVICE_KEY = serviceKey;
+    }
     
     try {
       const generationResults = await createTestUsers();
@@ -58,6 +67,24 @@ const TestUsersGenerator = () => {
             </>
           )}
         </Button>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="serviceKey">Supabase Service Key (optional)</Label>
+        <div className="grid grid-cols-1 gap-2">
+          <Input
+            id="serviceKey"
+            type="password"
+            placeholder="eyJhbGci0iJIUzI1NiI..."
+            value={serviceKey}
+            onChange={(e) => setServiceKey(e.target.value)}
+            className="font-mono"
+          />
+          <p className="text-xs text-muted-foreground">
+            For bypassing RLS policies, you can provide a service key.
+            Get it from Supabase Dashboard &gt; Project Settings &gt; API &gt; Service Role Key.
+          </p>
+        </div>
       </div>
 
       {results && (
