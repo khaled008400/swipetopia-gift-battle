@@ -239,9 +239,9 @@ const AdminService = {
     return response.data;
   },
 
-  async getVideosList(page = 1, limit = 10, status = '', search = '') {
+  async getVideosList(page = 1, limit = 10, status = '', search = '', username = '', date = '') {
     const response = await api.get('/admin/videos', {
-      params: { page, limit, status, search }
+      params: { page, limit, status, search, username, date }
     });
     return response.data;
   },
@@ -468,7 +468,52 @@ const AdminService = {
   async getStreamAnalytics(streamId: string) {
     const response = await api.get(`/admin/live-streams/${streamId}/analytics`);
     return response.data;
-  }
+  },
+
+  // Add user warning functionality
+  async sendUserWarning(userId: string, message: string, relatedContentId?: string) {
+    const response = await api.post(`/admin/users/${userId}/warnings`, { 
+      message, 
+      related_content_id: relatedContentId 
+    });
+    return response.data;
+  },
+
+  // Restrict user functionality
+  async restrictUser(userId: string, reason: string) {
+    const response = await api.post(`/admin/users/${userId}/restrict`, { reason });
+    return response.data;
+  },
+
+  // Batch update video statuses
+  async batchUpdateVideoStatus(videoIds: string[], status: 'active' | 'flagged' | 'removed') {
+    const response = await api.post('/admin/videos/batch-update', { video_ids: videoIds, status });
+    return response.data;
+  },
+
+  // Batch delete videos
+  async batchDeleteVideos(videoIds: string[]) {
+    const response = await api.post('/admin/videos/batch-delete', { video_ids: videoIds });
+    return response.data;
+  },
+
+  // Get user warning history
+  async getUserWarnings(userId: string) {
+    const response = await api.get(`/admin/users/${userId}/warnings`);
+    return response.data;
+  },
+
+  // Get user activity log
+  async getUserActivityLog(userId: string) {
+    const response = await api.get(`/admin/users/${userId}/activity-log`);
+    return response.data;
+  },
+
+  // Get video reports
+  async getVideoReports(videoId: string) {
+    const response = await api.get(`/admin/videos/${videoId}/reports`);
+    return response.data;
+  },
 };
 
 export default AdminService;
