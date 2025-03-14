@@ -1,5 +1,7 @@
 
 // Simplified auth context - authentication disabled temporarily
+import React from 'react';
+
 export const useAuth = () => ({
   user: null,
   isAuthenticated: false,
