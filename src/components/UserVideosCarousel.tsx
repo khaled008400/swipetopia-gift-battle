@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Zap } from "lucide-react";
 import { 
@@ -8,7 +7,7 @@ import {
   CarouselPrevious, 
   CarouselNext 
 } from "./ui/carousel";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 
 interface UserCreatedVideo {
   id: string;

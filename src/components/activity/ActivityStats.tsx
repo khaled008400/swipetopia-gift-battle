@@ -1,5 +1,5 @@
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/auth/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity, Heart, MessageSquare, ShoppingBag } from "lucide-react";
 

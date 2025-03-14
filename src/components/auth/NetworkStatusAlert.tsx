@@ -32,7 +32,7 @@ const NetworkStatusAlert = ({ isOnline, isConnectedToApi }: NetworkStatusAlertPr
     );
   }
 
-  if (isOnline && !isConnectedToApi) {
+  if (isOnline && !isConnectedToApi && !import.meta.env.DEV) {
     return (
       <div className="mb-4 p-3 bg-amber-900/30 border border-amber-800 rounded-md flex items-center">
         <AlertCircle className="h-5 w-5 text-amber-400 mr-2" />
