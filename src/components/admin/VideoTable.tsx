@@ -55,8 +55,10 @@ const VideoTable: React.FC<VideoTableProps> = ({
   // Set the indeterminate property on the checkbox DOM element when needed
   useEffect(() => {
     if (checkboxRef.current) {
-      // This updates the visual representation without using the unsupported prop
-      checkboxRef.current.indeterminate = someSelected;
+      // TypeScript doesn't know about the indeterminate property on HTMLButtonElement
+      // so we need to use the Element type that has this property
+      const element = checkboxRef.current as unknown as HTMLInputElement;
+      element.indeterminate = someSelected;
     }
   }, [someSelected]);
 
