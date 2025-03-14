@@ -5,12 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,6 +26,26 @@ const LoginPage = () => {
       navigate("/");
     }
   }, [isAuthenticated, navigate, user]);
+
+  // Network error check
+  useEffect(() => {
+    const checkNetworkConnection = async () => {
+      try {
+        // Check if we can reach Supabase
+        const response = await fetch("https://ifeuccpukdosoxtufxzi.supabase.co/", {
+          method: "HEAD",
+          mode: "no-cors",
+          cache: "no-store",
+        });
+        setNetworkError(false);
+      } catch (error) {
+        console.error("Network connectivity issue:", error);
+        setNetworkError(true);
+      }
+    };
+
+    checkNetworkConnection();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +90,15 @@ const LoginPage = () => {
           <h1 className="text-3xl font-bold mb-2 neon-text">SWIPETOPIA</h1>
           <p className="text-gray-400">Sign in to continue</p>
         </div>
+
+        {networkError && (
+          <div className="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-md flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <p className="text-sm text-red-300">
+              Network connection issue detected. Please check your internet connection.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

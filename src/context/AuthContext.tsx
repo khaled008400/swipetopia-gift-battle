@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             email: session.user.email || '',
             avatar: profileData?.avatar_url || '/placeholder.svg',
             coins: profileData?.coins || 0,
-            // Set default values for followers and following since they don't exist in the database
+            // Set default values since these fields don't exist in the database yet
             followers: 0,
             following: 0
           };
