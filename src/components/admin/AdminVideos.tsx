@@ -5,7 +5,6 @@ import AdminService, { AdminVideo, AdminUser } from '@/services/admin.service';
 import { Loader2, Trash2, CheckCircle, Flag, Ban, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-// Import refactored components
 import VideoTable from './VideoTable';
 import VideoPreviewDialog from './VideoPreviewDialog';
 import VideosFilter from './VideosFilter';
@@ -17,9 +16,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Label,
+  Textarea,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 const AdminVideos = () => {
   const [page, setPage] = useState(1);
@@ -43,19 +42,16 @@ const AdminVideos = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query for videos with all filters
   const { data, isLoading } = useQuery({
     queryKey: ['adminVideos', page, statusFilter, userFilter, dateFilter, search],
     queryFn: () => {
-      // Convert date to ISO string for API if exists
       const dateString = dateFilter ? dateFilter.toISOString().split('T')[0] : '';
       return AdminService.getVideosList(page);
     },
   });
 
-  // Mutation for updating video status
   const updateStatusMutation = useMutation({
-    mutationFn: ({ videoIds, status }: { videoIds: string[], status: 'active' | 'under_review' | 'removed' }) => 
+    mutationFn: ({ videoIds, status }: { videoIds: string[], status: 'active' | 'under_review' | 'removed' | 'flagged' }) => 
       Promise.all(videoIds.map(id => AdminService.updateVideoStatus(id, status))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
@@ -74,7 +70,6 @@ const AdminVideos = () => {
     },
   });
 
-  // Delete video mutation
   const deleteVideoMutation = useMutation({
     mutationFn: (videoIds: string[]) => 
       Promise.all(videoIds.map(id => AdminService.deleteVideo(id))),
@@ -95,10 +90,8 @@ const AdminVideos = () => {
     },
   });
 
-  // Mutation for sending warnings to users
   const sendWarningMutation = useMutation({
     mutationFn: ({ videoId, userId, message }: { videoId: string, userId: string, message: string }) => 
-      // This would need to be implemented in AdminService
       AdminService.sendUserWarning(userId, message, videoId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
@@ -116,10 +109,8 @@ const AdminVideos = () => {
     },
   });
 
-  // Mutation for restricting users
   const restrictUserMutation = useMutation({
-    mutationFn: ({ userId, reason, duration }: { userId: string, reason: string, duration: string }) => 
-      // This would need to be implemented in AdminService
+    mutationFn: ({ userId, reason, duration = "30days" }: { userId: string, reason: string, duration?: string }) => 
       AdminService.restrictUser(userId, reason, duration),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
@@ -137,14 +128,12 @@ const AdminVideos = () => {
     },
   });
 
-  // Query for user details
   const { data: userData, isLoading: userLoading } = useQuery({
     queryKey: ['adminUser', userDetailsDialog.user?.id],
     queryFn: () => userDetailsDialog.user?.id ? AdminService.getUser(userDetailsDialog.user.id) : null,
     enabled: !!userDetailsDialog.user?.id && userDetailsDialog.open,
   });
 
-  // Handler functions
   const handleStatusChange = (videoId: string, status: 'active' | 'flagged' | 'removed') => {
     updateStatusMutation.mutate({ videoIds: [videoId], status });
   };
@@ -165,11 +154,10 @@ const AdminVideos = () => {
   };
 
   const handleRestrictUser = (userId: string, reason: string) => {
-    restrictUserMutation.mutate({ userId, reason });
+    restrictUserMutation.mutate({ userId, reason, duration: "30days" });
   };
 
   const handleViewUserProfile = (userId: string) => {
-    // Fetch user data before opening dialog
     AdminService.getUser(userId).then(userData => {
       setUserDetailsDialog({
         open: true,
@@ -208,7 +196,6 @@ const AdminVideos = () => {
       case 'delete':
         deleteVideoMutation.mutate(selectedVideos);
         break;
-      // Add cases for 'warn' and 'restrict' if those functionalities are added
     }
     setBatchActionDialog({ open: false, type: 'approve' });
     setBatchActionReason('');
@@ -315,7 +302,6 @@ const AdminVideos = () => {
         onDeleteVideo={handleDeleteVideo}
       />
 
-      {/* Batch Action Confirmation Dialog */}
       <Dialog 
         open={batchActionDialog.open} 
         onOpenChange={(open) => setBatchActionDialog({ ...batchActionDialog, open })}
@@ -327,8 +313,6 @@ const AdminVideos = () => {
               {batchActionDialog.type === 'flag' && 'Flag Selected Videos'}
               {batchActionDialog.type === 'remove' && 'Remove Selected Videos'}
               {batchActionDialog.type === 'delete' && 'Delete Selected Videos'}
-              {batchActionDialog.type === 'warn' && 'Warn Users'}
-              {batchActionDialog.type === 'restrict' && 'Restrict Users'}
             </DialogTitle>
             <DialogDescription>
               {batchActionDialog.type === 'delete' 
@@ -368,7 +352,6 @@ const AdminVideos = () => {
         </DialogContent>
       </Dialog>
 
-      {/* User Details Dialog */}
       <Dialog 
         open={userDetailsDialog.open} 
         onOpenChange={(open) => setUserDetailsDialog({ ...userDetailsDialog, open })}
@@ -406,7 +389,6 @@ const AdminVideos = () => {
                     className="w-full text-yellow-600"
                     onClick={() => {
                       setUserDetailsDialog({ open: false, user: null });
-                      // Add logic to navigate to the user's videos
                       if (userDetailsDialog.user) {
                         setUserFilter(userDetailsDialog.user.username);
                       }
@@ -418,7 +400,6 @@ const AdminVideos = () => {
                     variant="outline" 
                     className="w-full text-red-600"
                     onClick={() => {
-                      // Add logic to restrict user
                       if (userDetailsDialog.user) {
                         setBatchActionDialog({ open: true, type: 'restrict' });
                         setUserDetailsDialog({ open: false, user: null });

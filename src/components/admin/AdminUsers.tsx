@@ -170,7 +170,7 @@ const AdminUsers = () => {
                   <TableCell>{getStatusBadge(user.status)}</TableCell>
                   <TableCell>{getRoleBadge(user.role || 'viewer')}</TableCell>
                   <TableCell>{user.videoCount}</TableCell>
-                  <TableCell>{user.orderCount}</TableCell>
+                  <TableCell>{user.ordersCount}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Select 

@@ -12,7 +12,7 @@ export interface AdminUser {
   lastActive: string;
   videoCount: number;
   followerCount: number;
-  ordersCount?: number;
+  ordersCount: number;
 }
 
 export type UserRole = 'user' | 'moderator' | 'admin' | 'seller' | 'streamer' | 'viewer';
@@ -24,11 +24,11 @@ export interface AdminVideo {
   description: string;
   thumbnailUrl: string;
   videoUrl: string;
-  url?: string;
+  url: string;
   duration: number;
   views: number;
   likes: number;
-  comments?: number;
+  comments: number;
   shares?: number;
   status: 'active' | 'under_review' | 'removed' | 'flagged';
   createdAt: string;
@@ -337,7 +337,7 @@ class AdminService {
     }
   }
 
-  async restrictUser(userId: string, duration: number, reason: string): Promise<void> {
+  async restrictUser(userId: string, reason: string, duration: string = "7days"): Promise<void> {
     try {
       await adminApi.post(`/users/${userId}/restrict`, { duration, reason });
     } catch (error) {

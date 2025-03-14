@@ -123,6 +123,11 @@ const VirtualGifts = () => {
     toggleGiftMutation.mutate({ id, available });
   };
 
+  // Create a wrapper function that takes a gift and extracts id and available status
+  const handleGiftToggle = (gift: VirtualGift) => {
+    handleToggleAvailability(gift.id, !gift.available);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -155,12 +160,23 @@ const VirtualGifts = () => {
               </DialogHeader>
               <GiftForm 
                 initialData={currentGift}
-                isEditing={isEditing}
                 onSubmit={(data) => {
                   if (isEditing && currentGift) {
                     updateGiftMutation.mutate({ id: currentGift.id, data });
                   } else {
-                    addGiftMutation.mutate(data as Omit<VirtualGift, 'id' | 'createdAt'>);
+                    // Cast data to required type, ensuring required fields are present
+                    const giftData = {
+                      name: data.name || '',
+                      price: data.price || 0,
+                      description: data.description || '',
+                      category: data.category || 'general',
+                      imageUrl: data.imageUrl || '',
+                      imageType: data.imageType || 'svg',
+                      hasSound: data.hasSound || false,
+                      soundUrl: data.soundUrl || '',
+                      available: data.available !== undefined ? data.available : true
+                    };
+                    addGiftMutation.mutate(giftData);
                   }
                 }}
                 onCancel={() => setOpen(false)}
@@ -189,7 +205,7 @@ const VirtualGifts = () => {
                   deleteGiftMutation.mutate(id);
                 }
               }}
-              onToggleAvailability={handleToggleAvailability}
+              onToggleAvailability={handleGiftToggle}
             />
           ) : (
             <Card>

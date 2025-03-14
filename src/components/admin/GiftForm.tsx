@@ -1,280 +1,196 @@
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { VirtualGift } from '@/services/admin.service';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-  FormDescription
-} from '@/components/ui/form';
+import React from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { VirtualGift } from '@/services/admin.service';
+import { useForm } from 'react-hook-form';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-
-// Define the gift schema
-const giftSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  description: z.string().optional(),
-  price: z.number().min(1, "Price must be at least 1"),
-  imageUrl: z.string().url("Must be a valid URL"),
-  imageType: z.enum(["gif", "svg"]),
-  hasSound: z.boolean(),
-  soundUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
-  category: z.string().min(1, "Category is required"),
-  available: z.boolean()
-});
-
-export type GiftFormData = z.infer<typeof giftSchema>;
 
 interface GiftFormProps {
-  initialData?: VirtualGift | null;
-  onSubmit: (data: GiftFormData) => void;
-  mode: 'create' | 'edit';
+  initialData: VirtualGift | null;
+  onSubmit: (data: Partial<Omit<VirtualGift, 'id' | 'createdAt'>>) => void;
+  onCancel: () => void;
 }
 
-const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
-  const [hasSound, setHasSound] = useState(initialData?.hasSound || false);
-
-  const form = useForm<GiftFormData>({
-    resolver: zodResolver(giftSchema),
-    defaultValues: initialData ? {
-      name: initialData.name,
-      description: initialData.description || '',
-      price: initialData.price,
-      imageUrl: initialData.imageUrl,
-      imageType: initialData.imageType,
-      hasSound: initialData.hasSound,
-      soundUrl: initialData.soundUrl || '',
-      category: initialData.category,
-      available: initialData.available
-    } : {
+const GiftForm = ({ initialData, onSubmit, onCancel }: GiftFormProps) => {
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+    defaultValues: initialData || {
       name: '',
       description: '',
-      price: 50,
+      price: 0,
+      category: 'general',
       imageUrl: '',
-      imageType: 'gif',
+      imageType: 'svg',
       hasSound: false,
       soundUrl: '',
-      category: 'general',
       available: true
     }
   });
 
-  const handleSoundToggle = (checked: boolean) => {
-    setHasSound(checked);
-    form.setValue('hasSound', checked);
-    if (!checked) {
-      form.setValue('soundUrl', '');
+  // Set up form values based on initialData
+  React.useEffect(() => {
+    if (initialData) {
+      Object.entries(initialData).forEach(([key, value]) => {
+        if (key !== 'id' && key !== 'createdAt') {
+          setValue(key as any, value);
+        }
+      });
     }
-  };
+  }, [initialData, setValue]);
+
+  const hasSound = watch('hasSound');
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Gift Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  {...field} 
-                  rows={3}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price (coins)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="1"
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    value={field.value}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="name" className="text-right">
+            Name
+          </Label>
+          <Input
+            id="name"
+            className="col-span-3"
+            {...register('name', { required: 'Name is required' })}
           />
-          
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select 
-                  value={field.value} 
-                  onValueChange={field.onChange}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="celebration">Celebration</SelectItem>
-                    <SelectItem value="luxury">Luxury</SelectItem>
-                    <SelectItem value="cute">Cute</SelectItem>
-                    <SelectItem value="funny">Funny</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+          {errors.name && <p className="text-red-500 text-sm col-span-3 col-start-2">{errors.name.message}</p>}
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="price" className="text-right">
+            Price
+          </Label>
+          <Input
+            id="price"
+            type="number"
+            className="col-span-3"
+            {...register('price', { required: 'Price is required', min: { value: 0, message: 'Price must be positive' } })}
+          />
+          {errors.price && <p className="text-red-500 text-sm col-span-3 col-start-2">{errors.price.message}</p>}
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="description" className="text-right">
+            Description
+          </Label>
+          <Textarea
+            id="description"
+            className="col-span-3"
+            {...register('description')}
           />
         </div>
-        
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormDescription>URL to the gif or svg file</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="imageType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image Type</FormLabel>
-              <Select 
-                value={field.value} 
-                onValueChange={field.onChange}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an image type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="gif">GIF</SelectItem>
-                  <SelectItem value="svg">SVG</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="hasSound"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Include Sound</FormLabel>
-                <FormDescription>
-                  Enable sound effect for this gift
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={(checked) => handleSoundToggle(checked)}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        
-        {hasSound && (
-          <FormField
-            control={form.control}
-            name="soundUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sound URL</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormDescription>URL to a sound file (mp3, wav)</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="category" className="text-right">
+            Category
+          </Label>
+          <Select
+            defaultValue={initialData?.category || 'general'}
+            onValueChange={(value) => setValue('category', value)}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="celebration">Celebration</SelectItem>
+              <SelectItem value="luxury">Luxury</SelectItem>
+              <SelectItem value="cute">Cute</SelectItem>
+              <SelectItem value="funny">Funny</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="imageUrl" className="text-right">
+            Image URL
+          </Label>
+          <Input
+            id="imageUrl"
+            className="col-span-3"
+            {...register('imageUrl', { required: 'Image URL is required' })}
           />
+          {errors.imageUrl && <p className="text-red-500 text-sm col-span-3 col-start-2">{errors.imageUrl.message}</p>}
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="imageType" className="text-right">
+            Image Type
+          </Label>
+          <Select
+            defaultValue={initialData?.imageType || 'svg'}
+            onValueChange={(value) => setValue('imageType', value as 'svg' | 'gif')}
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Select image type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="svg">SVG</SelectItem>
+              <SelectItem value="gif">GIF</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="hasSound" className="text-right">
+            Has Sound
+          </Label>
+          <div className="col-span-3 flex items-center space-x-2">
+            <Switch
+              id="hasSound"
+              checked={hasSound}
+              onCheckedChange={(checked) => setValue('hasSound', checked)}
+            />
+            <Label htmlFor="hasSound">{hasSound ? 'Yes' : 'No'}</Label>
+          </div>
+        </div>
+
+        {hasSound && (
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="soundUrl" className="text-right">
+              Sound URL
+            </Label>
+            <Input
+              id="soundUrl"
+              className="col-span-3"
+              {...register('soundUrl', { required: hasSound ? 'Sound URL is required when Has Sound is enabled' : false })}
+            />
+            {errors.soundUrl && <p className="text-red-500 text-sm col-span-3 col-start-2">{errors.soundUrl.message}</p>}
+          </div>
         )}
-        
-        <FormField
-          control={form.control}
-          name="available"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Available for Users</FormLabel>
-                <FormDescription>
-                  Make this gift available for users to purchase
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">Cancel</Button>
-          </DialogClose>
-          <Button type="submit">
-            {mode === 'create' ? 'Create Gift' : 'Save Changes'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
+
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="available" className="text-right">
+            Available
+          </Label>
+          <div className="col-span-3 flex items-center space-x-2">
+            <Switch
+              id="available"
+              checked={watch('available')}
+              onCheckedChange={(checked) => setValue('available', checked)}
+            />
+            <Label htmlFor="available">{watch('available') ? 'Yes' : 'No'}</Label>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          {initialData ? 'Update Gift' : 'Create Gift'}
+        </Button>
+      </div>
+    </form>
   );
 };
 

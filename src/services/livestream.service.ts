@@ -1,3 +1,4 @@
+
 import { Platform } from 'react-native';
 import ZegoExpressEngine from 'zego-express-engine-reactnative';
 
@@ -32,8 +33,8 @@ class LiveStreamService {
             logSize: 0,
           },
           scenario: 0, // General scenario
-          application: Platform.OS === 'ios' ? 1 : 0 // Platform specific setting
-        }
+        },
+        Platform.OS === 'ios' ? 1 : 0 // Platform specific setting as a separate parameter
       );
       
       await this.engine.loginRoom(config.roomID, config.userID, config.userName);
