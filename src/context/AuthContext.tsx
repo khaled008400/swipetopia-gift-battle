@@ -33,122 +33,65 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { toast } = useToast();
   
   useEffect(() => {
-    let isMounted = true;
-    
+    // Check active session
     const initializeAuth = async () => {
+      setIsLoading(true);
+      
       try {
-        console.log("AuthContext: Initializing auth state");
         const currentSession = await getSession();
-        
-        if (!isMounted) return;
-        
-        console.log("AuthContext: Current session:", currentSession ? "exists" : "none");
         
         if (currentSession) {
           setSession(currentSession);
-          
-          try {
-            const profile = await fetchUserProfile(currentSession.user);
-            if (!isMounted) return;
-            
-            if (profile) {
-              console.log("AuthContext: User profile loaded:", profile);
-              setUser(profile);
-            }
-          } catch (profileError) {
-            console.error("AuthContext: Error fetching profile:", profileError);
+          const profile = await fetchUserProfile(currentSession.user);
+          if (profile) {
+            setUser(profile);
           }
         } else {
           setUser(null);
-          setSession(null);
         }
       } catch (error) {
-        console.error("AuthContext: Error retrieving session:", error);
-        if (isMounted) {
-          setUser(null);
-          setSession(null);
-        }
+        console.error("Error retrieving session:", error);
       } finally {
-        // Always set loading to false, even if there are errors
-        if (isMounted) {
-          console.log("AuthContext: Setting isLoading to false after initialization");
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
     
     initializeAuth();
     
     // Set up auth state change listener
-    const { data } = setupAuthListener(async (event, newSession) => {
-      console.log("AuthContext: Auth state changed:", event, newSession ? "session exists" : "no session");
+    const subscription = setupAuthListener(async (event, session) => {
+      console.log("Auth state changed:", event);
+      setSession(session);
       
-      if (!isMounted) return;
-      
-      // Update session state immediately
-      setSession(newSession);
-      
-      if (newSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        try {
-          const profile = await fetchUserProfile(newSession.user);
-          if (!isMounted) return;
-          
-          if (profile) {
-            console.log("AuthContext: Profile from auth listener:", profile);
-            setUser(profile);
-          }
-          setIsLoading(false);
-        } catch (error) {
-          console.error("AuthContext: Error fetching profile after auth state change:", error);
-          setIsLoading(false);
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        const profile = await fetchUserProfile(session.user);
+        if (profile) {
+          setUser(profile);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setIsLoading(false);
       }
     });
     
+    // Cleanup subscription on unmount
     return () => {
-      isMounted = false;
-      // Correctly access unsubscribe method
-      if (data && typeof data.unsubscribe === 'function') {
-        data.unsubscribe();
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      console.log("AuthContext: Login attempt for:", email);
-      
       const data = await loginUser(email, password);
-      
-      if (!data.user) {
-        throw new Error("Login failed - user data not returned");
-      }
-      
-      // Set session immediately
-      if (data.session) {
-        console.log("AuthContext: Setting session after login");
-        setSession(data.session);
-      }
-      
-      // Get profile data
-      const profile = await fetchUserProfile(data.user);
-      if (profile) {
-        console.log("AuthContext: Profile after login:", profile);
-        setUser(profile);
-      }
       
       toast({
         title: "Login successful",
-        description: `Welcome back!`,
+        description: `Welcome back${data.user?.user_metadata?.username ? ', ' + data.user.user_metadata.username : ''}!`,
       });
       
-      return data;
+      // No need to set user here, will be handled by auth state change
     } catch (error: any) {
-      console.error("AuthContext: Login error:", error);
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Failed to login",
@@ -156,8 +99,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       throw error;
     } finally {
-      // Always ensure loading state is reset
-      console.log("AuthContext: Setting isLoading to false after login attempt");
       setIsLoading(false);
     }
   };
@@ -171,8 +112,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         title: "Account created",
         description: `Welcome, ${username}!`,
       });
+      
+      // No need to set user here, will be handled by auth state change
     } catch (error: any) {
-      console.error("AuthContext: Signup error:", error);
+      console.error("Signup error:", error);
       toast({
         title: "Signup failed",
         description: error.message || "Failed to create account",
@@ -189,16 +132,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       await logoutUser();
       
-      // Clean up local state
-      setUser(null);
-      setSession(null);
-      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     } catch (error: any) {
-      console.error("AuthContext: Logout error:", error);
+      console.error("Logout error:", error);
       toast({
         title: "Logout failed",
         description: error.message || "Failed to log out",
@@ -210,10 +149,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const isAdmin = () => {
-    console.log("AuthContext: Checking isAdmin. User:", user);
     if (!user) return false;
-    console.log("AuthContext: User role:", user.role);
-    return user?.role === 'admin';
+    return user.role === 'admin';
   };
 
   return (

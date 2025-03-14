@@ -6,85 +6,29 @@ import { useQuery } from '@tanstack/react-query';
 import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminLoginForm from '@/components/admin/AdminLoginForm';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
 
 const AdminPage = () => {
-  const { user, login, isAdmin, isLoading: authLoading } = useAuth();
-  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
+  const { user, login, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
 
   // Check if user has admin role
   useEffect(() => {
-    console.log("AdminPage: Auth state check:", { 
-      user, 
-      isAdmin: user ? isAdmin() : false, 
-      authLoading 
-    });
-    
-    if (!authLoading) {
-      if (user) {
-        const hasAdminRole = isAdmin();
-        console.log("AdminPage: Admin check result:", hasAdminRole);
-        
-        if (hasAdminRole) {
-          console.log("AdminPage: User is admin, setting adminAuthenticated to true");
-          setAdminAuthenticated(true);
-        } else {
-          console.log("AdminPage: User is not admin:", user);
-          setAdminAuthenticated(false);
-        }
-      } else {
-        console.log("AdminPage: No user found, not admin");
-        setAdminAuthenticated(false);
-      }
+    if (user && isAdmin()) {
+      setAdminAuthenticated(true);
+    } else if (user && !isAdmin()) {
+      // If user is logged in but not an admin, show a message
+      console.log("User is not an admin");
+      setAdminAuthenticated(false);
     }
-  }, [user, isAdmin, authLoading]);
+  }, [user, isAdmin]);
 
   const handleAdminLogin = async (email: string, password: string) => {
     try {
-      setIsProcessing(true);
-      console.log("AdminPage: Attempting admin login with:", email);
-      const result = await login(email, password);
-      console.log("AdminPage: Login result:", result);
-      
-      // Check admin status after login
-      if (result && result.user) {
-        // Small delay to ensure user state is updated properly
-        setTimeout(() => {
-          const isUserAdmin = isAdmin();
-          console.log("AdminPage: After login, is user admin?", isUserAdmin);
-          
-          if (isUserAdmin) {
-            console.log("AdminPage: Setting adminAuthenticated to true");
-            setAdminAuthenticated(true);
-            toast({
-              title: "Admin access granted",
-              description: "Welcome to the admin dashboard",
-            });
-          } else {
-            console.log("AdminPage: User is not admin after login");
-            toast({
-              title: "Access denied",
-              description: "You don't have admin privileges",
-              variant: "destructive"
-            });
-          }
-          setIsProcessing(false);
-        }, 500);
-      } else {
-        setIsProcessing(false);
-      }
-    } catch (error: any) {
-      console.error("AdminPage: Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
-        variant: "destructive"
-      });
-      setIsProcessing(false);
+      await login(email, password);
+      // The useEffect above will check if the user is an admin after login
+    } catch (error) {
+      console.error("Admin login error:", error);
     }
   };
 
@@ -92,11 +36,12 @@ const AdminPage = () => {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => AdminService.getDashboardStats(),
-    refetchInterval: 60000,
-    enabled: !!user && adminAuthenticated,
+    refetchInterval: 60000, // Refresh every minute
+    enabled: !!user && adminAuthenticated, // Only run query if user is admin
   });
 
-  const defaultStats = {
+  // Create default stats object to avoid undefined errors
+  const defaultStats: AdminStats = {
     totalUsers: 0,
     newUsersToday: 0,
     totalVideos: 0,
@@ -106,26 +51,6 @@ const AdminPage = () => {
     revenueTotal: 0,
     revenueToday: 0
   };
-
-  console.log("AdminPage: Render state:", {
-    authLoading,
-    isProcessing,
-    user: !!user,
-    adminAuthenticated,
-    statsLoading
-  });
-
-  // Show loading state only during initial authentication check
-  if (authLoading || isProcessing) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <span className="ml-2">
-          {isProcessing ? "Verifying admin access..." : "Checking authentication..."}
-        </span>
-      </div>
-    );
-  }
 
   // Display login form if not authenticated as admin
   if (!user || !adminAuthenticated) {
@@ -137,6 +62,7 @@ const AdminPage = () => {
     );
   }
 
+  // Pass either the actual stats or the default stats
   return <AdminTabbedInterface stats={stats || defaultStats} statsLoading={statsLoading} />;
 };
 

@@ -12,8 +12,8 @@ interface AdminLoginFormProps {
 }
 
 const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin, message }) => {
-  const [username, setUsername] = useState("admin@example.com"); // Pre-fill with admin email
-  const [password, setPassword] = useState("Password123!"); // Pre-fill with admin password
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -23,7 +23,6 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin, message }) => 
     
     try {
       await onLogin(username, password);
-      // Note: Login result is handled in the parent component
     } catch (error) {
       console.error("Admin login error:", error);
       toast({
