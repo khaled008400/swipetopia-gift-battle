@@ -3,7 +3,7 @@ import PopularLiveSection from "../components/PopularLiveSection";
 import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
-import { useAuth } from "../context/auth/AuthContext";
+import { useAuth } from "@/context/auth/AuthContext";
 
 const Index = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);

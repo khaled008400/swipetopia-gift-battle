@@ -1,6 +1,6 @@
 
-import { useAuth } from "@/context/auth/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/context/auth/AuthContext";
 import { Activity, Heart, MessageSquare, ShoppingBag } from "lucide-react";
 
 const ActivityStats = () => {

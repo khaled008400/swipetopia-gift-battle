@@ -13,6 +13,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Helper function to check if Supabase is connected
 export const isSupabaseConnected = () => {
-  return SUPABASE_URL && SUPABASE_URL !== "DISCONNECTED" && 
-         SUPABASE_PUBLISHABLE_KEY && SUPABASE_PUBLISHABLE_KEY !== "DISCONNECTED";
+  return Boolean(SUPABASE_URL) && SUPABASE_URL !== "" && 
+         Boolean(SUPABASE_PUBLISHABLE_KEY) && SUPABASE_PUBLISHABLE_KEY !== "";
 };
