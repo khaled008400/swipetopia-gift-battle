@@ -3,7 +3,7 @@ import { useState } from "react";
 import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
-import { useAuth } from "@/context/auth/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 
 // Mock data for trending videos
 const TRENDING_VIDEOS = [
@@ -24,7 +24,7 @@ const TRENDING_VIDEOS = [
   }
 ];
 
-// Mock data for video feed
+// Mock data for video feed - updated to match BattleVideo type
 const FEED_VIDEOS = [
   {
     id: "feed1",
@@ -33,10 +33,25 @@ const FEED_VIDEOS = [
     description: "Running through nature",
     likes: 1200,
     comments: 85,
+    shares: 45, // Added missing shares property
+    user: {
+      username: "Runner", // Changed from name to username for BattleVideo type
+      avatar: "/placeholder.svg" // Changed from avatar to match BattleVideo type
+    }
+  }
+];
+
+// Updated user videos for carousel to match required props
+const USER_VIDEOS = [
+  {
+    id: "vid1",
+    title: "Nature Run",
+    thumbnailUrl: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
     user: {
       id: "user1",
-      name: "Runner",
-      avatar: "/placeholder.svg"
+      username: "Runner",
+      avatarUrl: "/placeholder.svg"
     }
   }
 ];
@@ -79,7 +94,7 @@ const IndexPage = () => {
           <>
             {user ? (
               <>
-                <UserVideosCarousel />
+                <UserVideosCarousel videos={USER_VIDEOS} />
                 <VideoFeed videos={FEED_VIDEOS} activeVideoIndex={activeVideoIndex} />
               </>
             ) : (

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { 
@@ -8,7 +7,7 @@ import {
   CarouselPrevious, 
   CarouselNext 
 } from "./ui/carousel";
-import { useAuth } from "@/context/auth/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 
 interface UserVideosCarouselProps {
   videos?: {
