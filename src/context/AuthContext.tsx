@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,8 @@ interface UserProfile {
   avatar_url: string | null;
   coins: number;
   role?: string;
+  followers?: number;
+  following?: number;
 }
 
 interface AuthContextType {
@@ -106,7 +107,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           email: authUser.email || '',
           avatar_url: data.avatar_url,
           coins: data.coins || 0,
-          role: authUser.user_metadata?.role
+          role: authUser.user_metadata?.role,
+          followers: 0, // Default value for followers
+          following: 0  // Default value for following
         });
       }
     } catch (error) {
