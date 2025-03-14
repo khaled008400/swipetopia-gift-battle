@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -11,7 +12,8 @@ import {
   Ticket, 
   Truck, 
   Users, 
-  Video 
+  Video,
+  Loader2
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
 import AdminDashboard from './AdminDashboard';
@@ -70,7 +72,7 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         <TabsList className="grid grid-cols-11 w-full">
           {tabs.map(tab => (
             <TabsTrigger key={tab.id} value={tab.id}>
-              {tab.icon}
+              <tab.icon className="w-4 h-4" />
               <span className="ml-2">{tab.label}</span>
             </TabsTrigger>
           ))}
@@ -88,7 +90,7 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
           <AdminVideos />
         </TabsContent>
         
-        <TabsContent value="livestreams">
+        <TabsContent value="live-streams">
           <AdminLiveStreams />
         </TabsContent>
         
@@ -98,10 +100,6 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="products">
           <AdminProducts />
-        </TabsContent>
-        
-        <TabsContent value="attributes">
-          <ProductAttributes />
         </TabsContent>
         
         <TabsContent value="coupons">
