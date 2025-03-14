@@ -204,31 +204,55 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           coins: number | null
           created_at: string | null
           email: string | null
+          followers: number | null
+          following: number | null
           id: string
+          interests: string[] | null
+          location: string | null
           role: string | null
+          roles: string[] | null
+          shop_name: string | null
+          stream_key: string | null
           updated_at: string | null
           username: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           coins?: number | null
           created_at?: string | null
           email?: string | null
+          followers?: number | null
+          following?: number | null
           id: string
+          interests?: string[] | null
+          location?: string | null
           role?: string | null
+          roles?: string[] | null
+          shop_name?: string | null
+          stream_key?: string | null
           updated_at?: string | null
           username: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           coins?: number | null
           created_at?: string | null
           email?: string | null
+          followers?: number | null
+          following?: number | null
           id?: string
+          interests?: string[] | null
+          location?: string | null
           role?: string | null
+          roles?: string[] | null
+          shop_name?: string | null
+          stream_key?: string | null
           updated_at?: string | null
           username?: string
         }
