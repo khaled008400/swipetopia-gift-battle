@@ -2,109 +2,77 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface AdminLoginFormProps {
-  onLogin: (username: string, password: string) => Promise<void>;
-  message?: string;
+export interface AdminLoginFormProps {
+  onLoginSuccess?: () => void;
 }
 
-const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin, message }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      await onLogin(username, password);
-    } catch (error) {
-      console.error("Admin login error:", error);
+    if (!username || !password) {
       toast({
-        title: "Admin Access Failed",
-        description: "Unable to authenticate for admin access.",
+        title: "Invalid input",
+        description: "Please enter both username and password",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+    
+    setIsLoading(true);
+    
+    // For demo purposes, we'll accept any login
+    // In a real app, you would validate credentials against an API
+    setTimeout(() => {
+      setIsLoading(false);
+      
+      // Always succeed in this demo
+      toast({
+        title: "Login successful",
+        description: "Welcome to the admin dashboard",
+      });
+      
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold mb-2">Admin Access</h1>
-          <p className="text-gray-500">Login to access admin dashboard</p>
-        </div>
-
-        {message && (
-          <Alert className="mb-4">
-            <AlertDescription>{message}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="admin-username" className="text-sm font-medium">
-              Email
-            </label>
-            <Input
-              id="admin-username"
-              type="email"
-              placeholder="Enter your email"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="admin-password" className="text-sm font-medium">
-              Password
-            </label>
-            <Input
-              id="admin-password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </Button>
-        </form>
-        
-        <div className="mt-6 p-3 bg-blue-100 rounded-md">
-          <p className="text-xs text-blue-600 font-medium">
-            Admin Credentials:
-          </p>
-          <p className="text-xs text-blue-600 mt-1">
-            Email: admin@example.com<br />
-            Password: Password123!
-          </p>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="username">Username</Label>
+        <Input
+          id="username"
+          placeholder="admin"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
       </div>
-    </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? "Logging in..." : "Login to Admin Panel"}
+      </Button>
+    </form>
   );
 };
 

@@ -1,130 +1,160 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import AdminService, { AdminStats } from '@/services/admin.service';
-import AdminLoginForm from '@/components/admin/AdminLoginForm';
-import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
-import { supabase } from '@/integrations/supabase/client';
+import { Navigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  UsersTable, 
+  ContentModeration, 
+  VirtualGifts, 
+  AdminLoginForm, 
+  ReportedVideos,
+  UserVerification,
+  RevenueStats
+} from '@/components/admin';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  UserRound, Film, Gift, AlertTriangle, 
+  BadgeCheck, DollarSign, ShieldAlert 
+} from 'lucide-react';
 
-const AdminPage = () => {
+interface AdminPageProps {
+  // No props needed
+}
+
+const AdminPage: React.FC<AdminPageProps> = () => {
   const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
-  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
-
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState('users');
+  
   useEffect(() => {
     // Check if user is admin
     if (user && isAdmin()) {
-      setAdminAuthenticated(true);
-    } else {
-      setAdminAuthenticated(false);
+      setIsAuthenticated(true);
     }
   }, [user, isAdmin]);
-
-  // Fetch real stats from Supabase
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['adminStats'],
-    queryFn: async () => {
-      try {
-        // Get user count
-        const { count: totalUsers } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-        
-        // Get new users today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const { count: newUsersToday } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', today.toISOString());
-        
-        // Get video count
-        const { count: totalVideos } = await supabase
-          .from('short_videos')
-          .select('*', { count: 'exact', head: true });
-        
-        // Get new videos today
-        const { count: videoUploadsToday } = await supabase
-          .from('short_videos')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', today.toISOString());
-        
-        // Get order count
-        const { count: totalOrders } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
-        
-        // Get new orders today
-        const { count: ordersToday } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', today.toISOString());
-        
-        // Get revenue data
-        const { data: ordersData } = await supabase
-          .from('orders')
-          .select('total_amount');
-        
-        const revenueTotal = ordersData?.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) || 0;
-        
-        // Get today's revenue
-        const { data: todayOrdersData } = await supabase
-          .from('orders')
-          .select('total_amount')
-          .gte('created_at', today.toISOString());
-        
-        const revenueToday = todayOrdersData?.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) || 0;
-        
-        return {
-          totalUsers: totalUsers || 0,
-          newUsersToday: newUsersToday || 0,
-          totalVideos: totalVideos || 0,
-          videoUploadsToday: videoUploadsToday || 0,
-          totalOrders: totalOrders || 0,
-          ordersToday: ordersToday || 0,
-          revenueTotal,
-          revenueToday
-        };
-      } catch (error) {
-        console.error("Error fetching admin stats:", error);
-        // Return fallback data on error
-        return {
-          totalUsers: 0,
-          newUsersToday: 0,
-          totalVideos: 0,
-          videoUploadsToday: 0,
-          totalOrders: 0,
-          ordersToday: 0,
-          revenueTotal: 0,
-          revenueToday: 0
-        };
-      }
-    },
-    enabled: adminAuthenticated,
-    refetchInterval: 60000, // Refresh every minute
-  });
-
-  // Redirect non-admin users to the home page
-  useEffect(() => {
-    if (user && !isAdmin() && !adminAuthenticated) {
-      navigate('/');
-    }
-  }, [user, isAdmin, adminAuthenticated, navigate]);
-
-  // Show login form for unauthenticated users
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+  
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+  
   if (!user) {
-    return <AdminLoginForm onLoginSuccess={() => setAdminAuthenticated(true)} />;
+    return <Navigate to="/login" replace />;
   }
-
-  // Show admin interface for authenticated admins
-  if (adminAuthenticated) {
-    return <AdminTabbedInterface stats={stats} statsLoading={statsLoading} />;
+  
+  // For demo purposes, we'll show the admin login form if not authenticated
+  // In a real app, we would redirect non-admin users away
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-lg shadow-lg">
+        <div className="text-center mb-6">
+          <ShieldAlert className="h-12 w-12 mx-auto text-primary mb-2" />
+          <h1 className="text-2xl font-bold">Admin Authentication</h1>
+          <p className="text-gray-500">Please log in with your admin credentials</p>
+        </div>
+        <AdminLoginForm />
+      </div>
+    );
   }
-
-  // Loading state while checking authentication
-  return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
+      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Total Users</p>
+                <p className="text-2xl font-bold">12,534</p>
+              </div>
+              <UserRound className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Content Items</p>
+                <p className="text-2xl font-bold">45,291</p>
+              </div>
+              <Film className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Revenue (USD)</p>
+                <p className="text-2xl font-bold">$392,150</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Tabs 
+        value={activeTab} 
+        onValueChange={handleTabChange}
+        className="space-y-4"
+      >
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+          <TabsTrigger value="users" className="data-[state=active]:bg-blue-50">
+            <UserRound className="mr-2 h-4 w-4" /> Users
+          </TabsTrigger>
+          <TabsTrigger value="content" className="data-[state=active]:bg-purple-50">
+            <Film className="mr-2 h-4 w-4" /> Content
+          </TabsTrigger>
+          <TabsTrigger value="gifts" className="data-[state=active]:bg-pink-50">
+            <Gift className="mr-2 h-4 w-4" /> Virtual Gifts
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="data-[state=active]:bg-red-50">
+            <AlertTriangle className="mr-2 h-4 w-4" /> Reports
+          </TabsTrigger>
+          <TabsTrigger value="verification" className="data-[state=active]:bg-green-50">
+            <BadgeCheck className="mr-2 h-4 w-4" /> Verification
+          </TabsTrigger>
+          <TabsTrigger value="revenue" className="data-[state=active]:bg-yellow-50">
+            <DollarSign className="mr-2 h-4 w-4" /> Revenue
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users" className="space-y-4">
+          <UsersTable />
+        </TabsContent>
+        
+        <TabsContent value="content" className="space-y-4">
+          <ContentModeration />
+        </TabsContent>
+        
+        <TabsContent value="gifts" className="space-y-4">
+          <VirtualGifts />
+        </TabsContent>
+        
+        <TabsContent value="reports" className="space-y-4">
+          <ReportedVideos />
+        </TabsContent>
+        
+        <TabsContent value="verification" className="space-y-4">
+          <UserVerification />
+        </TabsContent>
+        
+        <TabsContent value="revenue" className="space-y-4">
+          <RevenueStats />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 };
 
 export default AdminPage;

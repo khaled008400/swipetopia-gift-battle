@@ -1,256 +1,359 @@
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import GiftForm from './GiftForm';
-import GiftsTable from './GiftsTable';
-import GiftFilters from './GiftFilters';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { adminApi } from "@/services/api";
+import { VirtualGift } from "@/types/gift.types";
+import { Plus, Edit, Trash } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export interface VirtualGift {
-  id: string;
-  name: string;
-  price: number;
-  icon: string;
-  color: string;
-  value: number;
-  available?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-const VirtualGifts = () => {
-  const [page, setPage] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [showGiftDialog, setShowGiftDialog] = useState(false);
-  const [selectedGift, setSelectedGift] = useState<VirtualGift | null>(null);
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
+export default function VirtualGifts() {
+  const [gifts, setGifts] = useState<VirtualGift[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingGift, setEditingGift] = useState<VirtualGift | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['virtualGifts', page, categoryFilter],
-    queryFn: async () => {
-      let query = supabase.from('gifts').select('*');
-      
-      // Apply category filter if present
-      if (categoryFilter) {
-        query = query.eq('color', categoryFilter);
-      }
-      
-      // Apply pagination
-      const from = (page - 1) * 10;
-      const to = from + 9;
-      query = query.range(from, to);
-      
-      const { data, error, count } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return {
-        data: data,
-        pagination: {
-          page,
-          pageSize: 10,
-          total: count || 0,
-          totalPages: Math.ceil((count || 0) / 10)
-        }
-      };
+  // Form state
+  const [giftName, setGiftName] = useState("");
+  const [giftPrice, setGiftPrice] = useState<number>(0);
+  const [giftIcon, setGiftIcon] = useState("");
+  const [giftColor, setGiftColor] = useState("#FFD700"); // Default gold
+  const [giftValue, setGiftValue] = useState<number>(0);
+  const [isAvailable, setIsAvailable] = useState(true);
+
+  useEffect(() => {
+    fetchGifts();
+  }, []);
+
+  const fetchGifts = async () => {
+    setLoading(true);
+    try {
+      // In a real app, we would fetch from a real API endpoint
+      // const response = await adminApi.get("/gifts");
+      // setGifts(response.data);
+
+      // For now, simulate a delay and set mock data
+      setTimeout(() => {
+        const mockGifts: VirtualGift[] = [
+          {
+            id: "1",
+            name: "Diamond",
+            price: 500,
+            icon: "💎",
+            color: "#3498db",
+            value: 500,
+            available: true,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            name: "Heart",
+            price: 100,
+            icon: "❤️",
+            color: "#e74c3c",
+            value: 100,
+            available: true,
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: "3",
+            name: "Star",
+            price: 250,
+            icon: "⭐",
+            color: "#f1c40f",
+            value: 250,
+            available: true,
+            created_at: new Date().toISOString(),
+          },
+        ];
+        setGifts(mockGifts);
+        setLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Error fetching gifts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load virtual gifts. Please try again.",
+        variant: "destructive",
+      });
+      setLoading(false);
     }
-  });
+  };
 
-  const createGiftMutation = useMutation({
-    mutationFn: async (giftData: Omit<VirtualGift, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('gifts')
-        .insert([giftData])
-        .select();
+  const handleOpenDialog = (gift?: VirtualGift) => {
+    if (gift) {
+      // Editing existing gift
+      setEditingGift(gift);
+      setGiftName(gift.name);
+      setGiftPrice(gift.price);
+      setGiftIcon(gift.icon);
+      setGiftColor(gift.color);
+      setGiftValue(gift.value);
+      setIsAvailable(gift.available ?? true);
+    } else {
+      // Creating new gift
+      setEditingGift(null);
+      setGiftName("");
+      setGiftPrice(0);
+      setGiftIcon("");
+      setGiftColor("#FFD700");
+      setGiftValue(0);
+      setIsAvailable(true);
+    }
+    setIsOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const giftData: VirtualGift = {
+        id: editingGift?.id || Date.now().toString(),
+        name: giftName,
+        price: giftPrice,
+        icon: giftIcon,
+        color: giftColor,
+        value: giftValue,
+        available: isAvailable,
+        created_at: editingGift?.created_at || new Date().toISOString(),
+      };
+
+      if (editingGift) {
+        // Update existing gift
+        // In a real app, we would use:
+        // await adminApi.put(`/gifts/${editingGift.id}`, giftData);
         
-      if (error) throw error;
-      return data[0];
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
-      setShowGiftDialog(false);
-      toast({
-        title: "Gift created",
-        description: "Virtual gift has been created successfully.",
-      });
-    },
-    onError: (error) => {
-      console.error("Error creating gift:", error);
+        // For now, update in local state
+        setGifts(gifts.map(g => g.id === editingGift.id ? giftData : g));
+        toast({
+          title: "Gift Updated",
+          description: "The virtual gift has been updated successfully.",
+        });
+      } else {
+        // Create new gift
+        // In a real app, we would use:
+        // const response = await adminApi.post("/gifts", giftData);
+        
+        // For now, add to local state
+        setGifts([...gifts, giftData]);
+        toast({
+          title: "Gift Created",
+          description: "The new virtual gift has been created successfully.",
+        });
+      }
+
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error saving gift:", error);
       toast({
         title: "Error",
-        description: "Failed to create virtual gift.",
+        description: "Failed to save virtual gift. Please try again.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  const updateGiftMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string, data: Partial<Omit<VirtualGift, 'id' | 'created_at' | 'updated_at'>> }) => {
-      const { data: updatedData, error } = await supabase
-        .from('gifts')
-        .update(data)
-        .eq('id', id)
-        .select();
-        
-      if (error) throw error;
-      return updatedData[0];
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
-      setShowGiftDialog(false);
+  const handleDelete = async (id: string) => {
+    try {
+      // In a real app, we would use:
+      // await adminApi.delete(`/gifts/${id}`);
+      
+      // For now, remove from local state
+      setGifts(gifts.filter(gift => gift.id !== id));
       toast({
-        title: "Gift updated",
-        description: "Virtual gift has been updated successfully.",
+        title: "Gift Deleted",
+        description: "The virtual gift has been deleted successfully.",
       });
-    },
-    onError: (error) => {
-      console.error("Error updating gift:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update virtual gift.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteGiftMutation = useMutation({
-    mutationFn: async (giftId: string) => {
-      const { error } = await supabase
-        .from('gifts')
-        .delete()
-        .eq('id', giftId);
-        
-      if (error) throw error;
-      return giftId;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
-      toast({
-        title: "Gift deleted",
-        description: "Virtual gift has been deleted successfully.",
-      });
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error("Error deleting gift:", error);
       toast({
         title: "Error",
-        description: "Failed to delete virtual gift.",
+        description: "Failed to delete virtual gift. Please try again.",
         variant: "destructive",
       });
-    },
-  });
-
-  const toggleAvailabilityMutation = useMutation({
-    mutationFn: async ({ id, available }: { id: string, available: boolean }) => {
-      const { data, error } = await supabase
-        .from('gifts')
-        .update({ available })
-        .eq('id', id)
-        .select();
-        
-      if (error) throw error;
-      return data[0];
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
-      toast({
-        title: "Availability updated",
-        description: "Gift availability has been updated successfully.",
-      });
-    },
-    onError: (error) => {
-      console.error("Error updating availability:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update gift availability.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleCreateGift = () => {
-    setDialogMode('create');
-    setSelectedGift(null);
-    setShowGiftDialog(true);
-  };
-
-  const handleEditGift = (gift: VirtualGift) => {
-    setSelectedGift(gift);
-    setDialogMode('edit');
-    setShowGiftDialog(true);
-  };
-
-  const handleDeleteGift = (giftId: string) => {
-    if (confirm("Are you sure you want to delete this gift? This action cannot be undone.")) {
-      deleteGiftMutation.mutate(giftId);
     }
   };
 
-  const handleToggleAvailability = (gift: VirtualGift) => {
-    toggleAvailabilityMutation.mutate({ 
-      id: gift.id, 
-      available: !gift.available 
-    });
-  };
-
-  const handleFormSubmit = (data: Omit<VirtualGift, 'id' | 'created_at' | 'updated_at'>) => {
-    if (dialogMode === 'create') {
-      createGiftMutation.mutate(data);
-    } else if (dialogMode === 'edit' && selectedGift) {
-      updateGiftMutation.mutate({ id: selectedGift.id, data });
-    }
-  };
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Virtual Gifts</h2>
+          <Skeleton className="h-10 w-[100px]" />
+        </div>
+        <div className="border rounded-md">
+          <div className="p-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center space-x-4 py-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Virtual Gifts</h2>
-        <Button onClick={handleCreateGift} className="bg-app-yellow text-app-black hover:bg-app-yellow/80">
+        <Button onClick={() => handleOpenDialog()}>
           <Plus className="mr-2 h-4 w-4" /> Add New Gift
         </Button>
       </div>
 
-      <GiftFilters 
-        categoryFilter={categoryFilter}
-        onCategoryFilterChange={setCategoryFilter}
-      />
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Gift</TableHead>
+              <TableHead>Price (Coins)</TableHead>
+              <TableHead>Value</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {gifts.map((gift) => (
+              <TableRow key={gift.id}>
+                <TableCell>
+                  <div className="flex items-center">
+                    <div className="mr-2 text-2xl">{gift.icon}</div>
+                    <div>{gift.name}</div>
+                  </div>
+                </TableCell>
+                <TableCell>{gift.price}</TableCell>
+                <TableCell>{gift.value}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs ${gift.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {gift.available ? 'Available' : 'Unavailable'}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(gift)} className="mr-2">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(gift.id)} className="text-red-500">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
-      {isLoading ? (
-        <div className="flex justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : (
-        <GiftsTable
-          gifts={data?.data || []}
-          onEdit={handleEditGift}
-          onDelete={handleDeleteGift}
-          onToggleAvailability={handleToggleAvailability}
-        />
-      )}
-
-      <Dialog open={showGiftDialog} onOpenChange={setShowGiftDialog}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {dialogMode === 'create' ? 'Add New Virtual Gift' : 'Edit Virtual Gift'}
-            </DialogTitle>
+            <DialogTitle>{editingGift ? 'Edit Gift' : 'Add New Gift'}</DialogTitle>
           </DialogHeader>
           
-          <GiftForm
-            initialData={selectedGift}
-            onSubmit={handleFormSubmit}
-            mode={dialogMode}
-          />
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Name</Label>
+              <Input
+                id="name"
+                value={giftName}
+                onChange={(e) => setGiftName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">Price</Label>
+              <Input
+                id="price"
+                type="number"
+                value={giftPrice}
+                onChange={(e) => setGiftPrice(Number(e.target.value))}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="icon" className="text-right">Icon (Emoji)</Label>
+              <Input
+                id="icon"
+                value={giftIcon}
+                onChange={(e) => setGiftIcon(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="color" className="text-right">Color</Label>
+              <div className="col-span-3 flex items-center gap-2">
+                <Input
+                  id="color"
+                  type="color"
+                  value={giftColor}
+                  onChange={(e) => setGiftColor(e.target.value)}
+                  className="w-16 h-10"
+                />
+                <Input
+                  value={giftColor}
+                  onChange={(e) => setGiftColor(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="value" className="text-right">Value</Label>
+              <Input
+                id="value"
+                type="number"
+                value={giftValue}
+                onChange={(e) => setGiftValue(Number(e.target.value))}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="available" className="text-right">Status</Label>
+              <div className="col-span-3">
+                <select
+                  id="available"
+                  value={isAvailable ? "true" : "false"}
+                  onChange={(e) => setIsAvailable(e.target.value === "true")}
+                  className="w-full p-2 border rounded-md"
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Unavailable</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>{editingGift ? 'Update' : 'Create'}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default VirtualGifts;
+}

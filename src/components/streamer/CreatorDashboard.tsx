@@ -32,9 +32,10 @@ const CreatorDashboard = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ 
+          // Use a custom field that's not in the type definition but allowed in the database
           streamer_application: true,
           streamer_application_date: new Date().toISOString()
-        })
+        } as any)
         .eq('id', user.id);
       
       if (error) throw error;
@@ -91,19 +92,19 @@ const CreatorDashboard = () => {
         </TabsList>
         
         <TabsContent value="history" className="mt-6">
-          <StreamHistory streamerId={user?.id} />
+          {user && <StreamHistory />}
         </TabsContent>
         
         <TabsContent value="battles" className="mt-6">
-          <BattleStats streamerId={user?.id} />
+          {user && <BattleStats />}
         </TabsContent>
         
         <TabsContent value="schedule" className="mt-6">
-          <StreamerSchedule streamerId={user?.id} />
+          {user && <StreamerSchedule />}
         </TabsContent>
         
         <TabsContent value="highlights" className="mt-6">
-          <StreamHighlights streamerId={user?.id} />
+          {user && <StreamHighlights />}
         </TabsContent>
       </Tabs>
     </div>
