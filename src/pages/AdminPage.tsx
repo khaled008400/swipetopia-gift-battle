@@ -24,11 +24,13 @@ const AdminPage = () => {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // All useState hooks must be called in the same order every render
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // Check if user has admin role
   useEffect(() => {
@@ -124,7 +126,7 @@ const AdminPage = () => {
     );
   }
 
-  // Only fetch stats if user is authenticated
+  // Only fetch stats if user is authenticated - must come after the early return
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => AdminService.getDashboardStats(),
