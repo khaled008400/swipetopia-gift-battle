@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -11,7 +12,8 @@ import {
   Ticket, 
   Truck, 
   Users, 
-  Video 
+  Video,
+  Loader2 
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
 import AdminDashboard from './AdminDashboard';
@@ -46,17 +48,17 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
   console.log("Admin stats:", stats);
 
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: Layout },
-    { id: "products", label: "Products", icon: Package },
-    { id: "users", label: "Users", icon: Users },
-    { id: "orders", label: "Orders", icon: ShoppingCart },
-    { id: "videos", label: "Videos", icon: Video },
-    { id: "virtual-gifts", label: "Virtual Gifts", icon: Gift },
-    { id: "coupons", label: "Coupons", icon: Ticket },
-    { id: "offers", label: "Offers", icon: PercentCircle },
-    { id: "shipping", label: "Shipping", icon: Truck },
-    { id: "reports", label: "Reports", icon: BarChart },
-    { id: "live-streams", label: "Live Streams", icon: Radio },
+    { id: "dashboard", label: "Dashboard", icon: <Layout size={16} /> },
+    { id: "products", label: "Products", icon: <Package size={16} /> },
+    { id: "users", label: "Users", icon: <Users size={16} /> },
+    { id: "orders", label: "Orders", icon: <ShoppingCart size={16} /> },
+    { id: "videos", label: "Videos", icon: <Video size={16} /> },
+    { id: "virtual-gifts", label: "Virtual Gifts", icon: <Gift size={16} /> },
+    { id: "coupons", label: "Coupons", icon: <Ticket size={16} /> },
+    { id: "offers", label: "Offers", icon: <PercentCircle size={16} /> },
+    { id: "shipping", label: "Shipping", icon: <Truck size={16} /> },
+    { id: "reports", label: "Reports", icon: <BarChart size={16} /> },
+    { id: "live-streams", label: "Live Streams", icon: <Radio size={16} /> },
   ];
 
   return (
@@ -88,7 +90,7 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
           <AdminVideos />
         </TabsContent>
         
-        <TabsContent value="livestreams">
+        <TabsContent value="live-streams">
           <AdminLiveStreams />
         </TabsContent>
         
@@ -98,10 +100,6 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="products">
           <AdminProducts />
-        </TabsContent>
-        
-        <TabsContent value="attributes">
-          <ProductAttributes />
         </TabsContent>
         
         <TabsContent value="coupons">
