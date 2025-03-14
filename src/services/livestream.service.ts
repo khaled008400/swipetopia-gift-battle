@@ -1,205 +1,196 @@
 
-import api from './api';
-import { ZegoExpressEngine } from 'zego-express-engine-reactnative';
+import ZegoExpressEngine from 'zego-express-engine-reactnative';
 
-export interface StreamSettings {
-  appID: string;
-  serverSecret: string;
-}
-
-export interface StreamUser {
+export interface ZegoStreamConfig {
+  appID: number;
+  appSign: string;
   userID: string;
   userName: string;
-  avatar?: string;
-}
-
-export interface RoomInfo {
   roomID: string;
-  roomName: string;
-  hostUserID: string;
-  streamID: string;
-  startTime: number;
-}
-
-export class ZegoLiveStreamError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ZegoLiveStreamError';
-  }
+  streamID?: string;
 }
 
 class LiveStreamService {
-  private engine: any = null;
-  private appID: string = '';
-  private initialized: boolean = false;
+  private engine: any;
+  private isInitialized: boolean = false;
+  private config: ZegoStreamConfig | null = null;
 
-  // Initialize the ZegoCloud SDK
-  async initialize(): Promise<void> {
+  async init(config: ZegoStreamConfig): Promise<void> {
+    if (this.isInitialized) {
+      console.log('ZegoExpressEngine already initialized');
+      return;
+    }
+
+    this.config = config;
     try {
-      // Fetch API settings from backend
-      const response = await api.get('/stream-settings');
-      if (!response.data || !response.data.appID) {
-        throw new ZegoLiveStreamError('Stream API settings not configured');
-      }
-
-      this.appID = response.data.appID;
+      this.engine = ZegoExpressEngine.createEngine(config.appID, config.appSign);
       
-      // Create and initialize the ZegoExpressEngine
-      this.engine = ZegoExpressEngine.createEngine(
-        parseInt(this.appID), 
-        response.data.serverSecret,
-        { logConfig: { logLevel: 'error' } }
-      );
-
-      this.initialized = true;
-      console.log('ZegoCloud SDK initialized successfully');
+      await this.engine.loginRoom(config.roomID, config.userID, config.userName);
+      this.isInitialized = true;
+      console.log('ZegoExpressEngine initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize ZegoCloud SDK:', error);
-      throw new ZegoLiveStreamError('Failed to initialize live streaming engine');
+      console.error('Failed to initialize ZegoExpressEngine:', error);
+      throw error;
     }
   }
 
-  // Check if the engine is initialized
-  isInitialized(): boolean {
-    return this.initialized;
-  }
-
-  // Login to a room as a user
-  async loginRoom(roomID: string, user: StreamUser, token: string): Promise<void> {
-    if (!this.initialized) {
-      await this.initialize();
+  async startPublishing(streamID: string, config: { camera?: boolean, microphone?: boolean } = {}): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
     }
 
     try {
-      await this.engine.loginRoom(
-        roomID,
-        token,
-        { userID: user.userID, userName: user.userName },
-        { userUpdate: true }
-      );
-      console.log(`Logged into room ${roomID} as ${user.userName}`);
-    } catch (error) {
-      console.error('Failed to login to room:', error);
-      throw new ZegoLiveStreamError('Failed to join the live stream room');
-    }
-  }
+      // Set default camera and microphone state
+      const useCamera = config.camera !== false;
+      const useMicrophone = config.microphone !== false;
 
-  // Start a live stream as a host
-  async startLiveStream(roomInfo: RoomInfo, user: StreamUser): Promise<void> {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
-    try {
-      // Create a local stream
-      await this.engine.startPreview({
-        canvas: document.getElementById('local-video')
-      });
+      // Enable camera and microphone as needed
+      await this.engine.enableCamera(useCamera);
+      await this.engine.muteMicrophone(!useMicrophone);
       
       // Start publishing
-      await this.engine.startPublishingStream(roomInfo.streamID);
-      
-      console.log(`Started live stream in room ${roomInfo.roomID} with stream ID ${roomInfo.streamID}`);
+      await this.engine.startPublishingStream(streamID);
+      console.log('Started publishing stream:', streamID);
     } catch (error) {
-      console.error('Failed to start live stream:', error);
-      throw new ZegoLiveStreamError('Failed to start the live stream');
+      console.error('Failed to start publishing:', error);
+      throw error;
     }
   }
 
-  // Watch a live stream as a viewer
-  async watchLiveStream(roomID: string, streamID: string): Promise<void> {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
-    try {
-      // Start playing the remote stream
-      await this.engine.startPlayingStream(streamID, {
-        canvas: document.getElementById('remote-video')
-      });
-      
-      console.log(`Started watching stream ${streamID} in room ${roomID}`);
-    } catch (error) {
-      console.error('Failed to watch live stream:', error);
-      throw new ZegoLiveStreamError('Failed to watch the live stream');
-    }
-  }
-
-  // Stop a live stream (for host)
-  async stopLiveStream(streamID: string): Promise<void> {
-    if (!this.initialized) {
+  async stopPublishing(): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
       return;
     }
 
     try {
       await this.engine.stopPublishingStream();
-      await this.engine.stopPreview();
-      console.log(`Stopped live stream with ID ${streamID}`);
+      console.log('Stopped publishing stream');
     } catch (error) {
-      console.error('Failed to stop live stream:', error);
-      throw new ZegoLiveStreamError('Failed to stop the live stream');
+      console.error('Failed to stop publishing:', error);
+      throw error;
     }
   }
 
-  // Stop watching a live stream (for viewer)
-  async stopWatchingStream(streamID: string): Promise<void> {
-    if (!this.initialized) {
+  async startPlaying(streamID: string, canvas: any): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+
+    try {
+      await this.engine.startPlayingStream(streamID, canvas);
+      console.log('Started playing stream:', streamID);
+    } catch (error) {
+      console.error('Failed to start playing:', error);
+      throw error;
+    }
+  }
+
+  async stopPlaying(streamID: string): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
       return;
     }
 
     try {
       await this.engine.stopPlayingStream(streamID);
-      console.log(`Stopped watching stream with ID ${streamID}`);
+      console.log('Stopped playing stream:', streamID);
     } catch (error) {
-      console.error('Failed to stop watching stream:', error);
-      throw new ZegoLiveStreamError('Failed to stop watching the stream');
+      console.error('Failed to stop playing:', error);
+      throw error;
     }
   }
 
-  // Leave the room
-  async leaveRoom(roomID: string): Promise<void> {
-    if (!this.initialized) {
+  async switchCamera(): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+
+    try {
+      await this.engine.switchCamera();
+      console.log('Camera switched');
+    } catch (error) {
+      console.error('Failed to switch camera:', error);
+      throw error;
+    }
+  }
+
+  async setVideoConfig(width: number, height: number, fps: number, bitrate: number): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+
+    try {
+      await this.engine.setVideoConfig({
+        width,
+        height,
+        bitrate,
+        fps
+      });
+      console.log('Video config set');
+    } catch (error) {
+      console.error('Failed to set video config:', error);
+      throw error;
+    }
+  }
+
+  async leaveRoom(): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
       return;
     }
 
     try {
-      await this.engine.logoutRoom(roomID);
-      console.log(`Left room ${roomID}`);
+      await this.engine.logoutRoom();
+      console.log('Left room');
+      this.isInitialized = false;
     } catch (error) {
       console.error('Failed to leave room:', error);
-      throw new ZegoLiveStreamError('Failed to leave the room');
+      throw error;
     }
   }
 
-  // Clean up and destroy the engine
-  async destroy(): Promise<void> {
-    if (!this.initialized) {
+  // Expose methods to access private engine for LiveStreamPage
+  async getLocalVideoView(): Promise<any> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+    return this.engine.createLocalView();
+  }
+
+  async getRemoteVideoView(streamID: string): Promise<any> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+    return this.engine.createRemoteView(streamID);
+  }
+
+  async enableCamera(enable: boolean): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+    await this.engine.enableCamera(enable);
+  }
+
+  async enableMicrophone(enable: boolean): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+    await this.engine.muteMicrophone(!enable);
+  }
+
+  async registerEventListener(event: string, callback: Function): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
+      throw new Error('ZegoExpressEngine not initialized');
+    }
+    this.engine.on(event, callback);
+  }
+
+  async removeEventListener(event: string, callback?: Function): Promise<void> {
+    if (!this.isInitialized || !this.engine) {
       return;
     }
-
-    try {
-      this.engine.destroyEngine();
-      this.engine = null;
-      this.initialized = false;
-      console.log('ZegoCloud engine destroyed');
-    } catch (error) {
-      console.error('Failed to destroy ZegoCloud engine:', error);
-    }
-  }
-
-  // Generate a token for authentication (typically done on the server)
-  // This is a placeholder and should be implemented securely on the backend
-  async generateToken(userID: string, roomID: string, role: number): Promise<string> {
-    try {
-      const response = await api.post('/generate-zego-token', {
-        userID,
-        roomID,
-        role
-      });
-      return response.data.token;
-    } catch (error) {
-      console.error('Failed to generate token:', error);
-      throw new ZegoLiveStreamError('Failed to generate authentication token');
+    if (callback) {
+      this.engine.off(event, callback);
+    } else {
+      this.engine.off(event);
     }
   }
 }
