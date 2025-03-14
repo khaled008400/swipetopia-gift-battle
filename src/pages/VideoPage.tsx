@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import VideoOverlay from "@/components/video/VideoOverlay";
+import VideoPlayer from "@/components/VideoPlayer";
 
 interface Video {
   id: string;
@@ -204,22 +205,9 @@ const VideoPage = () => {
               index === activeVideoIndex ? "opacity-100 z-10" : "opacity-0 -z-10"
             }`}
           >
-            <video
-              src={video.url}
-              className="h-full w-full object-cover"
-              autoPlay={index === activeVideoIndex}
-              loop
-              muted
-              playsInline
-            />
-            
-            <VideoOverlay 
+            <VideoPlayer 
               video={video} 
-              isLiked={video.isLiked || false}
-              isSaved={video.isSaved || false}
-              onLike={handleLike}
-              onSave={handleSave}
-              onFollow={handleFollow}
+              isActive={index === activeVideoIndex} 
             />
           </div>
         ))}
