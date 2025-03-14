@@ -1,12 +1,11 @@
 
 import { useRef, useState, useEffect } from "react";
-import VideoOverlay from "./video/VideoOverlay";
-import VideoErrorDisplay from "./video/VideoErrorDisplay";
 import DoubleTapHandler from "./video/DoubleTapHandler";
 import VideoPlaybackController from "./video/VideoPlaybackController";
 import { useToast } from "@/hooks/use-toast";
 import { useVideoError } from "@/hooks/useVideoError";
-import { VideoService } from "@/services/video.service";
+import VideoOverlay from "./video/VideoOverlay";
+import VideoErrorDisplay from "./video/VideoErrorDisplay";
 
 interface VideoPlayerProps {
   video: {
