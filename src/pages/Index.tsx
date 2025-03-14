@@ -2,7 +2,7 @@ import { useState } from "react";
 import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
-import { useAuth } from "../context/auth/AuthContext";
+import { useAuth } from "../context/auth";
 
 // Mock data for trending videos
 const TRENDING_VIDEOS = [

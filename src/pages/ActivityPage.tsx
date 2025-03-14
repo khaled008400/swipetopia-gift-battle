@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useAuth } from "../context/auth/AuthContext";
+import { useAuth } from "../context/auth";
 import { 
   Tabs, 
   TabsContent, 
