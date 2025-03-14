@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,27 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "user:", user);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    console.log("LoginPage useEffect - checking auth status:", isAuthenticated);
+    if (isAuthenticated && user) {
+      console.log("User is already authenticated, redirecting to home");
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate, user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submitted with:", { email, password });
+    
     if (!email || !password) {
+      console.log("Missing email or password");
       toast({
         title: "Error",
         description: "Please fill all fields",
@@ -28,19 +42,25 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      console.log("Login attempt with:", email);
+      console.log("Attempting login with:", email);
       await login(email, password);
-      console.log("Login successful, navigating to home");
-      navigate("/");
+      console.log("Login call completed successfully");
+      
+      // Don't navigate here - let the useEffect handle it once authentication state updates
     } catch (error: any) {
-      console.error("Login error:", error);
-      // The error toast is handled in the AuthContext
+      console.error("Login error in component:", error);
+      // Error toast is handled in AuthContext, but adding a fallback here
+      if (error.message && !error.message.includes("Toast is handled")) {
+        toast({
+          title: "Login failed",
+          description: error.message || "An unknown error occurred",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
-
-  console.log("Rendering login page");
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-app-black p-4">

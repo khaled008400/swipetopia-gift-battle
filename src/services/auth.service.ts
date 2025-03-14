@@ -41,6 +41,9 @@ const isDevelopment = import.meta.env.DEV;
 const mapUser = (user: User | null, profile?: any): AppUser | null => {
   if (!user) return null;
 
+  console.log("Mapping user from Supabase", user);
+  console.log("Profile data:", profile);
+
   return {
     id: user.id,
     username: profile?.username || user.email?.split('@')[0] || 'user',
@@ -67,22 +70,28 @@ const AuthService = {
         throw error;
       }
 
-      console.log("Supabase login successful, fetching profile");
+      console.log("Supabase login successful, user data:", data.user);
+      console.log("Session data:", data.session);
+      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user?.id)
         .single();
 
+      console.log("Profile fetch result:", profileData, profileError);
+
       if (profileError && profileError.code !== 'PGRST116') {
         console.error("Profile fetch error:", profileError);
       }
 
       const mappedUser = mapUser(data.user, profileData);
+      console.log("Mapped user:", mappedUser);
       
       // Store user data in localStorage
       if (mappedUser) {
         localStorage.setItem('user', JSON.stringify(mappedUser));
+        console.log("User data stored in localStorage");
       }
 
       console.log("Login complete, returning user data");
@@ -91,7 +100,7 @@ const AuthService = {
         token: data.session?.access_token
       };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error in service:', error);
       
       // In development, allow mock login if API is unavailable
       if (isDevelopment) {
@@ -101,6 +110,7 @@ const AuthService = {
           user: MOCK_USER
         };
         localStorage.setItem('user', JSON.stringify(MOCK_USER));
+        console.log("Mock user stored in localStorage:", MOCK_USER);
         return mockResponse;
       }
       
