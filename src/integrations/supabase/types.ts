@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      battle_history: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          opponent_avatar: string | null
+          opponent_id: string
+          opponent_username: string
+          result: string
+          streamer_id: string
+          view_count: number
+          votes_opponent: number
+          votes_received: number
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          opponent_avatar?: string | null
+          opponent_id: string
+          opponent_username: string
+          result: string
+          streamer_id: string
+          view_count?: number
+          votes_opponent?: number
+          votes_received?: number
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          opponent_avatar?: string | null
+          opponent_id?: string
+          opponent_username?: string
+          result?: string
+          streamer_id?: string
+          view_count?: number
+          votes_opponent?: number
+          votes_received?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_history_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "battle_history_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       battles: {
         Row: {
           ended_at: string | null
@@ -275,6 +332,57 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_streams: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_battle: boolean | null
+          opponent_id: string | null
+          scheduled_time: string
+          status: string | null
+          streamer_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_battle?: boolean | null
+          opponent_id?: string | null
+          scheduled_time: string
+          status?: string | null
+          streamer_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_battle?: boolean | null
+          opponent_id?: string | null
+          scheduled_time?: string
+          status?: string | null
+          streamer_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_streams_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_streams_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       short_videos: {
         Row: {
           created_at: string | null
@@ -368,6 +476,97 @@ export type Database = {
           },
         ]
       }
+      stream_highlights: {
+        Row: {
+          comments: number
+          created_at: string | null
+          duration: string
+          id: string
+          likes: number
+          streamer_id: string
+          thumbnail: string
+          title: string
+          video_url: string
+          views: number
+        }
+        Insert: {
+          comments?: number
+          created_at?: string | null
+          duration: string
+          id?: string
+          likes?: number
+          streamer_id: string
+          thumbnail: string
+          title: string
+          video_url: string
+          views?: number
+        }
+        Update: {
+          comments?: number
+          created_at?: string | null
+          duration?: string
+          id?: string
+          likes?: number
+          streamer_id?: string
+          thumbnail?: string
+          title?: string
+          video_url?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_highlights_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stream_history: {
+        Row: {
+          coins_earned: number
+          created_at: string | null
+          date: string
+          duration: number
+          gifts_earned: number
+          id: string
+          streamer_id: string
+          title: string
+          view_count: number
+        }
+        Insert: {
+          coins_earned?: number
+          created_at?: string | null
+          date?: string
+          duration: number
+          gifts_earned?: number
+          id?: string
+          streamer_id: string
+          title: string
+          view_count?: number
+        }
+        Update: {
+          coins_earned?: number
+          created_at?: string | null
+          date?: string
+          duration?: number
+          gifts_earned?: number
+          id?: string
+          streamer_id?: string
+          title?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_history_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streams: {
         Row: {
           description: string | null
@@ -406,6 +605,51 @@ export type Database = {
           {
             foreignKeyName: "streams_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      top_supporters: {
+        Row: {
+          created_at: string | null
+          gift_amount: number
+          id: string
+          streamer_id: string
+          supporter_avatar: string | null
+          supporter_id: string
+          supporter_username: string
+        }
+        Insert: {
+          created_at?: string | null
+          gift_amount?: number
+          id?: string
+          streamer_id: string
+          supporter_avatar?: string | null
+          supporter_id: string
+          supporter_username: string
+        }
+        Update: {
+          created_at?: string | null
+          gift_amount?: number
+          id?: string
+          streamer_id?: string
+          supporter_avatar?: string | null
+          supporter_id?: string
+          supporter_username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "top_supporters_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "top_supporters_supporter_id_fkey"
+            columns: ["supporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

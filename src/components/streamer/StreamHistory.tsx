@@ -3,41 +3,20 @@ import { useState } from "react";
 import { Eye, Gift, Clock, Calendar, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-// Mock data - would come from API in production
-const mockStreamHistory = [
-  {
-    id: "1",
-    title: "Summer Fashion Showcase",
-    date: "2023-08-15T19:00:00Z",
-    duration: 58, // minutes
-    viewCount: 1243,
-    giftsEarned: 256,
-    coinsEarned: 3720,
-  },
-  {
-    id: "2",
-    title: "Makeup Tutorial & Product Review",
-    date: "2023-08-10T18:30:00Z",
-    duration: 45,
-    viewCount: 876,
-    giftsEarned: 124,
-    coinsEarned: 1850,
-  },
-  {
-    id: "3",
-    title: "Tech Gadgets Unboxing",
-    date: "2023-08-05T20:00:00Z",
-    duration: 62,
-    viewCount: 1512,
-    giftsEarned: 310,
-    coinsEarned: 4625,
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { useStreamHistory } from "@/hooks/useStreamerData";
+import { useAuth } from "@/context/AuthContext";
 
 const StreamHistory = () => {
+  const { user } = useAuth();
   const [period, setPeriod] = useState("last30");
+  const { streamHistory, isLoading, error } = useStreamHistory(user?.id || '');
   
+  // Calculate summary stats
+  const totalViews = streamHistory.reduce((sum, stream) => sum + stream.view_count, 0);
+  const totalGifts = streamHistory.reduce((sum, stream) => sum + stream.gifts_earned, 0);
+  const totalCoins = streamHistory.reduce((sum, stream) => sum + stream.coins_earned, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -72,10 +51,14 @@ const StreamHistory = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Views</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <Eye className="h-5 w-5 text-blue-400 mr-2" />
-              <span className="text-2xl font-bold">3,631</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="flex items-center">
+                <Eye className="h-5 w-5 text-blue-400 mr-2" />
+                <span className="text-2xl font-bold">{totalViews.toLocaleString()}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
         
@@ -84,10 +67,14 @@ const StreamHistory = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Gifts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <Gift className="h-5 w-5 text-purple-400 mr-2" />
-              <span className="text-2xl font-bold">690</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="flex items-center">
+                <Gift className="h-5 w-5 text-purple-400 mr-2" />
+                <span className="text-2xl font-bold">{totalGifts.toLocaleString()}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
         
@@ -96,10 +83,14 @@ const StreamHistory = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">Coins Earned</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <span className="text-yellow-400 font-bold text-lg mr-2">⭐</span>
-              <span className="text-2xl font-bold">10,195</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="flex items-center">
+                <span className="text-yellow-400 font-bold text-lg mr-2">⭐</span>
+                <span className="text-2xl font-bold">{totalCoins.toLocaleString()}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -109,40 +100,65 @@ const StreamHistory = () => {
           <h3 className="font-medium">Recent Streams</h3>
         </div>
         <div className="divide-y divide-app-gray-light">
-          {mockStreamHistory.map((stream) => (
-            <div key={stream.id} className="p-4 hover:bg-app-gray-darker transition-colors">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-medium">{stream.title}</h4>
-                  <div className="flex items-center mt-1 text-sm text-muted-foreground gap-3">
-                    <div className="flex items-center">
-                      <Calendar className="h-3.5 w-3.5 mr-1" />
-                      {new Date(stream.date).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-3.5 w-3.5 mr-1" />
-                      {stream.duration} min
+          {isLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <div key={i} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <Skeleton className="h-5 w-48 mb-2" />
+                    <div className="flex items-center mt-1 gap-3">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-16" />
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="flex items-center">
-                    <Eye className="h-4 w-4 text-blue-400 mr-1" />
-                    <span>{stream.viewCount}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Gift className="h-4 w-4 text-purple-400 mr-1" />
-                    <span>{stream.giftsEarned}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-yellow-400 font-semibold text-sm mr-1">⭐</span>
-                    <span>{stream.coinsEarned}</span>
+                  <div className="flex gap-4">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-16" />
                   </div>
                 </div>
               </div>
+            ))
+          ) : streamHistory.length === 0 ? (
+            <div className="p-6 text-center text-muted-foreground">
+              No stream history available
             </div>
-          ))}
+          ) : (
+            streamHistory.map((stream) => (
+              <div key={stream.id} className="p-4 hover:bg-app-gray-darker transition-colors">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{stream.title}</h4>
+                    <div className="flex items-center mt-1 text-sm text-muted-foreground gap-3">
+                      <div className="flex items-center">
+                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                        {new Date(stream.date).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3.5 w-3.5 mr-1" />
+                        {stream.duration} min
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="flex items-center">
+                      <Eye className="h-4 w-4 text-blue-400 mr-1" />
+                      <span>{stream.view_count.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Gift className="h-4 w-4 text-purple-400 mr-1" />
+                      <span>{stream.gifts_earned}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-yellow-400 font-semibold text-sm mr-1">⭐</span>
+                      <span>{stream.coins_earned}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

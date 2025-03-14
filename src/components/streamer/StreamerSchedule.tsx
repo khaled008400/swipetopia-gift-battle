@@ -1,203 +1,125 @@
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Clock, Users, Video, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Plus, Swords, Mail, Check, X } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-
-// Mock data - would come from API in production
-const mockScheduledStreams = [
-  {
-    id: "1",
-    title: "New Summer Collection",
-    description: "Showcasing our new summer fashion line with exclusive discounts.",
-    date: new Date(Date.now() + 86400000 * 2), // 2 days from now
-    duration: 60, // minutes
-    status: "scheduled"
-  },
-  {
-    id: "2",
-    title: "Tech Gadgets Review",
-    description: "Reviewing the latest tech gadgets and accessories with special offers.",
-    date: new Date(Date.now() + 86400000 * 5), // 5 days from now
-    duration: 45, // minutes
-    status: "scheduled"
-  },
-];
-
-const mockBattleInvites = [
-  {
-    id: "1",
-    from: { username: "fashionista", avatar: "https://i.pravatar.cc/150?u=fashionista" },
-    date: new Date(Date.now() + 86400000 * 1), // 1 day from now
-    duration: 30, // minutes
-    message: "Let's battle to see who has the best summer fashion collection!",
-    status: "pending"
-  },
-  {
-    id: "2",
-    from: { username: "techguy", avatar: "https://i.pravatar.cc/150?u=techguy" },
-    date: new Date(Date.now() + 86400000 * 3), // 3 days from now
-    duration: 45, // minutes
-    message: "Tech gadgets showdown! Let's see who has the coolest gear!",
-    status: "pending"
-  },
-];
+import { Card, CardContent } from "@/components/ui/card";
+import { useScheduledStreams } from "@/hooks/useStreamerData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/AuthContext";
 
 const StreamerSchedule = () => {
-  const [activeTab, setActiveTab] = useState("scheduled");
-  
+  const { user } = useAuth();
+  const { scheduledStreams, isLoading, error } = useScheduledStreams(user?.id || '');
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="space-y-1">
           <h2 className="text-xl font-semibold">Schedule & Invites</h2>
           <p className="text-sm text-muted-foreground">
-            Manage your upcoming streams and battle invitations
+            Manage your upcoming live streams and battle invitations
           </p>
         </div>
         
-        <Button className="bg-app-yellow text-app-black">
-          <Plus className="mr-2 h-4 w-4" /> Schedule Stream
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Video className="h-4 w-4 mr-2" /> Schedule Stream
+          </Button>
+          <Button className="bg-app-yellow text-app-black hover:bg-app-yellow/90">
+            <Swords className="h-4 w-4 mr-2" /> Create Battle
+          </Button>
+        </div>
       </div>
       
-      <Tabs 
-        defaultValue="scheduled" 
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="scheduled">
-            Scheduled Streams {mockScheduledStreams.length > 0 && `(${mockScheduledStreams.length})`}
-          </TabsTrigger>
-          <TabsTrigger value="invites">
-            Battle Invites {mockBattleInvites.length > 0 && `(${mockBattleInvites.length})`}
-          </TabsTrigger>
-        </TabsList>
+      <div className="bg-app-gray-dark rounded-md">
+        <div className="p-4 border-b border-app-gray-light">
+          <h3 className="font-medium">Upcoming Streams</h3>
+        </div>
         
-        <TabsContent value="scheduled" className="mt-0">
-          {mockScheduledStreams.length === 0 ? (
-            <Card className="bg-app-gray-dark">
-              <CardContent className="pt-6 text-center">
-                <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-medium mb-2">No scheduled streams</h3>
-                <p className="text-muted-foreground mb-4">
-                  You don't have any upcoming streams scheduled yet.
-                </p>
-                <Button className="bg-app-yellow text-app-black">
-                  <Plus className="mr-2 h-4 w-4" /> Schedule Your First Stream
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="divide-y divide-app-gray-light">
+          {isLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <div key={i} className="p-4">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                  <div>
+                    <Skeleton className="h-5 w-32 mb-2" />
+                    <Skeleton className="h-4 w-64 mb-1" />
+                    <div className="flex gap-4 mt-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 w-24" />
+                    <Skeleton className="h-9 w-24" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : scheduledStreams.length === 0 ? (
+            <div className="p-6 text-center text-muted-foreground">
+              No upcoming streams scheduled
+            </div>
           ) : (
-            <div className="space-y-4">
-              {mockScheduledStreams.map((stream) => (
-                <Card key={stream.id} className="bg-app-gray-dark">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold">{stream.title}</h3>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          <span>{stream.date.toLocaleDateString("en-US", { 
-                            weekday: 'short',
-                            month: 'short', 
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit'
-                          })}</span>
-                          <Clock className="h-4 w-4 ml-3 mr-1" />
-                          <span>{stream.duration} minutes</span>
-                        </div>
-                        <p className="text-sm mt-2">{stream.description}</p>
+            scheduledStreams.map((stream) => (
+              <div key={stream.id} className="p-4 hover:bg-app-gray-darker transition-colors">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                  <div>
+                    <h4 className="font-medium flex items-center">
+                      {stream.is_battle && (
+                        <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full mr-2">
+                          BATTLE
+                        </span>
+                      )}
+                      {stream.title}
+                    </h4>
+                    
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {stream.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center mt-2 text-sm text-muted-foreground gap-4">
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-1 text-app-yellow" />
+                        {new Date(stream.scheduled_time).toLocaleDateString()}
                       </div>
-                      
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">Edit</Button>
-                        <Button variant="outline" size="sm" className="text-red-500">Cancel</Button>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1 text-app-yellow" />
+                        {new Date(stream.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      <Clock className="h-4 w-4 mr-2" /> Reschedule
+                    </Button>
+                    <Button variant="default" size="sm" className="bg-app-yellow text-app-black hover:bg-app-yellow/90">
+                      <Video className="h-4 w-4 mr-2" /> Start Stream
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
-        </TabsContent>
-        
-        <TabsContent value="invites" className="mt-0">
-          {mockBattleInvites.length === 0 ? (
-            <Card className="bg-app-gray-dark">
-              <CardContent className="pt-6 text-center">
-                <Swords className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-medium mb-2">No battle invites</h3>
-                <p className="text-muted-foreground mb-4">
-                  You don't have any pending battle invitations.
-                </p>
-                <Button variant="outline">
-                  <Swords className="mr-2 h-4 w-4" /> Invite Someone to Battle
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {mockBattleInvites.map((invite) => (
-                <Card key={invite.id} className="bg-app-gray-dark">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={invite.from.avatar} />
-                        <AvatarFallback>{invite.from.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center">
-                              <h3 className="font-semibold">@{invite.from.username}</h3>
-                              <Badge className="ml-2 bg-blue-500">Battle Invite</Badge>
-                            </div>
-                            
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              <span>{invite.date.toLocaleDateString("en-US", { 
-                                weekday: 'short',
-                                month: 'short', 
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit'
-                              })}</span>
-                              <Clock className="h-4 w-4 ml-3 mr-1" />
-                              <span>{invite.duration} minutes</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                              <Check className="h-4 w-4 mr-1" /> Accept
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-red-500">
-                              <X className="h-4 w-4 mr-1" /> Decline
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-app-gray-darker rounded p-3 mt-3 text-sm">
-                          <Mail className="h-4 w-4 inline-block mr-2 text-muted-foreground" />
-                          <span>{invite.message}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
+      
+      <Card className="bg-app-gray-dark border-app-gray-light">
+        <CardContent className="p-4">
+          <div className="text-center p-6">
+            <Users className="h-12 w-12 mx-auto mb-3 text-app-yellow" />
+            <h3 className="text-lg font-medium mb-2">Invite Streamers to Battle</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+              Challenge other creators to a PK battle and grow your audience together!
+            </p>
+            <Button onClick={() => setInviteModalOpen(true)}>
+              Send Battle Invites
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

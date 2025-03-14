@@ -1,51 +1,43 @@
 
 import { Play, ThumbsUp, MessageCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useStreamHighlights, StreamHighlight } from "@/hooks/useStreamerData";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data - would come from API in production
-const mockHighlights = [
-  {
-    id: "1",
-    title: "Summer Fashion Haul",
-    thumbnail: "https://placehold.co/360x200/333/FFF?text=Fashion+Haul",
-    duration: "3:45",
-    views: 1250,
-    likes: 342,
-    comments: 56
-  },
-  {
-    id: "2",
-    title: "Makeup Tutorial - Night Out Look",
-    thumbnail: "https://placehold.co/360x200/333/FFF?text=Makeup+Tutorial",
-    duration: "5:20",
-    views: 875,
-    likes: 243,
-    comments: 32
-  },
-  {
-    id: "3",
-    title: "Best Tech Gadgets Under $50",
-    thumbnail: "https://placehold.co/360x200/333/FFF?text=Tech+Gadgets",
-    duration: "4:15",
-    views: 1540,
-    likes: 412,
-    comments: 78
-  },
-  {
-    id: "4",
-    title: "Home Office Setup Guide",
-    thumbnail: "https://placehold.co/360x200/333/FFF?text=Office+Setup",
-    duration: "6:30",
-    views: 925,
-    likes: 267,
-    comments: 45
+interface StreamHighlightsProps {
+  streamerId?: string;
+}
+
+const StreamHighlights = ({ streamerId }: StreamHighlightsProps) => {
+  const { streamHighlights, isLoading, error } = useStreamHighlights(streamerId || '');
+
+  if (error) {
+    return <div className="text-red-500">Failed to load stream highlights</div>;
   }
-];
 
-const StreamHighlights = () => {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="bg-app-gray-dark overflow-hidden">
+            <Skeleton className="h-40 w-full" />
+            <CardContent className="p-3">
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-3 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!streamHighlights.length) {
+    return <div className="text-muted-foreground">No stream highlights available</div>;
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {mockHighlights.map((highlight) => (
+      {streamHighlights.map((highlight: StreamHighlight) => (
         <Card key={highlight.id} className="bg-app-gray-dark overflow-hidden group cursor-pointer">
           <div className="relative">
             <img 
