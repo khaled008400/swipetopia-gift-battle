@@ -27,6 +27,7 @@ import AdminShipping from './AdminShipping';
 import AdminReports from './AdminReports';
 import AdminLiveStreams from './AdminLiveStreams';
 import VirtualGifts from './VirtualGifts';
+import TestUsersGenerator from './TestUsersGenerator';
 
 interface AdminTabbedInterfaceProps {
   stats: AdminStats;
@@ -67,6 +68,13 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
         <p className="text-muted-foreground">Manage your app's content and users</p>
       </div>
+
+      {/* Test Users Generator - shown only in development */}
+      {import.meta.env.DEV && (
+        <div className="mb-6">
+          <TestUsersGenerator />
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-11 w-full">
