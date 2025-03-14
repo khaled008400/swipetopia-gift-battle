@@ -1,12 +1,21 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, X, CreditCard, CheckCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Minus, Plus, Trash2, X, CreditCard, CheckCircle, Tag, Truck } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
 import { toast } from "sonner";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import PricingService, { ShippingMethod } from "@/services/pricing.service";
 
 interface CartSheetProps {
   open: boolean;
@@ -14,9 +23,71 @@ interface CartSheetProps {
 }
 
 const CartSheet = ({ open, onOpenChange }: CartSheetProps) => {
-  const { items, removeItem, updateQuantity, clearCart, totalPrice, itemCount } = useCart();
+  const { 
+    items, 
+    removeItem, 
+    updateQuantity, 
+    clearCart, 
+    subtotal, 
+    shippingCost,
+    discountAmount,
+    taxAmount,
+    additionalFees,
+    totalPrice,
+    itemCount,
+    appliedCoupons,
+    appliedOffers,
+    selectedShipping,
+    addCoupon,
+    removeCoupon,
+    setShippingMethod,
+    isCalculatingPrice
+  } = useCart();
+  
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "payment" | "confirmation">("cart");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
+
+  // Fetch shipping methods when cart changes
+  useEffect(() => {
+    const fetchShippingMethods = async () => {
+      if (items.length === 0) return;
+      
+      setIsLoadingShipping(true);
+      try {
+        const methods = await PricingService.getShippingMethods(subtotal);
+        setShippingMethods(methods);
+        
+        // Auto-select first shipping method if none selected
+        if (!selectedShipping && methods.length > 0) {
+          setShippingMethod(methods[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching shipping methods:", error);
+      } finally {
+        setIsLoadingShipping(false);
+      }
+    };
+    
+    fetchShippingMethods();
+  }, [items, subtotal]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
+    
+    setIsApplyingCoupon(true);
+    const success = await addCoupon(couponCode);
+    if (success) {
+      setCouponCode("");
+    }
+    setIsApplyingCoupon(false);
+  };
 
   const handleCheckout = () => {
     setCheckoutStep("payment");
@@ -65,7 +136,12 @@ const CartSheet = ({ open, onOpenChange }: CartSheetProps) => {
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <h4 className="font-medium text-sm line-clamp-1">{item.name}</h4>
-                  <span className="text-app-yellow font-semibold mt-1">${item.price.toFixed(2)}</span>
+                  <div className="flex items-center mt-1 space-x-2">
+                    <span className="text-app-yellow font-semibold">${item.price.toFixed(2)}</span>
+                    {item.original_price && item.original_price > item.price && (
+                      <span className="text-gray-400 text-sm line-through">${item.original_price.toFixed(2)}</span>
+                    )}
+                  </div>
                   
                   <div className="flex items-center justify-between mt-auto">
                     <div className="flex items-center space-x-1 bg-app-gray-dark rounded-full px-1 py-0.5">
@@ -100,6 +176,107 @@ const CartSheet = ({ open, onOpenChange }: CartSheetProps) => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Applied Offers and Coupons */}
+          {(appliedOffers.length > 0 || appliedCoupons.length > 0) && (
+            <div className="mt-6 mb-3">
+              <h4 className="text-sm font-medium mb-2">Applied Discounts</h4>
+              <div className="space-y-2">
+                {appliedOffers.map(offer => (
+                  <div key={offer.id} className="flex items-center bg-green-900/20 px-3 py-2 rounded-md">
+                    <Tag className="h-4 w-4 text-green-500 mr-2" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{offer.name}</p>
+                      <p className="text-xs text-gray-400">{offer.description}</p>
+                    </div>
+                  </div>
+                ))}
+                
+                {appliedCoupons.map(coupon => (
+                  <div key={coupon.id} className="flex items-center justify-between bg-indigo-900/20 px-3 py-2 rounded-md">
+                    <div className="flex items-center">
+                      <Tag className="h-4 w-4 text-indigo-500 mr-2" />
+                      <div>
+                        <p className="text-sm font-medium">{coupon.code}</p>
+                        <p className="text-xs text-gray-400">
+                          {coupon.type === 'percentage' ? `${coupon.value}% off` : `$${coupon.value} off`}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0 rounded-full hover:bg-red-100/10 hover:text-red-500"
+                      onClick={() => removeCoupon(coupon.code)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Coupon Input */}
+          <div className="flex items-center gap-2 mt-6">
+            <div className="relative flex-1">
+              <Input
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                className="bg-app-gray-dark border-app-gray-light"
+              />
+            </div>
+            <Button 
+              onClick={handleApplyCoupon} 
+              size="sm"
+              disabled={isApplyingCoupon || !couponCode.trim()}
+            >
+              {isApplyingCoupon ? "Applying..." : "Apply"}
+            </Button>
+          </div>
+
+          {/* Shipping Options */}
+          <div className="mt-5">
+            <h4 className="text-sm font-medium mb-2">Shipping Method</h4>
+            <div className="relative">
+              {isLoadingShipping ? (
+                <div className="h-10 bg-app-gray-dark rounded-md flex items-center justify-center">
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              ) : (
+                <Select 
+                  value={selectedShipping?.id} 
+                  onValueChange={(id) => {
+                    const method = shippingMethods.find(m => m.id === id);
+                    if (method) setShippingMethod(method);
+                  }}
+                >
+                  <SelectTrigger className="bg-app-gray-dark border-app-gray-light">
+                    <SelectValue placeholder="Select shipping method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shippingMethods.map(method => (
+                      <SelectItem key={method.id} value={method.id}>
+                        <div className="flex justify-between items-center w-full">
+                          <span>{method.name}</span>
+                          <span className="ml-2">${method.price.toFixed(2)}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            {selectedShipping && (
+              <p className="text-xs text-gray-400 mt-1">
+                {selectedShipping.description} ({selectedShipping.estimated_days})
+              </p>
+            )}
           </div>
         </>
       )}
@@ -203,16 +380,41 @@ const CartSheet = ({ open, onOpenChange }: CartSheetProps) => {
           <div className="space-y-3 mb-3">
             <div className="flex justify-between">
               <span className="text-gray-400">Subtotal</span>
-              <span>${totalPrice.toFixed(2)}</span>
+              <span>${subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Shipping</span>
-              <span>$0.00</span>
-            </div>
+            {(shippingCost > 0 || selectedShipping) && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">Shipping</span>
+                <span>${shippingCost.toFixed(2)}</span>
+              </div>
+            )}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-500">
+                <span>Discount</span>
+                <span>-${discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {taxAmount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tax</span>
+                <span>${taxAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {additionalFees > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">Additional Fees</span>
+                <span>${additionalFees.toFixed(2)}</span>
+              </div>
+            )}
             <Separator />
             <div className="flex justify-between font-semibold">
               <span>Total</span>
-              <span className="text-app-yellow">${totalPrice.toFixed(2)}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-app-yellow">${totalPrice.toFixed(2)}</span>
+                {isCalculatingPrice && (
+                  <span className="text-xs text-gray-400 animate-pulse">Calculating...</span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -222,9 +424,19 @@ const CartSheet = ({ open, onOpenChange }: CartSheetProps) => {
             <Button 
               className="flex-1 bg-app-yellow text-app-black hover:bg-app-yellow/90" 
               onClick={handleCheckout}
-              disabled={items.length === 0}
+              disabled={items.length === 0 || !selectedShipping || isCalculatingPrice}
             >
-              Checkout
+              {isCalculatingPrice ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-app-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Calculating...
+                </span>
+              ) : (
+                "Checkout"
+              )}
             </Button>
           </div>
         </>

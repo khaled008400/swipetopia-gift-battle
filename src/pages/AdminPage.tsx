@@ -13,6 +13,9 @@ import ProductAttributes from '@/components/admin/ProductAttributes';
 import { useQuery } from '@tanstack/react-query';
 import AdminService from '@/services/admin.service';
 import { Loader2 } from 'lucide-react';
+import AdminCoupons from '@/components/admin/AdminCoupons';
+import AdminOffers from '@/components/admin/AdminOffers';
+import AdminShipping from '@/components/admin/AdminShipping';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -51,13 +54,16 @@ const AdminPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-10 w-full">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="videos">Videos</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="attributes">Attributes</TabsTrigger>
+          <TabsTrigger value="coupons">Coupons</TabsTrigger>
+          <TabsTrigger value="offers">Offers</TabsTrigger>
+          <TabsTrigger value="shipping">Shipping</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
         
@@ -83,6 +89,18 @@ const AdminPage = () => {
         
         <TabsContent value="attributes">
           <ProductAttributes />
+        </TabsContent>
+        
+        <TabsContent value="coupons">
+          <AdminCoupons />
+        </TabsContent>
+        
+        <TabsContent value="offers">
+          <AdminOffers />
+        </TabsContent>
+        
+        <TabsContent value="shipping">
+          <AdminShipping />
         </TabsContent>
         
         <TabsContent value="reports">

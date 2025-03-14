@@ -73,6 +73,59 @@ export interface ProductAttribute {
   status: 'active' | 'inactive';
 }
 
+export interface AdminCoupon {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minimum_purchase?: number;
+  expiry_date: string;
+  usage_limit?: number;
+  usage_count: number;
+  is_active: boolean;
+  applicable_products?: string[]; // Product IDs the coupon applies to
+  applicable_categories?: string[]; // Category IDs the coupon applies to
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminOffer {
+  id: string;
+  name: string;
+  description: string;
+  type: 'percentage' | 'fixed' | 'buy_x_get_y' | 'bundle';
+  value: number;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  applicable_products?: string[]; // Product IDs the offer applies to
+  applicable_categories?: string[]; // Category IDs the offer applies to
+  rules?: {
+    buy_quantity?: number;
+    get_quantity?: number;
+    bundle_products?: string[];
+    bundle_price?: number;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminShippingMethod {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  estimated_days: string; // e.g., "3-5 days"
+  is_active: boolean;
+  conditions?: {
+    min_order_value?: number;
+    max_order_value?: number;
+    applicable_regions?: string[];
+  };
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Pagination {
   current_page: number;
   last_page: number;
@@ -188,6 +241,84 @@ const AdminService = {
 
   async getRevenueData(period: 'week' | 'month' | 'year'): Promise<any> {
     const response = await adminApi.get('/analytics/revenue', { params: { period } });
+    return response.data;
+  },
+
+  // Coupons management
+  async getCoupons(page = 1, search = ''): Promise<{ data: AdminCoupon[], pagination: Pagination }> {
+    const response = await adminApi.get('/coupons', { params: { page, search } });
+    return response.data;
+  },
+
+  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>): Promise<AdminCoupon> {
+    const response = await adminApi.post('/coupons', couponData);
+    return response.data;
+  },
+
+  async updateCoupon(couponId: string, couponData: Partial<AdminCoupon>): Promise<AdminCoupon> {
+    const response = await adminApi.put(`/coupons/${couponId}`, couponData);
+    return response.data;
+  },
+
+  async deleteCoupon(couponId: string): Promise<void> {
+    await adminApi.delete(`/coupons/${couponId}`);
+  },
+
+  // Offers management
+  async getOffers(page = 1, search = '', active_only = false): Promise<{ data: AdminOffer[], pagination: Pagination }> {
+    const response = await adminApi.get('/offers', { 
+      params: { page, search, active_only } 
+    });
+    return response.data;
+  },
+
+  async createOffer(offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>): Promise<AdminOffer> {
+    const response = await adminApi.post('/offers', offerData);
+    return response.data;
+  },
+
+  async updateOffer(offerId: string, offerData: Partial<AdminOffer>): Promise<AdminOffer> {
+    const response = await adminApi.put(`/offers/${offerId}`, offerData);
+    return response.data;
+  },
+
+  async deleteOffer(offerId: string): Promise<void> {
+    await adminApi.delete(`/offers/${offerId}`);
+  },
+
+  // Shipping methods management
+  async getShippingMethods(page = 1): Promise<{ data: AdminShippingMethod[], pagination: Pagination }> {
+    const response = await adminApi.get('/shipping/methods', { params: { page } });
+    return response.data;
+  },
+
+  async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id' | 'created_at' | 'updated_at'>): Promise<AdminShippingMethod> {
+    const response = await adminApi.post('/shipping/methods', methodData);
+    return response.data;
+  },
+
+  async updateShippingMethod(methodId: string, methodData: Partial<AdminShippingMethod>): Promise<AdminShippingMethod> {
+    const response = await adminApi.put(`/shipping/methods/${methodId}`, methodData);
+    return response.data;
+  },
+
+  async deleteShippingMethod(methodId: string): Promise<void> {
+    await adminApi.delete(`/shipping/methods/${methodId}`);
+  },
+
+  // Analytics for pricing, coupons and offers
+  async getCouponUsageStats(period: 'week' | 'month' | 'year'): Promise<any> {
+    const response = await adminApi.get('/analytics/coupon-usage', { params: { period } });
+    return response.data;
+  },
+
+  async getOfferConversionStats(period: 'week' | 'month' | 'year'): Promise<any> {
+    const response = await adminApi.get('/analytics/offer-conversion', { params: { period } });
+    return response.data;
+  },
+
+  async getShippingMethodUsageStats(): Promise<any> {
+    const response = await adminApi.get('/analytics/shipping-usage');
     return response.data;
   }
 };
