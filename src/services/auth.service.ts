@@ -61,6 +61,16 @@ const AuthService = {
     try {
       console.log("AuthService.login called with:", credentials.email);
       
+      // For dev mode with demo account
+      if (isDevelopment && credentials.email === "demo@example.com") {
+        console.log("Using demo account in development mode");
+        localStorage.setItem('user', JSON.stringify(MOCK_USER));
+        return {
+          token: "mock-token-for-development",
+          user: MOCK_USER
+        };
+      }
+      
       // Try real login with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,

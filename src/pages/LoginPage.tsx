@@ -13,11 +13,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login, isAuthenticated, user } = useAuth();
-  const { isOnline, isConnectedToApi } = useNetworkStatus();
+  const { isOnline, isConnectedToApi, checkApiConnection } = useNetworkStatus();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "user:", user?.username);
+  console.log("Network status:", { isOnline, isConnectedToApi });
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -27,6 +28,13 @@ const LoginPage = () => {
       navigate("/");
     }
   }, [isAuthenticated, navigate, user]);
+
+  // Check API connection on mount
+  useEffect(() => {
+    if (isOnline) {
+      checkApiConnection();
+    }
+  }, [isOnline, checkApiConnection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,20 +59,15 @@ const LoginPage = () => {
       return;
     }
 
-    if (!isConnectedToApi) {
-      toast({
-        title: "Server unreachable",
-        description: "Cannot reach authentication servers. Please try again later.",
-        variant: "destructive",
-      });
-      
-      if (import.meta.env.DEV) {
+    // Check API connection again before login attempt
+    if (isOnline) {
+      const apiReachable = await checkApiConnection();
+      if (!apiReachable && !import.meta.env.DEV) {
         toast({
-          title: "Development mode",
-          description: "Attempting to log in with mock credentials since you're in development mode.",
-          variant: "default",
+          title: "Server unreachable",
+          description: "Cannot reach authentication servers. Please try again later.",
+          variant: "destructive",
         });
-      } else {
         return;
       }
     }
@@ -163,6 +166,22 @@ const LoginPage = () => {
               "Sign In"
             )}
           </Button>
+
+          {import.meta.env.DEV && (
+            <div className="mt-2">
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEmail("demo@example.com");
+                  setPassword("password");
+                }}
+                className="w-full text-app-yellow border-app-yellow hover:bg-app-yellow/10"
+              >
+                Use Demo Credentials
+              </Button>
+            </div>
+          )}
         </form>
 
         <div className="mt-6 text-center">

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 export function useNetworkStatus() {
@@ -8,22 +8,31 @@ export function useNetworkStatus() {
   const { toast } = useToast();
 
   // Check if we can reach the API server
-  const checkApiConnection = async () => {
+  const checkApiConnection = useCallback(async () => {
+    if (!navigator.onLine) {
+      setIsConnectedToApi(false);
+      return false;
+    }
+    
     try {
       // Check if we can reach Supabase
-      const response = await fetch("https://ifeuccpukdosoxtufxzi.supabase.co/", {
+      const response = await fetch("https://ifeuccpukdosoxtufxzi.supabase.co/rest/v1/", {
         method: "HEAD",
-        mode: "no-cors",
-        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZXVjY3B1a2Rvc294dHVmeHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NDM2MjAsImV4cCI6MjA1NzMxOTYyMH0.I4wy6OFJY_zYNrhYWjw7xphFTBc5vT9sgNM3i2iPUqI"
+        }
       });
-      setIsConnectedToApi(true);
-      return true;
+      
+      const connected = response.ok || response.status === 200;
+      setIsConnectedToApi(connected);
+      return connected;
     } catch (error) {
       console.error("API connectivity issue:", error);
       setIsConnectedToApi(false);
       return false;
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Update network status
@@ -88,7 +97,7 @@ export function useNetworkStatus() {
       window.removeEventListener('offline', handleOffline);
       clearInterval(intervalId);
     };
-  }, [toast]);
+  }, [toast, checkApiConnection]);
 
   return { isOnline, isConnectedToApi, checkApiConnection };
 }
