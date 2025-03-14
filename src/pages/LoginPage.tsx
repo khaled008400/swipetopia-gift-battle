@@ -94,6 +94,16 @@ const LoginPage = () => {
     }
   };
 
+  const fillDemoCredentials = () => {
+    setEmail("demo@example.com");
+    setPassword("password");
+    toast({
+      title: "Demo credentials filled",
+      description: "Click 'Sign In' to log in with demo account",
+      variant: "default",
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-app-black p-4">
       <div className="w-full max-w-md p-6 glass-panel animate-scale-in">
@@ -167,21 +177,14 @@ const LoginPage = () => {
             )}
           </Button>
 
-          {import.meta.env.DEV && (
-            <div className="mt-2">
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEmail("demo@example.com");
-                  setPassword("password");
-                }}
-                className="w-full text-app-yellow border-app-yellow hover:bg-app-yellow/10"
-              >
-                Use Demo Credentials
-              </Button>
-            </div>
-          )}
+          <Button 
+            type="button"
+            variant="outline"
+            onClick={fillDemoCredentials}
+            className="w-full text-app-yellow border-app-yellow hover:bg-app-yellow/10"
+          >
+            Use Demo Credentials
+          </Button>
         </form>
 
         <div className="mt-6 text-center">
@@ -196,7 +199,7 @@ const LoginPage = () => {
         {import.meta.env.DEV && (
           <div className="mt-4 p-3 bg-blue-900/30 rounded-md">
             <p className="text-xs text-blue-400">
-              Development mode: If the API is unavailable, you can still log in with any credentials.
+              Development mode: Demo email is demo@example.com with password "password"
             </p>
           </div>
         )}
