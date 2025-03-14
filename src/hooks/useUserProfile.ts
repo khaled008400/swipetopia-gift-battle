@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/types/auth.types";
+import { UserProfile, UserRole } from "@/types/auth.types";
 
 export const fetchUserProfile = async (authUser: User): Promise<UserProfile | null> => {
   try {
@@ -17,15 +17,25 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
     }
     
     if (data) {
+      // Convert single role to array of roles if present
+      let userRoles: UserRole[] = [];
+      if (data.role) {
+        userRoles = [data.role as UserRole];
+      } else if (authUser.user_metadata?.role) {
+        userRoles = [authUser.user_metadata.role as UserRole];
+      } else {
+        userRoles = ["user"]; // Default role
+      }
+
       return {
         id: data.id,
         username: data.username,
         email: authUser.email || '',
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
-        role: authUser.user_metadata?.role || data.role,
-        followers: 0, // Default value since it doesn't exist in the database yet
-        following: 0  // Default value since it doesn't exist in the database yet
+        roles: userRoles, // Changed from 'role' to 'roles' to match UserProfile interface
+        followers: data.followers || 0,
+        following: data.following || 0
       };
     }
     return null;
