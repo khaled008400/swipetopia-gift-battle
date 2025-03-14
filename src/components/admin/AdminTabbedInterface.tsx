@@ -13,7 +13,8 @@ import {
   Truck, 
   Users, 
   Video,
-  Loader2 
+  Loader2, 
+  Menu 
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
 import AdminDashboard from './AdminDashboard';
@@ -27,6 +28,9 @@ import AdminShipping from './AdminShipping';
 import AdminReports from './AdminReports';
 import AdminLiveStreams from './AdminLiveStreams';
 import VirtualGifts from './VirtualGifts';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Button } from '../ui/button';
+import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
 
 interface AdminTabbedInterfaceProps {
   stats: AdminStats;
@@ -35,6 +39,7 @@ interface AdminTabbedInterfaceProps {
 
 const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, statsLoading }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   if (statsLoading) {
     return (
@@ -61,22 +66,63 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
     { id: "live-streams", label: "Live Streams", icon: <Radio size={16} /> },
   ];
 
+  // Mobile view
+  const MobileTabsView = () => (
+    <div className="md:hidden">
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DrawerTrigger asChild>
+          <Button variant="outline" className="mb-4">
+            <Menu className="h-4 w-4 mr-2" />
+            {tabs.find(tab => tab.id === activeTab)?.label || "Menu"}
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-2">
+              {tabs.map(tab => (
+                <Button
+                  key={tab.id}
+                  variant={activeTab === tab.id ? "default" : "outline"}
+                  className="justify-start"
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsDrawerOpen(false);
+                  }}
+                >
+                  {tab.icon}
+                  <span className="ml-2">{tab.label}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </div>
+  );
+
+  // Desktop view
+  const DesktopTabsView = () => (
+    <div className="hidden md:block">
+      <TabsList className="mb-4 flex flex-wrap space-x-1">
+        {tabs.map(tab => (
+          <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
+            {tab.icon}
+            <span className="ml-2">{tab.label}</span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </div>
+  );
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
-        <p className="text-muted-foreground">Manage your app's content and users</p>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Admin Panel</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-11 w-full">
-          {tabs.map(tab => (
-            <TabsTrigger key={tab.id} value={tab.id}>
-              {tab.icon}
-              <span className="ml-2">{tab.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <MobileTabsView />
+        <DesktopTabsView />
         
         <TabsContent value="dashboard">
           <AdminDashboard stats={stats} />
