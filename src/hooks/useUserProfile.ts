@@ -34,8 +34,8 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         roles: userRoles, // Changed from 'role' to 'roles' to match UserProfile interface
-        followers: data.followers || 0,
-        following: data.following || 0
+        followers: 0, // Default value since it doesn't exist in the database yet
+        following: 0  // Default value since it doesn't exist in the database yet
       };
     }
     return null;
