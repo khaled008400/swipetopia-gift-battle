@@ -3,6 +3,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
+// Define the RealtimePostgresChangesPayload interface to match Supabase's structure
+interface RealtimePostgresChangesPayload<T> {
+  commit_timestamp: string;
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  schema: string;
+  table: string;
+  old: T | null;
+  new: T | null;
+}
+
 export function useRealtimeData<T>(
   tableName: string, 
   initialData: T[], 
@@ -45,12 +55,16 @@ export function useRealtimeData<T>(
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload) => {
-        setData((prevData) => [...prevData, payload.new as T]);
-        toast({
-          title: "New data received",
-          description: `New update for ${tableName}`,
-        });
+      (payload: { [key: string]: any }) => {
+        // Extract the data from the payload correctly
+        const newRecord = (payload.new || payload.payload?.new) as T;
+        if (newRecord) {
+          setData((prevData) => [...prevData, newRecord]);
+          toast({
+            title: "New data received",
+            description: `New update for ${tableName}`,
+          });
+        }
       }
     );
     
@@ -63,12 +77,16 @@ export function useRealtimeData<T>(
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload) => {
-        setData((prevData) =>
-          prevData.map((item: any) =>
-            item.id === (payload.new as any).id ? payload.new as T : item
-          )
-        );
+      (payload: { [key: string]: any }) => {
+        // Extract the data from the payload correctly
+        const updatedRecord = (payload.new || payload.payload?.new) as T;
+        if (updatedRecord) {
+          setData((prevData) =>
+            prevData.map((item: any) =>
+              item.id === (updatedRecord as any).id ? updatedRecord : item
+            )
+          );
+        }
       }
     );
     
@@ -81,10 +99,14 @@ export function useRealtimeData<T>(
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload) => {
-        setData((prevData) =>
-          prevData.filter((item: any) => item.id !== (payload.old as any).id)
-        );
+      (payload: { [key: string]: any }) => {
+        // Extract the data from the payload correctly
+        const deletedRecord = (payload.old || payload.payload?.old) as T;
+        if (deletedRecord) {
+          setData((prevData) =>
+            prevData.filter((item: any) => item.id !== (deletedRecord as any).id)
+          );
+        }
       }
     );
 
