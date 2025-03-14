@@ -17,9 +17,15 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
     }
     
     if (data) {
-      // Convert single role to array of roles if present
+      // Get roles from database if available, otherwise from metadata, or default to "user"
       let userRoles: UserRole[] = [];
-      if (data.role) {
+      
+      if (data.roles && Array.isArray(data.roles)) {
+        userRoles = data.roles as UserRole[];
+      } else if (authUser.user_metadata?.roles && Array.isArray(authUser.user_metadata.roles)) {
+        userRoles = authUser.user_metadata.roles as UserRole[];
+      } else if (data.role) {
+        // For backward compatibility with single role field
         userRoles = [data.role as UserRole];
       } else if (authUser.user_metadata?.role) {
         userRoles = [authUser.user_metadata.role as UserRole];
@@ -33,9 +39,14 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         email: authUser.email || '',
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
-        roles: userRoles, // Changed from 'role' to 'roles' to match UserProfile interface
+        roles: userRoles,
+        bio: data.bio,
+        location: data.location,
         followers: 0, // Default value since it doesn't exist in the database yet
-        following: 0  // Default value since it doesn't exist in the database yet
+        following: 0, // Default value since it doesn't exist in the database yet
+        interests: data.interests,
+        shop_name: data.shop_name,
+        stream_key: data.stream_key
       };
     }
     return null;

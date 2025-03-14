@@ -1,21 +1,35 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShoppingBag, Video } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { UserRole } from "@/types/auth.types";
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(["user"]);
   const [isLoading, setIsLoading] = useState(false);
   const { signup, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleRoleChange = (role: UserRole) => {
+    if (role === "user") return;
+    
+    setSelectedRoles(prev => {
+      if (prev.includes(role)) {
+        return prev.filter(r => r !== role);
+      }
+      return [...prev, role];
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,11 +54,10 @@ const SignupPage = () => {
 
     setIsLoading(true);
     try {
-      await signup(email, username, password);
+      await signup(email, username, password, selectedRoles);
       navigate("/");
     } catch (error) {
       console.error("Signup error:", error);
-      // The error toast is handled in the AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -116,6 +129,41 @@ const SignupPage = () => {
               className="bg-app-gray-dark border-app-gray-light text-white"
               disabled={isLoading || authLoading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-gray-300 block mb-2">
+              I am a: (select all that apply)
+            </label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 rounded-md bg-app-gray-dark border border-app-gray-light hover:bg-app-gray transition-colors">
+                <input
+                  type="checkbox"
+                  id="role-seller"
+                  checked={selectedRoles.includes("seller")}
+                  onChange={() => handleRoleChange("seller")}
+                  className="h-4 w-4"
+                />
+                <ShoppingBag className="h-5 w-5 text-app-yellow" />
+                <label htmlFor="role-seller" className="flex-1 cursor-pointer">
+                  Seller - I want to sell products
+                </label>
+              </div>
+              
+              <div className="flex items-center gap-2 p-3 rounded-md bg-app-gray-dark border border-app-gray-light hover:bg-app-gray transition-colors">
+                <input
+                  type="checkbox"
+                  id="role-streamer"
+                  checked={selectedRoles.includes("streamer")}
+                  onChange={() => handleRoleChange("streamer")}
+                  className="h-4 w-4"
+                />
+                <Video className="h-5 w-5 text-purple-500" />
+                <label htmlFor="role-streamer" className="flex-1 cursor-pointer">
+                  Streamer - I want to create live streams
+                </label>
+              </div>
+            </div>
           </div>
 
           <Button 

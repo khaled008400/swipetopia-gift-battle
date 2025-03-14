@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { fetchUserProfile } from "@/hooks/useUserProfile";
+import { UserRole } from "@/types/auth.types";
 
 export const loginUser = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -13,7 +14,7 @@ export const loginUser = async (email: string, password: string) => {
   return data;
 };
 
-export const signupUser = async (email: string, username: string, password: string) => {
+export const signupUser = async (email: string, username: string, password: string, roles: UserRole[] = ["user"]) => {
   // First, check if username is already taken
   const { data: existingUsers, error: checkError } = await supabase
     .from('profiles')
@@ -34,7 +35,7 @@ export const signupUser = async (email: string, username: string, password: stri
     options: {
       data: {
         username,
-        role: 'viewer' // Default role
+        roles // Store roles in user metadata
       }
     }
   });
@@ -48,6 +49,7 @@ export const signupUser = async (email: string, username: string, password: stri
       .insert({
         id: data.user.id,
         username: username,
+        roles: roles, // Store roles array in profile
         avatar_url: `https://i.pravatar.cc/150?u=${username}` // Placeholder avatar
       });
     
