@@ -60,6 +60,8 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
+    "zego-express-engine-reactnative": "^3.19.2",
+    "zego-superboard-web": "^2.20.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

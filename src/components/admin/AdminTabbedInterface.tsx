@@ -14,7 +14,8 @@ import {
   Users, 
   Video,
   Loader2, 
-  Menu 
+  Menu,
+  Settings
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
 import AdminDashboard from './AdminDashboard';
@@ -28,6 +29,7 @@ import AdminShipping from './AdminShipping';
 import AdminReports from './AdminReports';
 import AdminLiveStreams from './AdminLiveStreams';
 import VirtualGifts from './VirtualGifts';
+import AdminStreamAPI from './AdminStreamAPI';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Button } from '../ui/button';
 import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
@@ -64,6 +66,7 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
     { id: "shipping", label: "Shipping", icon: <Truck size={16} /> },
     { id: "reports", label: "Reports", icon: <BarChart size={16} /> },
     { id: "live-streams", label: "Live Streams", icon: <Radio size={16} /> },
+    { id: "stream-api", label: "Stream API", icon: <Settings size={16} /> },
   ];
 
   // Mobile view
@@ -166,6 +169,10 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="virtual-gifts" className="p-0">
           <VirtualGifts />
+        </TabsContent>
+
+        <TabsContent value="stream-api">
+          <AdminStreamAPI />
         </TabsContent>
       </Tabs>
     </div>
