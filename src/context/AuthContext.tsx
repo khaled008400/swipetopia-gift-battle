@@ -148,6 +148,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const isAdmin = () => {
+    if (!user) return false;
+    return user.role === 'admin';
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -157,7 +162,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isLoading,
         login,
         signup,
-        logout
+        logout,
+        isAdmin
       }}
     >
       {children}

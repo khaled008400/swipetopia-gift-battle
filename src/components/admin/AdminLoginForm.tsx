@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AdminLoginFormProps {
   onLogin: (username: string, password: string) => Promise<void>;
+  message?: string;
 }
 
-const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin }) => {
+const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin, message }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -41,14 +43,21 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin }) => {
           <p className="text-gray-500">Login to access admin dashboard</p>
         </div>
 
+        {message && (
+          <Alert className="mb-4">
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="admin-username" className="text-sm font-medium">
-              Username
+              Email
             </label>
             <Input
               id="admin-username"
-              placeholder="Enter your username"
+              type="email"
+              placeholder="Enter your email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
@@ -85,13 +94,15 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin }) => {
           </Button>
         </form>
         
-        {import.meta.env.DEV && (
-          <div className="mt-4 p-3 bg-blue-100 rounded-md">
-            <p className="text-xs text-blue-600">
-              Development mode: If the API is unavailable, you can still log in with any credentials.
-            </p>
-          </div>
-        )}
+        <div className="mt-6 p-3 bg-blue-100 rounded-md">
+          <p className="text-xs text-blue-600 font-medium">
+            Admin Credentials:
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            Email: admin@example.com<br />
+            Password: Password123!
+          </p>
+        </div>
       </div>
     </div>
   );

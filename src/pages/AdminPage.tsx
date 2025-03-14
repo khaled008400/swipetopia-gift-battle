@@ -8,30 +8,36 @@ import AdminLoginForm from '@/components/admin/AdminLoginForm';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
 
 const AdminPage = () => {
-  const { user, login } = useAuth();
+  const { user, login, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
 
   // Check if user has admin role
   useEffect(() => {
-    if (user) {
-      // In a real app, you would check if the user has admin permissions
-      // For demonstration, we'll consider any logged in user as having admin access
+    if (user && isAdmin()) {
       setAdminAuthenticated(true);
+    } else if (user && !isAdmin()) {
+      // If user is logged in but not an admin, show a message
+      console.log("User is not an admin");
+      setAdminAuthenticated(false);
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
-  const handleAdminLogin = async (username: string, password: string) => {
-    await login(username, password);
-    setAdminAuthenticated(true);
+  const handleAdminLogin = async (email: string, password: string) => {
+    try {
+      await login(email, password);
+      // The useEffect above will check if the user is an admin after login
+    } catch (error) {
+      console.error("Admin login error:", error);
+    }
   };
 
-  // Fetch stats only if user is authenticated
+  // Fetch stats only if user is authenticated as admin
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => AdminService.getDashboardStats(),
     refetchInterval: 60000, // Refresh every minute
-    enabled: !!user && adminAuthenticated, // Only run query if user is authenticated
+    enabled: !!user && adminAuthenticated, // Only run query if user is admin
   });
 
   // Create default stats object to avoid undefined errors
@@ -46,9 +52,14 @@ const AdminPage = () => {
     revenueToday: 0
   };
 
-  // Display login form if not authenticated
+  // Display login form if not authenticated as admin
   if (!user || !adminAuthenticated) {
-    return <AdminLoginForm onLogin={handleAdminLogin} />;
+    return (
+      <AdminLoginForm 
+        onLogin={handleAdminLogin} 
+        message={user && !isAdmin() ? "You do not have admin privileges" : "Please login with admin credentials"}
+      />
+    );
   }
 
   // Pass either the actual stats or the default stats
