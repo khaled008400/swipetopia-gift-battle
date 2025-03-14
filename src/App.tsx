@@ -21,6 +21,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import SellerDashboardPage from "./pages/SellerDashboardPage";
 import SellerProfilePage from "./pages/SellerProfilePage";
+import StreamerProfilePage from "./pages/StreamerProfilePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,7 @@ function App() {
                 <Route path="battle/:battleId" element={<BattlePage />} />
                 <Route path="seller/dashboard" element={<SellerDashboardPage />} />
                 <Route path="seller/:sellerId" element={<SellerProfilePage />} />
+                <Route path="streamer/:streamerId" element={<StreamerProfilePage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
               <Route path="/login" element={<LoginPage />} />
