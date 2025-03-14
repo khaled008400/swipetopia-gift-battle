@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout";
@@ -19,8 +19,19 @@ import LiveStreamPage from "./pages/LiveStreamPage";
 import ActivityPage from "./pages/ActivityPage";
 import ExplorePage from "./pages/ExplorePage";
 import AdminPage from "./pages/AdminPage";
+import { useAuth } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
+
+// AuthWrapper component to check authentication status
+const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  
+  // We add this console log to help debug
+  console.log("Auth status:", isAuthenticated);
+  
+  return children;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,22 +41,24 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/" element={<Layout />}>
-                <Route index element={<HomePage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="videos" element={<VideoPage />} />
-                <Route path="live" element={<LiveStreamPage />} />
-                <Route path="wallet" element={<WalletPage />} />
-                <Route path="shop" element={<ShopPage />} />
-                <Route path="activity" element={<ActivityPage />} />
-                <Route path="explore" element={<ExplorePage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AuthWrapper>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<HomePage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="videos" element={<VideoPage />} />
+                  <Route path="live" element={<LiveStreamPage />} />
+                  <Route path="wallet" element={<WalletPage />} />
+                  <Route path="shop" element={<ShopPage />} />
+                  <Route path="activity" element={<ActivityPage />} />
+                  <Route path="explore" element={<ExplorePage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthWrapper>
           </BrowserRouter>
         </TooltipProvider>
       </CartProvider>

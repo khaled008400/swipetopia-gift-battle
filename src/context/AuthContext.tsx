@@ -32,14 +32,48 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   
   // Check if user is logged in on component mount and listen for auth changes
   useEffect(() => {
-    const storedUser = AuthService.getCurrentUser();
-    if (storedUser) {
-      setUser(storedUser);
-    }
+    const checkCurrentSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          // Update local user state
+          const updatedUser: AppUser = {
+            id: session.user.id,
+            username: profileData?.username || session.user.email?.split('@')[0] || 'user',
+            email: session.user.email || '',
+            avatar: profileData?.avatar_url || '/placeholder.svg',
+            coins: profileData?.coins || 0,
+            // Set default values for followers and following since they don't exist in the database
+            followers: 0,
+            following: 0
+          };
+          
+          setUser(updatedUser);
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        } else {
+          // Check for stored user (for development mode)
+          const storedUser = AuthService.getCurrentUser();
+          if (storedUser) {
+            setUser(storedUser);
+          }
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      }
+    };
+    
+    checkCurrentSession();
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session);
         if (event === 'SIGNED_IN' && session) {
           // Get the user profile when signed in
           try {
