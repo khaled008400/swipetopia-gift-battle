@@ -58,9 +58,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             email: session.user.email || '',
             avatar: profileData?.avatar_url || '/placeholder.svg',
             coins: profileData?.coins || 0,
-            // Set default values since they might not exist in the database yet
-            followers: profileData?.followers || 0,
-            following: profileData?.following || 0
+            // Set default values for followers and following since they might not exist in the database yet
+            followers: 0,
+            following: 0
           };
           
           console.log("Setting user:", updatedUser.username);
@@ -103,9 +103,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               email: session.user.email || '',
               avatar: profileData?.avatar_url || '/placeholder.svg',
               coins: profileData?.coins || 0,
-              // Set default values since they might not exist in the database yet
-              followers: profileData?.followers || 0,
-              following: profileData?.following || 0
+              // Set default values for followers and following since they don't exist in the database
+              followers: 0,
+              following: 0
             };
             
             console.log("Auth state change - setting user:", updatedUser.username);

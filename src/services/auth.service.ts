@@ -50,8 +50,9 @@ const mapUser = (user: User | null, profile?: any): AppUser | null => {
     email: user.email || '',
     avatar: profile?.avatar_url || '/placeholder.svg',
     coins: profile?.coins || 0,
-    followers: profile?.followers || 0,
-    following: profile?.following || 0
+    // Set default values since these fields don't exist in the database yet
+    followers: 0,
+    following: 0
   };
 };
 
