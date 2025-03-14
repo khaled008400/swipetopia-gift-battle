@@ -3,7 +3,7 @@ import { Search, Bell, Heart, Home, ShoppingBag, User, Zap } from "lucide-react"
 import { Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem } from "../components/ui/carousel";
 import UserVideosCarousel from "../components/UserVideosCarousel";
-import { useAuth } from "@/context/auth/AuthContext";
+import { useAuth } from "../context/auth/AuthContext";
 
 // Mock data for the live selling profiles
 const LIVE_SELLERS = [{
