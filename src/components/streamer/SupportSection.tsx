@@ -1,5 +1,5 @@
 
-import { Gift, Coin, Heart } from "lucide-react";
+import { Gift, Coins, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -39,7 +39,7 @@ const SupportSection = ({ streamerId }: SupportSectionProps) => {
             <div className="flex items-center justify-between p-3 border border-app-gray-light rounded-lg hover:border-app-yellow transition-colors">
               <div className="flex items-center">
                 <div className="bg-yellow-900/20 p-2 rounded-lg mr-3">
-                  <Coin className="h-5 w-5 text-yellow-500" />
+                  <Coins className="h-5 w-5 text-yellow-500" />
                 </div>
                 <div>
                   <div className="font-medium">Send Coins</div>
@@ -125,7 +125,7 @@ const SupportSection = ({ streamerId }: SupportSectionProps) => {
                     </div>
                   </div>
                   <div className="flex items-center text-app-yellow font-semibold">
-                    <Coin className="h-4 w-4 mr-1" />
+                    <Coins className="h-4 w-4 mr-1" />
                     {supporter.gift_amount}
                   </div>
                 </div>
