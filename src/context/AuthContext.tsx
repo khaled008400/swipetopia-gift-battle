@@ -110,7 +110,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     return () => {
       isMounted = false;
-      data.unsubscribe();
+      // Correctly access unsubscribe method
+      if (data && typeof data.unsubscribe === 'function') {
+        data.unsubscribe();
+      }
     };
   }, []);
 

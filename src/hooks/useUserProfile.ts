@@ -43,9 +43,9 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         role: userRole || data.role || 'viewer',
-        // Safely handle optional fields with fallback values
-        followers: data.followers || 0,
-        following: data.following || 0
+        // Safely handle optional fields - check if they exist in the data object
+        followers: 'followers' in data ? Number(data.followers) : 0,
+        following: 'following' in data ? Number(data.following) : 0
       };
       
       console.log("Constructed profile:", profile);
