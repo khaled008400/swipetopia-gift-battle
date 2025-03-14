@@ -43,7 +43,7 @@ export function useNetworkStatus() {
         toast({
           title: "Limited Connection",
           description: "You're online but can't reach our servers. Some features may be unavailable.",
-          variant: "warning",
+          variant: "default", // Changed from "warning" to "default"
         });
       }
     };
