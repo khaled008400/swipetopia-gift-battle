@@ -3,6 +3,21 @@ import { Session, User } from "@supabase/supabase-js";
 
 export type UserRole = "user" | "seller" | "streamer" | "admin";
 
+export interface PaymentMethod {
+  id: string;
+  type: "card" | "paypal" | "bank";
+  name: string;
+  last4?: string;
+  isDefault?: boolean;
+}
+
+export interface NotificationPreferences {
+  battles: boolean;
+  orders: boolean;
+  messages: boolean;
+  followers: boolean;
+}
+
 export interface UserProfile {
   id: string;
   username: string;
@@ -17,6 +32,8 @@ export interface UserProfile {
   interests?: string[];
   shop_name?: string;
   stream_key?: string;
+  payment_methods?: PaymentMethod[];
+  notification_preferences?: NotificationPreferences;
 }
 
 export interface AuthContextType {
