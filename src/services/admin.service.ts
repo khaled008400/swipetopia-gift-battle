@@ -1,4 +1,3 @@
-
 import { adminApi } from './api';
 
 // User related interfaces
@@ -13,9 +12,10 @@ export interface AdminUser {
   lastActive: string;
   videoCount: number;
   followerCount: number;
+  ordersCount?: number;
 }
 
-export type UserRole = 'user' | 'moderator' | 'admin';
+export type UserRole = 'user' | 'moderator' | 'admin' | 'seller' | 'streamer' | 'viewer';
 
 // Video related interfaces
 export interface AdminVideo {
@@ -24,10 +24,13 @@ export interface AdminVideo {
   description: string;
   thumbnailUrl: string;
   videoUrl: string;
+  url?: string;
   duration: number;
   views: number;
   likes: number;
-  status: 'active' | 'under_review' | 'removed';
+  comments?: number;
+  shares?: number;
+  status: 'active' | 'under_review' | 'removed' | 'flagged';
   createdAt: string;
   user: {
     id: string;
@@ -45,7 +48,7 @@ export interface AdminProduct {
   image: string;
   inventory: number;
   category: string;
-  status: 'active' | 'draft' | 'out_of_stock';
+  status: 'active' | 'draft' | 'out_of_stock' | 'unavailable';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -83,15 +86,19 @@ export interface AdminShippingMethod {
 export interface AdminCoupon {
   id: string;
   code: string;
-  description: string;
-  discount_type: 'percentage' | 'fixed';
-  discount_value: number;
-  min_purchase_amount?: number;
-  max_uses?: number;
-  times_used: number;
-  start_date?: string;
-  end_date?: string;
-  active: boolean;
+  description?: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minimum_purchase?: number;
+  usage_limit?: number;
+  usage_count: number;
+  expiry_date?: string;
+  is_active: boolean;
+  applicable_products?: string[];
+  applicable_categories?: string[];
+  created_at: string;
+  updated_at?: string;
+  active?: boolean;
 }
 
 // Offer related interfaces
@@ -121,6 +128,8 @@ export interface VirtualGift {
   category: string;
   available: boolean;
   createdAt: string;
+  color?: string;
+  status?: string;
 }
 
 // Product Attribute related interfaces
@@ -128,6 +137,8 @@ export interface ProductAttribute {
   id: string;
   name: string;
   values: string[];
+  color?: string;
+  status?: string;
 }
 
 export interface AdminStats {
@@ -206,7 +217,8 @@ class AdminService {
           createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
           lastActive: new Date(Date.now() - Math.random() * 1000000).toISOString(),
           videoCount: Math.floor(Math.random() * 50),
-          followerCount: Math.floor(Math.random() * 10000)
+          followerCount: Math.floor(Math.random() * 10000),
+          ordersCount: Math.floor(Math.random() * 25)
         })),
         pagination: {
           total: 100,
@@ -253,7 +265,8 @@ class AdminService {
         createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
         lastActive: new Date(Date.now() - Math.random() * 1000000).toISOString(),
         videoCount: Math.floor(Math.random() * 50),
-        followerCount: Math.floor(Math.random() * 10000)
+        followerCount: Math.floor(Math.random() * 10000),
+        ordersCount: Math.floor(Math.random() * 25)
       };
     }
   }
@@ -273,10 +286,13 @@ class AdminService {
           description: `Description for video ${i + 1}. This is a sample video description.`,
           thumbnailUrl: `https://picsum.photos/seed/${i + 1}/300/200`,
           videoUrl: 'https://example.com/video.mp4',
+          url: 'https://example.com/video.mp4',
           duration: Math.floor(Math.random() * 180) + 10,
           views: Math.floor(Math.random() * 10000),
           likes: Math.floor(Math.random() * 1000),
-          status: i % 5 === 0 ? 'under_review' : i % 7 === 0 ? 'removed' : 'active',
+          comments: Math.floor(Math.random() * 200),
+          shares: Math.floor(Math.random() * 50),
+          status: i % 5 === 0 ? 'under_review' : i % 7 === 0 ? 'removed' : i % 9 === 0 ? 'flagged' : 'active',
           createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
           user: {
             id: `user-${i + 1}`,
@@ -294,7 +310,7 @@ class AdminService {
     }
   }
 
-  async updateVideoStatus(videoId: string, status: 'active' | 'under_review' | 'removed'): Promise<void> {
+  async updateVideoStatus(videoId: string, status: 'active' | 'under_review' | 'removed' | 'flagged'): Promise<void> {
     try {
       await adminApi.patch(`/videos/${videoId}/status`, { status });
     } catch (error) {
@@ -535,9 +551,9 @@ class AdminService {
       console.error('Error fetching product attributes:', error);
       // Return mock data
       return [
-        { id: 'attr-1', name: 'Size', values: ['Small', 'Medium', 'Large', 'X-Large'] },
-        { id: 'attr-2', name: 'Color', values: ['Red', 'Blue', 'Green', 'Black', 'White'] },
-        { id: 'attr-3', name: 'Material', values: ['Cotton', 'Polyester', 'Wool', 'Silk'] }
+        { id: 'attr-1', name: 'Size', values: ['Small', 'Medium', 'Large', 'X-Large'], color: '#4CAF50', status: 'active' },
+        { id: 'attr-2', name: 'Color', values: ['Red', 'Blue', 'Green', 'Black', 'White'], color: '#2196F3', status: 'active' },
+        { id: 'attr-3', name: 'Material', values: ['Cotton', 'Polyester', 'Wool', 'Silk'], color: '#FF9800', status: 'active' }
       ];
     }
   }
@@ -681,14 +697,16 @@ class AdminService {
         id: `coupon-${i + 1}`,
         code: `SAVE${i + 1}${i + 5}`,
         description: `${i + 10}% off your order`,
-        discount_type: i % 2 === 0 ? 'percentage' : 'fixed',
-        discount_value: i % 2 === 0 ? 10 + i * 5 : 5 + i * 2,
-        min_purchase_amount: i % 3 === 0 ? 50 : 0,
-        max_uses: i % 2 === 0 ? 100 : null,
-        times_used: Math.floor(Math.random() * 50),
-        start_date: new Date(Date.now() - 86400000 * 10).toISOString(),
-        end_date: new Date(Date.now() + 86400000 * 20).toISOString(),
-        active: i !== 2
+        type: i % 2 === 0 ? 'percentage' : 'fixed',
+        value: i % 2 === 0 ? 10 + i * 5 : 5 + i * 2,
+        minimum_purchase: i % 3 === 0 ? 50 : undefined,
+        usage_limit: i % 2 === 0 ? 100 : undefined,
+        usage_count: Math.floor(Math.random() * 50),
+        expiry_date: new Date(Date.now() + 86400000 * 20).toISOString(),
+        is_active: i !== 2,
+        created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+        applicable_products: i % 2 === 0 ? [`product-${i + 1}`, `product-${i + 2}`] : undefined,
+        applicable_categories: i % 3 === 0 ? ['clothing', 'accessories'] : undefined
       }));
     }
   }
@@ -701,19 +719,23 @@ class AdminService {
       console.error('Error fetching coupon analytics:', error);
       // Return mock data
       return {
-        totalUsageCount: 875,
-        totalRevenueImpact: 4350.25,
-        averageOrderValue: 78.50,
-        topCoupons: [
-          { id: 'coupon-1', code: 'SAVE25', uses: 125, revenue: 1875.50 },
-          { id: 'coupon-2', code: 'FREESHIP', uses: 98, revenue: 980.25 },
-          { id: 'coupon-3', code: 'WELCOME15', uses: 87, revenue: 652.75 }
-        ]
+        usage_over_time: Array(30).fill(null).map((_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (30 - i));
+          return {
+            date: date.toISOString().split('T')[0],
+            count: Math.floor(Math.random() * 10) + 1
+          };
+        }),
+        most_used_coupons: Array(5).fill(null).map((_, i) => ({
+          code: `SAVE${i + 1}${i + 5}`,
+          usage_count: 50 - i * 10
+        }))
       };
     }
   }
 
-  async createCoupon(data: Omit<AdminCoupon, 'id' | 'times_used'>): Promise<AdminCoupon> {
+  async createCoupon(data: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>): Promise<AdminCoupon> {
     try {
       const response = await adminApi.post('/coupons', data);
       return response.data;
@@ -723,12 +745,14 @@ class AdminService {
       return {
         id: `coupon-${Date.now()}`,
         ...data,
-        times_used: 0
+        usage_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
     }
   }
 
-  async updateCoupon(id: string, data: Partial<Omit<AdminCoupon, 'id' | 'times_used'>>): Promise<AdminCoupon> {
+  async updateCoupon(id: string, data: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>>): Promise<AdminCoupon> {
     try {
       const response = await adminApi.patch(`/coupons/${id}`, data);
       return response.data;
@@ -759,7 +783,7 @@ class AdminService {
         id: `offer-${i + 1}`,
         name: `${['Summer', 'Winter', 'Spring', 'Holiday', 'Flash'][i]} Sale`,
         description: `Special offer for ${['summer', 'winter', 'spring', 'holiday', 'limited time'][i]}`,
-        discount_type: ['percentage', 'fixed', 'special'][i % 3],
+        discount_type: ['percentage', 'fixed', 'special'][i % 3] as 'percentage' | 'fixed' | 'special',
         discount_value: 10 + i * 5,
         min_purchase_amount: i % 2 === 0 ? 50 : undefined,
         product_category: i % 3 === 0 ? 'clothing' : undefined,
@@ -830,7 +854,7 @@ class AdminService {
       return response.data;
     } catch (error) {
       console.error('Error fetching virtual gifts:', error);
-      // Return mock data
+      // Return mock data with added color property
       return Array(8).fill(null).map((_, i) => ({
         id: `gift-${i + 1}`,
         name: ['Diamond', 'Crown', 'Heart', 'Star', 'Rocket', 'Rose', 'Trophy', 'Cake'][i],
@@ -842,7 +866,9 @@ class AdminService {
         soundUrl: i % 3 === 0 ? `https://example.com/sounds/${['diamond', 'crown', 'heart', 'star', 'rocket', 'rose', 'trophy', 'cake'][i]}.mp3` : undefined,
         category: ['luxury', 'luxury', 'general', 'celebration', 'celebration', 'cute', 'luxury', 'celebration'][i],
         available: i !== 2,
-        createdAt: new Date(Date.now() - 86400000 * (10 + i)).toISOString()
+        createdAt: new Date(Date.now() - 86400000 * (10 + i)).toISOString(),
+        color: ['#FFD700', '#9C27B0', '#E91E63', '#FFC107', '#4CAF50', '#FF9800', '#2196F3', '#F44336'][i],
+        status: i !== 2 ? 'active' : 'inactive'
       }));
     }
   }

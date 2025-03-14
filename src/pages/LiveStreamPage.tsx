@@ -1,455 +1,316 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/router';
-import { ZegoStreamConfig } from '@/services/livestream.service';
-import livestreamService from '@/services/livestream.service';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
+import LiveStreamService, { ZegoStreamConfig } from '@/services/livestream.service';
+import { ChevronRight, Trash2, Paperclip, Smile, Send, MicOff, Mic, Camera, CameraOff, Settings, Users, Gift, DollarSign } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import LiveStreamIndicator from '@/components/live/LiveStreamIndicator';
+import BattleModeSelector from '@/components/live/BattleModeSelector';
 
-const LiveStreamPage: React.FC = () => {
-  const router = useRouter();
-  const { toast } = useToast();
+interface ChatMessage {
+  id: string;
+  sender: string;
+  message: string;
+  timestamp: Date;
+}
+
+const LiveStreamPage = () => {
   const [streamID, setStreamID] = useState('');
-  const [appID, setAppID] = useState<number | null>(null);
-  const [appSign, setAppSign] = useState('');
-  const [userID, setUserID] = useState('');
-  const [userName, setUserName] = useState('');
-  const [roomID, setRoomID] = useState('');
-  const [localView, setLocalView] = useState<any>(null);
-  const [remoteView, setRemoteView] = useState<any>(null);
-  const [publishing, setPublishing] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [cameraEnabled, setCameraEnabled] = useState(true);
-  const [microphoneEnabled, setMicrophoneEnabled] = useState(true);
-  const [videoWidth, setVideoWidth] = useState(360);
-  const [videoHeight, setVideoHeight] = useState(640);
-  const [videoFPS, setVideoFPS] = useState(15);
-  const [videoBitrate, setVideoBitrate] = useState(600);
-
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
+  const [userID, setUserID] = useState(Math.floor(Math.random() * 10000).toString());
+  const [displayName, setDisplayName] = useState(`User ${Math.floor(Math.random() * 1000)}`);
+  const [roomID, setRoomID] = useState('default_room');
+  const [streaming, setStreaming] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [enableCamera, setEnableCamera] = useState(true);
+  const [enableMicrophone, setEnableMicrophone] = useState(true);
+  const [localVideoView, setLocalVideoView] = useState<any>(null);
+  const [remoteVideoView, setRemoteVideoView] = useState<any>(null);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [battleMode, setBattleMode] = useState<'solo' | 'team'>('solo');
+  const [volume, setVolume] = useState(50);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Load settings from local storage
-    const storedAppID = localStorage.getItem('zego_app_id');
-    const storedAppSign = localStorage.getItem('zego_app_sign');
-    const storedUserID = localStorage.getItem('zego_user_id');
-    const storedUserName = localStorage.getItem('zego_user_name');
-    const storedRoomID = localStorage.getItem('zego_room_id');
-    const storedStreamID = localStorage.getItem('zego_stream_id');
+    // Scroll to the bottom of the chat on new messages
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
-    if (storedAppID) setAppID(Number(storedAppID));
-    if (storedAppSign) setAppSign(storedAppSign);
-    if (storedUserID) setUserID(storedUserID);
-    if (storedUserName) setUserName(storedUserName);
-    if (storedRoomID) setRoomID(storedRoomID);
-    if (storedStreamID) setStreamID(storedStreamID);
+  const sendMessage = () => {
+    if (chatInput.trim() !== '') {
+      const newMessage: ChatMessage = {
+        id: Math.random().toString(36).substring(7),
+        sender: displayName,
+        message: chatInput,
+        timestamp: new Date(),
+      };
+      setChatMessages([...chatMessages, newMessage]);
+      setChatInput('');
+    }
+  };
 
-    // Initialize ZegoCloud SDK when the component mounts
-    const initialize = async () => {
-      if (appID && appSign && userID && userName && roomID) {
-        const config: ZegoStreamConfig = {
-          appID: appID,
-          appSign: appSign,
-          userID: userID,
-          userName: userName,
-          roomID: roomID,
-        };
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  };
 
-        try {
-          await livestreamService.init(config);
-          console.log('Live stream service initialized');
-        } catch (error) {
-          console.error('Failed to initialize live stream service:', error);
-          toast({
-            title: "Initialization Error",
-            description: "Failed to initialize the live stream service.",
-            variant: "destructive",
-          });
-        }
-      }
-    };
-
-    initialize();
-
-    return () => {
-      // Clean up when the component unmounts
-      livestreamService.leaveRoom();
-    };
-  }, []);
-
-  useEffect(() => {
-    // Save settings to local storage whenever they change
-    localStorage.setItem('zego_app_id', String(appID));
-    localStorage.setItem('zego_app_sign', appSign);
-    localStorage.setItem('zego_user_id', userID);
-    localStorage.setItem('zego_user_name', userName);
-    localStorage.setItem('zego_room_id', roomID);
-    localStorage.setItem('zego_stream_id', streamID);
-  }, [appID, appSign, userID, userName, roomID, streamID]);
-
-  const handleStartPublishing = async () => {
+  const startLiveStream = async () => {
     if (!streamID) {
-      alert('Please enter a stream ID.');
+      toast({
+        title: "Stream ID Required",
+        description: "Please enter a stream ID to start streaming.",
+        variant: "destructive",
+      });
       return;
     }
 
+    setLoading(true);
+
     try {
-      await livestreamService.startPublishing(streamID, { camera: cameraEnabled, microphone: microphoneEnabled });
-      setPublishing(true);
-
-      const newLocalView = await livestreamService.getLocalVideoView();
-      setLocalView(newLocalView);
-
-      if (localVideoRef.current) {
-        localVideoRef.current.innerHTML = '';
-        localVideoRef.current.appendChild(newLocalView);
-      }
-
-      toast({
-        title: "Publishing Started",
-        description: `Successfully started publishing stream: ${streamID}.`,
+      // Initialize the Zego engine
+      await LiveStreamService.init({
+        appID: 123456789, // Replace with your actual App ID
+        appSign: "your-app-sign", // Replace with your actual App Sign
+        userID: userID,
+        userName: displayName,
+        roomID: roomID,
       });
+
+      // Setup camera/microphone state
+      await LiveStreamService.enableCamera(enableCamera);
+      await LiveStreamService.enableMicrophone(enableMicrophone);
+
+      // Start publishing
+      await LiveStreamService.startPublishing(streamID, {
+        camera: enableCamera,
+        microphone: enableMicrophone
+      });
+
+      // Create local video view
+      const localView = await LiveStreamService.getLocalVideoView();
+      setLocalVideoView(localView);
+
+      // Register for events
+      await LiveStreamService.registerEventListener('roomUserUpdate', (roomID, updateType, userList) => {
+        console.log('Room user update:', roomID, updateType, userList);
+      });
+
+      await LiveStreamService.registerEventListener('roomStreamUpdate', (roomID, updateType, streamList) => {
+        console.log('Room stream update:', roomID, updateType, streamList);
+      });
+
+      setStreaming(true);
+      setLoading(false);
     } catch (error) {
-      console.error('Failed to start publishing:', error);
+      console.error('Failed to start live stream:', error);
       toast({
-        title: "Publishing Error",
-        description: "Failed to start publishing the stream.",
+        title: "Streaming Failed",
+        description: "Failed to start the live stream. Please try again.",
         variant: "destructive",
       });
+      setLoading(false);
     }
   };
 
-  const handleStopPublishing = async () => {
+  const stopLiveStream = async () => {
     try {
-      await livestreamService.stopPublishing();
-      setPublishing(false);
-      setLocalView(null);
-
-      if (localVideoRef.current) {
-        localVideoRef.current.innerHTML = '';
-      }
-
-      toast({
-        title: "Publishing Stopped",
-        description: "Successfully stopped publishing the stream.",
-      });
+      await LiveStreamService.stopPublishing();
+      await LiveStreamService.leaveRoom();
+      
+      // Remove event listeners
+      await LiveStreamService.removeEventListener('roomUserUpdate');
+      await LiveStreamService.removeEventListener('roomStreamUpdate');
+      
+      setStreaming(false);
+      setLocalVideoView(null);
     } catch (error) {
-      console.error('Failed to stop publishing:', error);
-      toast({
-        title: "Stop Error",
-        description: "Failed to stop publishing the stream.",
-        variant: "destructive",
-      });
+      console.error('Failed to stop live stream:', error);
     }
   };
 
-  const handleStartPlaying = async () => {
-    if (!streamID) {
-      alert('Please enter a stream ID.');
-      return;
-    }
-
+  const toggleCamera = async () => {
     try {
-      const newRemoteView = await livestreamService.getRemoteVideoView(streamID);
-      setRemoteView(newRemoteView);
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.innerHTML = '';
-        remoteVideoRef.current.appendChild(newRemoteView);
-      }
-
-      await livestreamService.startPlaying(streamID, newRemoteView);
-      setPlaying(true);
-
-      toast({
-        title: "Playing Started",
-        description: `Successfully started playing stream: ${streamID}.`,
-      });
+      await LiveStreamService.enableCamera(!enableCamera);
+      setEnableCamera(!enableCamera);
     } catch (error) {
-      console.error('Failed to start playing:', error);
-      toast({
-        title: "Playing Error",
-        description: "Failed to start playing the stream.",
-        variant: "destructive",
-      });
+      console.error('Failed to toggle camera:', error);
     }
   };
 
-  const handleStopPlaying = async () => {
+  const toggleMicrophone = async () => {
     try {
-      await livestreamService.stopPlaying(streamID);
-      setPlaying(false);
-      setRemoteView(null);
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.innerHTML = '';
-      }
-
-      toast({
-        title: "Playing Stopped",
-        description: "Successfully stopped playing the stream.",
-      });
+      await LiveStreamService.enableMicrophone(!enableMicrophone);
+      setEnableMicrophone(!enableMicrophone);
     } catch (error) {
-      console.error('Failed to stop playing:', error);
-      toast({
-        title: "Stop Error",
-        description: "Failed to stop playing the stream.",
-        variant: "destructive",
-      });
+      console.error('Failed to toggle microphone:', error);
     }
   };
 
-  const handleSwitchCamera = async () => {
+  const switchCameraHandler = async () => {
     try {
-      await livestreamService.switchCamera();
+      await LiveStreamService.switchCamera();
       toast({
         title: "Camera Switched",
-        description: "Successfully switched camera.",
+        description: "Camera switched successfully.",
       });
     } catch (error) {
       console.error('Failed to switch camera:', error);
-      toast({
-        title: "Switch Error",
-        description: "Failed to switch camera.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCameraToggle = async (checked: boolean) => {
-    try {
-      await livestreamService.enableCamera(checked);
-      setCameraEnabled(checked);
-      toast({
-        title: "Camera Toggled",
-        description: `Camera ${checked ? 'enabled' : 'disabled'} successfully.`,
-      });
-    } catch (error) {
-      console.error('Failed to toggle camera:', error);
-      toast({
-        title: "Camera Toggle Error",
-        description: "Failed to toggle camera.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleMicrophoneToggle = async (checked: boolean) => {
-    try {
-      await livestreamService.enableMicrophone(checked);
-      setMicrophoneEnabled(checked);
-      toast({
-        title: "Microphone Toggled",
-        description: `Microphone ${checked ? 'enabled' : 'disabled'} successfully.`,
-      });
-    } catch (error) {
-      console.error('Failed to toggle microphone:', error);
-      toast({
-        title: "Microphone Toggle Error",
-        description: "Failed to toggle microphone.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSetVideoConfig = async () => {
-    try {
-      await livestreamService.setVideoConfig(videoWidth, videoHeight, videoFPS, videoBitrate);
-      toast({
-        title: "Video Config Set",
-        description: "Successfully set video configuration.",
-      });
-    } catch (error) {
-      console.error('Failed to set video config:', error);
-      toast({
-        title: "Video Config Error",
-        description: "Failed to set video configuration.",
-        variant: "destructive",
-      });
     }
   };
 
   return (
     <div className="container mx-auto p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Live Stream Settings</CardTitle>
-          <CardDescription>Configure your live stream settings here.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="appID">App ID</Label>
-              <Input
-                type="number"
-                id="appID"
-                value={appID || ''}
-                onChange={(e) => setAppID(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="appSign">App Sign</Label>
-              <Input
-                type="text"
-                id="appSign"
-                value={appSign}
-                onChange={(e) => setAppSign(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="userID">User ID</Label>
-              <Input
-                type="text"
-                id="userID"
-                value={userID}
-                onChange={(e) => setUserID(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="userName">User Name</Label>
-              <Input
-                type="text"
-                id="userName"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="roomID">Room ID</Label>
-              <Input
-                type="text"
-                id="roomID"
-                value={roomID}
-                onChange={(e) => setRoomID(e.target.value)}
-              />
-            </div>
+      <h1 className="text-2xl font-bold mb-4">Live Stream Page</h1>
+
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="streamID">Stream ID</Label>
               <Input
-                type="text"
                 id="streamID"
+                type="text"
                 value={streamID}
                 onChange={(e) => setStreamID(e.target.value)}
+                placeholder="Enter Stream ID"
+              />
+            </div>
+            <div>
+              <Label htmlFor="userID">User ID</Label>
+              <Input
+                id="userID"
+                type="text"
+                value={userID}
+                onChange={(e) => setUserID(e.target.value)}
+                placeholder="Enter User ID"
+                disabled
+              />
+            </div>
+            <div>
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter Display Name"
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Video Configuration</CardTitle>
-          <CardDescription>Adjust video settings for optimal streaming.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="videoWidth">Width</Label>
-              <Input
-                type="number"
-                id="videoWidth"
-                value={videoWidth}
-                onChange={(e) => setVideoWidth(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="videoHeight">Height</Label>
-              <Input
-                type="number"
-                id="videoHeight"
-                value={videoHeight}
-                onChange={(e) => setVideoHeight(Number(e.target.value))}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="videoFPS">FPS</Label>
-              <Input
-                type="number"
-                id="videoFPS"
-                value={videoFPS}
-                onChange={(e) => setVideoFPS(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="videoBitrate">Bitrate (kbps)</Label>
-              <Input
-                type="number"
-                id="videoBitrate"
-                value={videoBitrate}
-                onChange={(e) => setVideoBitrate(Number(e.target.value))}
-              />
-            </div>
-          </div>
-          <Button onClick={handleSetVideoConfig}>Set Video Configuration</Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Controls</CardTitle>
-          <CardDescription>Start publishing or playing the stream.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
+          <Separator className="my-4" />
           <div className="flex items-center space-x-2">
+            <Switch id="camera" checked={enableCamera} onCheckedChange={toggleCamera} />
             <Label htmlFor="camera">Enable Camera</Label>
-            <Switch id="camera" checked={cameraEnabled} onCheckedChange={handleCameraToggle} />
+            <Button variant="outline" size="sm" onClick={switchCameraHandler} disabled={!streaming}>
+              Switch Camera
+            </Button>
           </div>
           <div className="flex items-center space-x-2">
+            <Switch id="microphone" checked={enableMicrophone} onCheckedChange={toggleMicrophone} />
             <Label htmlFor="microphone">Enable Microphone</Label>
-            <Switch id="microphone" checked={microphoneEnabled} onCheckedChange={handleMicrophoneToggle} />
           </div>
-          <div className="flex space-x-2">
-            {!publishing ? (
-              <Button onClick={handleStartPublishing}>Start Publishing</Button>
-            ) : (
-              <Button variant="destructive" onClick={handleStopPublishing}>Stop Publishing</Button>
-            )}
-            <Button onClick={handleSwitchCamera}>Switch Camera</Button>
-          </div>
-          {!playing ? (
-            <Button onClick={handleStartPlaying}>Start Playing</Button>
+          <Separator className="my-4" />
+          {streaming ? (
+            <Button onClick={stopLiveStream} disabled={loading} variant="destructive">
+              Stop Live Stream
+            </Button>
           ) : (
-            <Button variant="destructive" onClick={handleStopPlaying}>Stop Playing</Button>
+            <Button onClick={startLiveStream} disabled={loading}>
+              Start Live Stream
+            </Button>
           )}
+          {loading && <p>Loading...</p>}
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Local Video</CardTitle>
-            <CardDescription>Your local stream preview.</CardDescription>
-          </CardHeader>
           <CardContent>
-            <div ref={localVideoRef} className="w-full h-64 bg-gray-100" />
+            <h3 className="text-lg font-semibold mb-2">Local Video</h3>
+            {localVideoView ? localVideoView : <p>Waiting to start stream...</p>}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Remote Video</CardTitle>
-            <CardDescription>The remote stream you are playing.</CardDescription>
-          </CardHeader>
           <CardContent>
-            <div ref={remoteVideoRef} className="w-full h-64 bg-gray-100" />
+            <h3 className="text-lg font-semibold mb-2">Remote Video</h3>
+            {remoteVideoView ? remoteVideoView : <p>No remote stream playing</p>}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <Card className="md:col-span-2">
+          <CardContent className="p-4">
+            <h3 className="text-lg font-semibold mb-2">Chat</h3>
+            <div
+              className="h-64 overflow-y-auto p-2 mb-2 bg-secondary rounded"
+              ref={chatScrollRef}
+            >
+              {chatMessages.map((msg) => (
+                <div key={msg.id} className="mb-1">
+                  <span className="font-semibold">{msg.sender}:</span> {msg.message}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="text"
+                placeholder="Type your message..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <Button onClick={sendMessage}><Send className="h-4 w-4" /></Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-lg font-semibold mb-2">Settings</h3>
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList>
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="audio">Audio</TabsTrigger>
+                <TabsTrigger value="video">Video</TabsTrigger>
+              </TabsList>
+              <TabsContent value="general">
+                <div className="space-y-2">
+                  <Label>Room ID</Label>
+                  <Input type="text" value={roomID} onChange={(e) => setRoomID(e.target.value)} />
+                </div>
+              </TabsContent>
+              <TabsContent value="audio">
+                <div className="space-y-2">
+                  <Label>Volume</Label>
+                  <Slider
+                    defaultValue={[volume]}
+                    max={100}
+                    step={1}
+                    onValueChange={(value) => setVolume(value[0])}
+                  />
+                  <p className="text-sm text-muted-foreground">Current Volume: {volume}</p>
+                </div>
+              </TabsContent>
+              <TabsContent value="video">
+                <p>Video settings will be here</p>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

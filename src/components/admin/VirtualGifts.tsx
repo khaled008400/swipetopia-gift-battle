@@ -1,178 +1,199 @@
-
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { VirtualGift } from '@/services/admin.service';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Plus } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import GiftForm from './GiftForm';
+import AdminService, { VirtualGift } from '@/services/admin.service';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import GiftsTable from './GiftsTable';
 import GiftFilters from './GiftFilters';
+import GiftForm from './GiftForm';
+import { Plus, Filter, Search, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/use-toast';
 
 const VirtualGifts = () => {
-  const [page, setPage] = useState(1);
+  const [open, setOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentGift, setCurrentGift] = useState<VirtualGift | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [showGiftDialog, setShowGiftDialog] = useState(false);
-  const [selectedGift, setSelectedGift] = useState<VirtualGift | null>(null);
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['virtualGifts', page, categoryFilter],
-    queryFn: () => AdminService.getVirtualGifts(page, 10, categoryFilter),
+  const queryClient = useQueryClient();
+  
+  // Fetch gifts
+  const { data: gifts, isLoading } = useQuery({
+    queryKey: ['virtualGifts'],
+    queryFn: () => AdminService.getVirtualGifts(),
   });
 
-  const createGiftMutation = useMutation({
-    mutationFn: (giftData: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) => 
-      AdminService.createVirtualGift(giftData),
+  // Add gift mutation
+  const addGiftMutation = useMutation({
+    mutationFn: (gift: Omit<VirtualGift, 'id' | 'createdAt'>) => AdminService.createVirtualGift(gift),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
-      setShowGiftDialog(false);
+      setOpen(false);
       toast({
-        title: "Gift created",
-        description: "Virtual gift has been created successfully.",
+        title: "Success",
+        description: "Gift created successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create virtual gift.",
+        description: "Failed to create gift",
         variant: "destructive",
       });
-    },
+      console.error("Create gift error:", error);
+    }
   });
 
+  // Update gift mutation
   const updateGiftMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>> }) => 
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<VirtualGift, 'id' | 'createdAt'>> }) => 
       AdminService.updateVirtualGift(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
-      setShowGiftDialog(false);
+      setOpen(false);
       toast({
-        title: "Gift updated",
-        description: "Virtual gift has been updated successfully.",
+        title: "Success",
+        description: "Gift updated successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update virtual gift.",
+        description: "Failed to update gift",
         variant: "destructive",
       });
-    },
+      console.error("Update gift error:", error);
+    }
   });
 
+  // Delete gift mutation
   const deleteGiftMutation = useMutation({
-    mutationFn: (giftId: string) => AdminService.deleteVirtualGift(giftId),
+    mutationFn: (id: string) => AdminService.deleteVirtualGift(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
       toast({
-        title: "Gift deleted",
-        description: "Virtual gift has been deleted successfully.",
+        title: "Success",
+        description: "Gift deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete virtual gift.",
+        description: "Failed to delete gift",
         variant: "destructive",
       });
-    },
+      console.error("Delete gift error:", error);
+    }
   });
 
-  const toggleAvailabilityMutation = useMutation({
+  // Toggle gift availability mutation
+  const toggleGiftMutation = useMutation({
     mutationFn: ({ id, available }: { id: string, available: boolean }) => 
       AdminService.toggleGiftAvailability(id, available),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtualGifts'] });
       toast({
-        title: "Availability updated",
-        description: "Gift availability has been updated successfully.",
+        title: "Success",
+        description: "Gift availability updated",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update gift availability.",
+        description: "Failed to update gift availability",
         variant: "destructive",
       });
-    },
+      console.error("Toggle gift error:", error);
+    }
   });
 
-  const handleCreateGift = () => {
-    setDialogMode('create');
-    setSelectedGift(null);
-    setShowGiftDialog(true);
-  };
-
-  const handleEditGift = (gift: VirtualGift) => {
-    setSelectedGift(gift);
-    setDialogMode('edit');
-    setShowGiftDialog(true);
-  };
-
-  const handleDeleteGift = (giftId: string) => {
-    if (confirm("Are you sure you want to delete this gift? This action cannot be undone.")) {
-      deleteGiftMutation.mutate(giftId);
-    }
-  };
-
-  const handleToggleAvailability = (gift: VirtualGift) => {
-    toggleAvailabilityMutation.mutate({ id: gift.id, available: !gift.available });
-  };
-
-  const handleFormSubmit = (data: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (dialogMode === 'create') {
-      createGiftMutation.mutate(data);
-    } else if (dialogMode === 'edit' && selectedGift) {
-      updateGiftMutation.mutate({ id: selectedGift.id, data });
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open);
+    if (!open) {
+      setIsEditing(false);
+      setCurrentGift(null);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Virtual Gifts</h2>
-        <Button onClick={handleCreateGift} className="bg-app-yellow text-app-black hover:bg-app-yellow/80">
-          <Plus className="mr-2 h-4 w-4" /> Add New Gift
-        </Button>
+        <div className="flex items-center space-x-4">
+          <Input
+            type="search"
+            placeholder="Search gifts..."
+            className="md:w-64"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <GiftFilters onCategoryChange={setCategoryFilter} />
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Gift
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{isEditing ? 'Edit Gift' : 'Add Gift'}</DialogTitle>
+                <DialogDescription>
+                  {isEditing ? 'Update existing gift details' : 'Add a new virtual gift to your store'}
+                </DialogDescription>
+              </DialogHeader>
+              <GiftForm 
+                gift={currentGift}
+                isEditing={isEditing}
+                onSubmit={(data) => {
+                  if (isEditing && currentGift) {
+                    updateGiftMutation.mutate({ id: currentGift.id, data });
+                  } else {
+                    addGiftMutation.mutate(data);
+                  }
+                }}
+                onCancel={() => setOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <GiftFilters 
-        categoryFilter={categoryFilter}
-        onCategoryFilterChange={setCategoryFilter}
-      />
-
       {isLoading ? (
-        <div className="flex justify-center p-8">
+        <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <GiftsTable
-          gifts={data?.data || []}
-          onEdit={handleEditGift}
-          onDelete={handleDeleteGift}
-          onToggleAvailability={handleToggleAvailability}
-        />
+        <>
+          {gifts && gifts.length > 0 ? (
+            <GiftsTable 
+              gifts={gifts}
+              onEdit={(gift) => {
+                setCurrentGift(gift);
+                setIsEditing(true);
+                setOpen(true);
+              }}
+              onDelete={(id) => {
+                if (confirm('Are you sure you want to delete this gift?')) {
+                  deleteGiftMutation.mutate(id);
+                }
+              }}
+              onToggleAvailability={(id, available) => {
+                toggleGiftMutation.mutate({ id, available });
+              }}
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">No virtual gifts found. Create your first gift to get started.</p>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
-
-      <Dialog open={showGiftDialog} onOpenChange={setShowGiftDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {dialogMode === 'create' ? 'Add New Virtual Gift' : 'Edit Virtual Gift'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <GiftForm
-            initialData={selectedGift}
-            onSubmit={handleFormSubmit}
-            mode={dialogMode}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

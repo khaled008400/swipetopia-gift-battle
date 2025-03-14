@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -187,17 +186,7 @@ const AdminCoupons = () => {
         data: couponData
       });
     } else {
-      addMutation.mutate({
-        code,
-        type,
-        value,
-        minimum_purchase: minimumPurchase,
-        expiry_date: expiryDate ? expiryDate.toISOString() : null,
-        usage_limit: usageLimit,
-        is_active: isActive,
-        applicable_products: applicableProducts.length > 0 ? applicableProducts : undefined,
-        applicable_categories: applicableCategories.length > 0 ? applicableCategories : undefined,
-      });
+      addMutation.mutate(couponData);
     }
   };
 
@@ -337,9 +326,6 @@ const AdminCoupons = () => {
                   <Label htmlFor="is-active">Active</Label>
                 </div>
               </div>
-              
-              {/* Additional fields can be added here for applicable products and categories */}
-              
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -351,7 +337,6 @@ const AdminCoupons = () => {
         </Dialog>
       </div>
 
-      {/* Analytics Section */}
       {analytics && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
@@ -402,7 +387,6 @@ const AdminCoupons = () => {
         </div>
       )}
 
-      {/* Coupons List */}
       <div className="grid gap-6">
         {coupons && coupons.length > 0 ? (
           coupons.map((coupon: AdminCoupon) => (

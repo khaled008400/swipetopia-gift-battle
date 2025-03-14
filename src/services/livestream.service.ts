@@ -1,4 +1,4 @@
-
+import { Platform } from 'react-native';
 import ZegoExpressEngine from 'zego-express-engine-reactnative';
 
 export interface ZegoStreamConfig {
@@ -23,7 +23,14 @@ class LiveStreamService {
 
     this.config = config;
     try {
-      this.engine = ZegoExpressEngine.createEngine(config.appID, config.appSign);
+      this.engine = ZegoExpressEngine.createEngine(
+        config.appID, 
+        config.appSign,
+        {
+          scenario: 0, // General scenario
+          application: Platform.OS === 'ios' ? 1 : 0 // Platform specific setting
+        }
+      );
       
       await this.engine.loginRoom(config.roomID, config.userID, config.userName);
       this.isInitialized = true;
@@ -40,15 +47,12 @@ class LiveStreamService {
     }
 
     try {
-      // Set default camera and microphone state
       const useCamera = config.camera !== false;
       const useMicrophone = config.microphone !== false;
 
-      // Enable camera and microphone as needed
       await this.engine.enableCamera(useCamera);
       await this.engine.muteMicrophone(!useMicrophone);
       
-      // Start publishing
       await this.engine.startPublishingStream(streamID);
       console.log('Started publishing stream:', streamID);
     } catch (error) {
@@ -147,7 +151,6 @@ class LiveStreamService {
     }
   }
 
-  // Expose methods to access private engine for LiveStreamPage
   async getLocalVideoView(): Promise<any> {
     if (!this.isInitialized || !this.engine) {
       throw new Error('ZegoExpressEngine not initialized');
