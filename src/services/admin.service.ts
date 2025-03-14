@@ -1,324 +1,234 @@
-import { adminApi } from './api';
+import api from './api';
+import { Coupon, Offer, ShippingMethod, PricingRules } from './pricing.service';
 
-export interface AdminStats {
-  totalUsers: number;
-  totalVideos: number;
-  totalOrders: number;
-  revenueTotal: number;
-  newUsersToday: number;
-  videoUploadsToday: number;
-  ordersToday: number;
-  revenueToday: number;
-}
-
-export interface AdminUser {
+export interface AdminCoupon extends Coupon {
   id: string;
-  username: string;
-  email: string;
-  createdAt: string;
-  status: 'active' | 'suspended' | 'pending';
-  videosCount: number;
-  ordersCount: number;
-}
-
-export interface AdminVideo {
-  id: string;
-  user: {
-    id: string;
-    username: string;
-  };
-  url: string;
-  description: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  createdAt: string;
-  status: 'active' | 'flagged' | 'removed';
-}
-
-export interface AdminOrder {
-  id: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-  };
-  products: Array<{
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-  }>;
-  total: number;
-  status: 'pending' | 'completed' | 'cancelled';
-  createdAt: string;
-}
-
-export interface AdminProduct {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  image: string;
-  inventory: number;
-  category: string;
-  status: 'active' | 'draft' | 'unavailable';
-}
-
-export interface ProductAttribute {
-  id: string;
-  name: string;
-  values: string[];
-  color?: string;
-  status: 'active' | 'inactive';
-}
-
-export interface AdminCoupon {
-  id: string;
-  code: string;
-  type: 'percentage' | 'fixed';
-  value: number;
-  minimum_purchase?: number;
-  expiry_date: string;
-  usage_limit?: number;
   usage_count: number;
-  is_active: boolean;
-  applicable_products?: string[]; // Product IDs the coupon applies to
-  applicable_categories?: string[]; // Category IDs the coupon applies to
   created_at: string;
   updated_at: string;
 }
 
-export interface AdminOffer {
+export interface AdminOffer extends Offer {
   id: string;
-  name: string;
-  description: string;
-  type: 'percentage' | 'fixed' | 'buy_x_get_y' | 'bundle';
-  value: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
-  applicable_products?: string[]; // Product IDs the offer applies to
-  applicable_categories?: string[]; // Category IDs the offer applies to
-  rules?: {
-    buy_quantity?: number;
-    get_quantity?: number;
-    bundle_products?: string[];
-    bundle_price?: number;
-  };
   created_at: string;
   updated_at: string;
 }
 
-export interface AdminShippingMethod {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  estimated_days: string; // e.g., "3-5 days"
-  is_active: boolean;
-  conditions?: {
-    min_order_value?: number;
-    max_order_value?: number;
-    applicable_regions?: string[];
-  };
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Pagination {
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-}
+// Other admin related interfaces can be added here
 
 const AdminService = {
-  async getDashboardStats(): Promise<AdminStats> {
-    const response = await adminApi.get('/dashboard/stats');
+  async getDashboardStats() {
+    const response = await api.get('/admin/dashboard/stats');
     return response.data;
   },
 
-  async getUsers(page = 1, search = ''): Promise<{ data: AdminUser[], pagination: Pagination }> {
-    const response = await adminApi.get('/users', { params: { page, search } });
-    return response.data;
-  },
-
-  async getUserDetails(userId: string): Promise<AdminUser> {
-    const response = await adminApi.get(`/users/${userId}`);
-    return response.data;
-  },
-
-  async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<AdminUser> {
-    const response = await adminApi.patch(`/users/${userId}/status`, { status });
-    return response.data;
-  },
-
-  async getVideos(page = 1, status = '', userId = ''): Promise<{ data: AdminVideo[], pagination: Pagination }> {
-    const response = await adminApi.get('/videos', { 
-      params: { page, status, user_id: userId } 
+  async getUsersList(page = 1, limit = 10, search = '') {
+    const response = await api.get('/admin/users', {
+      params: { page, limit, search }
     });
     return response.data;
   },
 
-  async updateVideoStatus(videoId: string, status: 'active' | 'flagged' | 'removed'): Promise<AdminVideo> {
-    const response = await adminApi.patch(`/videos/${videoId}/status`, { status });
+  async getUser(userId: string) {
+    const response = await api.get(`/admin/users/${userId}`);
     return response.data;
   },
 
-  async deleteVideo(videoId: string): Promise<void> {
-    await adminApi.delete(`/videos/${videoId}`);
+  async updateUser(userId: string, userData: any) {
+    const response = await api.put(`/admin/users/${userId}`, userData);
+    return response.data;
   },
 
-  async getOrders(page = 1, status = '', userId = ''): Promise<{ data: AdminOrder[], pagination: Pagination }> {
-    const response = await adminApi.get('/orders', { 
-      params: { page, status, user_id: userId } 
+  async deleteUser(userId: string) {
+    const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
+
+  async getProductsList(page = 1, limit = 10, category = '', search = '') {
+    const response = await api.get('/admin/products', {
+      params: { page, limit, category, search }
     });
     return response.data;
   },
 
-  async updateOrderStatus(orderId: string, status: 'pending' | 'completed' | 'cancelled'): Promise<AdminOrder> {
-    const response = await adminApi.patch(`/orders/${orderId}/status`, { status });
+  async getProduct(productId: string) {
+    const response = await api.get(`/admin/products/${productId}`);
     return response.data;
   },
 
-  async getProducts(page = 1, category = '', search = ''): Promise<{ data: AdminProduct[], pagination: Pagination }> {
-    const response = await adminApi.get('/products', { 
-      params: { page, category, search } 
+  async createProduct(productData: any) {
+    const response = await api.post('/admin/products', productData);
+    return response.data;
+  },
+
+  async updateProduct(productId: string, productData: any) {
+    const response = await api.put(`/admin/products/${productId}`, productData);
+    return response.data;
+  },
+
+  async deleteProduct(productId: string) {
+    const response = await api.delete(`/admin/products/${productId}`);
+    return response.data;
+  },
+
+  async getOrdersList(page = 1, limit = 10, status = '', search = '') {
+    const response = await api.get('/admin/orders', {
+      params: { page, limit, status, search }
     });
     return response.data;
   },
 
-  async createProduct(productData: Omit<AdminProduct, 'id'>): Promise<AdminProduct> {
-    const response = await adminApi.post('/products', productData);
+  async getOrder(orderId: string) {
+    const response = await api.get(`/admin/orders/${orderId}`);
     return response.data;
   },
 
-  async updateProduct(productId: string, productData: Partial<AdminProduct>): Promise<AdminProduct> {
-    const response = await adminApi.put(`/products/${productId}`, productData);
+  async updateOrderStatus(orderId: string, status: string) {
+    const response = await api.patch(`/admin/orders/${orderId}/status`, { status });
     return response.data;
   },
 
-  async deleteProduct(productId: string): Promise<void> {
-    await adminApi.delete(`/products/${productId}`);
-  },
-
-  async getProductAttributes(page = 1): Promise<{ data: ProductAttribute[], pagination: Pagination }> {
-    const response = await adminApi.get('/product-attributes', { params: { page } });
-    return response.data;
-  },
-
-  async createProductAttribute(attributeData: Omit<ProductAttribute, 'id'>): Promise<ProductAttribute> {
-    const response = await adminApi.post('/product-attributes', attributeData);
-    return response.data;
-  },
-
-  async updateProductAttribute(attributeId: string, attributeData: Partial<ProductAttribute>): Promise<ProductAttribute> {
-    const response = await adminApi.put(`/product-attributes/${attributeId}`, attributeData);
-    return response.data;
-  },
-
-  async deleteProductAttribute(attributeId: string): Promise<void> {
-    await adminApi.delete(`/product-attributes/${attributeId}`);
-  },
-
-  async getProductSalesData(period: 'week' | 'month' | 'year', productId?: string): Promise<any> {
-    const response = await adminApi.get('/analytics/product-sales', { 
-      params: { period, product_id: productId } 
+  async getVideosList(page = 1, limit = 10, status = '', search = '') {
+    const response = await api.get('/admin/videos', {
+      params: { page, limit, status, search }
     });
     return response.data;
   },
 
-  async getUserGrowthData(period: 'week' | 'month' | 'year'): Promise<any> {
-    const response = await adminApi.get('/analytics/user-growth', { params: { period } });
+  async approveVideo(videoId: string) {
+    const response = await api.post(`/admin/videos/${videoId}/approve`);
     return response.data;
   },
 
-  async getVideoEngagementData(period: 'week' | 'month' | 'year'): Promise<any> {
-    const response = await adminApi.get('/analytics/video-engagement', { params: { period } });
+  async rejectVideo(videoId: string, reason?: string) {
+    const response = await api.post(`/admin/videos/${videoId}/reject`, { reason });
     return response.data;
   },
 
-  async getRevenueData(period: 'week' | 'month' | 'year'): Promise<any> {
-    const response = await adminApi.get('/analytics/revenue', { params: { period } });
-    return response.data;
-  },
-
-  // Coupons management
-  async getCoupons(page = 1, search = ''): Promise<{ data: AdminCoupon[], pagination: Pagination }> {
-    const response = await adminApi.get('/coupons', { params: { page, search } });
-    return response.data;
-  },
-
-  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>): Promise<AdminCoupon> {
-    const response = await adminApi.post('/coupons', couponData);
-    return response.data;
-  },
-
-  async updateCoupon(couponId: string, couponData: Partial<AdminCoupon>): Promise<AdminCoupon> {
-    const response = await adminApi.put(`/coupons/${couponId}`, couponData);
-    return response.data;
-  },
-
-  async deleteCoupon(couponId: string): Promise<void> {
-    await adminApi.delete(`/coupons/${couponId}`);
-  },
-
-  // Offers management
-  async getOffers(page = 1, search = '', active_only = false): Promise<{ data: AdminOffer[], pagination: Pagination }> {
-    const response = await adminApi.get('/offers', { 
-      params: { page, search, active_only } 
+  async getReportsList(type = 'sales', period = 'month') {
+    const response = await api.get('/admin/reports', {
+      params: { type, period }
     });
     return response.data;
   },
 
-  async createOffer(offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>): Promise<AdminOffer> {
-    const response = await adminApi.post('/offers', offerData);
+  // Product attributes 
+  async getAttributes() {
+    const response = await api.get('/admin/product-attributes');
     return response.data;
   },
 
-  async updateOffer(offerId: string, offerData: Partial<AdminOffer>): Promise<AdminOffer> {
-    const response = await adminApi.put(`/offers/${offerId}`, offerData);
+  async getAttribute(attributeId: string) {
+    const response = await api.get(`/admin/product-attributes/${attributeId}`);
     return response.data;
   },
 
-  async deleteOffer(offerId: string): Promise<void> {
-    await adminApi.delete(`/offers/${offerId}`);
-  },
-
-  // Shipping methods management
-  async getShippingMethods(page = 1): Promise<{ data: AdminShippingMethod[], pagination: Pagination }> {
-    const response = await adminApi.get('/shipping/methods', { params: { page } });
+  async createAttribute(attributeData: any) {
+    const response = await api.post('/admin/product-attributes', attributeData);
     return response.data;
   },
 
-  async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id' | 'created_at' | 'updated_at'>): Promise<AdminShippingMethod> {
-    const response = await adminApi.post('/shipping/methods', methodData);
+  async updateAttribute(attributeId: string, attributeData: any) {
+    const response = await api.put(`/admin/product-attributes/${attributeId}`, attributeData);
     return response.data;
   },
 
-  async updateShippingMethod(methodId: string, methodData: Partial<AdminShippingMethod>): Promise<AdminShippingMethod> {
-    const response = await adminApi.put(`/shipping/methods/${methodId}`, methodData);
+  async deleteAttribute(attributeId: string) {
+    const response = await api.delete(`/admin/product-attributes/${attributeId}`);
     return response.data;
   },
 
-  async deleteShippingMethod(methodId: string): Promise<void> {
-    await adminApi.delete(`/shipping/methods/${methodId}`);
-  },
-
-  // Analytics for pricing, coupons and offers
-  async getCouponUsageStats(period: 'week' | 'month' | 'year'): Promise<any> {
-    const response = await adminApi.get('/analytics/coupon-usage', { params: { period } });
+  // Coupon methods
+  async getCoupons() {
+    const response = await api.get('/admin/coupons');
     return response.data;
   },
 
-  async getOfferConversionStats(period: 'week' | 'month' | 'year'): Promise<any> {
-    const response = await adminApi.get('/analytics/offer-conversion', { params: { period } });
+  async getCouponAnalytics() {
+    const response = await api.get('/admin/coupons/analytics');
     return response.data;
   },
 
-  async getShippingMethodUsageStats(): Promise<any> {
-    const response = await adminApi.get('/analytics/shipping-usage');
+  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>) {
+    const response = await api.post('/admin/coupons', couponData);
+    return response.data;
+  },
+
+  async updateCoupon(couponId: string, couponData: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>>) {
+    const response = await api.put(`/admin/coupons/${couponId}`, couponData);
+    return response.data;
+  },
+
+  async deleteCoupon(couponId: string) {
+    const response = await api.delete(`/admin/coupons/${couponId}`);
+    return response.data;
+  },
+
+  // Offer methods
+  async getOffers() {
+    const response = await api.get('/admin/offers');
+    return response.data;
+  },
+
+  async getOfferAnalytics() {
+    const response = await api.get('/admin/offers/analytics');
+    return response.data;
+  },
+
+  async createOffer(offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>) {
+    const response = await api.post('/admin/offers', offerData);
+    return response.data;
+  },
+
+  async updateOffer(offerId: string, offerData: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>) {
+    const response = await api.put(`/admin/offers/${offerId}`, offerData);
+    return response.data;
+  },
+
+  async deleteOffer(offerId: string) {
+    const response = await api.delete(`/admin/offers/${offerId}`);
+    return response.data;
+  },
+
+  // Shipping methods
+  async getShippingMethods() {
+    const response = await api.get('/admin/shipping');
+    return response.data;
+  },
+
+  async createShippingMethod(methodData: Omit<ShippingMethod, 'id'>) {
+    const response = await api.post('/admin/shipping', methodData);
+    return response.data;
+  },
+
+  async updateShippingMethod(methodId: string, methodData: Partial<Omit<ShippingMethod, 'id'>>) {
+    const response = await api.put(`/admin/shipping/${methodId}`, methodData);
+    return response.data;
+  },
+
+  async deleteShippingMethod(methodId: string) {
+    const response = await api.delete(`/admin/shipping/${methodId}`);
+    return response.data;
+  },
+
+  // Pricing rules
+  async getPricingRules() {
+    const response = await api.get('/admin/pricing-rules');
+    return response.data;
+  },
+
+  async createPricingRule(ruleData: Omit<PricingRules, 'id'>) {
+    const response = await api.post('/admin/pricing-rules', ruleData);
+    return response.data;
+  },
+
+  async updatePricingRule(ruleId: string, ruleData: Partial<Omit<PricingRules, 'id'>>) {
+    const response = await api.put(`/admin/pricing-rules/${ruleId}`, ruleData);
+    return response.data;
+  },
+
+  async deletePricingRule(ruleId: string) {
+    const response = await api.delete(`/admin/pricing-rules/${ruleId}`);
     return response.data;
   }
 };

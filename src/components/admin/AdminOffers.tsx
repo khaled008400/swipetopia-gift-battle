@@ -1,604 +1,686 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { AdminOffer } from '@/services/admin.service';
-import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Plus, Search, Edit, Trash2 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AdminService, { AdminOffer } from '@/services/admin.service';
+import { Loader2, Plus, Pencil, Trash2, Calendar, Tag, Percent, DollarSign, ShoppingBag, Package } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from '@/components/ui/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } from 'recharts';
 
-const offerSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  description: z.string().min(3, "Description must be at least 3 characters"),
-  type: z.enum(["percentage", "fixed", "buy_x_get_y", "bundle"]),
-  value: z.number().min(0, "Value must be at least 0"),
-  start_date: z.string().refine(date => !isNaN(Date.parse(date)), "Invalid date format"),
-  end_date: z.string().refine(date => !isNaN(Date.parse(date)), "Invalid date format"),
-  is_active: z.boolean(),
-  rules: z.object({
-    buy_quantity: z.number().int().min(0).optional(),
-    get_quantity: z.number().int().min(0).optional(),
-    bundle_products: z.array(z.string()).optional(),
-    bundle_price: z.number().min(0).optional()
-  }).optional()
-});
-
-type OfferFormData = z.infer<typeof offerSchema>;
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const AdminOffers = () => {
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [showOfferDialog, setShowOfferDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
-  const [selectedOffer, setSelectedOffer] = useState<AdminOffer | null>(null);
-  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentOffer, setCurrentOffer] = useState<AdminOffer | null>(null);
+  
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState<'percentage' | 'fixed' | 'buy_x_get_y' | 'bundle'>('percentage');
+  const [value, setValue] = useState<number>(0);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isActive, setIsActive] = useState(true);
+  const [applicableProducts, setApplicableProducts] = useState<string[]>([]);
+  const [applicableCategories, setApplicableCategories] = useState<string[]>([]);
+  
+  // Buy X Get Y rule fields
+  const [buyQuantity, setBuyQuantity] = useState<number | undefined>(undefined);
+  const [getQuantity, setGetQuantity] = useState<number | undefined>(undefined);
+  
+  // Bundle rule fields
+  const [bundleProducts, setBundleProducts] = useState<string[]>([]);
+  const [bundlePrice, setBundlePrice] = useState<number | undefined>(undefined);
+
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['adminOffers', page, search],
-    queryFn: () => AdminService.getOffers(page, search)
+  // Fetch offers
+  const { data: offers, isLoading } = useQuery({
+    queryKey: ['adminOffers'],
+    queryFn: () => AdminService.getOffers(),
   });
 
-  const createOfferMutation = useMutation({
-    mutationFn: (offerData: OfferFormData) => {
-      return AdminService.createOffer({
-        ...offerData,
-        applicable_products: [],
-        applicable_categories: []
-      });
-    },
+  // Fetch offer analytics
+  const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
+    queryKey: ['offerAnalytics'],
+    queryFn: () => AdminService.getOfferAnalytics(),
+  });
+
+  // Add offer mutation
+  const addMutation = useMutation({
+    mutationFn: (offer: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>) => AdminService.createOffer(offer),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOffers'] });
-      setShowOfferDialog(false);
+      resetForm();
+      setOpen(false);
       toast({
-        title: "Offer created",
-        description: "Offer has been created successfully."
+        title: "Success",
+        description: "Offer created successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create offer.",
-        variant: "destructive"
+        description: "Failed to create offer",
+        variant: "destructive",
       });
+      console.error("Create offer error:", error);
     }
   });
 
-  const updateOfferMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: OfferFormData }) => {
-      return AdminService.updateOffer(id, data);
-    },
+  // Update offer mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>> }) => 
+      AdminService.updateOffer(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOffers'] });
-      setShowOfferDialog(false);
+      resetForm();
+      setOpen(false);
       toast({
-        title: "Offer updated",
-        description: "Offer has been updated successfully."
+        title: "Success",
+        description: "Offer updated successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update offer.",
-        variant: "destructive"
+        description: "Failed to update offer",
+        variant: "destructive",
       });
+      console.error("Update offer error:", error);
     }
   });
 
-  const deleteOfferMutation = useMutation({
-    mutationFn: (offerId: string) => AdminService.deleteOffer(offerId),
+  // Delete offer mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => AdminService.deleteOffer(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOffers'] });
       toast({
-        title: "Offer deleted",
-        description: "Offer has been deleted successfully."
+        title: "Success",
+        description: "Offer deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete offer.",
-        variant: "destructive"
+        description: "Failed to delete offer",
+        variant: "destructive",
       });
+      console.error("Delete offer error:", error);
     }
   });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1); // Reset to first page on new search
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setType('percentage');
+    setValue(0);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setIsActive(true);
+    setApplicableProducts([]);
+    setApplicableCategories([]);
+    setBuyQuantity(undefined);
+    setGetQuantity(undefined);
+    setBundleProducts([]);
+    setBundlePrice(undefined);
+    setCurrentOffer(null);
+    setIsEditing(false);
   };
 
-  const handleCreateOffer = () => {
-    setDialogMode('create');
-    setSelectedOffer(null);
-    setShowOfferDialog(true);
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      resetForm();
+    }
+    setOpen(open);
   };
 
   const handleEditOffer = (offer: AdminOffer) => {
-    setSelectedOffer(offer);
-    setDialogMode('edit');
-    setShowOfferDialog(true);
+    setCurrentOffer(offer);
+    setName(offer.name);
+    setDescription(offer.description || '');
+    setType(offer.type);
+    setValue(offer.value);
+    
+    if (offer.start_date) {
+      setStartDate(new Date(offer.start_date));
+    }
+    
+    if (offer.end_date) {
+      setEndDate(new Date(offer.end_date));
+    }
+    
+    setIsActive(offer.is_active);
+    
+    if (offer.applicable_products) {
+      setApplicableProducts(offer.applicable_products);
+    }
+    
+    if (offer.applicable_categories) {
+      setApplicableCategories(offer.applicable_categories);
+    }
+    
+    if (offer.rules) {
+      if (offer.rules.buy_quantity) {
+        setBuyQuantity(offer.rules.buy_quantity);
+      }
+      
+      if (offer.rules.get_quantity) {
+        setGetQuantity(offer.rules.get_quantity);
+      }
+      
+      if (offer.rules.bundle_products) {
+        setBundleProducts(offer.rules.bundle_products);
+      }
+      
+      if (offer.rules.bundle_price) {
+        setBundlePrice(offer.rules.bundle_price);
+      }
+    }
+    
+    setIsEditing(true);
+    setOpen(true);
   };
 
-  const handleDeleteOffer = (offerId: string) => {
-    if (confirm("Are you sure you want to delete this offer? This action cannot be undone.")) {
-      deleteOfferMutation.mutate(offerId);
+  const handleSubmit = () => {
+    // Validate form
+    if (!name || !value || !type || !startDate || !endDate) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Additional validation for specific types
+    if (type === 'buy_x_get_y' && (!buyQuantity || !getQuantity)) {
+      toast({
+        title: "Validation Error",
+        description: "Buy X Get Y offers require quantities",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (type === 'bundle' && (!bundleProducts.length || !bundlePrice)) {
+      toast({
+        title: "Validation Error",
+        description: "Bundle offers require products and price",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Build rules based on offer type
+    const rules: any = {};
+    
+    if (type === 'buy_x_get_y') {
+      rules.buy_quantity = buyQuantity;
+      rules.get_quantity = getQuantity;
+    } else if (type === 'bundle') {
+      rules.bundle_products = bundleProducts;
+      rules.bundle_price = bundlePrice;
+    }
+
+    const offerData: any = {
+      name,
+      description,
+      type,
+      value,
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+      is_active: isActive,
+      applicable_products: applicableProducts.length > 0 ? applicableProducts : undefined,
+      applicable_categories: applicableCategories.length > 0 ? applicableCategories : undefined,
+    };
+    
+    // Only add rules if they exist
+    if (Object.keys(rules).length > 0) {
+      offerData.rules = rules;
+    }
+
+    if (isEditing && currentOffer) {
+      updateMutation.mutate({
+        id: currentOffer.id,
+        data: offerData
+      });
+    } else {
+      addMutation.mutate(offerData);
     }
   };
 
-  const getOfferTypeDisplay = (type: string) => {
+  const getOfferTypeIcon = (type: string) => {
     switch (type) {
-      case 'percentage': return 'Percentage Discount';
-      case 'fixed': return 'Fixed Amount';
-      case 'buy_x_get_y': return 'Buy X Get Y';
-      case 'bundle': return 'Bundle Deal';
-      default: return type;
+      case 'percentage':
+        return <Percent className="h-5 w-5" />;
+      case 'fixed':
+        return <DollarSign className="h-5 w-5" />;
+      case 'buy_x_get_y':
+        return <ShoppingBag className="h-5 w-5" />;
+      case 'bundle':
+        return <Package className="h-5 w-5" />;
+      default:
+        return <Tag className="h-5 w-5" />;
     }
   };
 
-  const getOfferValueDisplay = (offer: AdminOffer) => {
-    if (offer.type === 'percentage') {
-      return `${offer.value}% off`;
-    } else if (offer.type === 'fixed') {
-      return `$${offer.value.toFixed(2)} off`;
-    } else if (offer.type === 'buy_x_get_y') {
-      return offer.rules?.buy_quantity && offer.rules?.get_quantity 
-        ? `Buy ${offer.rules.buy_quantity} get ${offer.rules.get_quantity}`
-        : 'Special offer';
-    } else if (offer.type === 'bundle') {
-      return offer.rules?.bundle_price 
-        ? `Bundle for $${offer.rules.bundle_price.toFixed(2)}`
-        : 'Bundle deal';
+  const formatOfferValue = (offer: AdminOffer) => {
+    switch (offer.type) {
+      case 'percentage':
+        return `${offer.value}% off`;
+      case 'fixed':
+        return `$${offer.value.toFixed(2)} off`;
+      case 'buy_x_get_y':
+        return `Buy ${offer.rules?.buy_quantity}, Get ${offer.rules?.get_quantity} Free`;
+      case 'bundle':
+        return `Bundle for $${offer.rules?.bundle_price?.toFixed(2)}`;
+      default:
+        return '';
     }
-    return '-';
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Offers & Promotions</h2>
-        <Button onClick={handleCreateOffer}>
-          <Plus className="mr-2 h-4 w-4" /> Create Offer
-        </Button>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-
-      <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center space-x-2">
-        <Input
-          type="text"
-          placeholder="Search offers..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Button type="submit">
-          <Search className="h-4 w-4" />
-        </Button>
-      </form>
-
-      {isLoading ? (
-        <div className="flex justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Date Range</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.data.map((offer) => (
-                  <TableRow key={offer.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                        <div>{offer.name}</div>
-                        <div className="text-xs text-muted-foreground truncate max-w-xs">
-                          {offer.description}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getOfferTypeDisplay(offer.type)}
-                    </TableCell>
-                    <TableCell>
-                      {getOfferValueDisplay(offer)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-xs">
-                        <div>Start: {format(new Date(offer.start_date), 'MMM dd, yyyy')}</div>
-                        <div>End: {format(new Date(offer.end_date), 'MMM dd, yyyy')}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={offer.is_active ? 'bg-green-500' : 'bg-gray-500'}>
-                        {offer.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleEditOffer(offer)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => handleDeleteOffer(offer.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-                {data?.data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                      No offers found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {data?.pagination && (
-            <div className="flex items-center justify-center space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page - 1)}
-                disabled={page <= 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {page} of {data.pagination.last_page}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page + 1)}
-                disabled={page >= data.pagination.last_page}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </>
-      )}
-
-      <OfferFormDialog
-        open={showOfferDialog}
-        onOpenChange={setShowOfferDialog}
-        mode={dialogMode}
-        initialData={selectedOffer}
-        onSubmit={(data) => {
-          if (dialogMode === 'create') {
-            createOfferMutation.mutate(data);
-          } else if (selectedOffer) {
-            updateOfferMutation.mutate({ id: selectedOffer.id, data });
-          }
-        }}
-      />
-    </div>
-  );
-};
-
-interface OfferFormDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  mode: 'create' | 'edit';
-  initialData: AdminOffer | null;
-  onSubmit: (data: OfferFormData) => void;
-}
-
-const OfferFormDialog = ({ 
-  open, 
-  onOpenChange, 
-  mode, 
-  initialData, 
-  onSubmit 
-}: OfferFormDialogProps) => {
-  const form = useForm<OfferFormData>({
-    resolver: zodResolver(offerSchema),
-    defaultValues: initialData ? {
-      name: initialData.name,
-      description: initialData.description,
-      type: initialData.type,
-      value: initialData.value,
-      start_date: initialData.start_date.split('T')[0],
-      end_date: initialData.end_date.split('T')[0],
-      is_active: initialData.is_active,
-      rules: initialData.rules || {
-        buy_quantity: 0,
-        get_quantity: 0,
-        bundle_products: [],
-        bundle_price: 0
-      }
-    } : {
-      name: '',
-      description: '',
-      type: 'percentage',
-      value: 0,
-      start_date: new Date().toISOString().split('T')[0],
-      end_date: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], // 30 days from now
-      is_active: true,
-      rules: {
-        buy_quantity: 0,
-        get_quantity: 0,
-        bundle_products: [],
-        bundle_price: 0
-      }
-    }
-  });
-
-  const offerType = form.watch('type');
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'Create Offer' : 'Edit Offer'}
-          </DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Offer Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Summer Sale" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder="Get discount on summer items" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Offer Type</FormLabel>
-                  <Select 
-                    value={field.value} 
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="percentage">Percentage Discount</SelectItem>
-                      <SelectItem value="fixed">Fixed Amount Discount</SelectItem>
-                      <SelectItem value="buy_x_get_y">Buy X Get Y Free</SelectItem>
-                      <SelectItem value="bundle">Bundle Deal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Different fields based on offer type */}
-            {(offerType === 'percentage' || offerType === 'fixed') && (
-              <FormField
-                control={form.control}
-                name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {offerType === 'percentage' ? 'Discount Percentage (%)' : 'Discount Amount ($)'}
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step={offerType === 'percentage' ? '1' : '0.01'}
-                        min="0"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                        value={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {offerType === 'buy_x_get_y' && (
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="rules.buy_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Buy Quantity</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1"
-                          step="1"
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          value={field.value || 0}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="rules.get_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Get Quantity</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1"
-                          step="1"
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          value={field.value || 0}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Special Offers</h2>
+          <p className="text-muted-foreground">Manage promotional offers for your store</p>
+        </div>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsEditing(false)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Offer
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{isEditing ? 'Edit Offer' : 'Add Offer'}</DialogTitle>
+              <DialogDescription>
+                {isEditing ? 'Update existing offer details' : 'Add a new promotional offer to your store'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Offer Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Summer Sale"
                 />
               </div>
-            )}
-
-            {offerType === 'bundle' && (
-              <FormField
-                control={form.control}
-                name="rules.bundle_price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bundle Price ($)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        value={field.value || 0}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="is_active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                  <FormControl>
-                    <input
-                      type="checkbox"
-                      checked={field.value}
-                      onChange={field.onChange}
-                      className="h-4 w-4"
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Special offer for summer season"
+                  rows={2}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Offer Type</Label>
+                  <Select 
+                    value={type} 
+                    onValueChange={(val) => setType(val as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage Discount</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount Off</SelectItem>
+                      <SelectItem value="buy_x_get_y">Buy X Get Y Free</SelectItem>
+                      <SelectItem value="bundle">Bundle Offer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="value">
+                    {type === 'percentage' ? 'Discount Percentage' : 
+                     type === 'fixed' ? 'Discount Amount' : 
+                     type === 'buy_x_get_y' ? 'Discount Value' : 
+                     'Bundle Discount'}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                      {type === 'percentage' ? '%' : '$'}
+                    </span>
+                    <Input
+                      id="value"
+                      type="number"
+                      min="0"
+                      max={type === 'percentage' ? "100" : undefined}
+                      className="pl-8"
+                      value={value.toString()}
+                      onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
                     />
-                  </FormControl>
-                  <FormLabel className="font-normal">Active</FormLabel>
-                  <FormMessage />
-                </FormItem>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Date Range */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, 'PPP') : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, 'PPP') : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              
+              {/* Type-specific fields */}
+              {type === 'buy_x_get_y' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="buy-quantity">Buy Quantity</Label>
+                    <Input
+                      id="buy-quantity"
+                      type="number"
+                      min="1"
+                      value={buyQuantity || ''}
+                      onChange={(e) => setBuyQuantity(parseInt(e.target.value) || undefined)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="get-quantity">Get Free Quantity</Label>
+                    <Input
+                      id="get-quantity"
+                      type="number"
+                      min="1"
+                      value={getQuantity || ''}
+                      onChange={(e) => setGetQuantity(parseInt(e.target.value) || undefined)}
+                    />
+                  </div>
+                </div>
               )}
-            />
-
+              
+              {type === 'bundle' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bundle-products">Bundle Products (IDs)</Label>
+                    <Textarea
+                      id="bundle-products"
+                      value={bundleProducts.join(', ')}
+                      onChange={(e) => setBundleProducts(e.target.value.split(',').map(p => p.trim()).filter(Boolean))}
+                      placeholder="product1, product2, product3"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bundle-price">Bundle Price</Label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                        $
+                      </span>
+                      <Input
+                        id="bundle-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="pl-8"
+                        value={bundlePrice || ''}
+                        onChange={(e) => setBundlePrice(parseFloat(e.target.value) || undefined)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is-active"
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                />
+                <Label htmlFor="is-active">Active</Label>
+              </div>
+              
+              {/* Additional fields can be added here for applicable products and categories */}
+              
+            </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">
-                {mode === 'create' ? 'Create Offer' : 'Save Changes'}
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleSubmit}>
+                {isEditing ? 'Update' : 'Add'} Offer
               </Button>
             </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Analytics Section */}
+      {analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Offer Performance</CardTitle>
+              <CardDescription>Redemptions over the last 30 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={analytics.performance_over_time}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="redemptions" stroke="#8884d8" fill="#8884d8" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Offer Type Distribution</CardTitle>
+              <CardDescription>Breakdown by offer type</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={analytics.type_distribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {analytics.type_distribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Offers List */}
+      <div className="grid gap-6">
+        {offers && offers.length > 0 ? (
+          offers.map((offer: AdminOffer) => (
+            <Card key={offer.id}>
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                <div>
+                  <CardTitle className="text-xl flex items-center">
+                    {getOfferTypeIcon(offer.type)}
+                    <span className="ml-2">{offer.name}</span>
+                    {!offer.is_active && (
+                      <Badge variant="outline" className="ml-2 text-xs">Inactive</Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>{offer.description}</CardDescription>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="icon" onClick={() => handleEditOffer(offer)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="text-destructive"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete ${offer.name}?`)) {
+                        deleteMutation.mutate(offer.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Discount</p>
+                    <p className="text-xl font-bold">{formatOfferValue(offer)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Date Range</p>
+                    <p>{format(new Date(offer.start_date), 'PP')} - {format(new Date(offer.end_date), 'PP')}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Status</p>
+                    <Badge variant={offer.is_active ? "success" : "outline"}>
+                      {offer.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </div>
+                
+                {(offer.applicable_products?.length > 0 || offer.applicable_categories?.length > 0) && (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="space-y-3">
+                      {offer.applicable_products?.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium">Applicable Products</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {offer.applicable_products.map(productId => (
+                              <Badge key={productId} variant="secondary">{productId}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {offer.applicable_categories?.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium">Applicable Categories</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {offer.applicable_categories.map(category => (
+                              <Badge key={category} variant="secondary">{category}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                
+                {offer.type === 'bundle' && offer.rules?.bundle_products?.length > 0 && (
+                  <>
+                    <Separator className="my-4" />
+                    <div>
+                      <p className="text-sm font-medium">Bundle Products</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {offer.rules.bundle_products.map(productId => (
+                          <Badge key={productId} variant="secondary">{productId}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">No offers found. Create your first offer to get started.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
   );
 };
 

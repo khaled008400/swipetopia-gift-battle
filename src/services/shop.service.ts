@@ -1,3 +1,4 @@
+
 import api from './api';
 
 export interface Product {
@@ -101,11 +102,6 @@ const ShopService = {
 
   async getFavorites() {
     const response = await api.get('/shop/favorites');
-    return response.data;
-  },
-
-  async createOrder(products: Array<{id: string, quantity: number}>) {
-    const response = await api.post('/shop/orders', { products });
     return response.data;
   },
 
