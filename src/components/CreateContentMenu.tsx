@@ -1,7 +1,8 @@
 
 import { useState, useRef } from "react";
 import { VideoIcon, Upload, X, Camera } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
+import VideoUploadModal from "./upload/VideoUploadModal";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CreateContentMenuProps {
 
 const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
   const [showRecordOptions, setShowRecordOptions] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   
   if (!isOpen) return null;
   
@@ -20,78 +22,78 @@ const CreateContentMenu = ({ isOpen, onClose }: CreateContentMenuProps) => {
   }
 
   const handleUploadVideo = () => {
-    // Create an input element to open file selector
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'video/*';
-    fileInput.onchange = (e) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        const file = target.files[0];
-        toast({
-          title: "Video selected",
-          description: `You selected: ${file.name}`,
-        });
-        console.log("Selected video file:", file);
-        // Here we would implement the actual upload functionality
-        onClose();
-      }
-    };
-    fileInput.click();
+    setShowUploadModal(true);
+  };
+
+  const handleUploadSuccess = (videoId: string) => {
+    console.log("Video uploaded successfully with ID:", videoId);
+    setShowUploadModal(false);
+    onClose();
+    
+    // Redirect to the video page
+    // window.location.href = `/video/${videoId}`;
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
-      {/* Status bar */}
-      <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-10">
-        <div className="text-xl font-bold text-white">9:41</div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-white rounded-full"></div>
-          <div className="w-4 h-4 bg-white rounded-full"></div>
-          <div className="w-4 h-4 bg-white rounded-full"></div>
+    <>
+      <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center animate-fade-in">
+        {/* Status bar */}
+        <div className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-10">
+          <div className="text-xl font-bold text-white">9:41</div>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 bg-white rounded-full"></div>
+            <div className="w-4 h-4 bg-white rounded-full"></div>
+            <div className="w-4 h-4 bg-white rounded-full"></div>
+          </div>
         </div>
-      </div>
-      
-      <div className="absolute top-4 right-4">
-        <button 
-          onClick={onClose}
-          className="rounded-full bg-transparent w-10 h-10 flex items-center justify-center"
-        >
-          <X className="text-white w-6 h-6" />
-        </button>
-      </div>
-      
-      {/* Content options */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md p-6">
-        <h2 className="text-white text-2xl font-bold mb-8">Create Content</h2>
         
-        <div className="space-y-4 w-full">
+        <div className="absolute top-4 right-4">
           <button 
-            className="w-full bg-app-black border border-app-yellow text-app-yellow font-bold py-4 rounded-xl flex items-center justify-center gap-3"
-            onClick={() => setShowRecordOptions(true)}
+            onClick={onClose}
+            className="rounded-full bg-transparent w-10 h-10 flex items-center justify-center"
           >
-            <VideoIcon className="h-6 w-6" />
-            <span>Record Video</span>
-          </button>
-          
-          <button 
-            className="w-full bg-app-black border border-app-yellow text-app-yellow font-bold py-4 rounded-xl flex items-center justify-center gap-3"
-            onClick={handleUploadVideo}
-          >
-            <Upload className="h-6 w-6" />
-            <span>Upload Video</span>
-          </button>
-          
-          <button 
-            className="w-full bg-app-yellow text-app-black font-bold py-4 rounded-xl flex items-center justify-center gap-3"
-            onClick={() => window.location.href = "/live/new"}
-          >
-            <Camera className="h-6 w-6" />
-            <span>Go Live</span>
+            <X className="text-white w-6 h-6" />
           </button>
         </div>
+        
+        {/* Content options */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md p-6">
+          <h2 className="text-white text-2xl font-bold mb-8">Create Content</h2>
+          
+          <div className="space-y-4 w-full">
+            <button 
+              className="w-full bg-app-black border border-app-yellow text-app-yellow font-bold py-4 rounded-xl flex items-center justify-center gap-3"
+              onClick={() => setShowRecordOptions(true)}
+            >
+              <VideoIcon className="h-6 w-6" />
+              <span>Record Video</span>
+            </button>
+            
+            <button 
+              className="w-full bg-app-black border border-app-yellow text-app-yellow font-bold py-4 rounded-xl flex items-center justify-center gap-3"
+              onClick={handleUploadVideo}
+            >
+              <Upload className="h-6 w-6" />
+              <span>Upload Video</span>
+            </button>
+            
+            <button 
+              className="w-full bg-app-yellow text-app-black font-bold py-4 rounded-xl flex items-center justify-center gap-3"
+              onClick={() => window.location.href = "/live/new"}
+            >
+              <Camera className="h-6 w-6" />
+              <span>Go Live</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <VideoUploadModal 
+        isOpen={showUploadModal} 
+        onClose={() => setShowUploadModal(false)} 
+        onSuccess={handleUploadSuccess}
+      />
+    </>
   );
 };
 

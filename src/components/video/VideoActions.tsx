@@ -1,7 +1,10 @@
+
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, Coins } from "lucide-react";
+import { Heart, MessageCircle, Share2, Coins, Download, Flag, Bookmark } from "lucide-react";
 import VideoComments from "./VideoComments";
 import { useToast } from "@/hooks/use-toast";
+import { VideoService } from "@/services/video.service";
+import ReportVideoDialog from "./ReportVideoDialog";
 
 interface VideoActionsProps {
   likes: number;
@@ -10,6 +13,9 @@ interface VideoActionsProps {
   isLiked: boolean;
   onLike: () => void;
   videoId?: string;
+  allowDownloads?: boolean;
+  onSave?: () => void;
+  isSaved?: boolean;
 }
 
 const VideoActions = ({
@@ -18,10 +24,14 @@ const VideoActions = ({
   shares,
   isLiked,
   onLike,
-  videoId = "1"
+  videoId = "1",
+  allowDownloads = false,
+  onSave,
+  isSaved = false
 }: VideoActionsProps) => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [showTipOptions, setShowTipOptions] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleLikeClick = () => {
@@ -37,21 +47,29 @@ const VideoActions = ({
     });
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Check out this video!',
-        text: 'I found this amazing video you should watch',
-        url: window.location.href
-      }).then(() => console.log('Successful share')).catch(error => console.log('Error sharing:', error));
-    } else {
-      toast({
-        title: "Link copied",
-        description: "Video link copied to clipboard!",
-        duration: 2000
-      });
+  const handleShare = async () => {
+    try {
+      if (videoId) {
+        await VideoService.shareVideo(videoId);
+      }
+      
+      if (navigator.share) {
+        navigator.share({
+          title: 'Check out this video!',
+          text: 'I found this amazing video you should watch',
+          url: window.location.href
+        }).then(() => console.log('Successful share')).catch(error => console.log('Error sharing:', error));
+      } else {
+        toast({
+          title: "Link copied",
+          description: "Video link copied to clipboard!",
+          duration: 2000
+        });
 
-      navigator.clipboard.writeText(window.location.href).catch(err => console.error('Failed to copy:', err));
+        navigator.clipboard.writeText(window.location.href).catch(err => console.error('Failed to copy:', err));
+      }
+    } catch (error) {
+      console.error("Error sharing video:", error);
     }
   };
 
@@ -74,6 +92,55 @@ const VideoActions = ({
       duration: 3000,
     });
     setShowTipOptions(false);
+  };
+
+  const handleDownload = async () => {
+    if (!allowDownloads) {
+      toast({
+        title: "Download not allowed",
+        description: "The creator has not enabled downloads for this video",
+        variant: "destructive",
+        duration: 2000
+      });
+      return;
+    }
+
+    try {
+      if (videoId) {
+        await VideoService.downloadVideo(videoId);
+      }
+      
+      toast({
+        title: "Downloading video",
+        description: "Your download has started",
+        duration: 2000
+      });
+    } catch (error) {
+      console.error("Error downloading video:", error);
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading this video",
+        variant: "destructive",
+        duration: 2000
+      });
+    }
+  };
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave();
+    }
+    toast({
+      title: isSaved ? "Removed from saved" : "Saved",
+      description: isSaved 
+        ? "Video removed from your saved videos" 
+        : "Video saved to your collection",
+      duration: 2000
+    });
+  };
+
+  const handleReport = () => {
+    setIsReportDialogOpen(true);
   };
 
   return (
@@ -108,6 +175,38 @@ const VideoActions = ({
           <Share2 className="h-6 w-6 text-white" />
         </button>
         <span className="text-white text-xs mt-1">{shares}</span>
+      </div>
+      
+      <div className="flex flex-col items-center">
+        <button 
+          onClick={handleSave}
+          className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+        >
+          <Bookmark className={`h-6 w-6 ${isSaved ? "fill-yellow-500 text-yellow-500" : "text-white"}`} />
+        </button>
+        <span className="text-white text-xs mt-1">Save</span>
+      </div>
+      
+      {allowDownloads && (
+        <div className="flex flex-col items-center">
+          <button 
+            onClick={handleDownload}
+            className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+          >
+            <Download className="h-6 w-6 text-white" />
+          </button>
+          <span className="text-white text-xs mt-1">Download</span>
+        </div>
+      )}
+      
+      <div className="flex flex-col items-center">
+        <button 
+          onClick={handleReport}
+          className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+        >
+          <Flag className="h-6 w-6 text-white" />
+        </button>
+        <span className="text-white text-xs mt-1">Report</span>
       </div>
       
       <div className="flex flex-col items-center relative">
@@ -158,6 +257,12 @@ const VideoActions = ({
           videoId={videoId}
         />
       )}
+
+      <ReportVideoDialog 
+        isOpen={isReportDialogOpen} 
+        onClose={() => setIsReportDialogOpen(false)} 
+        videoId={videoId} 
+      />
     </div>
   );
 };
