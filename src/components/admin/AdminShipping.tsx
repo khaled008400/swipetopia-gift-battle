@@ -1,435 +1,338 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShippingMethod } from '@/services/pricing.service';
 import AdminService from '@/services/admin.service';
-import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ShippingMethod } from '@/services/pricing.service';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Plus, Edit, Trash2, Ship, MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  FormDescription
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/components/ui/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 
-const AdminShipping = () => {
-  const [open, setOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentShipping, setCurrentShipping] = useState<ShippingMethod | null>(null);
-  
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [estimatedDays, setEstimatedDays] = useState('');
-  const [isActive, setIsActive] = useState(true);
-  const [minOrderValue, setMinOrderValue] = useState('');
-  const [maxOrderValue, setMaxOrderValue] = useState('');
-  const [applicableRegions, setApplicableRegions] = useState<string[]>([]);
-  const [newRegion, setNewRegion] = useState('');
+// Define the form schema for shipping methods
+const shippingMethodSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  description: z.string().min(2, "Description must be at least 2 characters"),
+  price: z.number().min(0, "Price cannot be negative"),
+  estimated_days: z.string().min(1, "Estimated delivery time is required")
+});
 
+type ShippingMethodFormValues = z.infer<typeof shippingMethodSchema>;
+
+const AdminShipping: React.FC = () => {
+  const [methodDialog, setMethodDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
+  const [selectedMethod, setSelectedMethod] = useState<ShippingMethod | null>(null);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: shippingMethods, isLoading } = useQuery({
-    queryKey: ['adminShippingMethods'],
+  // Fetch shipping methods
+  const { data, isLoading } = useQuery({
+    queryKey: ['shippingMethods'],
     queryFn: () => AdminService.getShippingMethods(),
   });
 
-  const addMutation = useMutation({
-    mutationFn: (shipping: Omit<ShippingMethod, 'id'>) => AdminService.createShippingMethod(shipping),
+  // Create shipping method mutation
+  const createMethodMutation = useMutation({
+    mutationFn: (methodData: Omit<ShippingMethod, 'id'>) => 
+      AdminService.createShippingMethod(methodData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminShippingMethods'] });
-      resetForm();
-      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['shippingMethods'] });
+      setMethodDialog(false);
       toast({
-        title: "Success",
-        description: "Shipping method created successfully",
+        title: "Shipping method created",
+        description: "Shipping method has been created successfully."
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create shipping method",
-        variant: "destructive",
+        description: "Failed to create shipping method.",
+        variant: "destructive"
       });
-      console.error("Create shipping method error:", error);
     }
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (shipping: ShippingMethod) => AdminService.updateShippingMethod(shipping.id, shipping),
+  // Update shipping method mutation
+  const updateMethodMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<ShippingMethod, 'id'>> }) => 
+      AdminService.updateShippingMethod(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminShippingMethods'] });
-      resetForm();
-      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['shippingMethods'] });
+      setMethodDialog(false);
       toast({
-        title: "Success",
-        description: "Shipping method updated successfully",
+        title: "Shipping method updated",
+        description: "Shipping method has been updated successfully."
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update shipping method",
-        variant: "destructive",
+        description: "Failed to update shipping method.",
+        variant: "destructive"
       });
-      console.error("Update shipping method error:", error);
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => AdminService.deleteShippingMethod(id),
+  // Delete shipping method mutation
+  const deleteMethodMutation = useMutation({
+    mutationFn: (methodId: string) => AdminService.deleteShippingMethod(methodId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminShippingMethods'] });
+      queryClient.invalidateQueries({ queryKey: ['shippingMethods'] });
       toast({
-        title: "Success",
-        description: "Shipping method deleted successfully",
+        title: "Shipping method deleted",
+        description: "Shipping method has been deleted successfully."
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to delete shipping method",
-        variant: "destructive",
+        description: "Failed to delete shipping method.",
+        variant: "destructive"
       });
-      console.error("Delete shipping method error:", error);
     }
   });
 
-  const resetForm = () => {
-    setName('');
-    setDescription('');
-    setPrice('');
-    setEstimatedDays('');
-    setIsActive(true);
-    setMinOrderValue('');
-    setMaxOrderValue('');
-    setApplicableRegions([]);
-    setNewRegion('');
-    setCurrentShipping(null);
-    setIsEditing(false);
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      resetForm();
+  // Form setup
+  const form = useForm<ShippingMethodFormValues>({
+    resolver: zodResolver(shippingMethodSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      estimated_days: ''
     }
-    setOpen(open);
+  });
+
+  // Handle dialog open
+  const handleCreateMethod = () => {
+    form.reset({
+      name: '',
+      description: '',
+      price: 0,
+      estimated_days: ''
+    });
+    setDialogMode('create');
+    setSelectedMethod(null);
+    setMethodDialog(true);
   };
 
-  const handleEditShipping = (shipping: ShippingMethod) => {
-    setCurrentShipping(shipping);
-    setName(shipping.name);
-    setDescription(shipping.description);
-    setPrice(shipping.price.toString());
-    setEstimatedDays(shipping.estimated_days);
-    setIsActive(shipping.is_active);
-    
-    // Set conditions if they exist
-    if (shipping.conditions) {
-      if (shipping.conditions.min_order_value) {
-        setMinOrderValue(shipping.conditions.min_order_value.toString());
-      }
-      if (shipping.conditions.max_order_value) {
-        setMaxOrderValue(shipping.conditions.max_order_value.toString());
-      }
-      if (shipping.conditions.applicable_regions) {
-        setApplicableRegions(shipping.conditions.applicable_regions);
-      }
-    }
-    
-    setIsEditing(true);
-    setOpen(true);
+  // Handle edit method
+  const handleEditMethod = (method: ShippingMethod) => {
+    form.reset({
+      name: method.name,
+      description: method.description,
+      price: method.price,
+      estimated_days: method.estimated_days
+    });
+    setDialogMode('edit');
+    setSelectedMethod(method);
+    setMethodDialog(true);
   };
 
-  const handleAddRegion = () => {
-    if (newRegion && !applicableRegions.includes(newRegion)) {
-      setApplicableRegions([...applicableRegions, newRegion]);
-      setNewRegion('');
+  // Handle delete method
+  const handleDeleteMethod = (methodId: string) => {
+    if (confirm("Are you sure you want to delete this shipping method? This action cannot be undone.")) {
+      deleteMethodMutation.mutate(methodId);
     }
   };
 
-  const handleRemoveRegion = (region: string) => {
-    setApplicableRegions(applicableRegions.filter(r => r !== region));
-  };
-
-  const handleSubmit = () => {
-    // Validate form
-    if (!name || !description || !price || !estimatedDays) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
+  // Handle form submission
+  const onSubmit = (formData: ShippingMethodFormValues) => {
+    if (dialogMode === 'create') {
+      createMethodMutation.mutate(formData);
+    } else if (dialogMode === 'edit' && selectedMethod) {
+      updateMethodMutation.mutate({
+        id: selectedMethod.id,
+        data: formData
       });
-      return;
-    }
-
-    const shippingData: any = {
-      name,
-      description,
-      price: parseFloat(price),
-      estimated_days: estimatedDays,
-      is_active: isActive,
-      conditions: {
-        min_order_value: minOrderValue ? parseFloat(minOrderValue) : undefined,
-        max_order_value: maxOrderValue ? parseFloat(maxOrderValue) : undefined,
-        applicable_regions: applicableRegions.length > 0 ? applicableRegions : undefined,
-      }
-    };
-
-    if (isEditing && currentShipping) {
-      updateMutation.mutate({
-        ...shippingData,
-        id: currentShipping.id
-      });
-    } else {
-      addMutation.mutate(shippingData);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Shipping Methods</h2>
-          <p className="text-muted-foreground">Manage shipping options for your store</p>
+        <h2 className="text-2xl font-bold">Shipping Methods</h2>
+        <Button onClick={handleCreateMethod}>
+          <Plus className="h-4 w-4 mr-2" /> Add Shipping Method
+        </Button>
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsEditing(false)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Shipping Method
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Shipping Method' : 'Add Shipping Method'}</DialogTitle>
-              <DialogDescription>
-                {isEditing ? 'Update existing shipping method details' : 'Add a new shipping method to your store'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Standard Shipping"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="9.99"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Delivery via standard carrier"
-                  rows={2}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="estimated_days">Estimated Days</Label>
-                  <Input
-                    id="estimated_days"
-                    value={estimatedDays}
-                    onChange={(e) => setEstimatedDays(e.target.value)}
-                    placeholder="3-5 days"
-                  />
-                </div>
-                <div className="flex items-center space-x-2 pt-6">
-                  <Switch
-                    id="is_active"
-                    checked={isActive}
-                    onCheckedChange={setIsActive}
-                  />
-                  <Label htmlFor="is_active">Active</Label>
-                </div>
-              </div>
-              
-              <Separator className="my-2" />
-              
-              <h3 className="text-sm font-medium">Conditions</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min_order">Minimum Order Value</Label>
-                  <Input
-                    id="min_order"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={minOrderValue}
-                    onChange={(e) => setMinOrderValue(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max_order">Maximum Order Value</Label>
-                  <Input
-                    id="max_order"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={maxOrderValue}
-                    onChange={(e) => setMaxOrderValue(e.target.value)}
-                    placeholder="No limit"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Applicable Regions</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newRegion}
-                    onChange={(e) => setNewRegion(e.target.value)}
-                    placeholder="Enter region"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRegion())}
-                  />
-                  <Button type="button" onClick={handleAddRegion} variant="outline">Add</Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {applicableRegions.map((region) => (
-                    <Badge key={region} variant="secondary" className="px-2 py-1">
-                      {region}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={() => handleRemoveRegion(region)}
-                      >
-                        &times;
-                      </Button>
-                    </Badge>
-                  ))}
-                  {applicableRegions.length === 0 && (
-                    <span className="text-sm text-muted-foreground">All regions</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>
-                {isEditing ? 'Update' : 'Add'} Shipping Method
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Delivery Time</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.map((method: ShippingMethod) => (
+              <TableRow key={method.id}>
+                <TableCell className="font-medium">{method.name}</TableCell>
+                <TableCell>{method.description}</TableCell>
+                <TableCell>${method.price.toFixed(2)}</TableCell>
+                <TableCell>{method.estimated_days}</TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditMethod(method)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">More options</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteMethod(method.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
-      <div className="grid gap-6">
-        {shippingMethods && shippingMethods.length > 0 ? (
-          shippingMethods.map((shipping: ShippingMethod) => (
-            <Card key={shipping.id}>
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <div>
-                  <CardTitle className="text-xl flex items-center">
-                    {shipping.name}
-                    {!shipping.is_active && (
-                      <Badge variant="outline" className="ml-2 text-xs">Inactive</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>{shipping.description}</CardDescription>
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="icon" onClick={() => handleEditShipping(shipping)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="text-destructive"
-                    onClick={() => {
-                      if (confirm(`Are you sure you want to delete ${shipping.name}?`)) {
-                        deleteMutation.mutate(shipping.id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Price</p>
-                    <p className="text-xl font-bold">${shipping.price.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Estimated Delivery</p>
-                    <p className="text-lg">{shipping.estimated_days}</p>
-                  </div>
-                </div>
-                
-                {shipping.conditions && Object.keys(shipping.conditions).length > 0 && (
-                  <>
-                    <Separator className="my-4" />
-                    <div className="grid grid-cols-2 gap-4">
-                      {shipping.conditions.min_order_value !== undefined && (
-                        <div>
-                          <p className="text-sm font-medium">Minimum Order</p>
-                          <p>${shipping.conditions.min_order_value.toFixed(2)}</p>
-                        </div>
-                      )}
-                      
-                      {shipping.conditions.max_order_value !== undefined && (
-                        <div>
-                          <p className="text-sm font-medium">Maximum Order</p>
-                          <p>${shipping.conditions.max_order_value.toFixed(2)}</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {shipping.conditions.applicable_regions && shipping.conditions.applicable_regions.length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-sm font-medium">Regions</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {shipping.conditions.applicable_regions.map(region => (
-                            <Badge key={region} variant="secondary">{region}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
+      {/* Shipping Method Form Dialog */}
+      <Dialog open={methodDialog} onOpenChange={setMethodDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === 'create' ? 'Add New Shipping Method' : 'Edit Shipping Method'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Standard Shipping" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">No shipping methods found. Create your first shipping method to get started.</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="e.g. Regular mail delivery" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                        value={field.value}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="estimated_days"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estimated Delivery Time</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 3-5 business days" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Format as a range or specific number of days
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">
+                  {dialogMode === 'create' ? 'Create' : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

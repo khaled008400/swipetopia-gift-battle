@@ -1,5 +1,80 @@
+
 import api from './api';
 import { Coupon, Offer, ShippingMethod, PricingRules } from './pricing.service';
+
+// Interfaces for admin models
+export interface AdminUser {
+  id: string;
+  username: string;
+  email: string;
+  status: 'active' | 'suspended' | 'pending';
+  createdAt: string;
+  videosCount: number;
+  ordersCount: number;
+}
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  inventory: number;
+  category: string;
+  status: 'active' | 'draft' | 'unavailable';
+}
+
+export interface AdminVideo {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+  };
+  description: string;
+  url: string;
+  createdAt: string;
+  status: 'active' | 'flagged' | 'removed';
+  likes: number;
+  comments: number;
+  shares: number;
+}
+
+export interface AdminOrder {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+  };
+  products: Array<{
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+  total: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  createdAt: string;
+}
+
+export interface ProductAttribute {
+  id: string;
+  name: string;
+  values: string[];
+  color?: string;
+  status: 'active' | 'inactive';
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  newUsersToday: number;
+  totalVideos: number;
+  videoUploadsToday: number;
+  totalOrders: number;
+  ordersToday: number;
+  revenueTotal: number;
+  revenueToday: number;
+}
 
 export interface AdminCoupon extends Coupon {
   id: string;
@@ -22,6 +97,7 @@ const AdminService = {
     return response.data;
   },
 
+  // User related methods
   async getUsersList(page = 1, limit = 10, search = '') {
     const response = await api.get('/admin/users', {
       params: { page, limit, search }
@@ -39,14 +115,27 @@ const AdminService = {
     return response.data;
   },
 
+  async updateUserStatus(userId: string, status: 'active' | 'suspended') {
+    const response = await api.patch(`/admin/users/${userId}/status`, { status });
+    return response.data;
+  },
+
   async deleteUser(userId: string) {
     const response = await api.delete(`/admin/users/${userId}`);
     return response.data;
   },
 
+  // Product related methods
   async getProductsList(page = 1, limit = 10, category = '', search = '') {
     const response = await api.get('/admin/products', {
       params: { page, limit, category, search }
+    });
+    return response.data;
+  },
+
+  async getProducts(page = 1, category = '') {
+    const response = await api.get('/admin/products', {
+      params: { page, category }
     });
     return response.data;
   },
@@ -71,9 +160,24 @@ const AdminService = {
     return response.data;
   },
 
+  async getProductSalesData(productId: string, period = 'month') {
+    const response = await api.get(`/admin/products/${productId}/sales`, {
+      params: { period }
+    });
+    return response.data;
+  },
+
+  // Order related methods
   async getOrdersList(page = 1, limit = 10, status = '', search = '') {
     const response = await api.get('/admin/orders', {
       params: { page, limit, status, search }
+    });
+    return response.data;
+  },
+
+  async getOrders(page = 1, status = '') {
+    const response = await api.get('/admin/orders', {
+      params: { page, status }
     });
     return response.data;
   },
@@ -88,10 +192,23 @@ const AdminService = {
     return response.data;
   },
 
+  // Video related methods
   async getVideosList(page = 1, limit = 10, status = '', search = '') {
     const response = await api.get('/admin/videos', {
       params: { page, limit, status, search }
     });
+    return response.data;
+  },
+
+  async getVideos(page = 1, status = '') {
+    const response = await api.get('/admin/videos', {
+      params: { page, status }
+    });
+    return response.data;
+  },
+
+  async updateVideoStatus(videoId: string, status: 'active' | 'flagged' | 'removed') {
+    const response = await api.patch(`/admin/videos/${videoId}/status`, { status });
     return response.data;
   },
 
@@ -105,6 +222,12 @@ const AdminService = {
     return response.data;
   },
 
+  async deleteVideo(videoId: string) {
+    const response = await api.delete(`/admin/videos/${videoId}`);
+    return response.data;
+  },
+
+  // Report related methods
   async getReportsList(type = 'sales', period = 'month') {
     const response = await api.get('/admin/reports', {
       params: { type, period }
@@ -112,9 +235,37 @@ const AdminService = {
     return response.data;
   },
 
+  async getUserGrowthData(period = 'week') {
+    const response = await api.get('/admin/reports/user-growth', {
+      params: { period }
+    });
+    return response.data;
+  },
+
+  async getVideoEngagementData(period = 'week') {
+    const response = await api.get('/admin/reports/video-engagement', {
+      params: { period }
+    });
+    return response.data;
+  },
+
+  async getRevenueData(period = 'week') {
+    const response = await api.get('/admin/reports/revenue', {
+      params: { period }
+    });
+    return response.data;
+  },
+
   // Product attributes 
   async getAttributes() {
     const response = await api.get('/admin/product-attributes');
+    return response.data;
+  },
+
+  async getProductAttributes(page = 1) {
+    const response = await api.get('/admin/product-attributes', {
+      params: { page }
+    });
     return response.data;
   },
 
@@ -128,12 +279,27 @@ const AdminService = {
     return response.data;
   },
 
+  async createProductAttribute(attributeData: Omit<ProductAttribute, 'id'>) {
+    const response = await api.post('/admin/product-attributes', attributeData);
+    return response.data;
+  },
+
   async updateAttribute(attributeId: string, attributeData: any) {
     const response = await api.put(`/admin/product-attributes/${attributeId}`, attributeData);
     return response.data;
   },
 
+  async updateProductAttribute(attributeId: string, attributeData: Partial<Omit<ProductAttribute, 'id'>>) {
+    const response = await api.put(`/admin/product-attributes/${attributeId}`, attributeData);
+    return response.data;
+  },
+
   async deleteAttribute(attributeId: string) {
+    const response = await api.delete(`/admin/product-attributes/${attributeId}`);
+    return response.data;
+  },
+
+  async deleteProductAttribute(attributeId: string) {
     const response = await api.delete(`/admin/product-attributes/${attributeId}`);
     return response.data;
   },
