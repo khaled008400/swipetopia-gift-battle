@@ -1,9 +1,12 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Home, Plus, ShoppingBag, User, Video, Zap } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { Badge } from "@/components/ui/badge";
 
 const BottomNavigation = () => {
   const location = useLocation();
+  const { itemCount } = useCart();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -26,8 +29,13 @@ const BottomNavigation = () => {
       <Link to="/live" className={`group nav-item ${isActive('/live') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <Zap className={`nav-icon h-5 w-5 ${isActive('/live') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <Link to="/shop" className={`group nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
+      <Link to="/shop" className={`group relative nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
+        {itemCount > 0 && !isActive('/shop') && (
+          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-app-yellow text-app-black text-[10px]">
+            {itemCount > 9 ? '9+' : itemCount}
+          </Badge>
+        )}
       </Link>
       <Link to="/profile" className={`group nav-item ${isActive('/profile') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <User className={`nav-icon h-5 w-5 ${isActive('/profile') ? 'text-app-yellow' : ''}`} />

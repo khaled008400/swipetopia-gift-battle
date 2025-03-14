@@ -4,6 +4,7 @@ import { Heart, Star, ShoppingCart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
 
 interface ProductProps {
   id: string;
@@ -16,6 +17,17 @@ interface ProductProps {
 }
 
 const ProductCard = ({ id, image, name, price, rating, isLiked, onToggleLike }: ProductProps) => {
+  const { addItem } = useCart();
+  
+  const handleAddToCart = () => {
+    addItem({
+      id,
+      name,
+      price,
+      image
+    });
+  };
+  
   return (
     <Card className="relative overflow-hidden border-none bg-gradient-to-b from-app-gray-light to-app-gray-dark">
       <div className="relative aspect-square overflow-hidden">
@@ -51,7 +63,12 @@ const ProductCard = ({ id, image, name, price, rating, isLiked, onToggleLike }: 
         </div>
         <div className="flex justify-between items-center">
           <span className="text-white font-bold">${price.toFixed(2)}</span>
-          <Button size="sm" variant="outline" className="h-8 bg-app-yellow text-app-black hover:bg-app-yellow/80 border-none">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleAddToCart}
+            className="h-8 bg-app-yellow text-app-black hover:bg-app-yellow/80 border-none"
+          >
             <ShoppingCart className="w-3.5 h-3.5 mr-1" />
             Add
           </Button>
