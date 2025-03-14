@@ -4,7 +4,7 @@ import BattleVideo from "./BattleVideo";
 import VideoPlayer from "./VideoPlayer";
 
 interface VideoFeedProps {
-  videos: BattleVideoType[];
+  videos: any[]; // Make more generic to accept both BattleVideoType and Video
   activeVideoIndex: number;
   isBattlePage?: boolean;
 }

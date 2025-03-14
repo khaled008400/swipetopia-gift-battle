@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import VideoOverlay from "@/components/video/VideoOverlay";
-import VideoPlayer from "@/components/VideoPlayer";
+import VideoFeed from "@/components/VideoFeed";
 
 interface Video {
   id: string;
@@ -197,21 +196,10 @@ const VideoPage = () => {
 
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-black relative">
-      <div className="h-full w-full">
-        {videos.map((video, index) => (
-          <div
-            key={video.id}
-            className={`absolute top-0 left-0 h-full w-full transition-opacity duration-300 ${
-              index === activeVideoIndex ? "opacity-100 z-10" : "opacity-0 -z-10"
-            }`}
-          >
-            <VideoPlayer 
-              video={video} 
-              isActive={index === activeVideoIndex} 
-            />
-          </div>
-        ))}
-      </div>
+      <VideoFeed
+        videos={videos}
+        activeVideoIndex={activeVideoIndex}
+      />
       
       {renderProgressIndicators()}
     </div>
