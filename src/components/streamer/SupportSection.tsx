@@ -1,137 +1,139 @@
 
-import { useState } from "react";
-import { Gift, Sparkles, ChevronUp, ChevronDown, Heart } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Gift, Coin, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
-
-// Mock data - would come from API in production
-const mockGiftTiers = [
-  {
-    id: "1",
-    name: "Bronze Support",
-    description: "Show your appreciation with a small gift",
-    price: 100, // coins
-    perks: ["Special shoutout in next stream", "Bronze supporter badge"]
-  },
-  {
-    id: "2",
-    name: "Silver Support",
-    description: "Support your favorite streamer and get noticed",
-    price: 500, // coins
-    perks: ["Personal thank you message", "Silver supporter badge", "Access to subscriber-only streams"]
-  },
-  {
-    id: "3",
-    name: "Gold Support",
-    description: "Become a VIP supporter with exclusive benefits",
-    price: 1000, // coins
-    perks: ["VIP entry to future events", "Gold supporter badge", "Monthly one-on-one chat", "Early access to new products"]
-  }
-];
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useTopSupporters, TopSupporter } from "@/hooks/useStreamerData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SupportSectionProps {
   streamerId?: string;
 }
 
 const SupportSection = ({ streamerId }: SupportSectionProps) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [expandedTier, setExpandedTier] = useState<string | null>("1");
-  
-  const handleSupport = (tierId: string, price: number) => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to support this streamer",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // In a real app, this would call an API to process the gift
-    toast({
-      title: "Thank You!",
-      description: `You've successfully supported this streamer with ${price} coins!`,
-      variant: "default",
-    });
-  };
-  
-  const toggleTier = (tierId: string) => {
-    setExpandedTier(expandedTier === tierId ? null : tierId);
-  };
+  const { topSupporters, isLoading, error } = useTopSupporters(streamerId || '');
   
   return (
-    <div className="space-y-4">
-      <div className="bg-app-gray-dark rounded-md p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Gift className="h-5 w-5 text-app-yellow" />
-          <h3 className="text-lg font-medium">Support Tiers</h3>
-        </div>
-        
-        <p className="text-sm text-muted-foreground mb-6">
-          Show your support and unlock exclusive perks by sending gifts to this streamer.
-        </p>
-        
-        <div className="space-y-4">
-          {mockGiftTiers.map((tier) => (
-            <Card 
-              key={tier.id} 
-              className={`border ${
-                expandedTier === tier.id ? "border-app-yellow" : "border-app-gray-light"
-              } bg-app-gray-darker`}
-            >
-              <CardContent className="p-0">
-                <div 
-                  className="p-4 cursor-pointer flex justify-between items-center"
-                  onClick={() => toggleTier(tier.id)}
-                >
-                  <div>
-                    <div className="font-medium">{tier.name}</div>
-                    <div className="text-sm text-muted-foreground">{tier.description}</div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Donation Options */}
+      <Card className="bg-app-gray-dark border-app-gray-light">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Support Options</h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 border border-app-gray-light rounded-lg hover:border-app-yellow transition-colors">
+              <div className="flex items-center">
+                <div className="bg-purple-900/20 p-2 rounded-lg mr-3">
+                  <Gift className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <div className="font-medium">Send Virtual Gifts</div>
+                  <div className="text-sm text-muted-foreground">Gift special items during streams</div>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm">
+                Gift
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 border border-app-gray-light rounded-lg hover:border-app-yellow transition-colors">
+              <div className="flex items-center">
+                <div className="bg-yellow-900/20 p-2 rounded-lg mr-3">
+                  <Coin className="h-5 w-5 text-yellow-500" />
+                </div>
+                <div>
+                  <div className="font-medium">Send Coins</div>
+                  <div className="text-sm text-muted-foreground">Direct coin donations</div>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm">
+                Donate
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 border border-app-gray-light rounded-lg hover:border-app-yellow transition-colors">
+              <div className="flex items-center">
+                <div className="bg-red-900/20 p-2 rounded-lg mr-3">
+                  <Heart className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <div className="font-medium">Subscribe</div>
+                  <div className="text-sm text-muted-foreground">Monthly support with benefits</div>
+                </div>
+              </div>
+              <Button className="bg-app-yellow text-app-black hover:bg-app-yellow/90" size="sm">
+                Subscribe
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Top Supporters */}
+      <Card className="bg-app-gray-dark border-app-gray-light">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Top Supporters</h3>
+          
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center">
+                  <Skeleton className="h-10 w-10 rounded-full mr-3" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
-                  
+                  <Skeleton className="h-5 w-14" />
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-red-500 text-center">Failed to load top supporters</div>
+          ) : topSupporters.length === 0 ? (
+            <div className="text-center text-muted-foreground py-6">No supporters yet</div>
+          ) : (
+            <div className="space-y-4">
+              {topSupporters.map((supporter, index) => (
+                <div key={supporter.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-app-gray-light/20 transition-colors">
                   <div className="flex items-center">
-                    <div className="mr-3 text-right">
-                      <div className="font-medium text-app-yellow">{tier.price}</div>
-                      <div className="text-xs text-muted-foreground">coins</div>
+                    <div className="relative mr-3">
+                      <Avatar>
+                        <AvatarImage src={supporter.supporter_avatar || ''} />
+                        <AvatarFallback>{supporter.supporter_username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {index < 3 && (
+                        <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                          index === 0 
+                            ? 'bg-yellow-500 text-black' 
+                            : index === 1 
+                              ? 'bg-gray-300 text-black' 
+                              : 'bg-amber-700 text-white'
+                        }`}>
+                          {index + 1}
+                        </div>
+                      )}
                     </div>
-                    {expandedTier === tier.id ? 
-                      <ChevronUp className="h-5 w-5" /> : 
-                      <ChevronDown className="h-5 w-5" />
-                    }
+                    <div>
+                      <div className="font-medium">{supporter.supporter_username}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {supporter.gift_amount > 10000 
+                          ? 'Ultimate Fan' 
+                          : supporter.gift_amount > 5000 
+                            ? 'Super Fan' 
+                            : 'Supporter'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center text-app-yellow font-semibold">
+                    <Coin className="h-4 w-4 mr-1" />
+                    {supporter.gift_amount}
                   </div>
                 </div>
-                
-                {expandedTier === tier.id && (
-                  <div className="px-4 pb-4 pt-0">
-                    <div className="bg-app-gray-dark p-3 rounded-md mb-3">
-                      <div className="text-sm font-medium mb-2">Perks:</div>
-                      <ul className="text-sm space-y-1">
-                        {tier.perks.map((perk, index) => (
-                          <li key={index} className="flex items-start">
-                            <Sparkles className="h-4 w-4 text-app-yellow mr-2 mt-0.5 flex-shrink-0" />
-                            <span>{perk}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    <Button 
-                      className="w-full bg-app-yellow text-app-black"
-                      onClick={() => handleSupport(tier.id, tier.price)}
-                    >
-                      <Heart className="h-4 w-4 mr-2" />
-                      Support with {tier.price} Coins
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,7 +65,11 @@ const StreamerSchedule = () => {
 
       if (streamsError) throw streamsError;
       
-      setScheduledStreams(streamsData || []);
+      // Type assertion to ensure status has the correct type
+      setScheduledStreams(streamsData?.map(stream => ({
+        ...stream,
+        status: (stream.status as 'scheduled' | 'live' | 'completed' | 'cancelled') || 'scheduled'
+      })) || []);
       
       // In a real app, you would fetch battle invites from a different table
       // For now, we'll use mock data
