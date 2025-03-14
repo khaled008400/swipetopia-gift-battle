@@ -1,5 +1,5 @@
 
-// Export the AuthContext, AuthProvider, and useAuth hook
-import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthProvider } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 
 export { AuthProvider, useAuth };
