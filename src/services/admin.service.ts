@@ -1,4 +1,3 @@
-
 import api from './api';
 import { Coupon, Offer, ShippingMethod, PricingRules } from './pricing.service';
 
@@ -83,13 +82,25 @@ export interface AdminCoupon extends Coupon {
   updated_at: string;
 }
 
-export interface AdminOffer extends Offer {
+export interface AdminOffer {
   id: string;
+  name: string;
+  description: string;
+  discount_type: 'percentage' | 'fixed' | 'special';
+  discount_value: number;
+  start_date?: string;
+  end_date?: string;
+  min_purchase_amount?: number;
+  product_category?: string;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-// Other admin related interfaces can be added here
+export interface AdminShippingMethod extends Omit<ShippingMethod, 'is_active'> {
+  id: string;
+  is_active?: boolean;
+}
 
 const AdminService = {
   async getDashboardStats() {
@@ -97,12 +108,15 @@ const AdminService = {
     return response.data;
   },
 
-  // User related methods
   async getUsersList(page = 1, limit = 10, search = '') {
     const response = await api.get('/admin/users', {
       params: { page, limit, search }
     });
     return response.data;
+  },
+
+  async getUsers(page = 1, limit = 10, search = '') {
+    return this.getUsersList(page, limit, search);
   },
 
   async getUser(userId: string) {
@@ -125,7 +139,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Product related methods
   async getProductsList(page = 1, limit = 10, category = '', search = '') {
     const response = await api.get('/admin/products', {
       params: { page, limit, category, search }
@@ -167,7 +180,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Order related methods
   async getOrdersList(page = 1, limit = 10, status = '', search = '') {
     const response = await api.get('/admin/orders', {
       params: { page, limit, status, search }
@@ -192,7 +204,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Video related methods
   async getVideosList(page = 1, limit = 10, status = '', search = '') {
     const response = await api.get('/admin/videos', {
       params: { page, limit, status, search }
@@ -227,7 +238,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Report related methods
   async getReportsList(type = 'sales', period = 'month') {
     const response = await api.get('/admin/reports', {
       params: { type, period }
@@ -256,7 +266,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Product attributes 
   async getAttributes() {
     const response = await api.get('/admin/product-attributes');
     return response.data;
@@ -304,7 +313,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Coupon methods
   async getCoupons() {
     const response = await api.get('/admin/coupons');
     return response.data;
@@ -330,7 +338,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Offer methods
   async getOffers() {
     const response = await api.get('/admin/offers');
     return response.data;
@@ -356,18 +363,17 @@ const AdminService = {
     return response.data;
   },
 
-  // Shipping methods
   async getShippingMethods() {
     const response = await api.get('/admin/shipping');
     return response.data;
   },
 
-  async createShippingMethod(methodData: Omit<ShippingMethod, 'id'>) {
+  async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id'>) {
     const response = await api.post('/admin/shipping', methodData);
     return response.data;
   },
 
-  async updateShippingMethod(methodId: string, methodData: Partial<Omit<ShippingMethod, 'id'>>) {
+  async updateShippingMethod(methodId: string, methodData: Partial<Omit<AdminShippingMethod, 'id'>>) {
     const response = await api.put(`/admin/shipping/${methodId}`, methodData);
     return response.data;
   },
@@ -377,7 +383,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Pricing rules
   async getPricingRules() {
     const response = await api.get('/admin/pricing-rules');
     return response.data;

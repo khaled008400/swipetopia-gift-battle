@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Table, TableBody, TableCaption, TableCell, 
@@ -28,7 +27,7 @@ const AdminUsers = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['adminUsers', page, search],
-    queryFn: () => AdminService.getUsers(page, search),
+    queryFn: () => AdminService.getUsersList(page, 10, search),
   });
 
   const updateStatusMutation = useMutation({
@@ -53,7 +52,6 @@ const AdminUsers = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    // The search will trigger via the query dependency array
   };
 
   const handleStatusChange = (userId: string, status: 'active' | 'suspended') => {

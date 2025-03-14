@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService from '@/services/admin.service';
-import { ShippingMethod } from '@/services/pricing.service';
+import AdminService, { AdminShippingMethod } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Plus, Edit, Trash2, Ship, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,8 @@ const shippingMethodSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().min(2, "Description must be at least 2 characters"),
   price: z.number().min(0, "Price cannot be negative"),
-  estimated_days: z.string().min(1, "Estimated delivery time is required")
+  estimated_days: z.string().min(1, "Estimated delivery time is required"),
+  is_active: z.boolean().default(true)
 });
 
 type ShippingMethodFormValues = z.infer<typeof shippingMethodSchema>;
@@ -57,7 +57,7 @@ type ShippingMethodFormValues = z.infer<typeof shippingMethodSchema>;
 const AdminShipping: React.FC = () => {
   const [methodDialog, setMethodDialog] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
-  const [selectedMethod, setSelectedMethod] = useState<ShippingMethod | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<AdminShippingMethod | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -69,7 +69,7 @@ const AdminShipping: React.FC = () => {
 
   // Create shipping method mutation
   const createMethodMutation = useMutation({
-    mutationFn: (methodData: Omit<ShippingMethod, 'id'>) => 
+    mutationFn: (methodData: Omit<AdminShippingMethod, 'id'>) => 
       AdminService.createShippingMethod(methodData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shippingMethods'] });
@@ -90,7 +90,7 @@ const AdminShipping: React.FC = () => {
 
   // Update shipping method mutation
   const updateMethodMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<ShippingMethod, 'id'>> }) => 
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminShippingMethod, 'id'>> }) => 
       AdminService.updateShippingMethod(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shippingMethods'] });
@@ -135,7 +135,8 @@ const AdminShipping: React.FC = () => {
       name: '',
       description: '',
       price: 0,
-      estimated_days: ''
+      estimated_days: '',
+      is_active: true
     }
   });
 
@@ -145,7 +146,8 @@ const AdminShipping: React.FC = () => {
       name: '',
       description: '',
       price: 0,
-      estimated_days: ''
+      estimated_days: '',
+      is_active: true
     });
     setDialogMode('create');
     setSelectedMethod(null);
@@ -153,12 +155,13 @@ const AdminShipping: React.FC = () => {
   };
 
   // Handle edit method
-  const handleEditMethod = (method: ShippingMethod) => {
+  const handleEditMethod = (method: AdminShippingMethod) => {
     form.reset({
       name: method.name,
       description: method.description,
       price: method.price,
-      estimated_days: method.estimated_days
+      estimated_days: method.estimated_days,
+      is_active: method.is_active ?? true
     });
     setDialogMode('edit');
     setSelectedMethod(method);
