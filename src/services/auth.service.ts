@@ -55,19 +55,28 @@ const mapUser = (user: User | null, profile?: any): AppUser | null => {
 const AuthService = {
   async login(credentials: LoginCredentials) {
     try {
+      console.log("AuthService.login called with:", credentials.email);
       // Try real login with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase auth error:", error);
+        throw error;
+      }
 
-      const { data: profileData } = await supabase
+      console.log("Supabase login successful, fetching profile");
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user?.id)
         .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Profile fetch error:", profileError);
+      }
 
       const mappedUser = mapUser(data.user, profileData);
       
@@ -76,6 +85,7 @@ const AuthService = {
         localStorage.setItem('user', JSON.stringify(mappedUser));
       }
 
+      console.log("Login complete, returning user data");
       return {
         user: mappedUser as AppUser,
         token: data.session?.access_token
@@ -100,6 +110,7 @@ const AuthService = {
 
   async register(data: RegisterData) {
     try {
+      console.log("AuthService.register called with:", data.email);
       // Register with Supabase
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
@@ -111,8 +122,12 @@ const AuthService = {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase signup error:", error);
+        throw error;
+      }
 
+      console.log("Supabase signup successful, creating profile");
       // Create profile entry if it doesn't exist
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -134,6 +149,7 @@ const AuthService = {
         localStorage.setItem('user', JSON.stringify(mappedUser));
       }
 
+      console.log("Register complete, returning user data");
       return {
         user: mappedUser as AppUser,
         token: authData.session?.access_token
@@ -162,8 +178,10 @@ const AuthService = {
 
   async logout() {
     try {
+      console.log("AuthService.logout called");
       // Logout from Supabase
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error("Supabase logout error:", error);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -174,28 +192,40 @@ const AuthService = {
   getCurrentUser() {
     const userStr = localStorage.getItem('user');
     if (userStr) {
-      return JSON.parse(userStr);
+      try {
+        return JSON.parse(userStr);
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+        return null;
+      }
     }
     return null;
   },
 
   async getProfile() {
     try {
-      const user = supabase.auth.getUser();
-      if (!user) {
+      console.log("AuthService.getProfile called");
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error("Get user error:", userError);
         throw new Error("User not authenticated");
       }
 
+      console.log("User found, fetching profile");
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', (await user).data.user?.id)
+        .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Get profile error:", error);
+        throw error;
+      }
 
       return { 
-        user: mapUser((await user).data.user, data) 
+        user: mapUser(user, data) 
       };
     } catch (error) {
       console.error('Get profile error:', error);

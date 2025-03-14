@@ -21,49 +21,60 @@ import ExplorePage from "./pages/ExplorePage";
 import AdminPage from "./pages/AdminPage";
 import { useAuth } from "./context/AuthContext";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // AuthWrapper component to check authentication status
 const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
   
   // We add this console log to help debug
-  console.log("Auth status:", isAuthenticated);
+  console.log("AuthWrapper - Auth status:", isAuthenticated);
   
   return children;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthWrapper>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="videos" element={<VideoPage />} />
-                  <Route path="live" element={<LiveStreamPage />} />
-                  <Route path="wallet" element={<WalletPage />} />
-                  <Route path="shop" element={<ShopPage />} />
-                  <Route path="activity" element={<ActivityPage />} />
-                  <Route path="explore" element={<ExplorePage />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthWrapper>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CartProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log("App component rendering");
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthWrapper>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<HomePage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route path="videos" element={<VideoPage />} />
+                    <Route path="live" element={<LiveStreamPage />} />
+                    <Route path="wallet" element={<WalletPage />} />
+                    <Route path="shop" element={<ShopPage />} />
+                    <Route path="activity" element={<ActivityPage />} />
+                    <Route path="explore" element={<ExplorePage />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthWrapper>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

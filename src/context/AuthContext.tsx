@@ -30,17 +30,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const { toast } = useToast();
   
+  console.log("AuthProvider initialized");
+  
   // Check if user is logged in on component mount and listen for auth changes
   useEffect(() => {
+    console.log("Running auth effect");
+    
     const checkCurrentSession = async () => {
       try {
+        console.log("Checking current session");
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Session data:", session ? "Session exists" : "No session");
+        
         if (session) {
           const { data: profileData } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
+            
+          console.log("Profile data:", profileData);
             
           // Update local user state
           const updatedUser: AppUser = {
@@ -49,18 +58,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             email: session.user.email || '',
             avatar: profileData?.avatar_url || '/placeholder.svg',
             coins: profileData?.coins || 0,
-            // Set default values for followers and following since they don't exist in the database
+            // Set default values since they don't exist in the database yet
             followers: 0,
             following: 0
           };
           
+          console.log("Setting user:", updatedUser.username);
           setUser(updatedUser);
           localStorage.setItem('user', JSON.stringify(updatedUser));
         } else {
           // Check for stored user (for development mode)
           const storedUser = AuthService.getCurrentUser();
           if (storedUser) {
+            console.log("Using stored user:", storedUser.username);
             setUser(storedUser);
+          } else {
+            console.log("No stored user found");
           }
         }
       } catch (error) {
@@ -73,7 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event, session);
+        console.log("Auth state changed:", event, session ? "Session exists" : "No session");
         if (event === 'SIGNED_IN' && session) {
           // Get the user profile when signed in
           try {
@@ -90,17 +103,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               email: session.user.email || '',
               avatar: profileData?.avatar_url || '/placeholder.svg',
               coins: profileData?.coins || 0,
-              // Set default values for followers and following since they don't exist in the database
+              // Set default values since they don't exist in the database yet
               followers: 0,
               following: 0
             };
             
+            console.log("Auth state change - setting user:", updatedUser.username);
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
           } catch (error) {
             console.error('Error fetching profile:', error);
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out, clearing state");
           setUser(null);
           localStorage.removeItem('user');
         }
@@ -112,9 +127,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     try {
+      console.log("Login function called with email:", email);
       const data = await AuthService.login({ email, password });
+      console.log("Login successful, setting user:", data.user.username);
       setUser(data.user);
       toast({
         title: "Login successful",
@@ -129,6 +146,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         message = error.message;
       }
       
+      console.error("Login error:", message);
+      
       toast({
         title: "Login failed",
         description: message,
@@ -138,14 +157,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signup = async (username: string, email: string, password: string) => {
+  const signup = async (username: string, email: string, password: string): Promise<void> => {
     try {
+      console.log("Signup function called with email:", email);
       const data = await AuthService.register({ 
         username, 
         email, 
         password,
         password_confirmation: password
       });
+      console.log("Signup successful, setting user:", data.user.username);
       setUser(data.user);
       toast({
         title: "Account created",
@@ -160,6 +181,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         message = error.message;
       }
       
+      console.error("Signup error:", message);
+      
       toast({
         title: "Signup failed",
         description: message,
@@ -170,6 +193,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
+    console.log("Logout called");
     AuthService.logout();
     setUser(null);
     toast({
@@ -177,6 +201,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       description: "You have been successfully logged out.",
     });
   };
+
+  console.log("AuthProvider rendering, authenticated:", !!user);
 
   return (
     <AuthContext.Provider
