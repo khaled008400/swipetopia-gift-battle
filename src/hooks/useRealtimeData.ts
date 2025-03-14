@@ -48,16 +48,16 @@ export function useRealtimeData<T>(
     
     // Add listeners for INSERT events
     channel.on(
-      'postgres_changes' as any,
+      'postgres_changes',
       {
         event: 'INSERT',
         schema: 'public',
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload: { [key: string]: any }) => {
-        // Extract the data from the payload correctly
-        const newRecord = (payload.new || payload.payload?.new) as T;
+      (payload) => {
+        // Access the new record safely
+        const newRecord = payload.new as T;
         if (newRecord) {
           setData((prevData) => [...prevData, newRecord]);
           toast({
@@ -70,16 +70,16 @@ export function useRealtimeData<T>(
     
     // Add listeners for UPDATE events
     channel.on(
-      'postgres_changes' as any,
+      'postgres_changes',
       {
         event: 'UPDATE',
         schema: 'public',
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload: { [key: string]: any }) => {
-        // Extract the data from the payload correctly
-        const updatedRecord = (payload.new || payload.payload?.new) as T;
+      (payload) => {
+        // Access the updated record safely
+        const updatedRecord = payload.new as T;
         if (updatedRecord) {
           setData((prevData) =>
             prevData.map((item: any) =>
@@ -92,16 +92,16 @@ export function useRealtimeData<T>(
     
     // Add listeners for DELETE events
     channel.on(
-      'postgres_changes' as any,
+      'postgres_changes',
       {
         event: 'DELETE',
         schema: 'public',
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload: { [key: string]: any }) => {
-        // Extract the data from the payload correctly
-        const deletedRecord = (payload.old || payload.payload?.old) as T;
+      (payload) => {
+        // Access the deleted record safely
+        const deletedRecord = payload.old as T;
         if (deletedRecord) {
           setData((prevData) =>
             prevData.filter((item: any) => item.id !== (deletedRecord as any).id)
