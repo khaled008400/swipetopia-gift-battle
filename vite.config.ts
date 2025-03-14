@@ -30,9 +30,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Define environment variables with fallbacks for disconnected mode
+  // Ensure environment variables have safe fallbacks
   define: {
-    // Provide fallback values for env variables
+    // Provide explicit fallback values for env variables
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL || 'DISCONNECTED'),
     'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY || 'DISCONNECTED'),
   }

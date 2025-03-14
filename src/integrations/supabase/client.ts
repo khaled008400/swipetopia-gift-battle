@@ -6,15 +6,21 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ifeuccpukdosoxtufxzi.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZXVjY3B1a2Rvc294dHVmeHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NDM2MjAsImV4cCI6MjA1NzMxOTYyMH0.I4wy6OFJY_zYNrhYWjw7xphFTBc5vT9sgNM3i2iPUqI";
 
-// Create a dummy client for when Supabase is disconnected
+// Create a more comprehensive dummy client for when Supabase is disconnected
 const createDummyClient = () => {
   // Return an object with all the methods that might be used, but they'll all be no-ops
   return {
     auth: {
       getSession: () => Promise.resolve({ data: { session: null }, error: null }),
       getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: { message: "Supabase is disconnected" } }),
-      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: { message: "Supabase is disconnected" } }),
+      signInWithPassword: () => Promise.resolve({ 
+        data: { user: null, session: null }, 
+        error: { message: "Supabase is disconnected" } 
+      }),
+      signUp: () => Promise.resolve({ 
+        data: { user: null, session: null }, 
+        error: { message: "Supabase is disconnected" } 
+      }),
       signOut: () => Promise.resolve({ error: null }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
     },
