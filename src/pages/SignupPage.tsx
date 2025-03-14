@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");
@@ -11,7 +13,7 @@ const SignupPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
+  const { signup, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,7 +40,7 @@ const SignupPage = () => {
 
     setIsLoading(true);
     try {
-      await signup(username, email, password);
+      await signup(email, username, password);
       navigate("/");
     } catch (error) {
       console.error("Signup error:", error);
@@ -67,6 +69,7 @@ const SignupPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading || authLoading}
             />
           </div>
 
@@ -81,6 +84,7 @@ const SignupPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading || authLoading}
             />
           </div>
 
@@ -95,6 +99,7 @@ const SignupPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading || authLoading}
             />
           </div>
 
@@ -109,15 +114,23 @@ const SignupPage = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading || authLoading}
             />
           </div>
 
           <Button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
             className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
           >
-            {isLoading ? "Creating account..." : "Sign Up"}
+            {isLoading || authLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Sign Up"
+            )}
           </Button>
         </form>
 

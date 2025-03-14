@@ -1,13 +1,15 @@
 
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BottomNavigation from "./BottomNavigation";
 import { useEffect, useState } from "react";
 import CreateContentMenu from "./CreateContentMenu";
+import { Loader2 } from "lucide-react";
 
 const Layout = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleToggleCreateMenu = () => {
@@ -21,8 +23,17 @@ const Layout = () => {
     };
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen w-full items-center justify-center bg-app-black">
+        <Loader2 className="h-12 w-12 animate-spin text-app-yellow" />
+        <p className="mt-4 text-white">Loading...</p>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return (
