@@ -1,9 +1,10 @@
 
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Grid, Lock, Settings, Edit2 } from "lucide-react";
+import { Grid, Lock, Settings, Edit2, Activity, ChevronRight } from "lucide-react";
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -54,6 +55,17 @@ const ProfilePage = () => {
             <Settings className="w-4 h-4 mr-2" /> Settings
           </Button>
         </div>
+        
+        {/* Link to Activity Page */}
+        <Link to="/activity" className="mt-4 w-full">
+          <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+            <div className="flex items-center">
+              <Activity className="h-5 w-5 text-app-yellow mr-2" />
+              <span className="text-white">View Activity</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </div>
+        </Link>
 
         <Tabs defaultValue="videos" className="w-full mt-8">
           <TabsList className="w-full bg-app-gray-dark">
