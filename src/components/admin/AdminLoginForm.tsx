@@ -12,8 +12,8 @@ interface AdminLoginFormProps {
 }
 
 const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLogin, message }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("admin@example.com"); // Pre-fill with admin email
+  const [password, setPassword] = useState("Password123!"); // Pre-fill with admin password
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 

@@ -86,12 +86,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       const data = await loginUser(email, password);
       
+      // Wait a moment for the auth state change to be processed
+      // and profile to be loaded before returning
+      const profile = await fetchUserProfile(data.user);
+      if (profile) {
+        console.log("Profile after login:", profile);
+        setUser(profile);
+      }
+      
       toast({
         title: "Login successful",
-        description: `Welcome back${data.user?.user_metadata?.username ? ', ' + data.user.user_metadata.username : ''}!`,
+        description: `Welcome back${profile?.username ? ', ' + profile.username : ''}!`,
       });
       
-      // No need to set user here, will be handled by auth state change
+      return data;
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

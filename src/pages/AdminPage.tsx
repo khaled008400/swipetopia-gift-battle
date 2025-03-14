@@ -7,11 +7,13 @@ import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminLoginForm from '@/components/admin/AdminLoginForm';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 const AdminPage = () => {
   const { user, login, isAdmin, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const { toast } = useToast();
 
   // Check if user has admin role
   useEffect(() => {
@@ -28,10 +30,32 @@ const AdminPage = () => {
   const handleAdminLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting admin login with:", email);
-      await login(email, password);
-      // The useEffect above will check if the user is an admin after login
+      const result = await login(email, password);
+      console.log("Login result:", result);
+      
+      // Force a check immediately after login
+      if (user && isAdmin()) {
+        console.log("Login successful, user is admin");
+        setAdminAuthenticated(true);
+        toast({
+          title: "Admin access granted",
+          description: "Welcome to the admin dashboard",
+        });
+      } else {
+        console.log("Login successful but not admin:", user);
+        toast({
+          title: "Access denied",
+          description: "You don't have admin privileges",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error("Admin login error:", error);
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again",
+        variant: "destructive"
+      });
     }
   };
 
