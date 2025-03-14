@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { isSupabaseConnected } from '@/integrations/supabase/client';
 
 export function useNetworkStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -10,6 +11,18 @@ export function useNetworkStatus() {
   // Check if we can reach the API server
   const checkApiConnection = useCallback(async () => {
     if (!navigator.onLine) {
+      setIsConnectedToApi(false);
+      return false;
+    }
+    
+    // If Supabase is disconnected, don't try to ping it
+    if (!isSupabaseConnected()) {
+      console.log("Supabase is disconnected, skipping API connection check");
+      // In development mode, we can pretend the API is connected
+      if (import.meta.env.DEV) {
+        setIsConnectedToApi(true);
+        return true;
+      }
       setIsConnectedToApi(false);
       return false;
     }
