@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
@@ -41,7 +40,7 @@ const FEED_VIDEOS = [
   }
 ];
 
-// Updated user videos for carousel to match required props
+// Updated user videos to match required props
 const USER_VIDEOS = [
   {
     id: "vid1",
