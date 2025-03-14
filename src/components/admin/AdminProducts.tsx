@@ -79,8 +79,19 @@ const AdminProducts = () => {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: (productData: ProductFormData) => 
-      AdminService.createProduct(productData),
+    mutationFn: (productData: ProductFormData) => {
+      // Ensure all required fields are present even if they were optional in the form
+      const completeProductData: Omit<AdminProduct, 'id'> = {
+        name: productData.name,
+        price: productData.price,
+        description: productData.description || '',
+        image: productData.image,
+        inventory: productData.inventory,
+        category: productData.category,
+        status: productData.status
+      };
+      return AdminService.createProduct(completeProductData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       setShowProductDialog(false);
@@ -100,8 +111,19 @@ const AdminProducts = () => {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: ProductFormData }) => 
-      AdminService.updateProduct(id, data),
+    mutationFn: ({ id, data }: { id: string, data: ProductFormData }) => {
+      // Ensure all required fields are present for the update
+      const completeProductData: Partial<AdminProduct> = {
+        name: data.name,
+        price: data.price,
+        description: data.description || '',
+        image: data.image,
+        inventory: data.inventory,
+        category: data.category,
+        status: data.status
+      };
+      return AdminService.updateProduct(id, completeProductData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       setShowProductDialog(false);
@@ -306,7 +328,7 @@ const AdminProducts = () => {
                 <PaginationItem>
                   <PaginationPrevious 
                     onClick={handlePrevPage}
-                    className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                   />
                 </PaginationItem>
                 
@@ -317,6 +339,7 @@ const AdminProducts = () => {
                       <PaginationLink 
                         isActive={page === pageNum}
                         onClick={() => setPage(pageNum)}
+                        className="cursor-pointer"
                       >
                         {pageNum}
                       </PaginationLink>
@@ -327,7 +350,7 @@ const AdminProducts = () => {
                 <PaginationItem>
                   <PaginationNext 
                     onClick={handleNextPage}
-                    className={page === data.pagination.last_page ? "pointer-events-none opacity-50" : ""}
+                    className={page === data.pagination.last_page ? "pointer-events-none opacity-50" : "cursor-pointer"}
                   />
                 </PaginationItem>
               </PaginationContent>
