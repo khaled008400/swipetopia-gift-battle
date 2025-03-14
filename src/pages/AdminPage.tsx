@@ -14,7 +14,9 @@ const AdminPage = () => {
 
   // Check if user has admin role
   useEffect(() => {
+    console.log("Current user in AdminPage:", user);
     if (user && isAdmin()) {
+      console.log("User is admin, setting adminAuthenticated to true");
       setAdminAuthenticated(true);
     } else if (user && !isAdmin()) {
       // If user is logged in but not an admin, show a message
@@ -25,6 +27,7 @@ const AdminPage = () => {
 
   const handleAdminLogin = async (email: string, password: string) => {
     try {
+      console.log("Attempting admin login with email:", email);
       await login(email, password);
       // The useEffect above will check if the user is an admin after login
     } catch (error) {
@@ -35,7 +38,24 @@ const AdminPage = () => {
   // Fetch stats only if user is authenticated as admin
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
-    queryFn: () => AdminService.getDashboardStats(),
+    queryFn: () => {
+      console.log("Fetching admin stats...");
+      // Using mock data for development since the API endpoint might not exist
+      if (import.meta.env.DEV) {
+        console.log("Using mock admin stats for development");
+        return {
+          totalUsers: 250,
+          newUsersToday: 15,
+          totalVideos: 1200,
+          videoUploadsToday: 35,
+          totalOrders: 320,
+          ordersToday: 12,
+          revenueTotal: 15750,
+          revenueToday: 780
+        };
+      }
+      return AdminService.getDashboardStats();
+    },
     refetchInterval: 60000, // Refresh every minute
     enabled: !!user && adminAuthenticated, // Only run query if user is admin
   });
@@ -62,6 +82,7 @@ const AdminPage = () => {
     );
   }
 
+  console.log("Rendering admin interface with stats:", stats || defaultStats);
   // Pass either the actual stats or the default stats
   return <AdminTabbedInterface stats={stats || defaultStats} statsLoading={statsLoading} />;
 };

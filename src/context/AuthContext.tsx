@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     initializeAuth();
     
     // Set up auth state change listener
-    const subscription = setupAuthListener(async (event, session) => {
+    const { data } = setupAuthListener(async (event, session) => {
       console.log("Auth state changed:", event);
       setSession(session);
       
@@ -75,7 +75,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Cleanup subscription on unmount
     return () => {
-      subscription.unsubscribe();
+      if (data) {
+        data.subscription.unsubscribe();
+      }
     };
   }, []);
 

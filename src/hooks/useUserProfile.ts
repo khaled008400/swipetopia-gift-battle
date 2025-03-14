@@ -23,9 +23,9 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         email: authUser.email || '',
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
-        role: authUser.user_metadata?.role,
-        followers: 0, // Default value for followers
-        following: 0  // Default value for following
+        role: authUser.user_metadata?.role || data.role,
+        followers: 0, // Default value since it doesn't exist in the database yet
+        following: 0  // Default value since it doesn't exist in the database yet
       };
     }
     return null;
