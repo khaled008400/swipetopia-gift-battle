@@ -170,36 +170,53 @@ export type Database = {
       }
       products: {
         Row: {
+          category: string | null
           created_at: string | null
           description: string | null
           id: string
           image_url: string | null
           name: string
           price: number
+          seller_id: string | null
+          status: string | null
           stock_quantity: number | null
           updated_at: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
           name: string
           price: number
+          seller_id?: string | null
+          status?: string | null
           stock_quantity?: number | null
           updated_at?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
           name?: string
           price?: number
+          seller_id?: string | null
+          status?: string | null
           stock_quantity?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

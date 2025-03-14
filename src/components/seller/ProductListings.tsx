@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Plus, Edit, Trash2, Eye, ShoppingBag, Search, 
-  Filter, SortDesc, ChevronLeft, ChevronRight, Loader2
+  Filter, SortDesc, ChevronLeft, ChevronRight, Loader2 
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
@@ -30,7 +29,6 @@ const ProductListings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 6;
 
-  // Fetch products from Supabase
   useEffect(() => {
     const fetchProducts = async () => {
       if (!user) return;
@@ -52,7 +50,8 @@ const ProductListings = () => {
           rating: 0,
           inventory: p.stock_quantity || 0,
           category: p.category || "other",
-          status: p.status || "active"
+          status: p.status || "active",
+          seller_id: p.seller_id
         })) || []);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -69,12 +68,10 @@ const ProductListings = () => {
     fetchProducts();
   }, [user]);
 
-  // Filter products based on search term
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate pagination
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
@@ -119,7 +116,6 @@ const ProductListings = () => {
   const handleSubmit = async (data: ProductFormData) => {
     try {
       if (editProduct) {
-        // Update existing product
         const { error } = await supabase
           .from('products')
           .update({
@@ -155,7 +151,6 @@ const ProductListings = () => {
           description: "Product has been successfully updated."
         });
       } else {
-        // Create new product
         const { data: newProduct, error } = await supabase
           .from('products')
           .insert({
@@ -182,7 +177,8 @@ const ProductListings = () => {
           rating: 0,
           inventory: newProduct.stock_quantity || 0,
           category: newProduct.category || "other",
-          status: newProduct.status || "active"
+          status: newProduct.status || "active",
+          seller_id: newProduct.seller_id
         }]);
         
         toast({
@@ -307,7 +303,6 @@ const ProductListings = () => {
             ))}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center mt-4">
               <Button 
