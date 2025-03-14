@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
@@ -43,6 +43,23 @@ const VideoTable: React.FC<VideoTableProps> = ({
   onSelectVideo,
   onSelectAllVideos
 }) => {
+  // Create a ref for the checkbox element
+  const checkboxRef = useRef<HTMLButtonElement>(null);
+  
+  // Check if all videos are selected
+  const allSelected = videos.length > 0 && selectedVideos.length === videos.length;
+  
+  // Check if some videos are selected
+  const someSelected = selectedVideos.length > 0 && selectedVideos.length < videos.length;
+  
+  // Set the indeterminate property on the checkbox DOM element when needed
+  useEffect(() => {
+    if (checkboxRef.current) {
+      // This updates the visual representation without using the unsupported prop
+      checkboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -58,12 +75,6 @@ const VideoTable: React.FC<VideoTableProps> = ({
     }
   };
 
-  // Check if all videos are selected
-  const allSelected = videos.length > 0 && selectedVideos.length === videos.length;
-
-  // Check if some videos are selected
-  const someSelected = selectedVideos.length > 0 && selectedVideos.length < videos.length;
-
   return (
     <Table>
       <TableHeader>
@@ -71,8 +82,8 @@ const VideoTable: React.FC<VideoTableProps> = ({
           {onSelectVideo && (
             <TableHead className="w-12">
               <Checkbox 
+                ref={checkboxRef}
                 checked={allSelected}
-                indeterminate={someSelected}
                 onCheckedChange={(checked) => {
                   if (onSelectAllVideos) {
                     onSelectAllVideos(!!checked);
