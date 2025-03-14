@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -30,11 +29,8 @@ const LoginPage = () => {
       await login(username, password);
       navigate("/");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid credentials",
-        variant: "destructive",
-      });
+      console.error("Login error:", error);
+      // The error toast is handled in the AuthContext
     } finally {
       setIsLoading(false);
     }

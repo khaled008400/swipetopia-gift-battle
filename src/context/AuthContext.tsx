@@ -1,14 +1,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-
-interface User {
-  id: string;
-  username: string;
-  avatar: string;
-  coins: number;
-  followers: number;
-  following: number;
-}
+import AuthService, { User } from "../services/auth.service";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AuthContextType {
   user: User | null;
@@ -34,50 +27,56 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
   
   // Check if user is logged in on component mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = AuthService.getCurrentUser();
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
   }, []);
 
   const login = async (username: string, password: string) => {
-    // In a real app, this would make an API call to verify credentials
-    if (username && password) {
-      const mockUser: User = {
-        id: "1",
-        username,
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png",
-        coins: 1000,
-        followers: 456,
-        following: 123
-      };
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+    try {
+      const data = await AuthService.login({ username, password });
+      setUser(data.user);
+      return data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to login';
+      toast({
+        title: "Login failed",
+        description: message,
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
   const signup = async (username: string, email: string, password: string) => {
-    // In a real app, this would make an API call to create a new user
-    if (username && email && password) {
-      const mockUser: User = {
-        id: "1",
-        username,
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png",
-        coins: 500,
-        followers: 0,
-        following: 0
-      };
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+    try {
+      const data = await AuthService.register({ 
+        username, 
+        email, 
+        password,
+        password_confirmation: password
+      });
+      setUser(data.user);
+      return data;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to create account';
+      toast({
+        title: "Signup failed",
+        description: message,
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
   const logout = () => {
+    AuthService.logout();
     setUser(null);
-    localStorage.removeItem("user");
   };
 
   return (

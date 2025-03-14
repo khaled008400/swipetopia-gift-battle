@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -42,11 +41,8 @@ const SignupPage = () => {
       await signup(username, email, password);
       navigate("/");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create account",
-        variant: "destructive",
-      });
+      console.error("Signup error:", error);
+      // The error toast is handled in the AuthContext
     } finally {
       setIsLoading(false);
     }
