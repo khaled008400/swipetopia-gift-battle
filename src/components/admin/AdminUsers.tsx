@@ -37,13 +37,13 @@ const AdminUsers = () => {
           throw error;
         }
         
-        // Transform profiles to match AdminUser interface
-        const users = profiles.map(profile => ({
+        // Transform profiles to match AdminUser interface with properly typed status
+        const users: AdminUser[] = profiles.map(profile => ({
           id: profile.id,
           username: profile.username,
           email: profile.email || 'No email available',
-          status: 'active', // Default status
-          role: profile.role || 'viewer',
+          status: 'active' as 'active' | 'suspended' | 'pending', // Type assertion to match expected union type
+          role: (profile.role as UserRole) || 'viewer',
           createdAt: profile.created_at,
           videosCount: 0, // Default values for now
           ordersCount: 0, // Default values for now
