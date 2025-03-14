@@ -21,10 +21,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 
 const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -124,6 +124,7 @@ const AdminPage = () => {
     );
   }
 
+  // Only fetch stats if user is authenticated
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => AdminService.getDashboardStats(),
