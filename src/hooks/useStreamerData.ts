@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useRealtimeData } from "./useRealtimeData";
 
 export interface StreamHistory {
   id: string;
@@ -49,7 +50,7 @@ export interface ScheduledStream {
   scheduled_time: string;
   is_battle: boolean;
   opponent_id: string | null;
-  status: string;
+  status: "scheduled" | "live" | "completed" | "cancelled";
 }
 
 export const useStreamHistory = (streamerId: string) => {
@@ -89,7 +90,24 @@ export const useStreamHistory = (streamerId: string) => {
     }
   }, [streamerId, toast]);
 
-  return { streamHistory, isLoading, error };
+  // Subscribe to real-time updates
+  const realtimeData = useRealtimeData<StreamHistory>(
+    "stream_history", 
+    streamHistory, 
+    "streamer_id", 
+    streamerId
+  );
+
+  // Merge initial data with realtime updates
+  const finalStreamHistory = realtimeData.data.length > 0 ? realtimeData.data : streamHistory;
+  const finalIsLoading = isLoading || realtimeData.isLoading;
+  const finalError = error || realtimeData.error;
+
+  return { 
+    streamHistory: finalStreamHistory, 
+    isLoading: finalIsLoading, 
+    error: finalError 
+  };
 };
 
 export const useBattleHistory = (streamerId: string) => {
@@ -129,7 +147,24 @@ export const useBattleHistory = (streamerId: string) => {
     }
   }, [streamerId, toast]);
 
-  return { battleHistory, isLoading, error };
+  // Subscribe to real-time updates
+  const realtimeData = useRealtimeData<BattleHistory>(
+    "battle_history", 
+    battleHistory, 
+    "streamer_id", 
+    streamerId
+  );
+
+  // Merge initial data with realtime updates
+  const finalBattleHistory = realtimeData.data.length > 0 ? realtimeData.data : battleHistory;
+  const finalIsLoading = isLoading || realtimeData.isLoading;
+  const finalError = error || realtimeData.error;
+
+  return { 
+    battleHistory: finalBattleHistory, 
+    isLoading: finalIsLoading, 
+    error: finalError 
+  };
 };
 
 export const useTopSupporters = (streamerId: string) => {
@@ -170,7 +205,24 @@ export const useTopSupporters = (streamerId: string) => {
     }
   }, [streamerId, toast]);
 
-  return { topSupporters, isLoading, error };
+  // Subscribe to real-time updates
+  const realtimeData = useRealtimeData<TopSupporter>(
+    "top_supporters", 
+    topSupporters, 
+    "streamer_id", 
+    streamerId
+  );
+
+  // Merge initial data with realtime updates
+  const finalTopSupporters = realtimeData.data.length > 0 ? realtimeData.data : topSupporters;
+  const finalIsLoading = isLoading || realtimeData.isLoading;
+  const finalError = error || realtimeData.error;
+
+  return { 
+    topSupporters: finalTopSupporters, 
+    isLoading: finalIsLoading, 
+    error: finalError 
+  };
 };
 
 export const useStreamHighlights = (streamerId: string) => {
@@ -210,7 +262,24 @@ export const useStreamHighlights = (streamerId: string) => {
     }
   }, [streamerId, toast]);
 
-  return { streamHighlights, isLoading, error };
+  // Subscribe to real-time updates
+  const realtimeData = useRealtimeData<StreamHighlight>(
+    "stream_highlights", 
+    streamHighlights, 
+    "streamer_id", 
+    streamerId
+  );
+
+  // Merge initial data with realtime updates
+  const finalStreamHighlights = realtimeData.data.length > 0 ? realtimeData.data : streamHighlights;
+  const finalIsLoading = isLoading || realtimeData.isLoading;
+  const finalError = error || realtimeData.error;
+
+  return { 
+    streamHighlights: finalStreamHighlights, 
+    isLoading: finalIsLoading, 
+    error: finalError 
+  };
 };
 
 export const useScheduledStreams = (streamerId: string) => {
@@ -232,7 +301,11 @@ export const useScheduledStreams = (streamerId: string) => {
 
         if (error) throw error;
         
-        setScheduledStreams(data);
+        // Type assertion to ensure status has the correct type
+        setScheduledStreams(data?.map(stream => ({
+          ...stream,
+          status: (stream.status as "scheduled" | "live" | "completed" | "cancelled") || "scheduled"
+        })) || []);
       } catch (err) {
         console.error("Error fetching scheduled streams:", err);
         setError("Failed to load scheduled streams");
@@ -251,5 +324,22 @@ export const useScheduledStreams = (streamerId: string) => {
     }
   }, [streamerId, toast]);
 
-  return { scheduledStreams, isLoading, error };
+  // Subscribe to real-time updates
+  const realtimeData = useRealtimeData<ScheduledStream>(
+    "scheduled_streams", 
+    scheduledStreams, 
+    "streamer_id", 
+    streamerId
+  );
+
+  // Merge initial data with realtime updates
+  const finalScheduledStreams = realtimeData.data.length > 0 ? realtimeData.data : scheduledStreams;
+  const finalIsLoading = isLoading || realtimeData.isLoading;
+  const finalError = error || realtimeData.error;
+
+  return { 
+    scheduledStreams: finalScheduledStreams, 
+    isLoading: finalIsLoading, 
+    error: finalError 
+  };
 };

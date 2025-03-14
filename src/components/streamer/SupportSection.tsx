@@ -5,6 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useTopSupporters, TopSupporter } from "@/hooks/useStreamerData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SupportSectionProps {
   streamerId?: string;
@@ -12,6 +16,96 @@ interface SupportSectionProps {
 
 const SupportSection = ({ streamerId }: SupportSectionProps) => {
   const { topSupporters, isLoading, error } = useTopSupporters(streamerId || '');
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const sendSupport = async (type: 'gift' | 'coins' | 'subscribe', amount: number = 100) => {
+    if (!user || !streamerId) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to support this streamer",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      
+      // First, create a stream gift record
+      const { error: giftError } = await supabase
+        .from('stream_gifts')
+        .insert({
+          sender_id: user.id,
+          receiver_id: streamerId,
+          gift_type: type,
+          coins_amount: amount,
+          stream_id: null // In a real app, this would be the current stream ID if live
+        });
+        
+      if (giftError) throw giftError;
+      
+      // Then, update or create top supporter entry
+      const { data: existingSupporter, error: fetchError } = await supabase
+        .from('top_supporters')
+        .select('*')
+        .eq('supporter_id', user.id)
+        .eq('streamer_id', streamerId)
+        .single();
+        
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+      
+      if (existingSupporter) {
+        // Update existing supporter record
+        const { error: updateError } = await supabase
+          .from('top_supporters')
+          .update({
+            gift_amount: existingSupporter.gift_amount + amount
+          })
+          .eq('id', existingSupporter.id);
+          
+        if (updateError) throw updateError;
+      } else {
+        // Create new supporter record
+        // First get the supporter's username and avatar
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', user.id)
+          .single();
+          
+        if (profileError) throw profileError;
+        
+        const { error: insertError } = await supabase
+          .from('top_supporters')
+          .insert({
+            supporter_id: user.id,
+            supporter_username: profileData.username,
+            supporter_avatar: profileData.avatar_url,
+            streamer_id: streamerId,
+            gift_amount: amount
+          });
+          
+        if (insertError) throw insertError;
+      }
+      
+      toast({
+        title: "Support sent!",
+        description: `You've successfully sent support to this streamer.`,
+        variant: "default",
+      });
+    } catch (err) {
+      console.error("Error sending support:", err);
+      toast({
+        title: "Error",
+        description: "Failed to send support. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
   
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -31,7 +125,12 @@ const SupportSection = ({ streamerId }: SupportSectionProps) => {
                   <div className="text-sm text-muted-foreground">Gift special items during streams</div>
                 </div>
               </div>
-              <Button variant="secondary" size="sm">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => sendSupport('gift', 200)}
+                disabled={isProcessing}
+              >
                 Gift
               </Button>
             </div>
@@ -46,7 +145,12 @@ const SupportSection = ({ streamerId }: SupportSectionProps) => {
                   <div className="text-sm text-muted-foreground">Direct coin donations</div>
                 </div>
               </div>
-              <Button variant="secondary" size="sm">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => sendSupport('coins', 100)}
+                disabled={isProcessing}
+              >
                 Donate
               </Button>
             </div>
@@ -61,7 +165,12 @@ const SupportSection = ({ streamerId }: SupportSectionProps) => {
                   <div className="text-sm text-muted-foreground">Monthly support with benefits</div>
                 </div>
               </div>
-              <Button className="bg-app-yellow text-app-black hover:bg-app-yellow/90" size="sm">
+              <Button 
+                className="bg-app-yellow text-app-black hover:bg-app-yellow/90" 
+                size="sm"
+                onClick={() => sendSupport('subscribe', 500)}
+                disabled={isProcessing}
+              >
                 Subscribe
               </Button>
             </div>
