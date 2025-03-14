@@ -48,14 +48,14 @@ export function useRealtimeData<T>(
     
     // Add listeners for INSERT events
     channel.on(
-      'postgres_changes',
+      'postgres_changes' as any,
       {
         event: 'INSERT',
         schema: 'public',
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload) => {
+      (payload: any) => {
         // Access the new record safely
         const newRecord = payload.new as T;
         if (newRecord) {
@@ -70,14 +70,14 @@ export function useRealtimeData<T>(
     
     // Add listeners for UPDATE events
     channel.on(
-      'postgres_changes',
+      'postgres_changes' as any,
       {
         event: 'UPDATE',
         schema: 'public',
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload) => {
+      (payload: any) => {
         // Access the updated record safely
         const updatedRecord = payload.new as T;
         if (updatedRecord) {
@@ -92,14 +92,14 @@ export function useRealtimeData<T>(
     
     // Add listeners for DELETE events
     channel.on(
-      'postgres_changes',
+      'postgres_changes' as any,
       {
         event: 'DELETE',
         schema: 'public',
         table: tableName,
         ...(Object.keys(filter).length > 0 ? { filter } : {})
       },
-      (payload) => {
+      (payload: any) => {
         // Access the deleted record safely
         const deletedRecord = payload.old as T;
         if (deletedRecord) {
