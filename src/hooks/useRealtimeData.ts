@@ -25,68 +25,63 @@ export function useRealtimeData<T>(
     
     // Create a channel name based on table and filter if any
     const channelName = filterColumn && filterValue 
-      ? `public:${tableName}:${filterColumn}:${filterValue}`
-      : `public:${tableName}`;
+      ? `${tableName}:${filterColumn}:eq:${filterValue}`
+      : `${tableName}`;
     
-    const channel = supabase.channel(channelName);
-    
-    // Filter by column if provided
-    let filterOptions = {};
+    let filter = {};
     if (filterColumn && filterValue) {
-      filterOptions = { [filterColumn]: filterValue };
+      filter = { [filterColumn]: filterValue };
     }
-    
-    // Subscribe to INSERT events
-    channel.on(
-      'postgres_changes', 
-      { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: tableName,
-        ...(Object.keys(filterOptions).length > 0 ? { filter: filterOptions } : {})
-      }, 
-      (payload) => {
-        setData((prevData) => [...prevData, payload.new as T]);
-        toast({
-          title: "New data received",
-          description: `New update for ${tableName}`,
-        });
-      }
-    );
-    
-    // Subscribe to UPDATE events
-    channel.on(
-      'postgres_changes', 
-      { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: tableName,
-        ...(Object.keys(filterOptions).length > 0 ? { filter: filterOptions } : {})
-      }, 
-      (payload) => {
-        setData((prevData) => 
-          prevData.map((item: any) => 
-            item.id === (payload.new as any).id ? payload.new as T : item
-          )
-        );
-      }
-    );
-    
-    // Subscribe to DELETE events
-    channel.on(
-      'postgres_changes', 
-      { 
-        event: 'DELETE', 
-        schema: 'public', 
-        table: tableName,
-        ...(Object.keys(filterOptions).length > 0 ? { filter: filterOptions } : {})
-      }, 
-      (payload) => {
-        setData((prevData) => 
-          prevData.filter((item: any) => item.id !== (payload.old as any).id)
-        );
-      }
-    );
+
+    // Create channel for realtime updates
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: tableName,
+          ...(Object.keys(filter).length > 0 ? { filter } : {})
+        },
+        (payload) => {
+          setData((prevData) => [...prevData, payload.new as T]);
+          toast({
+            title: "New data received",
+            description: `New update for ${tableName}`,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: tableName,
+          ...(Object.keys(filter).length > 0 ? { filter } : {})
+        },
+        (payload) => {
+          setData((prevData) =>
+            prevData.map((item: any) =>
+              item.id === (payload.new as any).id ? payload.new as T : item
+            )
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: tableName,
+          ...(Object.keys(filter).length > 0 ? { filter } : {})
+        },
+        (payload) => {
+          setData((prevData) =>
+            prevData.filter((item: any) => item.id !== (payload.old as any).id)
+          );
+        }
+      );
 
     // Subscribe to the channel
     channel.subscribe((status) => {
