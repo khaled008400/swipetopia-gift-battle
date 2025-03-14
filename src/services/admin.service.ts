@@ -132,6 +132,21 @@ export interface LiveStreamStats {
   totalGiftRevenue: number;
 }
 
+export interface VirtualGift {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl: string;
+  imageType: 'gif' | 'svg';
+  hasSound: boolean;
+  soundUrl?: string;
+  category: string;
+  available: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const AdminService = {
   async getDashboardStats() {
     const response = await api.get('/admin/dashboard/stats');
@@ -470,7 +485,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Add user warning functionality
   async sendUserWarning(userId: string, message: string, relatedContentId?: string) {
     const response = await api.post(`/admin/users/${userId}/warnings`, { 
       message, 
@@ -479,41 +493,74 @@ const AdminService = {
     return response.data;
   },
 
-  // Restrict user functionality
   async restrictUser(userId: string, reason: string) {
     const response = await api.post(`/admin/users/${userId}/restrict`, { reason });
     return response.data;
   },
 
-  // Batch update video statuses
   async batchUpdateVideoStatus(videoIds: string[], status: 'active' | 'flagged' | 'removed') {
     const response = await api.post('/admin/videos/batch-update', { video_ids: videoIds, status });
     return response.data;
   },
 
-  // Batch delete videos
   async batchDeleteVideos(videoIds: string[]) {
     const response = await api.post('/admin/videos/batch-delete', { video_ids: videoIds });
     return response.data;
   },
 
-  // Get user warning history
   async getUserWarnings(userId: string) {
     const response = await api.get(`/admin/users/${userId}/warnings`);
     return response.data;
   },
 
-  // Get user activity log
   async getUserActivityLog(userId: string) {
     const response = await api.get(`/admin/users/${userId}/activity-log`);
     return response.data;
   },
 
-  // Get video reports
   async getVideoReports(videoId: string) {
     const response = await api.get(`/admin/videos/${videoId}/reports`);
     return response.data;
   },
+
+  async getVirtualGifts(page = 1, limit = 10, category = '') {
+    const response = await api.get('/admin/virtual-gifts', {
+      params: { page, limit, category }
+    });
+    return response.data;
+  },
+
+  async getVirtualGift(giftId: string) {
+    const response = await api.get(`/admin/virtual-gifts/${giftId}`);
+    return response.data;
+  },
+
+  async createVirtualGift(giftData: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) {
+    const response = await api.post('/admin/virtual-gifts', giftData);
+    return response.data;
+  },
+
+  async updateVirtualGift(giftId: string, giftData: Partial<Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>>) {
+    const response = await api.put(`/admin/virtual-gifts/${giftId}`, giftData);
+    return response.data;
+  },
+
+  async deleteVirtualGift(giftId: string) {
+    const response = await api.delete(`/admin/virtual-gifts/${giftId}`);
+    return response.data;
+  },
+
+  async toggleGiftAvailability(giftId: string, available: boolean) {
+    const response = await api.patch(`/admin/virtual-gifts/${giftId}/availability`, { available });
+    return response.data;
+  },
+
+  async getGiftUsageStats(period = 'month') {
+    const response = await api.get('/admin/virtual-gifts/stats', {
+      params: { period }
+    });
+    return response.data;
+  }
 };
 
 export default AdminService;

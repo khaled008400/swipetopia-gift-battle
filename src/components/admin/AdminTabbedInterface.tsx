@@ -1,19 +1,30 @@
-
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminDashboard from '@/components/admin/AdminDashboard';
-import AdminUsers from '@/components/admin/AdminUsers';
-import AdminVideos from '@/components/admin/AdminVideos';
-import AdminOrders from '@/components/admin/AdminOrders';
-import AdminProducts from '@/components/admin/AdminProducts';
-import AdminReports from '@/components/admin/AdminReports';
-import ProductAttributes from '@/components/admin/ProductAttributes';
-import AdminCoupons from '@/components/admin/AdminCoupons';
-import AdminOffers from '@/components/admin/AdminOffers';
-import AdminShipping from '@/components/admin/AdminShipping';
-import AdminLiveStreams from '@/components/admin/AdminLiveStreams';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  BarChart, 
+  Gift, 
+  Layout, 
+  Package, 
+  PercentCircle, 
+  Radio, 
+  ShoppingCart, 
+  Ticket, 
+  Truck, 
+  Users, 
+  Video 
+} from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
-import { Loader2 } from 'lucide-react';
+import AdminDashboard from './AdminDashboard';
+import AdminProducts from './AdminProducts';
+import AdminUsers from './AdminUsers';
+import AdminOrders from './AdminOrders';
+import AdminVideos from './AdminVideos';
+import AdminCoupons from './AdminCoupons';
+import AdminOffers from './AdminOffers';
+import AdminShipping from './AdminShipping';
+import AdminReports from './AdminReports';
+import AdminLiveStreams from './AdminLiveStreams';
+import VirtualGifts from './VirtualGifts';
 
 interface AdminTabbedInterfaceProps {
   stats: AdminStats;
@@ -34,6 +45,20 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
   // Log stats to verify data 
   console.log("Admin stats:", stats);
 
+  const tabs = [
+    { id: "dashboard", label: "Dashboard", icon: Layout },
+    { id: "products", label: "Products", icon: Package },
+    { id: "users", label: "Users", icon: Users },
+    { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "videos", label: "Videos", icon: Video },
+    { id: "virtual-gifts", label: "Virtual Gifts", icon: Gift },
+    { id: "coupons", label: "Coupons", icon: Ticket },
+    { id: "offers", label: "Offers", icon: PercentCircle },
+    { id: "shipping", label: "Shipping", icon: Truck },
+    { id: "reports", label: "Reports", icon: BarChart },
+    { id: "live-streams", label: "Live Streams", icon: Radio },
+  ];
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8">
@@ -43,17 +68,12 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-11 w-full">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="videos">Videos</TabsTrigger>
-          <TabsTrigger value="livestreams">Live Streams</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="attributes">Attributes</TabsTrigger>
-          <TabsTrigger value="coupons">Coupons</TabsTrigger>
-          <TabsTrigger value="offers">Offers</TabsTrigger>
-          <TabsTrigger value="shipping">Shipping</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          {tabs.map(tab => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.icon}
+              <span className="ml-2">{tab.label}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
         
         <TabsContent value="dashboard">
@@ -98,6 +118,10 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="reports">
           <AdminReports />
+        </TabsContent>
+        
+        <TabsContent value="virtual-gifts" className="p-0">
+          <VirtualGifts />
         </TabsContent>
       </Tabs>
     </div>
