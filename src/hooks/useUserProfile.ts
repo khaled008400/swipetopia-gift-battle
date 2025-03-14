@@ -20,16 +20,23 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
       // Get roles from database if available, otherwise from metadata, or default to "user"
       let userRoles: UserRole[] = [];
       
+      // Handle case when data.roles exists (array)
       if (data.roles && Array.isArray(data.roles)) {
         userRoles = data.roles as UserRole[];
-      } else if (authUser.user_metadata?.roles && Array.isArray(authUser.user_metadata.roles)) {
-        userRoles = authUser.user_metadata.roles as UserRole[];
-      } else if (data.role) {
-        // For backward compatibility with single role field
+      } 
+      // Handle case when data.role exists (string)
+      else if (data.role) {
         userRoles = [data.role as UserRole];
-      } else if (authUser.user_metadata?.role) {
+      } 
+      // Check in user metadata
+      else if (authUser.user_metadata?.roles && Array.isArray(authUser.user_metadata.roles)) {
+        userRoles = authUser.user_metadata.roles as UserRole[];
+      } 
+      // For backward compatibility with single role field in metadata
+      else if (authUser.user_metadata?.role) {
         userRoles = [authUser.user_metadata.role as UserRole];
-      } else {
+      } 
+      else {
         userRoles = ["user"]; // Default role
       }
 
@@ -40,13 +47,13 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         roles: userRoles,
-        bio: data.bio,
-        location: data.location,
+        bio: data.bio || undefined,
+        location: data.location || undefined,
         followers: 0, // Default value since it doesn't exist in the database yet
         following: 0, // Default value since it doesn't exist in the database yet
-        interests: data.interests,
-        shop_name: data.shop_name,
-        stream_key: data.stream_key
+        interests: data.interests || undefined,
+        shop_name: data.shop_name || undefined,
+        stream_key: data.stream_key || undefined
       };
     }
     return null;
