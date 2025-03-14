@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+
 import ZegoExpressEngine from 'zego-express-engine-reactnative';
 
 export interface ZegoStreamConfig {
@@ -23,7 +23,7 @@ class LiveStreamService {
 
     this.config = config;
     try {
-      // Create engine with correct parameters based on SDK documentation
+      // Create engine with correct parameters
       this.engine = ZegoExpressEngine.createEngine(
         config.appID, 
         config.appSign,
