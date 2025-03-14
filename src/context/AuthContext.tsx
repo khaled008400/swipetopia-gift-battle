@@ -36,17 +36,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Check active session
     const initializeAuth = async () => {
       setIsLoading(true);
-      
       try {
         const currentSession = await getSession();
         console.log("AuthContext: Current session:", currentSession);
         
         if (currentSession) {
           setSession(currentSession);
-          const profile = await fetchUserProfile(currentSession.user);
-          if (profile) {
-            console.log("AuthContext: User profile loaded:", profile);
-            setUser(profile);
+          try {
+            const profile = await fetchUserProfile(currentSession.user);
+            if (profile) {
+              console.log("AuthContext: User profile loaded:", profile);
+              setUser(profile);
+            }
+          } catch (profileError) {
+            console.error("AuthContext: Error fetching profile:", profileError);
+            // Continue even if profile fetch fails
           }
         } else {
           setUser(null);
@@ -55,6 +59,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error("AuthContext: Error retrieving session:", error);
         setUser(null);
       } finally {
+        // Always set loading to false, even if there are errors
         setIsLoading(false);
       }
     };
@@ -75,6 +80,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         } catch (error) {
           console.error("AuthContext: Error fetching profile after auth state change:", error);
+          // Continue even if profile fetch fails
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -95,17 +101,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error("Login failed - user data not returned");
       }
       
-      // Wait a moment for the auth state change to be processed
-      // and profile to be loaded before returning
-      const profile = await fetchUserProfile(data.user);
-      if (profile) {
-        console.log("AuthContext: Profile after login:", profile);
-        setUser(profile);
+      // Set session immediately
+      if (data.session) {
+        setSession(data.session);
+      }
+      
+      try {
+        // Get profile data
+        const profile = await fetchUserProfile(data.user);
+        if (profile) {
+          console.log("AuthContext: Profile after login:", profile);
+          setUser(profile);
+        }
+      } catch (profileError) {
+        console.error("AuthContext: Error fetching profile after login:", profileError);
       }
       
       toast({
         title: "Login successful",
-        description: `Welcome back${profile?.username ? ', ' + profile.username : ''}!`,
+        description: `Welcome back!`,
       });
       
       return data;
@@ -118,6 +132,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       throw error;
     } finally {
+      // Always ensure loading state is reset
       setIsLoading(false);
     }
   };
@@ -131,8 +146,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         title: "Account created",
         description: `Welcome, ${username}!`,
       });
-      
-      // No need to set user here, will be handled by auth state change
     } catch (error: any) {
       console.error("AuthContext: Signup error:", error);
       toast({
@@ -150,6 +163,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       await logoutUser();
+      
+      // Clean up local state
+      setUser(null);
+      setSession(null);
       
       toast({
         title: "Logged out",
@@ -171,7 +188,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log("AuthContext: Checking isAdmin. User:", user);
     if (!user) return false;
     console.log("AuthContext: User role:", user.role);
-    return user.role === 'admin';
+    return user?.role === 'admin';
   };
 
   return (

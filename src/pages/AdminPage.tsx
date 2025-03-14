@@ -24,15 +24,20 @@ const AdminPage = () => {
       authLoading 
     });
     
-    if (!authLoading && user) {
-      const hasAdminRole = isAdmin();
-      console.log("AdminPage: Admin check result:", hasAdminRole);
-      
-      if (hasAdminRole) {
-        console.log("AdminPage: User is admin, setting adminAuthenticated to true");
-        setAdminAuthenticated(true);
+    if (!authLoading) {
+      if (user) {
+        const hasAdminRole = isAdmin();
+        console.log("AdminPage: Admin check result:", hasAdminRole);
+        
+        if (hasAdminRole) {
+          console.log("AdminPage: User is admin, setting adminAuthenticated to true");
+          setAdminAuthenticated(true);
+        } else {
+          console.log("AdminPage: User is not admin:", user);
+          setAdminAuthenticated(false);
+        }
       } else {
-        console.log("AdminPage: User is not admin:", user);
+        console.log("AdminPage: No user found, not admin");
         setAdminAuthenticated(false);
       }
     }
@@ -42,28 +47,36 @@ const AdminPage = () => {
     try {
       setIsProcessing(true);
       console.log("AdminPage: Attempting admin login with:", email);
-      await login(email, password);
+      const result = await login(email, password);
+      console.log("AdminPage: Login result:", result);
       
-      // We need a small delay to make sure the user state is updated
-      setTimeout(() => {
-        // Check admin status right after login
-        if (user && isAdmin()) {
-          console.log("AdminPage: Login successful, user is admin");
-          setAdminAuthenticated(true);
-          toast({
-            title: "Admin access granted",
-            description: "Welcome to the admin dashboard",
-          });
-        } else {
-          console.log("AdminPage: Login successful but not admin");
-          toast({
-            title: "Access denied",
-            description: "You don't have admin privileges",
-            variant: "destructive"
-          });
-        }
+      // Check admin status after login
+      if (result && result.user) {
+        // Small delay to ensure user state is updated properly
+        setTimeout(() => {
+          const isUserAdmin = isAdmin();
+          console.log("AdminPage: After login, is user admin?", isUserAdmin);
+          
+          if (isUserAdmin) {
+            console.log("AdminPage: Setting adminAuthenticated to true");
+            setAdminAuthenticated(true);
+            toast({
+              title: "Admin access granted",
+              description: "Welcome to the admin dashboard",
+            });
+          } else {
+            console.log("AdminPage: User is not admin after login");
+            toast({
+              title: "Access denied",
+              description: "You don't have admin privileges",
+              variant: "destructive"
+            });
+          }
+          setIsProcessing(false);
+        }, 500);
+      } else {
         setIsProcessing(false);
-      }, 500);
+      }
     } catch (error: any) {
       console.error("AdminPage: Login error:", error);
       toast({

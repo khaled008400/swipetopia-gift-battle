@@ -23,16 +23,21 @@ const Layout = () => {
     };
   }, []);
 
+  console.log("Layout rendering with:", { isAuthenticated, isLoading });
+
+  // Show loading spinner while authentication state is being determined
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen w-full items-center justify-center bg-app-black">
         <Loader2 className="h-12 w-12 animate-spin text-app-yellow" />
-        <p className="mt-4 text-white">Loading...</p>
+        <p className="mt-4 text-white">Loading app...</p>
       </div>
     );
   }
 
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
+    console.log("User not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

@@ -21,7 +21,17 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
     
     if (error) {
       console.error("Error fetching user profile:", error);
-      return null;
+      // Rather than returning null, return a basic profile
+      return {
+        id: authUser.id,
+        username: authUser.email?.split('@')[0] || 'User',
+        email: authUser.email || '',
+        avatar_url: null,
+        coins: 0,
+        role: userRole || 'viewer',
+        followers: 0,
+        following: 0
+      };
     }
     
     if (data) {
@@ -31,9 +41,9 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         email: authUser.email || '',
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
-        role: userRole || data.role, // Try to get role from metadata first, then from profile
-        followers: 0, // Default value for followers
-        following: 0  // Default value for following
+        role: userRole || data.role || 'viewer',
+        followers: data.followers || 0,
+        following: data.following || 0
       };
       
       console.log("Constructed profile:", profile);
@@ -47,12 +57,22 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
       email: authUser.email || '',
       avatar_url: null,
       coins: 0,
-      role: userRole || 'viewer', // Default to viewer if no role specified
+      role: userRole || 'viewer',
       followers: 0,
       following: 0
     };
   } catch (error) {
     console.error("Unexpected error fetching profile:", error);
-    return null;
+    // Return a fallback profile to prevent the app from breaking
+    return {
+      id: authUser.id,
+      username: authUser.email?.split('@')[0] || 'User',
+      email: authUser.email || '',
+      avatar_url: null,
+      coins: 0,
+      role: 'viewer',
+      followers: 0,
+      following: 0
+    };
   }
 };
