@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
   Loader2, Grid, Lock, Settings, Edit2, Activity, ChevronRight, 
-  ShoppingBag, Video, Gift, Users, Calendar, Award
+  ShoppingBag, Video, Gift, Users, Calendar, Award, StoreIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -240,15 +240,29 @@ const ProfilePage = () => {
         </Button>
       </div>
       
-      <Link to="/activity" className="mt-4 px-4">
-        <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
-          <div className="flex items-center">
-            <Activity className="h-5 w-5 text-app-yellow mr-2" />
-            <span className="text-white">View Activity</span>
+      <div className="mt-4 px-4 space-y-3">
+        <Link to="/activity">
+          <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+            <div className="flex items-center">
+              <Activity className="h-5 w-5 text-app-yellow mr-2" />
+              <span className="text-white">View Activity</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
           </div>
-          <ChevronRight className="h-5 w-5 text-gray-400" />
-        </div>
-      </Link>
+        </Link>
+        
+        {hasRole("seller") && (
+          <Link to="/seller/dashboard">
+            <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+              <div className="flex items-center">
+                <StoreIcon className="h-5 w-5 text-app-yellow mr-2" />
+                <span className="text-white">Seller Dashboard</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </div>
+          </Link>
+        )}
+      </div>
 
       <Tabs defaultValue="videos" className="w-full mt-8">
         <TabsList className="w-full bg-app-gray-dark">

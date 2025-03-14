@@ -1,56 +1,68 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
-import ProfilePage from "./pages/ProfilePage";
-import VideoPage from "./pages/VideoPage";
-import WalletPage from "./pages/WalletPage";
-import ShopPage from "./pages/ShopPage";
+import ExplorePage from "./pages/ExplorePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import NotFound from "./pages/NotFound";
-import LiveStreamPage from "./pages/LiveStreamPage";
+import ProfilePage from "./pages/ProfilePage";
+import ShopPage from "./pages/ShopPage";
 import ActivityPage from "./pages/ActivityPage";
-import ExplorePage from "./pages/ExplorePage";
+import LiveStreamPage from "./pages/LiveStreamPage";
+import BattlePage from "./pages/BattlePage";
 import AdminPage from "./pages/AdminPage";
+import WalletPage from "./pages/WalletPage";
+import VideoPage from "./pages/VideoPage";
+import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
+import SellerDashboardPage from "./pages/SellerDashboardPage";
+import SellerProfilePage from "./pages/SellerProfilePage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartProvider>
+          <Router>
             <Routes>
-              <Route path="/login" element={<HomePage />} /> {/* Redirect login to home */}
-              <Route path="/signup" element={<HomePage />} /> {/* Redirect signup to home */}
-              <Route path="/admin" element={<AdminPage />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="videos" element={<VideoPage />} />
-                <Route path="live" element={<LiveStreamPage />} />
-                <Route path="wallet" element={<WalletPage />} />
-                <Route path="shop" element={<ShopPage />} />
-                <Route path="activity" element={<ActivityPage />} />
                 <Route path="explore" element={<ExplorePage />} />
+                <Route path="shop" element={<ShopPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="activity" element={<ActivityPage />} />
+                <Route path="wallet" element={<WalletPage />} />
+                <Route path="video/:videoId" element={<VideoPage />} />
+                <Route path="admin" element={<AdminPage />} />
+                <Route path="live/:streamId" element={<LiveStreamPage />} />
+                <Route path="battle/:battleId" element={<BattlePage />} />
+                <Route path="seller/dashboard" element={<SellerDashboardPage />} />
+                <Route path="seller/:sellerId" element={<SellerProfilePage />} />
+                <Route path="*" element={<NotFound />} />
               </Route>
-              <Route path="*" element={<NotFound />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CartProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+          </Router>
+          <Toaster />
+        </CartProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
