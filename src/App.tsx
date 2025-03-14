@@ -17,6 +17,7 @@ import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
 import LiveStreamPage from "./pages/LiveStreamPage";
 import ActivityPage from "./pages/ActivityPage";
+import ExplorePage from "./pages/ExplorePage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="wallet" element={<WalletPage />} />
                 <Route path="shop" element={<ShopPage />} />
                 <Route path="activity" element={<ActivityPage />} />
+                <Route path="explore" element={<ExplorePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
