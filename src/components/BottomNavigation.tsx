@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, ShoppingBag, User, Video, Zap, Search } from "lucide-react";
+import { Home, Plus, ShoppingBag, User, Zap, Search, Video } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
 
@@ -19,6 +19,9 @@ const BottomNavigation = () => {
       </Link>
       <Link to="/explore" className={`group nav-item ${isActive('/explore') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <Search className={`nav-icon h-5 w-5 ${isActive('/explore') ? 'text-app-yellow' : ''}`} />
+      </Link>
+      <Link to="/videos" className={`group nav-item ${isActive('/videos') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <Video className={`nav-icon h-5 w-5 ${isActive('/videos') ? 'text-app-yellow' : ''}`} />
       </Link>
       <button 
         className="bg-app-yellow text-app-black rounded-full p-3 -mt-5 shadow-lg"
