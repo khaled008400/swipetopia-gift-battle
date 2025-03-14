@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -30,8 +29,7 @@ const AdminPage = () => {
   const handleAdminLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting admin login with:", email);
-      const result = await login(email, password);
-      console.log("Login result:", result);
+      await login(email, password);
       
       // Force a check immediately after login
       if (user && isAdmin()) {
