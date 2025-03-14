@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Plus, Edit, Trash2, Eye, ShoppingBag, Search, 
-  Filter, SortDesc, ChevronLeft, ChevronRight 
+  Filter, SortDesc, ChevronLeft, ChevronRight, Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 

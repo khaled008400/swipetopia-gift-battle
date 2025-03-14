@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, Plus, Link2, Edit2, Trash2, Eye } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, Link2, Edit2, Trash2, Eye, ShoppingBag } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogHeader, 
   DialogTitle, DialogTrigger, DialogFooter, DialogClose 

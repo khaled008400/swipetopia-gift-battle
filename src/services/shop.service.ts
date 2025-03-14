@@ -13,6 +13,9 @@ export interface Product {
   original_price?: number;
   discount_percentage?: number;
   attributes?: Record<string, string[]>;
+  status?: string;
+  isLive?: boolean;
+  seller_id?: string;
 }
 
 export interface Order {
