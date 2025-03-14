@@ -1,4 +1,3 @@
-
 import { adminApi } from './api';
 
 export interface AdminStats {
@@ -66,6 +65,14 @@ export interface AdminProduct {
   status: 'active' | 'draft' | 'unavailable';
 }
 
+export interface ProductAttribute {
+  id: string;
+  name: string;
+  values: string[];
+  color?: string;
+  status: 'active' | 'inactive';
+}
+
 export interface Pagination {
   current_page: number;
   last_page: number;
@@ -74,13 +81,11 @@ export interface Pagination {
 }
 
 const AdminService = {
-  // Dashboard
   async getDashboardStats(): Promise<AdminStats> {
     const response = await adminApi.get('/dashboard/stats');
     return response.data;
   },
 
-  // Users management
   async getUsers(page = 1, search = ''): Promise<{ data: AdminUser[], pagination: Pagination }> {
     const response = await adminApi.get('/users', { params: { page, search } });
     return response.data;
@@ -96,7 +101,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Videos management
   async getVideos(page = 1, status = '', userId = ''): Promise<{ data: AdminVideo[], pagination: Pagination }> {
     const response = await adminApi.get('/videos', { 
       params: { page, status, user_id: userId } 
@@ -113,7 +117,6 @@ const AdminService = {
     await adminApi.delete(`/videos/${videoId}`);
   },
 
-  // Orders management
   async getOrders(page = 1, status = '', userId = ''): Promise<{ data: AdminOrder[], pagination: Pagination }> {
     const response = await adminApi.get('/orders', { 
       params: { page, status, user_id: userId } 
@@ -126,7 +129,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Products management
   async getProducts(page = 1, category = '', search = ''): Promise<{ data: AdminProduct[], pagination: Pagination }> {
     const response = await adminApi.get('/products', { 
       params: { page, category, search } 
@@ -148,7 +150,25 @@ const AdminService = {
     await adminApi.delete(`/products/${productId}`);
   },
 
-  // Product Analytics
+  async getProductAttributes(page = 1): Promise<{ data: ProductAttribute[], pagination: Pagination }> {
+    const response = await adminApi.get('/product-attributes', { params: { page } });
+    return response.data;
+  },
+
+  async createProductAttribute(attributeData: Omit<ProductAttribute, 'id'>): Promise<ProductAttribute> {
+    const response = await adminApi.post('/product-attributes', attributeData);
+    return response.data;
+  },
+
+  async updateProductAttribute(attributeId: string, attributeData: Partial<ProductAttribute>): Promise<ProductAttribute> {
+    const response = await adminApi.put(`/product-attributes/${attributeId}`, attributeData);
+    return response.data;
+  },
+
+  async deleteProductAttribute(attributeId: string): Promise<void> {
+    await adminApi.delete(`/product-attributes/${attributeId}`);
+  },
+
   async getProductSalesData(period: 'week' | 'month' | 'year', productId?: string): Promise<any> {
     const response = await adminApi.get('/analytics/product-sales', { 
       params: { period, product_id: productId } 
@@ -156,7 +176,6 @@ const AdminService = {
     return response.data;
   },
 
-  // Reports and Analytics
   async getUserGrowthData(period: 'week' | 'month' | 'year'): Promise<any> {
     const response = await adminApi.get('/analytics/user-growth', { params: { period } });
     return response.data;

@@ -9,6 +9,7 @@ import AdminVideos from '@/components/admin/AdminVideos';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminProducts from '@/components/admin/AdminProducts';
 import AdminReports from '@/components/admin/AdminReports';
+import ProductAttributes from '@/components/admin/ProductAttributes';
 import { useQuery } from '@tanstack/react-query';
 import AdminService from '@/services/admin.service';
 import { Loader2 } from 'lucide-react';
@@ -50,12 +51,13 @@ const AdminPage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="videos">Videos</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="attributes">Attributes</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
         
@@ -77,6 +79,10 @@ const AdminPage = () => {
         
         <TabsContent value="products">
           <AdminProducts />
+        </TabsContent>
+        
+        <TabsContent value="attributes">
+          <ProductAttributes />
         </TabsContent>
         
         <TabsContent value="reports">
