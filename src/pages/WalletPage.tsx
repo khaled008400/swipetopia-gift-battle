@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/auth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Wallet, CreditCard, Gift, Plus } from "lucide-react";
 
 // Mock transaction data
 const MOCK_TRANSACTIONS = [
