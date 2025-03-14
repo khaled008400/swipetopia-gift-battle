@@ -3,7 +3,7 @@ import { Search, Bell, Heart, Home, ShoppingBag, User, Zap } from "lucide-react"
 import { Link } from "react-router-dom";
 import { Carousel, CarouselContent, CarouselItem } from "../components/ui/carousel";
 import UserVideosCarousel from "../components/UserVideosCarousel";
-import { useAuth } from "../context/auth";
+import { useAuth } from "../context/AuthContext";
 
 // Mock data for the live selling profiles
 const LIVE_SELLERS = [{
@@ -58,51 +58,35 @@ const PRODUCTS = [{
   liked: false
 }];
 
-// User-created videos for swappable section, formatted to match UserVideosCarousel props
+// User-created videos for swappable section, now with following info
 const USER_VIDEOS = [
   {
     id: "4",
-    title: "Running Tutorial",
-    thumbnailUrl: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
-    user: {
-      id: "user1",
-      username: "runner_girl",
-      avatarUrl: "/placeholder.svg"
-    }
+    url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
+    username: "runner_girl",
+    isFollowing: true
   },
   {
     id: "5",
-    title: "Dance Moves",
-    thumbnailUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
-    user: {
-      id: "user2",
-      username: "dance_king",
-      avatarUrl: "/placeholder.svg"
-    }
+    url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
+    username: "dance_king",
+    isFollowing: false
   },
   {
     id: "6",
-    title: "Travel Vlog",
-    thumbnailUrl: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
-    user: {
-      id: "user3",
-      username: "travel_vlogger",
-      avatarUrl: "/placeholder.svg"
-    }
+    url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
+    username: "travel_vlogger",
+    isFollowing: true
   },
   {
     id: "7",
-    title: "Cooking Tutorial",
-    thumbnailUrl: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
-    user: {
-      id: "user4",
-      username: "chef_master",
-      avatarUrl: "/placeholder.svg"
-    }
+    url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
+    thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
+    username: "chef_master",
+    isFollowing: true
   }
 ];
 

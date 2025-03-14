@@ -1,10 +1,12 @@
 
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import BottomNavigation from "./BottomNavigation";
 import { useEffect, useState } from "react";
 import CreateContentMenu from "./CreateContentMenu";
 
 const Layout = () => {
+  const { isAuthenticated } = useAuth();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   useEffect(() => {
@@ -18,6 +20,10 @@ const Layout = () => {
       window.removeEventListener('toggle-create-menu', handleToggleCreateMenu);
     };
   }, []);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return (
     <div className="flex flex-col h-screen w-full bg-app-black">

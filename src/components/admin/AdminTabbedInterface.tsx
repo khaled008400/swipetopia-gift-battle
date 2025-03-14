@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -12,10 +11,7 @@ import {
   Ticket, 
   Truck, 
   Users, 
-  Video,
-  Loader2, 
-  Menu,
-  Settings
+  Video 
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
 import AdminDashboard from './AdminDashboard';
@@ -29,10 +25,6 @@ import AdminShipping from './AdminShipping';
 import AdminReports from './AdminReports';
 import AdminLiveStreams from './AdminLiveStreams';
 import VirtualGifts from './VirtualGifts';
-import AdminStreamAPI from './AdminStreamAPI';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { Button } from '../ui/button';
-import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
 
 interface AdminTabbedInterfaceProps {
   stats: AdminStats;
@@ -41,7 +33,6 @@ interface AdminTabbedInterfaceProps {
 
 const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, statsLoading }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   if (statsLoading) {
     return (
@@ -55,77 +46,35 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
   console.log("Admin stats:", stats);
 
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: <Layout size={16} /> },
-    { id: "products", label: "Products", icon: <Package size={16} /> },
-    { id: "users", label: "Users", icon: <Users size={16} /> },
-    { id: "orders", label: "Orders", icon: <ShoppingCart size={16} /> },
-    { id: "videos", label: "Videos", icon: <Video size={16} /> },
-    { id: "virtual-gifts", label: "Virtual Gifts", icon: <Gift size={16} /> },
-    { id: "coupons", label: "Coupons", icon: <Ticket size={16} /> },
-    { id: "offers", label: "Offers", icon: <PercentCircle size={16} /> },
-    { id: "shipping", label: "Shipping", icon: <Truck size={16} /> },
-    { id: "reports", label: "Reports", icon: <BarChart size={16} /> },
-    { id: "live-streams", label: "Live Streams", icon: <Radio size={16} /> },
-    { id: "stream-api", label: "Stream API", icon: <Settings size={16} /> },
+    { id: "dashboard", label: "Dashboard", icon: Layout },
+    { id: "products", label: "Products", icon: Package },
+    { id: "users", label: "Users", icon: Users },
+    { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "videos", label: "Videos", icon: Video },
+    { id: "virtual-gifts", label: "Virtual Gifts", icon: Gift },
+    { id: "coupons", label: "Coupons", icon: Ticket },
+    { id: "offers", label: "Offers", icon: PercentCircle },
+    { id: "shipping", label: "Shipping", icon: Truck },
+    { id: "reports", label: "Reports", icon: BarChart },
+    { id: "live-streams", label: "Live Streams", icon: Radio },
   ];
-
-  // Mobile view
-  const MobileTabsView = () => (
-    <div className="md:hidden">
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerTrigger asChild>
-          <Button variant="outline" className="mb-4">
-            <Menu className="h-4 w-4 mr-2" />
-            {tabs.find(tab => tab.id === activeTab)?.label || "Menu"}
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent>
-          <div className="p-4">
-            <div className="grid grid-cols-2 gap-2">
-              {tabs.map(tab => (
-                <Button
-                  key={tab.id}
-                  variant={activeTab === tab.id ? "default" : "outline"}
-                  className="justify-start"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setIsDrawerOpen(false);
-                  }}
-                >
-                  {tab.icon}
-                  <span className="ml-2">{tab.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
-    </div>
-  );
-
-  // Desktop view
-  const DesktopTabsView = () => (
-    <div className="hidden md:block">
-      <TabsList className="mb-4 flex flex-wrap space-x-1">
-        {tabs.map(tab => (
-          <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
-            {tab.icon}
-            <span className="ml-2">{tab.label}</span>
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </div>
-  );
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Admin Panel</h1>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
+        <p className="text-muted-foreground">Manage your app's content and users</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <MobileTabsView />
-        <DesktopTabsView />
+        <TabsList className="grid grid-cols-11 w-full">
+          {tabs.map(tab => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.icon}
+              <span className="ml-2">{tab.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
         
         <TabsContent value="dashboard">
           <AdminDashboard stats={stats} />
@@ -139,7 +88,7 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
           <AdminVideos />
         </TabsContent>
         
-        <TabsContent value="live-streams">
+        <TabsContent value="livestreams">
           <AdminLiveStreams />
         </TabsContent>
         
@@ -149,6 +98,10 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="products">
           <AdminProducts />
+        </TabsContent>
+        
+        <TabsContent value="attributes">
+          <ProductAttributes />
         </TabsContent>
         
         <TabsContent value="coupons">
@@ -169,10 +122,6 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="virtual-gifts" className="p-0">
           <VirtualGifts />
-        </TabsContent>
-
-        <TabsContent value="stream-api">
-          <AdminStreamAPI />
         </TabsContent>
       </Tabs>
     </div>

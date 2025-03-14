@@ -1,321 +1,195 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Slider } from '@/components/ui/slider';
-import LiveStreamService, { ZegoStreamConfig } from '@/services/livestream.service';
-import { ChevronRight, Trash2, Paperclip, Smile, Send, MicOff, Mic, Camera, CameraOff, Settings, Users, Gift, DollarSign } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import LiveStreamIndicator from '@/components/live/LiveStreamIndicator';
-import BattleModeSelector from '@/components/live/BattleModeSelector';
-
-interface ChatMessage {
-  id: string;
-  sender: string;
-  message: string;
-  timestamp: Date;
-}
-
-const LiveStreamPage = () => {
-  const [streamID, setStreamID] = useState('');
-  const [userID, setUserID] = useState(Math.floor(Math.random() * 10000).toString());
-  const [displayName, setDisplayName] = useState(`User ${Math.floor(Math.random() * 1000)}`);
-  const [roomID, setRoomID] = useState('default_room');
-  const [streaming, setStreaming] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [enableCamera, setEnableCamera] = useState(true);
-  const [enableMicrophone, setEnableMicrophone] = useState(true);
-  const [localVideoView, setLocalVideoView] = useState<any>(null);
-  const [remoteVideoView, setRemoteVideoView] = useState<any>(null);
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [battleMode, setBattleMode] = useState<'solo' | 'team'>('solo');
-  const [volume, setVolume] = useState(50);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Scroll to the bottom of the chat on new messages
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
-
-  const sendMessage = () => {
-    if (chatInput.trim() !== '') {
-      const newMessage: ChatMessage = {
-        id: Math.random().toString(36).substring(7),
-        sender: displayName,
-        message: chatInput,
-        timestamp: new Date(),
-      };
-      setChatMessages([...chatMessages, newMessage]);
-      setChatInput('');
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      sendMessage();
-    }
-  };
-
-  const startLiveStream = async () => {
-    if (!streamID) {
-      toast({
-        title: "Stream ID Required",
-        description: "Please enter a stream ID to start streaming.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Initialize the Zego engine
-      await LiveStreamService.init({
-        appID: 123456789, // Replace with your actual App ID
-        appSign: "your-app-sign", // Replace with your actual App Sign
-        userID: userID,
-        userName: displayName,
-        roomID: roomID,
-      });
-
-      // Setup camera/microphone state
-      await LiveStreamService.enableCamera(enableCamera);
-      await LiveStreamService.enableMicrophone(enableMicrophone);
-
-      // Start publishing
-      await LiveStreamService.startPublishing(streamID, {
-        camera: enableCamera,
-        microphone: enableMicrophone
-      });
-
-      // Create local video view
-      const localView = await LiveStreamService.getLocalVideoView();
-      setLocalVideoView(localView);
-
-      // Register for events
-      await LiveStreamService.registerEventListener('roomUserUpdate', (roomID, updateType, userList) => {
-        console.log('Room user update:', roomID, updateType, userList);
-      });
-
-      await LiveStreamService.registerEventListener('roomStreamUpdate', (roomID, updateType, streamList) => {
-        console.log('Room stream update:', roomID, updateType, streamList);
-      });
-
-      setStreaming(true);
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to start live stream:', error);
-      toast({
-        title: "Streaming Failed",
-        description: "Failed to start the live stream. Please try again.",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
-  };
-
-  const stopLiveStream = async () => {
-    try {
-      await LiveStreamService.stopPublishing();
-      await LiveStreamService.leaveRoom();
-      
-      // Remove event listeners
-      await LiveStreamService.removeEventListener('roomUserUpdate');
-      await LiveStreamService.removeEventListener('roomStreamUpdate');
-      
-      setStreaming(false);
-      setLocalVideoView(null);
-    } catch (error) {
-      console.error('Failed to stop live stream:', error);
-    }
-  };
-
-  const toggleCamera = async () => {
-    try {
-      await LiveStreamService.enableCamera(!enableCamera);
-      setEnableCamera(!enableCamera);
-    } catch (error) {
-      console.error('Failed to toggle camera:', error);
-    }
-  };
-
-  const toggleMicrophone = async () => {
-    try {
-      await LiveStreamService.enableMicrophone(!enableMicrophone);
-      setEnableMicrophone(!enableMicrophone);
-    } catch (error) {
-      console.error('Failed to toggle microphone:', error);
-    }
-  };
-
-  const switchCameraHandler = async () => {
-    try {
-      await LiveStreamService.switchCamera();
-      toast({
-        title: "Camera Switched",
-        description: "Camera switched successfully.",
-      });
-    } catch (error) {
-      console.error('Failed to switch camera:', error);
-    }
-  };
-
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Live Stream Page</h1>
-
-      <Card className="mb-4">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="streamID">Stream ID</Label>
-              <Input
-                id="streamID"
-                type="text"
-                value={streamID}
-                onChange={(e) => setStreamID(e.target.value)}
-                placeholder="Enter Stream ID"
-              />
-            </div>
-            <div>
-              <Label htmlFor="userID">User ID</Label>
-              <Input
-                id="userID"
-                type="text"
-                value={userID}
-                onChange={(e) => setUserID(e.target.value)}
-                placeholder="Enter User ID"
-                disabled
-              />
-            </div>
-            <div>
-              <Label htmlFor="displayName">Display Name</Label>
-              <Input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Enter Display Name"
-              />
-            </div>
-          </div>
-          <Separator className="my-4" />
-          <div className="flex items-center space-x-2">
-            <Switch id="camera" checked={enableCamera} onCheckedChange={toggleCamera} />
-            <Label htmlFor="camera">Enable Camera</Label>
-            <Button variant="outline" size="sm" onClick={switchCameraHandler} disabled={!streaming}>
-              Switch Camera
-            </Button>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="microphone" checked={enableMicrophone} onCheckedChange={toggleMicrophone} />
-            <Label htmlFor="microphone">Enable Microphone</Label>
-          </div>
-          <Separator className="my-4" />
-          {streaming ? (
-            <Button onClick={stopLiveStream} disabled={loading} variant="destructive">
-              Stop Live Stream
-            </Button>
-          ) : (
-            <Button onClick={startLiveStream} disabled={loading}>
-              Start Live Stream
-            </Button>
-          )}
-          {loading && <p>Loading...</p>}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardContent>
-            <h3 className="text-lg font-semibold mb-2">Local Video</h3>
-            {localVideoView ? localVideoView : <p>Waiting to start stream...</p>}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <h3 className="text-lg font-semibold mb-2">Remote Video</h3>
-            {remoteVideoView ? remoteVideoView : <p>No remote stream playing</p>}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <Card className="md:col-span-2">
-          <CardContent className="p-4">
-            <h3 className="text-lg font-semibold mb-2">Chat</h3>
-            <div
-              className="h-64 overflow-y-auto p-2 mb-2 bg-secondary rounded"
-              ref={chatScrollRef}
-            >
-              {chatMessages.map((msg) => (
-                <div key={msg.id} className="mb-1">
-                  <span className="font-semibold">{msg.sender}:</span> {msg.message}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="text"
-                placeholder="Type your message..."
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <Button onClick={sendMessage}><Send className="h-4 w-4" /></Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-lg font-semibold mb-2">Settings</h3>
-            <Tabs defaultValue="general" className="w-full">
-              <TabsList>
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="audio">Audio</TabsTrigger>
-                <TabsTrigger value="video">Video</TabsTrigger>
-              </TabsList>
-              <TabsContent value="general">
-                <div className="space-y-2">
-                  <Label>Room ID</Label>
-                  <Input type="text" value={roomID} onChange={(e) => setRoomID(e.target.value)} />
-                </div>
-              </TabsContent>
-              <TabsContent value="audio">
-                <div className="space-y-2">
-                  <Label>Volume</Label>
-                  <Slider
-                    defaultValue={[volume]}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => setVolume(value[0])}
-                  />
-                  <p className="text-sm text-muted-foreground">Current Volume: {volume}</p>
-                </div>
-              </TabsContent>
-              <TabsContent value="video">
-                <p>Video settings will be here</p>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+import { useEffect, useState } from "react";
+import VideoFeed from "@/components/VideoFeed";
+import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
+import { useBattleVideos } from "@/hooks/useBattleVideos";
+import VideoActions from "@/components/video/VideoActions";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Users } from "lucide-react";
+import BattleModeSelector from "@/components/live/BattleModeSelector";
+import ActiveStreamers from "@/components/live/ActiveStreamers";
+import { useToast } from "@/hooks/use-toast";
+type BattleMode = 'normal' | '1v1' | '2v2';
+const STREAMER_VIDEO_MAPPING: Record<string, string[]> = {
+  "1": ["1", "3"],
+  // dancequeen videos
+  "2": ["3", "5"],
+  // lipqueen videos
+  "3": ["6", "2"],
+  // styleicon videos
+  "4": ["2", "4"],
+  // beatmaker videos 
+  "5": ["5", "1"] // gamerpro videos
 };
+const LiveStreamPage = () => {
+  const [battleMode, setBattleMode] = useState<BattleMode>('normal');
+  const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
+  const {
+    toast
+  } = useToast();
+  const {
+    activeVideoIndex,
+    setActiveVideoIndex,
+    filteredVideos,
+    setStreamerFilter
+  } = useBattleVideos(true); // true = live streams only
 
+  const handleStreamerSelect = (streamerId: string) => {
+    setSelectedStreamerId(streamerId);
+    const streamerVideoIds = STREAMER_VIDEO_MAPPING[streamerId] || [];
+    setStreamerFilter(streamerVideoIds);
+    setActiveVideoIndex(0);
+    toast({
+      title: "Joined Live Stream",
+      description: "You're now watching this live stream",
+      duration: 2000
+    });
+  };
+  useEffect(() => {
+    const handleScroll = (e: WheelEvent) => {
+      if (e.deltaY > 0 && activeVideoIndex < filteredVideos.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+    window.addEventListener('wheel', handleScroll);
+    return () => {
+      window.removeEventListener('wheel', handleScroll);
+    };
+  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
+  useEffect(() => {
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      const diff = touchStartY - touchEndY;
+      if (diff > 50 && activeVideoIndex < filteredVideos.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } else if (diff < -50 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
+  return <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
+      {battleMode === 'normal' ? <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} /> : <LiveBattleFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} mode={battleMode} />}
+      
+      <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
+
+      <div className="absolute top-4 left-4 z-30 flex items-center">
+        <Link to="/">
+          
+        </Link>
+        
+      </div>
+
+      <ActiveStreamers onStreamerSelect={handleStreamerSelect} selectedStreamerId={selectedStreamerId} />
+
+      <div className="absolute top-28 right-4 z-30">
+        <BattleModeSelector currentMode={battleMode} onModeChange={setBattleMode} />
+      </div>
+      
+      <div className="absolute bottom-20 right-3 z-30">
+        {filteredVideos[activeVideoIndex] && <VideoActions likes={filteredVideos[activeVideoIndex].likes} comments={filteredVideos[activeVideoIndex].comments} shares={filteredVideos[activeVideoIndex].shares} isLiked={filteredVideos[activeVideoIndex].isLiked || false} onLike={() => {
+        console.log('Video liked:', filteredVideos[activeVideoIndex]);
+      }} />}
+      </div>
+
+      {filteredVideos.length === 0 && <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <h2 className="text-white text-xl font-bold mb-2">No Live Streams</h2>
+          <p className="text-gray-400 text-center px-8">
+            There are no live streams at the moment. Please check back later or select a streamer.
+          </p>
+        </div>}
+    </div>;
+};
+const LiveBattleFeed = ({
+  videos,
+  activeVideoIndex,
+  mode
+}: {
+  videos: any[];
+  activeVideoIndex: number;
+  mode: BattleMode;
+}) => {
+  const activeVideo = videos[activeVideoIndex];
+  if (!activeVideo) return null;
+  return <div className="h-full w-full relative">
+      {mode === '1v1' ? <div className="h-full w-full flex flex-col">
+          <div className="h-1/2 w-full relative border-b-2 border-white/20">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-xs">
+              {activeVideo.user.username}_1
+            </div>
+            <video src={activeVideo.url} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+          </div>
+          <div className="h-1/2 w-full relative">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-xs">
+              {activeVideo.user.username}_2
+            </div>
+            <video src={videos[(activeVideoIndex + 1) % videos.length].url} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+          </div>
+        </div> : <div className="h-full w-full grid grid-cols-2 grid-rows-2 gap-1">
+          <div className="relative">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-xs">
+              Team A - {activeVideo.user.username}
+            </div>
+            <video src={activeVideo.url} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+          </div>
+          
+          <div className="relative">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-xs">
+              Team A - Partner
+            </div>
+            <video src={videos[(activeVideoIndex + 1) % videos.length].url} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+          </div>
+          
+          <div className="relative">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-xs">
+              Team B - Challenger
+            </div>
+            <video src={videos[(activeVideoIndex + 2) % videos.length].url} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+          </div>
+          
+          <div className="relative">
+            <div className="absolute top-2 left-2 z-10 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-xs">
+              Team B - Partner
+            </div>
+            <video src={videos[(activeVideoIndex + 3) % videos.length].url} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+          </div>
+        </div>}
+      
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+        <div className="bg-black/40 backdrop-blur-md p-3 rounded-full">
+          <span className="text-white font-bold animate-pulse">
+            LIVE BATTLE
+          </span>
+        </div>
+      </div>
+      
+      {mode !== 'normal' && <div className="absolute bottom-24 left-0 right-0 px-4 z-20 flex justify-center">
+          <div className="flex space-x-4">
+            <button className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-xl border border-white/20">
+              Vote {mode === '1v1' ? activeVideo.user.username + '_1' : 'Team A'}
+            </button>
+            <button className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-xl border border-white/20">
+              Vote {mode === '1v1' ? activeVideo.user.username + '_2' : 'Team B'}
+            </button>
+          </div>
+        </div>}
+      
+      <div className="absolute top-14 right-4 z-20">
+        <div className="flex items-center bg-black/40 backdrop-blur-md px-2 py-1 rounded-full">
+          <Users className="h-4 w-4 text-red-500 mr-1" />
+          <span className="text-white text-xs">{Math.floor(Math.random() * 1000) + 100}</span>
+        </div>
+      </div>
+    </div>;
+};
 export default LiveStreamPage;

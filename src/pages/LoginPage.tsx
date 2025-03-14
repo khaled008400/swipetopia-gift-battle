@@ -1,74 +1,38 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/auth/AuthContext";
+
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import NetworkStatusAlert from "@/components/auth/NetworkStatusAlert";
-import LoginForm from "@/components/auth/LoginForm";
-import DevelopmentInfo from "@/components/auth/DevelopmentInfo";
+import { Loader2 } from "lucide-react";
 
 const LoginPage = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated, user } = useAuth();
-  const { isOnline, isConnectedToApi, checkApiConnection } = useNetworkStatus();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  console.log("LoginPage rendered. isAuthenticated:", isAuthenticated, "user:", user?.username);
-  console.log("Network status:", { isOnline, isConnectedToApi });
-
-  useEffect(() => {
-    console.log("LoginPage useEffect - checking auth status:", isAuthenticated);
-    if (isAuthenticated && user) {
-      console.log("User is already authenticated, redirecting to home");
-      navigate("/");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill all fields",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [isAuthenticated, navigate, user]);
 
-  useEffect(() => {
-    if (isOnline) {
-      checkApiConnection();
-    }
-  }, [isOnline, checkApiConnection]);
-
-  const handleLogin = async (email: string, password: string) => {
-    console.log("Form submitted with:", { email, password });
     setIsLoading(true);
-    
     try {
-      console.log("Attempting login with:", email);
-      
-      if (!isOnline && !import.meta.env.DEV) {
-        toast({
-          title: "No internet connection",
-          description: "Cannot log in while offline. Please check your connection.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (isOnline && !isConnectedToApi && !import.meta.env.DEV) {
-        toast({
-          title: "Server unreachable",
-          description: "Cannot reach authentication servers. Please try again later.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      await login(email, password);
-      console.log("Login call completed successfully");
-    } catch (error: any) {
-      console.error("Login error in component:", error);
-      if (error.message && !error.message.includes("Toast is handled")) {
-        toast({
-          title: "Login failed",
-          description: error.message || "An unknown error occurred",
-          variant: "destructive",
-        });
-      }
+      await login(username, password);
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      // The error toast is handled in the AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -82,19 +46,68 @@ const LoginPage = () => {
           <p className="text-gray-400">Sign in to continue</p>
         </div>
 
-        <NetworkStatusAlert 
-          isOnline={isOnline} 
-          isConnectedToApi={isConnectedToApi} 
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="username" className="text-sm text-gray-300">
+              Username
+            </label>
+            <Input
+              id="username"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading}
+            />
+          </div>
 
-        <LoginForm 
-          onSubmit={handleLogin}
-          isLoading={isLoading}
-          isOnline={isOnline}
-          isConnectedToApi={isConnectedToApi}
-        />
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm text-gray-300">
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="bg-app-gray-dark border-app-gray-light text-white"
+              disabled={isLoading}
+            />
+          </div>
+
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
+          </Button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-400">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-app-yellow hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
         
-        <DevelopmentInfo />
+        {import.meta.env.DEV && (
+          <div className="mt-4 p-3 bg-blue-900/30 rounded-md">
+            <p className="text-xs text-blue-400">
+              Development mode: If the API is unavailable, you can still log in with any credentials.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

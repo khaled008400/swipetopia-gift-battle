@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
@@ -11,32 +12,27 @@ import ProfilePage from "./pages/ProfilePage";
 import VideoPage from "./pages/VideoPage";
 import WalletPage from "./pages/WalletPage";
 import ShopPage from "./pages/ShopPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
 import LiveStreamPage from "./pages/LiveStreamPage";
 import ActivityPage from "./pages/ActivityPage";
 import ExplorePage from "./pages/ExplorePage";
 import AdminPage from "./pages/AdminPage";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-const App = () => {
-  console.log("App component rendering");
-  
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <CartProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
@@ -53,8 +49,8 @@ const App = () => {
           </BrowserRouter>
         </TooltipProvider>
       </CartProvider>
-    </QueryClientProvider>
-  );
-};
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

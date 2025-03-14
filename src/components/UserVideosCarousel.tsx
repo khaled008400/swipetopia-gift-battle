@@ -1,77 +1,82 @@
-import { useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { Zap } from "lucide-react";
 import { 
   Carousel, 
-  CarouselContent, 
+  CarouselContent,
   CarouselItem, 
   CarouselPrevious, 
   CarouselNext 
 } from "./ui/carousel";
-import { useAuth } from "../context/auth";
+import { useAuth } from "../context/AuthContext";
+
+interface UserCreatedVideo {
+  id: string;
+  url: string;
+  thumbnail: string;
+  username: string;
+  isFollowing?: boolean;
+}
 
 interface UserVideosCarouselProps {
-  videos?: {
-    id: string;
-    title: string;
-    thumbnailUrl: string;
-    videoUrl: string;
-    user: {
-      id: string;
-      username: string;
-      avatarUrl: string;
-    };
-  }[];
-  userId?: string;
+  videos: UserCreatedVideo[];
   title?: string;
 }
 
-const UserVideosCarousel: React.FC<UserVideosCarouselProps> = ({ videos = [], title }) => {
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+const UserVideosCarousel = ({ videos, title = "Following" }: UserVideosCarouselProps) => {
   const { user } = useAuth();
-
-  const handlePrev = () => {
-    setCurrentVideoIndex((prevIndex) =>
-      prevIndex === 0 ? videos.length - 1 : prevIndex - 1
+  const [followingVideos, setFollowingVideos] = useState<UserCreatedVideo[]>([]);
+  
+  useEffect(() => {
+    // In a real app, we would fetch videos from followed creators from an API
+    // For now, we'll filter videos that have isFollowing = true or simulate a following state
+    const filteredVideos = videos.filter(video => 
+      video.isFollowing || // If we have explicit following information
+      (user && Math.random() > 0.3) // Randomly mark some videos as from followed creators for demo
     );
-  };
+    
+    setFollowingVideos(filteredVideos);
+  }, [videos, user]);
 
-  const handleNext = () => {
-    setCurrentVideoIndex((prevIndex) =>
-      prevIndex === videos.length - 1 ? 0 : prevIndex + 1
+  if (followingVideos.length === 0) {
+    return (
+      <div className="my-4">
+        <div className="flex items-center mb-2">
+          <Zap className="w-4 h-4 text-white mr-1" />
+          <h3 className="text-white font-medium">{title}</h3>
+        </div>
+        <div className="bg-app-gray-dark rounded-lg p-4 text-center text-gray-400">
+          {user ? "No videos from creators you follow yet" : "Sign in to see videos from creators you follow"}
+        </div>
+      </div>
     );
-  };
-
-  if (videos.length === 0) {
-    return null;
   }
 
   return (
-    <div className="relative">
-      {title && (
-        <h3 className="text-white font-medium mb-2">{title}</h3>
-      )}
-      <Carousel className="w-full max-w-4xl mx-auto">
-        <CarouselContent className="overflow-hidden">
-          {videos.map((video, index) => (
-            <CarouselItem key={video.id} className={`pl-1 pr-1 md:pl-2 md:pr-2 w-full ${index === currentVideoIndex ? 'opacity-100' : 'opacity-50'}`}>
-              <div className="p-1">
-                <img
-                  src={video.thumbnailUrl}
-                  alt={video.title}
-                  className="object-cover rounded-md aspect-video"
+    <div>
+      <div className="flex items-center mb-2">
+        <Zap className="w-4 h-4 text-white mr-1" />
+        <h3 className="text-white font-medium">{title}</h3>
+      </div>
+      <Carousel className="w-full">
+        <CarouselContent>
+          {followingVideos.map((video) => (
+            <CarouselItem key={video.id} className="basis-2/3">
+              <div className="relative h-40 rounded-xl overflow-hidden">
+                <video 
+                  src={video.url}
+                  className="h-full w-full object-cover" 
+                  poster={video.thumbnail}
                 />
-                <h3 className="text-sm font-semibold mt-2">{video.title}</h3>
-                <p className="text-xs text-gray-400">Uploaded by {video.user.username}</p>
+                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
+                  <span className="text-white text-xs">@{video.username}</span>
+                </div>
               </div>
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-2 top-1/2 transform -translate-y-1/2 absolute z-10 bg-black/20 text-white rounded-full p-1" onClick={handlePrev}>
-          <ArrowLeft className="h-4 w-4" />
-        </CarouselPrevious>
-        <CarouselNext className="right-2 top-1/2 transform -translate-y-1/2 absolute z-10 bg-black/20 text-white rounded-full p-1" onClick={handleNext}>
-          <ArrowRight className="h-4 w-4" />
-        </CarouselNext>
+        <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 bg-app-yellow/80 text-app-black" />
+        <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 bg-app-yellow/80 text-app-black" />
       </Carousel>
     </div>
   );

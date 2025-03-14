@@ -8,24 +8,10 @@ interface TrendingVideo {
 }
 
 interface TrendingVideosSectionProps {
-  videos?: TrendingVideo[];
+  videos: TrendingVideo[];
 }
 
-const TrendingVideosSection = ({ videos = [] }: TrendingVideosSectionProps) => {
-  if (videos.length === 0) {
-    return (
-      <div className="absolute top-32 left-0 right-0 px-4 z-20">
-        <div className="flex items-center mb-2">
-          <Zap className="w-4 h-4 text-white mr-1" />
-          <h3 className="text-white font-medium">Trending Videos</h3>
-        </div>
-        <div className="p-4 text-center text-gray-400">
-          No trending videos available
-        </div>
-      </div>
-    );
-  }
-
+const TrendingVideosSection = ({ videos }: TrendingVideosSectionProps) => {
   return (
     <div className="absolute top-32 left-0 right-0 px-4 z-20">
       <div className="flex items-center mb-2">

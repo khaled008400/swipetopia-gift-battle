@@ -1,262 +1,398 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import AdminService, { ProductAttribute } from '@/services/admin.service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AdminService, { ProductAttribute } from '@/services/admin.service';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Plus, Edit, Trash2, Tag, MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Trash, Pencil, X } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Pagination } from '@/components/ui/pagination';
 
-interface ProductAttributesProps {
-  // Define any props here
-}
+// Define the form schema for product attributes
+const attributeSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  values: z.string().min(2, "Values must be at least 2 characters"),
+  color: z.string().optional(),
+  status: z.enum(['active', 'inactive'])
+});
 
-const ProductAttributes = () => {
-  const [open, setOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentAttribute, setCurrentAttribute] = useState<ProductAttribute | null>(null);
-  
-  const [attributeName, setAttributeName] = useState('');
-  const [attributeValues, setAttributeValues] = useState('');
+type AttributeFormValues = z.infer<typeof attributeSchema>;
 
+const ProductAttributes: React.FC = () => {
+  const [page, setPage] = useState(1);
+  const [attributeDialog, setAttributeDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
+  const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const resetForm = () => {
-    setAttributeName('');
-    setAttributeValues('');
-    setCurrentAttribute(null);
-    setIsEditing(false);
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      resetForm();
+  // Fetch attributes data
+  const { data, isLoading } = useQuery({
+    queryKey: ['productAttributes', page],
+    queryFn: () => AdminService.getProductAttributes(page),
+    // For development, let's provide placeholder data
+    placeholderData: {
+      data: [
+        { id: '1', name: 'Color', values: ['Red', 'Green', 'Blue'], color: '#9b87f5', status: 'active' },
+        { id: '2', name: 'Size', values: ['S', 'M', 'L', 'XL'], status: 'active' },
+        { id: '3', name: 'Material', values: ['Cotton', 'Polyester', 'Wool'], status: 'inactive' },
+      ],
+      pagination: {
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 3
+      }
     }
-    setOpen(open);
-  };
-
-  // Fetch attributes
-  const { data: attributes, isLoading } = useQuery({
-    queryKey: ['productAttributes'],
-    queryFn: () => AdminService.getProductAttributes(),
   });
 
-  // Add attribute mutation
-  const addAttributeMutation = useMutation({
-    mutationFn: (attribute: Omit<ProductAttribute, 'id'>) => AdminService.createProductAttribute(attribute),
+  // Create attribute mutation
+  const createAttributeMutation = useMutation({
+    mutationFn: (attributeData: Omit<ProductAttribute, 'id'>) => 
+      AdminService.createProductAttribute(attributeData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
-      resetForm();
-      setOpen(false);
+      setAttributeDialog(false);
       toast({
-        title: "Success",
-        description: "Attribute created successfully",
+        title: "Attribute created",
+        description: "Product attribute has been created successfully."
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create attribute",
-        variant: "destructive",
+        description: "Failed to create product attribute.",
+        variant: "destructive"
       });
-      console.error("Create attribute error:", error);
     }
   });
 
   // Update attribute mutation
   const updateAttributeMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<ProductAttribute, 'id'>> }) => 
+    mutationFn: ({ id, data }: { id: string, data: Partial<ProductAttribute> }) => 
       AdminService.updateProductAttribute(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
-      resetForm();
-      setOpen(false);
+      setAttributeDialog(false);
       toast({
-        title: "Success",
-        description: "Attribute updated successfully",
+        title: "Attribute updated",
+        description: "Product attribute has been updated successfully."
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update attribute",
-        variant: "destructive",
+        description: "Failed to update product attribute.",
+        variant: "destructive"
       });
-      console.error("Update attribute error:", error);
     }
   });
 
   // Delete attribute mutation
   const deleteAttributeMutation = useMutation({
-    mutationFn: (id: string) => AdminService.deleteProductAttribute(id),
+    mutationFn: (attributeId: string) => AdminService.deleteProductAttribute(attributeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       toast({
-        title: "Success",
-        description: "Attribute deleted successfully",
+        title: "Attribute deleted",
+        description: "Product attribute has been deleted successfully."
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to delete attribute",
-        variant: "destructive",
+        description: "Failed to delete product attribute.",
+        variant: "destructive"
       });
-      console.error("Delete attribute error:", error);
     }
   });
 
-  const handleEditAttribute = (attribute: ProductAttribute) => {
-    setCurrentAttribute(attribute);
-    setAttributeName(attribute.name);
-    setAttributeValues(attribute.values.join(', '));
-    setIsEditing(true);
-    setOpen(true);
+  // Form setup
+  const form = useForm<AttributeFormValues>({
+    resolver: zodResolver(attributeSchema),
+    defaultValues: {
+      name: '',
+      values: '',
+      color: '',
+      status: 'active'
+    }
+  });
+
+  // Handle dialog open
+  const handleCreateAttribute = () => {
+    form.reset({
+      name: '',
+      values: '',
+      color: '',
+      status: 'active'
+    });
+    setDialogMode('create');
+    setSelectedAttribute(null);
+    setAttributeDialog(true);
   };
 
-  const handleSubmit = () => {
-    // Validate form
-    if (!attributeName || !attributeValues) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
+  // Handle edit attribute
+  const handleEditAttribute = (attribute: ProductAttribute) => {
+    form.reset({
+      name: attribute.name,
+      values: attribute.values.join(', '),
+      color: attribute.color || '',
+      status: attribute.status
+    });
+    setDialogMode('edit');
+    setSelectedAttribute(attribute);
+    setAttributeDialog(true);
+  };
+
+  // Handle delete attribute
+  const handleDeleteAttribute = (attributeId: string) => {
+    if (confirm("Are you sure you want to delete this attribute? This action cannot be undone.")) {
+      deleteAttributeMutation.mutate(attributeId);
     }
+  };
 
-    // Convert comma-separated string to array of values
-    const values = attributeValues.split(',').map(value => value.trim()).filter(value => value);
-
-    const attributeData = {
-      name: attributeName,
-      values,
-      color: '#' + Math.floor(Math.random()*16777215).toString(16) // Generate random color
-    };
-
-    if (isEditing && currentAttribute) {
-      updateAttributeMutation.mutate({
-        id: currentAttribute.id,
-        data: attributeData
+  // Handle form submission
+  const onSubmit = (formData: AttributeFormValues) => {
+    const values = formData.values.split(',').map(val => val.trim());
+    
+    if (dialogMode === 'create') {
+      createAttributeMutation.mutate({
+        name: formData.name,
+        values,
+        color: formData.color,
+        status: formData.status
       });
-    } else {
-      addAttributeMutation.mutate(attributeData);
+    } else if (dialogMode === 'edit' && selectedAttribute) {
+      updateAttributeMutation.mutate({
+        id: selectedAttribute.id,
+        data: {
+          name: formData.name,
+          values,
+          color: formData.color,
+          status: formData.status
+        }
+      });
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Product Attributes</h2>
-          <p className="text-muted-foreground">Manage attributes for your products</p>
-        </div>
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsEditing(false)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Attribute
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Attribute' : 'Add Attribute'}</DialogTitle>
-              <DialogDescription>
-                {isEditing ? 'Update existing attribute details' : 'Add a new attribute to your store'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Attribute Name</Label>
-                <Input
-                  id="name"
-                  value={attributeName}
-                  onChange={(e) => setAttributeName(e.target.value)}
-                  placeholder="Size"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="values">Attribute Values (comma-separated)</Label>
-                <Input
-                  id="values"
-                  value={attributeValues}
-                  onChange={(e) => setAttributeValues(e.target.value)}
-                  placeholder="Small, Medium, Large"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>
-                {isEditing ? 'Update' : 'Add'} Attribute
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <h2 className="text-2xl font-bold">Product Attributes</h2>
+        <Button onClick={handleCreateAttribute}>
+          <Plus className="h-4 w-4 mr-2" /> Add Attribute
+        </Button>
       </div>
-
+      
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex justify-center p-8">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <div className="space-y-4">
-          {attributes && attributes.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Values</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {attributes.map((attribute) => (
-                  <TableRow key={attribute.id}>
-                    <TableCell className="font-medium">{attribute.name}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {attribute.values.map((value, index) => (
-                          <Badge key={index} variant="outline">{value}</Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditAttribute(attribute)}>
-                          <Pencil className="h-4 w-4" />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Values</TableHead>
+              <TableHead>Color</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.data.map((attribute) => (
+              <TableRow key={attribute.id}>
+                <TableCell className="font-medium">{attribute.name}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {attribute.values.map((value, index) => (
+                      <Badge key={index} className="bg-sidebar-accent">
+                        {value}
+                      </Badge>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {attribute.color && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: attribute.color }} />
+                      <span>{attribute.color}</span>
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge className={attribute.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
+                    {attribute.status === 'active' ? 'Active' : 'Inactive'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditAttribute(attribute)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">More options</span>
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => {
-                            if (confirm(`Are you sure you want to delete ${attribute.name}?`)) {
-                              deleteAttributeMutation.mutate(attribute.id);
-                            }
-                          }}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteAttribute(attribute.id)}
+                          className="text-red-600"
                         >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">No attributes found. Create your first attribute to get started.</p>
-              </CardContent>
-            </Card>
-          )}
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      {data?.pagination && data.pagination.last_page > 1 && (
+        <div className="flex justify-center">
+          <Pagination>
+            {/* Pagination would go here */}
+          </Pagination>
         </div>
       )}
+
+      {/* Attribute Form Dialog */}
+      <Dialog open={attributeDialog} onOpenChange={setAttributeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === 'create' ? 'Add New Attribute' : 'Edit Attribute'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Color, Size" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="values"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Values (comma separated)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Red, Green, Blue" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color Code (optional)</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="#9b87f5" {...field} />
+                      </FormControl>
+                      {field.value && (
+                        <div 
+                          className="w-10 h-10 rounded-md border" 
+                          style={{ backgroundColor: field.value }}
+                        />
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Active</FormLabel>
+                      <FormMessage />
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value === 'active'}
+                        onCheckedChange={(checked) => 
+                          field.onChange(checked ? 'active' : 'inactive')
+                        }
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">
+                  {dialogMode === 'create' ? 'Create' : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

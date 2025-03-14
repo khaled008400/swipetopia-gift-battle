@@ -1,11 +1,9 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/auth/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");
@@ -37,14 +35,14 @@ const SignupPage = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
     try {
       await signup(username, email, password);
       navigate("/");
     } catch (error) {
       console.error("Signup error:", error);
-      // Toast error is handled in AuthContext
+      // The error toast is handled in the AuthContext
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +53,7 @@ const SignupPage = () => {
       <div className="w-full max-w-md p-6 glass-panel animate-scale-in">
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-bold mb-2 neon-text">SWIPETOPIA</h1>
-          <p className="text-gray-400">Create an account</p>
+          <p className="text-gray-400">Create your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,7 +67,6 @@ const SignupPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading}
             />
           </div>
 
@@ -84,7 +81,6 @@ const SignupPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading}
             />
           </div>
 
@@ -99,7 +95,6 @@ const SignupPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading}
             />
           </div>
 
@@ -114,7 +109,6 @@ const SignupPage = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading}
             />
           </div>
 
@@ -123,14 +117,7 @@ const SignupPage = () => {
             disabled={isLoading}
             className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              "Sign Up"
-            )}
+            {isLoading ? "Creating account..." : "Sign Up"}
           </Button>
         </form>
 
@@ -138,18 +125,10 @@ const SignupPage = () => {
           <p className="text-gray-400">
             Already have an account?{" "}
             <Link to="/login" className="text-app-yellow hover:underline">
-              Log in
+              Sign in
             </Link>
           </p>
         </div>
-        
-        {import.meta.env.DEV && (
-          <div className="mt-4 p-3 bg-blue-900/30 rounded-md">
-            <p className="text-xs text-blue-400">
-              Development mode: If the API is unavailable, you can still sign up with any credentials.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

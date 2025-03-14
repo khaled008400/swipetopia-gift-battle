@@ -1,8 +1,9 @@
 
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet, CreditCard, Gift, Plus } from "lucide-react";
+import { Wallet, CreditCard, History, Gift, ArrowRight, Plus } from "lucide-react";
 
 // Mock transaction data
 const MOCK_TRANSACTIONS = [
@@ -21,15 +22,11 @@ const COIN_PACKAGES = [
   { id: 5, coins: 5000, price: 49.99, popular: false },
 ];
 
-// Mock user data
-const MOCK_USER = {
-  coins: 750
-};
-
 const WalletPage = () => {
-  // Use mock user instead of auth context
-  const user = MOCK_USER;
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("balance");
+
+  if (!user) return null;
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-app-black p-4">

@@ -53,7 +53,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit, mode }
       image: initialData.image,
       inventory: initialData.inventory,
       category: initialData.category,
-      status: initialData.status === 'out_of_stock' ? 'unavailable' : initialData.status
+      status: initialData.status
     } : {
       name: '',
       price: 0,
