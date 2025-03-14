@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Session } from "@supabase/supabase-js";
@@ -39,6 +38,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       try {
         const currentSession = await getSession();
+        console.log("Current session:", currentSession);
         
         if (currentSession) {
           setSession(currentSession);
@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       } catch (error) {
         console.error("Error retrieving session:", error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -61,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Set up auth state change listener
     const subscription = setupAuthListener(async (event, session) => {
-      console.log("Auth state changed:", event);
+      console.log("Auth state changed:", event, session);
       setSession(session);
       
       if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
@@ -75,7 +76,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     });
     
-    // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
@@ -159,8 +159,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const isAdmin = () => {
+    console.log("Checking isAdmin. User:", user);
     if (!user) return false;
-    console.log("Checking isAdmin. User role:", user.role);
+    console.log("User role:", user.role);
     return user.role === 'admin';
   };
 

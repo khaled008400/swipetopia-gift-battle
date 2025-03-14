@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -5,34 +6,35 @@ import { useQuery } from '@tanstack/react-query';
 import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminLoginForm from '@/components/admin/AdminLoginForm';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from 'luc3ide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const AdminPage = () => {
   const { user, login, isAdmin, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const { toast } = useToast();
 
   // Check if user has admin role
   useEffect(() => {
-    if (user && isAdmin()) {
-      console.log("User is an admin, setting adminAuthenticated to true");
-      setAdminAuthenticated(true);
-    } else if (user && !isAdmin()) {
-      // If user is logged in but not an admin, show a message
-      console.log("User is not an admin");
-      setAdminAuthenticated(false);
+    console.log("Auth state:", { user, isAdmin: isAdmin(), authLoading });
+    if (!authLoading) {
+      if (user && isAdmin()) {
+        console.log("User is admin, setting adminAuthenticated to true");
+        setAdminAuthenticated(true);
+      } else if (user) {
+        console.log("User is not admin:", user);
+        setAdminAuthenticated(false);
+      }
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, authLoading]);
 
   const handleAdminLogin = async (email: string, password: string) => {
     try {
       console.log("Attempting admin login with:", email);
       await login(email, password);
       
-      // Force a check immediately after login
-      if (user && isAdmin()) {
+      // Check admin status right after login
+      if (isAdmin()) {
         console.log("Login successful, user is admin");
         setAdminAuthenticated(true);
         toast({
@@ -40,18 +42,18 @@ const AdminPage = () => {
           description: "Welcome to the admin dashboard",
         });
       } else {
-        console.log("Login successful but not admin:", user);
+        console.log("Login successful but not admin");
         toast({
           title: "Access denied",
           description: "You don't have admin privileges",
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Admin login error:", error);
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again",
+        description: error.message || "Please check your credentials and try again",
         variant: "destructive"
       });
     }
@@ -61,12 +63,11 @@ const AdminPage = () => {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => AdminService.getDashboardStats(),
-    refetchInterval: 60000, // Refresh every minute
-    enabled: !!user && adminAuthenticated, // Only run query if user is admin
+    refetchInterval: 60000,
+    enabled: !!user && adminAuthenticated,
   });
 
-  // Create default stats object to avoid undefined errors
-  const defaultStats: AdminStats = {
+  const defaultStats = {
     totalUsers: 0,
     newUsersToday: 0,
     totalVideos: 0,
@@ -77,7 +78,7 @@ const AdminPage = () => {
     revenueToday: 0
   };
 
-  // Show loading state while we check authentication
+  // Show loading state only during initial authentication check
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -97,7 +98,6 @@ const AdminPage = () => {
     );
   }
 
-  // Pass either the actual stats or the default stats
   return <AdminTabbedInterface stats={stats || defaultStats} statsLoading={statsLoading} />;
 };
 
