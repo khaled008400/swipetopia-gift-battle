@@ -1,4 +1,3 @@
-
 import { Platform } from 'react-native';
 import ZegoExpressEngine from 'zego-express-engine-reactnative';
 
@@ -29,14 +28,7 @@ class LiveStreamService {
         config.appID, 
         config.appSign,
         true, // Use boolean instead of number for the third parameter
-        { 
-          // Advanced config as last parameter
-          logConfig: {
-            logPath: '',
-            logSize: 0,
-          },
-          scenario: 0, // General scenario
-        }
+        0 // General scenario - using an enum value directly instead of an object
       );
       
       await this.engine.loginRoom(config.roomID, config.userID, config.userName);
