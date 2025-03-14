@@ -24,17 +24,19 @@ class LiveStreamService {
 
     this.config = config;
     try {
+      // Create engine with correct parameters based on SDK documentation
       this.engine = ZegoExpressEngine.createEngine(
         config.appID, 
         config.appSign,
-        {
+        Platform.OS === 'ios' ? 1 : 0, // Platform specific setting
+        { 
+          // Advanced config as last parameter
           logConfig: {
             logPath: '',
             logSize: 0,
           },
           scenario: 0, // General scenario
-        },
-        Platform.OS === 'ios' ? 1 : 0 // Platform specific setting as a separate parameter
+        }
       );
       
       await this.engine.loginRoom(config.roomID, config.userID, config.userName);

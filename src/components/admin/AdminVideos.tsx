@@ -9,6 +9,8 @@ import VideoTable from './VideoTable';
 import VideoPreviewDialog from './VideoPreviewDialog';
 import VideosFilter from './VideosFilter';
 import VideosPagination from './VideosPagination';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -16,8 +18,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Label,
-  Textarea,
 } from "@/components/ui/dialog";
 
 const AdminVideos = () => {
@@ -381,7 +381,7 @@ const AdminVideos = () => {
                 <h3 className="text-lg font-medium">Activity</h3>
                 <div className="mt-2 space-y-2">
                   <p><strong>Videos:</strong> {userDetailsDialog.user.videoCount}</p>
-                  <p><strong>Orders:</strong> {userDetailsDialog.user.orderCount}</p>
+                  <p><strong>Orders:</strong> {userDetailsDialog.user.ordersCount}</p>
                 </div>
                 <div className="mt-4 space-y-2">
                   <Button 
