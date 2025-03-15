@@ -14,6 +14,9 @@ import { CartProvider } from './context/CartContext';
 import ShopPage from './pages/ShopPage';
 import ExplorePage from './pages/ExplorePage';
 import SignupPage from './pages/SignupPage';
+import AdminPage from './pages/AdminPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AuthCheck from './components/auth/AuthCheck';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
@@ -47,6 +50,16 @@ function App() {
               <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
               <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
               <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
+              <Route path="/admin" element={
+                <AuthCheck>
+                  <Layout><AdminPage /></Layout>
+                </AuthCheck>
+              } />
+              <Route path="/admin-dashboard" element={
+                <AuthCheck>
+                  <Layout><AdminDashboardPage /></Layout>
+                </AuthCheck>
+              } />
             </Routes>
           </Router>
         </CartProvider>
