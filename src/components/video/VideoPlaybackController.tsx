@@ -1,5 +1,6 @@
 
 import { useRef, useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoPlaybackControllerProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -14,6 +15,8 @@ const VideoPlaybackController = ({
   onError, 
   setIsPlaying 
 }: VideoPlaybackControllerProps) => {
+  const [playAttempts, setPlayAttempts] = useState(0);
+  const { toast } = useToast();
   
   const tryPlayVideo = async () => {
     if (!videoRef.current || !isActive) return;
@@ -21,10 +24,30 @@ const VideoPlaybackController = ({
     try {
       await videoRef.current.play();
       setIsPlaying(true);
+      // Reset play attempts on successful play
+      setPlayAttempts(0);
     } catch (err) {
       console.error("Error playing video:", err);
-      onError();
-      setIsPlaying(false);
+      setPlayAttempts(prev => prev + 1);
+      
+      // After multiple attempts, show an error toast
+      if (playAttempts >= 2) {
+        onError();
+        setIsPlaying(false);
+        toast({
+          title: "Playback error",
+          description: "There was a problem playing this video. Try again later.",
+          variant: "destructive",
+        });
+      } else {
+        // Try again with a delay
+        setTimeout(() => {
+          if (isActive && videoRef.current) {
+            videoRef.current.load();
+            videoRef.current.play().catch(() => onError());
+          }
+        }, 1000);
+      }
     }
   };
 
@@ -38,6 +61,11 @@ const VideoPlaybackController = ({
       }
     }
   }, [isActive]);
+
+  // Reset play attempts when video changes
+  useEffect(() => {
+    setPlayAttempts(0);
+  }, [videoRef.current?.src]);
 
   return null; // This is a controller component with no UI
 };

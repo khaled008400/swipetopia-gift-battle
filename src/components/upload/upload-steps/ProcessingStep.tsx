@@ -1,4 +1,6 @@
 
+import { Loader2 } from "lucide-react";
+
 interface ProcessingStepProps {
   uploadProgress: number;
 }
@@ -13,7 +15,10 @@ const ProcessingStep = ({ uploadProgress }: ProcessingStepProps) => {
           style={{ width: `${uploadProgress}%` }}
         ></div>
       </div>
-      <p className="text-sm text-gray-500">This may take a few minutes</p>
+      <div className="flex items-center text-sm text-gray-500 mt-2">
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        <p>This may take a few minutes</p>
+      </div>
     </div>
   );
 };
