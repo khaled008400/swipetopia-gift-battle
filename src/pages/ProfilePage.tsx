@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
@@ -13,7 +14,7 @@ import ProfileStats from "@/components/profile/ProfileStats";
 import RolesDisplay from "@/components/profile/RolesDisplay";
 import ProfileEdit from "@/components/profile/ProfileEdit";
 import { UserRole } from "@/types/auth.types";
-import { useNavigate } from "react-router-dom";
+import WalletSection from "@/components/profile/WalletSection";
 
 const ProfilePage = () => {
   const { user, logout, hasRole } = useAuth();
@@ -242,25 +243,15 @@ const ProfilePage = () => {
         </Button>
       </div>
       
+      {/* Wallet Section */}
+      <WalletSection user={user} />
+      
       <div className="mt-4 px-4 space-y-3">
-        <Link to="/wallet">
-          <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
-            <div className="flex items-center">
-              <Gift className="h-5 w-5 text-app-yellow mr-2" />
-              <span className="text-white">Wallet & Coins</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-app-yellow mr-2">{user?.coins || 0} coins</span>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </div>
-          </div>
-        </Link>
-        
         <Link to="/activity">
           <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
             <div className="flex items-center">
               <Activity className="h-5 w-5 text-app-yellow mr-2" />
-              <span className="text-white">View Activity</span>
+              <span className="text-white">Activity Feed</span>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
           </div>
@@ -272,6 +263,18 @@ const ProfilePage = () => {
               <div className="flex items-center">
                 <StoreIcon className="h-5 w-5 text-app-yellow mr-2" />
                 <span className="text-white">Seller Dashboard</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </div>
+          </Link>
+        )}
+        
+        {hasRole("streamer") && (
+          <Link to="/streamer/dashboard">
+            <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+              <div className="flex items-center">
+                <Video className="h-5 w-5 text-app-yellow mr-2" />
+                <span className="text-white">Creator Studio</span>
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </div>

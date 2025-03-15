@@ -1,84 +1,33 @@
-
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
-import { AuthProvider } from '@/context/AuthContext';
-import { CartProvider } from '@/context/CartContext';
-import Layout from '@/components/Layout';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import ProfilePage from '@/pages/ProfilePage';
-import ShopPage from '@/pages/ShopPage';
-import ProductDetailPage from '@/pages/ProductDetailPage';
-import LivePage from '@/pages/LivePage';
-import WatchPage from '@/pages/WatchPage';
-import CheckoutPage from '@/pages/CheckoutPage';
-import CategoryPage from '@/pages/CategoryPage';
-import SearchPage from '@/pages/SearchPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import AdminPage from '@/pages/AdminPage';
-import AdminDashboardPage from "./pages/AdminDashboardPage";
-import ExplorePage from '@/pages/ExplorePage';
-import VideosPage from '@/pages/VideosPage';
-import WalletPage from '@/pages/WalletPage';
-
-const queryClient = new QueryClient();
-
-const AppContent = () => {
-  const [loading, setLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
-
-  useEffect(() => {
-    // Just check if auth is loaded
-    if (user !== undefined) {
-      setLoading(false);
-    }
-  }, [user, isAuthenticated]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <Layout>
-      <Routes>
-        {/* Redirect from index to videos page */}
-        <Route path="/" element={<Navigate to="/videos" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/wallet" element={<WalletPage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/live" element={<LivePage />} />
-        <Route path="/videos" element={<VideosPage />} />
-        <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/watch/:videoId" element={<WatchPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/category/:categoryName" element={<CategoryPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/admin" element={<AdminDashboardPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Layout>
-  );
-};
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import HomePage from './pages/HomePage';
+import VideosPage from './pages/VideosPage';
+import ProfilePage from './pages/ProfilePage';
+import WalletPage from './pages/WalletPage';
+import SettingsPage from './pages/SettingsPage';
+import { AuthProvider } from './context/AuthContext';
+import VideoPlayerPage from './pages/VideoPlayerPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <CartProvider>
-          <Router>
-            <AppContent />
-          </Router>
-          <Toaster richColors closeButton />
-        </CartProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+    <div className="App flex flex-col min-h-screen bg-app-black text-white">
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/videos" element={<VideosPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/video/:videoId" element={<VideoPlayerPage />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </div>
   );
 }
 
