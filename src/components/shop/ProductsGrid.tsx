@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/services/shop.service';
-import { Heart } from 'lucide-react';
+import { Heart, TrendingUp } from 'lucide-react';
 
 export interface ProductsGridProps {
   products: Product[];
@@ -41,6 +41,24 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
                   <span className="text-gray-400">No image</span>
                 </div>
               )}
+              
+              {/* Display high suction badge */}
+              {product.suction_score && product.suction_score > 8 && (
+                <div className="absolute top-2 left-2">
+                  <Badge variant="outline" className="bg-blue-600 text-white border-0 flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-1" /> Hot
+                  </Badge>
+                </div>
+              )}
+              
+              {/* Display discount badge */}
+              {product.original_price && (
+                <div className="absolute top-2 right-2">
+                  <Badge className="bg-red-600 text-white">
+                    {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
+                  </Badge>
+                </div>
+              )}
             </div>
             
             <CardContent className="pt-4 pb-2">
@@ -54,9 +72,16 @@ const ProductsGrid: React.FC<ProductsGridProps> = ({
             
             <CardFooter className="pt-0 pb-4">
               <div className="flex items-center justify-between w-full">
-                <span className="font-bold text-app-yellow">
-                  ${product.price.toFixed(2)}
-                </span>
+                <div className="flex items-center">
+                  <span className="font-bold text-app-yellow">
+                    ${product.price.toFixed(2)}
+                  </span>
+                  {product.original_price && (
+                    <span className="ml-2 text-xs text-gray-500 line-through">
+                      ${product.original_price.toFixed(2)}
+                    </span>
+                  )}
+                </div>
                 {product.stock_quantity === 0 && (
                   <Badge variant="outline" className="bg-red-100 text-red-600 border-red-200">
                     Out of stock

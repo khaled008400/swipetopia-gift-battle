@@ -22,20 +22,11 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
     const loadProducts = async () => {
       setLoading(true);
       try {
+        // For featured products, use the new getFeaturedProducts method
+        const featured = await ShopService.getFeaturedProducts();
+        
+        // For new arrivals, get all products and sort by created_at date
         const allProducts = await ShopService.getProducts();
-        
-        if (allProducts.length === 0) {
-          console.warn("No products found in the database");
-        }
-        
-        // For featured products, get active products that have been tagged in live streams
-        // or have the highest stock quantity (as a simple heuristic)
-        const featured = allProducts
-          .filter(p => p.status === 'active')
-          .sort((a, b) => (b.stock_quantity || 0) - (a.stock_quantity || 0))
-          .slice(0, 8);
-        
-        // For new arrivals, sort by created_at date
         const newArrivals = [...allProducts]
           .filter(p => p.status === 'active')
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())

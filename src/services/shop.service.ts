@@ -21,6 +21,8 @@ export interface Product {
   inventory?: number;
   image?: string; // Compatibility with existing code
   rating?: number;
+  is_featured?: boolean;
+  suction_score?: number;
 }
 
 export interface AdminProduct {
@@ -32,6 +34,27 @@ export interface AdminProduct {
   stock_quantity: number;
   category: string;
   status: 'active' | 'draft' | 'unavailable';
+}
+
+export interface LiveSeller {
+  id: string;
+  user_id: string;
+  is_live: boolean;
+  title?: string;
+  thumbnail_url?: string;
+  viewers: number;
+  started_at: string;
+  username?: string;
+  avatar_url?: string;
+}
+
+export interface LimitedOffer {
+  id: string;
+  product_id: string;
+  discount_percentage: number;
+  start_date: string;
+  end_date: string;
+  product?: Product;
 }
 
 const ShopService = {
@@ -83,6 +106,7 @@ const ShopService = {
       .from('products')
       .select('*')
       .eq('status', 'active')
+      .eq('is_featured', true)
       .limit(8);
       
     if (error) {
@@ -91,6 +115,70 @@ const ShopService = {
     }
     
     return data || [];
+  },
+
+  getLimitedOffers: async () => {
+    const { data, error } = await supabase
+      .from('limited_offers')
+      .select(`
+        *,
+        product:product_id (*)
+      `)
+      .gte('end_date', new Date().toISOString());
+      
+    if (error) {
+      console.error('Error fetching limited offers:', error);
+      return [];
+    }
+    
+    return data.map(offer => ({
+      ...offer,
+      product: {
+        ...offer.product,
+        original_price: offer.product.price,
+        price: offer.product.price * (1 - offer.discount_percentage / 100)
+      }
+    })) || [];
+  },
+
+  getLiveSellers: async () => {
+    const { data, error } = await supabase
+      .from('live_sellers')
+      .select(`
+        *,
+        profiles:user_id (username, avatar_url)
+      `)
+      .eq('is_live', true)
+      .order('viewers', { ascending: false })
+      .limit(10);
+      
+    if (error) {
+      console.error('Error fetching live sellers:', error);
+      return [];
+    }
+    
+    return data.map(seller => ({
+      ...seller,
+      username: seller.profiles?.username,
+      avatar_url: seller.profiles?.avatar_url
+    })) || [];
+  },
+
+  getCategories: async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('category')
+      .eq('status', 'active')
+      .not('category', 'is', null);
+      
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return ["ALL"];
+    }
+    
+    // Extract unique categories and add ALL at the beginning
+    const categories = ["ALL", ...new Set(data.map(p => p.category.toUpperCase()))];
+    return categories;
   },
 
   searchProducts: async (query: string) => {

@@ -266,6 +266,80 @@ export type Database = {
         }
         Relationships: []
       }
+      limited_offers: {
+        Row: {
+          created_at: string | null
+          discount_percentage: number
+          end_date: string
+          id: string
+          product_id: string
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          discount_percentage: number
+          end_date: string
+          id?: string
+          product_id: string
+          start_date?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          discount_percentage?: number
+          end_date?: string
+          id?: string
+          product_id?: string
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "limited_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_sellers: {
+        Row: {
+          id: string
+          is_live: boolean | null
+          started_at: string | null
+          stream_key: string | null
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+          viewers: number | null
+        }
+        Insert: {
+          id?: string
+          is_live?: boolean | null
+          started_at?: string | null
+          stream_key?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+          viewers?: number | null
+        }
+        Update: {
+          id?: string
+          is_live?: boolean | null
+          started_at?: string | null
+          stream_key?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+          viewers?: number | null
+        }
+        Relationships: []
+      }
       live_stream_products: {
         Row: {
           created_at: string | null
@@ -392,11 +466,13 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_featured: boolean | null
           name: string
           price: number
           seller_id: string | null
           status: string | null
           stock_quantity: number | null
+          suction_score: number | null
           updated_at: string | null
         }
         Insert: {
@@ -405,11 +481,13 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean | null
           name: string
           price: number
           seller_id?: string | null
           status?: string | null
           stock_quantity?: number | null
+          suction_score?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -418,11 +496,13 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean | null
           name?: string
           price?: number
           seller_id?: string | null
           status?: string | null
           stock_quantity?: number | null
+          suction_score?: number | null
           updated_at?: string | null
         }
         Relationships: [
