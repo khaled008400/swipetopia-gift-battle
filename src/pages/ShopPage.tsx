@@ -5,7 +5,6 @@ import ShopHeader from "../components/shop/ShopHeader";
 import ShopSearch from "../components/shop/ShopSearch";
 import LiveSelling from "../components/shop/LiveSelling";
 import ShopShorts from "../components/shop/ShopShorts";
-import LimitedOffers from "../components/shop/LimitedOffers";
 import ShopCategories from "../components/shop/ShopCategories";
 import ProductsTabs from "../components/shop/ProductsTabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -97,7 +96,6 @@ const ShopPage = () => {
       )}
       
       <LiveSelling />
-      <LimitedOffers />
       <ShopShorts />
       <ShopCategories activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
       <ProductsTabs 
