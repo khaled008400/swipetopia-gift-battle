@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThumbsUp, MessageSquare, Share2, Bookmark, Flag, ArrowLeft } from 'lucide-react';
 import VideoPlayer from '@/components/VideoPlayer';
 import VideoComments from '@/components/video/VideoComments';
-import VideoInfo from '@/components/video/VideoInfo';
 
 const WatchPage: React.FC = () => {
   const { videoId } = useParams<{ videoId: string }>();

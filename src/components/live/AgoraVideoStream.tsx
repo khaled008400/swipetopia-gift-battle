@@ -16,7 +16,10 @@ const AgoraVideoStream: React.FC<AgoraVideoStreamProps> = ({
   role = 'audience'
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
-  const { client, localTracks, remoteUsers, join, leave } = useAgoraClient();
+  const { client, localTracks, remoteUsers, join, leave } = useAgoraClient({
+    channelName: channelName || `stream-${streamId}`,
+    role
+  });
 
   // Use the streamId as channel name if not provided
   const channel = channelName || `stream-${streamId}`;
@@ -29,11 +32,9 @@ const AgoraVideoStream: React.FC<AgoraVideoStreamProps> = ({
     }
     
     // Join the channel when component mounts
-    // Check actual implementation of join to ensure correct arguments
     join(channel);
     
     // Leave the channel when component unmounts
-    // Check leave doesn't need any arguments
     return () => {
       leave();
     };

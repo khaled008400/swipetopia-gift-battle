@@ -870,7 +870,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_streaming_config: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          agora_app_id: string
+          agora_app_certificate: string
+          agora_enabled: boolean
+          max_stream_duration: number
+          streamer_cooldown: number
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      log_admin_action: {
+        Args: {
+          p_action_type: string
+          p_target_id: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
+      update_streaming_config: {
+        Args: {
+          p_app_id: string
+          p_app_certificate: string
+          p_enabled: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -14,11 +14,12 @@ export interface AgoraToken {
 }
 
 interface UseAgoraClientProps {
-  channelName: string;
+  channelName?: string;
   role?: 'host' | 'audience';
 }
 
-export function useAgoraClient({ channelName, role = 'audience' }: UseAgoraClientProps) {
+export function useAgoraClient(props: UseAgoraClientProps = {}) {
+  const { channelName = '', role = 'audience' } = props;
   const [localTracks, setLocalTracks] = useState<{
     videoTrack: ICameraVideoTrack | null;
     audioTrack: IMicrophoneAudioTrack | null;
@@ -36,13 +37,13 @@ export function useAgoraClient({ channelName, role = 'audience' }: UseAgoraClien
   );
   
   // Function to fetch token from Supabase Edge function
-  const fetchToken = async () => {
+  const fetchToken = async (channel: string) => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
       const { data, error } = await supabase.functions.invoke('generate-agora-token', {
         body: { 
-          channelName, 
+          channelName: channel, 
           role: role === 'host' ? 'publisher' : 'subscriber' 
         }
       });
@@ -57,7 +58,7 @@ export function useAgoraClient({ channelName, role = 'audience' }: UseAgoraClien
   };
 
   // Function to join a channel
-  const join = async () => {
+  const join = async (channel: string) => {
     if (joined) return;
     
     setLoading(true);
@@ -65,14 +66,14 @@ export function useAgoraClient({ channelName, role = 'audience' }: UseAgoraClien
     
     try {
       // Fetch token
-      const tokenData = await fetchToken();
+      const tokenData = await fetchToken(channel);
       const { token, uid, appId } = tokenData;
       
       // Set client role
       await client.current.setClientRole(role === 'host' ? 'host' : 'audience');
       
       // Join the channel
-      await client.current.join(appId, channelName, token, uid);
+      await client.current.join(appId, channel, token, uid);
       
       // If host, create and publish local tracks
       if (role === 'host') {
