@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Gift, Heart, Send } from "lucide-react";
 import { useViewerPresence } from "@/hooks/useViewerPresence";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ const LiveChat = ({ streamerId }: LiveChatProps) => {
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { viewers, viewerCount } = useViewerPresence(streamerId);
+  const { toast } = useToast();
 
   // Automatically scroll to bottom when new messages arrive
   useEffect(() => {
@@ -36,15 +38,53 @@ const LiveChat = ({ streamerId }: LiveChatProps) => {
   }, [messages]);
 
   useEffect(() => {
+    // First set up realtime subscription to chat_messages table
+    const chatMessagesChannel = supabase
+      .channel('public:chat_messages')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'chat_messages'
+        }, 
+        async (payload) => {
+          console.log('New chat message:', payload);
+          
+          // Get the user profile info for the message
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', payload.new.sender_id)
+            .single();
+            
+          const newChatMessage: Message = {
+            id: payload.new.id,
+            userId: payload.new.sender_id,
+            username: profileData?.username || 'Anonymous',
+            avatar: profileData?.avatar_url,
+            text: payload.new.message,
+            type: 'text',
+            timestamp: payload.new.created_at
+          };
+          
+          setMessages((prev) => [...prev, newChatMessage]);
+        }
+      )
+      .subscribe((status) => {
+        console.log('Chat messages subscription status:', status);
+        setIsConnected(status === 'SUBSCRIBED');
+      });
+
+    // Then set up the presence channel for join/leave events
     const chatChannel = supabase.channel(`chat:${streamerId}`);
 
-    // Listen for chat messages
+    // Listen for chat messages from the presence channel (gifts, likes, etc.)
     chatChannel
       .on('broadcast', { event: 'chat-message' }, (payload) => {
         setMessages((prev) => [...prev, payload.payload as Message]);
       })
       .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
+        console.log('Presence channel status:', status);
         
         // Add a system message when connected
         if (status === 'SUBSCRIBED') {
@@ -65,6 +105,7 @@ const LiveChat = ({ streamerId }: LiveChatProps) => {
 
     // Clean up
     return () => {
+      supabase.removeChannel(chatMessagesChannel);
       supabase.removeChannel(chatChannel);
     };
   }, [streamerId]);
@@ -102,26 +143,28 @@ const LiveChat = ({ streamerId }: LiveChatProps) => {
         .eq('id', user.id)
         .single();
 
-      const message: Message = {
-        id: crypto.randomUUID(),
-        userId: user.id,
-        username: profileData?.username || 'Anonymous',
-        avatar: profileData?.avatar_url,
-        text: newMessage,
-        type: 'text',
-        timestamp: new Date().toISOString()
-      };
+      // Insert message into the chat_messages table
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          sender_id: user.id,
+          stream_id: streamerId,
+          message: newMessage
+        });
 
-      // Broadcast the message to all clients
-      await supabase.channel(`chat:${streamerId}`).send({
-        type: 'broadcast',
-        event: 'chat-message',
-        payload: message
-      });
+      if (error) {
+        throw error;
+      }
 
+      // Clear input field after successful send
       setNewMessage('');
     } catch (error) {
       console.error("Error sending message:", error);
+      toast({
+        title: "Error sending message",
+        description: "Your message could not be sent. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
