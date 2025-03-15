@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,6 +6,7 @@ import { CartProvider } from "@/context/CartContext";
 import Layout from "@/components/Layout";
 import BottomNavigation from "@/components/BottomNavigation";
 import "./App.css";
+import StreamerBroadcastPage from "./pages/StreamerBroadcastPage";
 
 // Lazy-loaded page components
 const HomePage = lazy(() => import("@/pages/HomePage"));
@@ -61,6 +61,7 @@ function App() {
               </Route>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/live/new" element={<StreamerBroadcastPage />} />
             </Routes>
           </Suspense>
           <BottomNavigation />

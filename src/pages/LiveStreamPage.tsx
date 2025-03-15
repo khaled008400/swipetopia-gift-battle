@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GiftService } from '@/services/streaming';
+import AgoraVideoStream from "@/components/live/AgoraVideoStream";
 
 type BattleMode = 'normal' | '1v1' | '2v2';
 
@@ -195,7 +196,11 @@ const LiveStreamPage = () => {
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {battleMode === 'normal' ? (
-        <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
+        selectedStreamerId ? (
+          <AgoraVideoStream channelName={selectedStreamerId} isHost={false} />
+        ) : (
+          <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
+        )
       ) : (
         <LiveBattleFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} mode={battleMode} />
       )}
@@ -366,7 +371,7 @@ const LiveStreamPage = () => {
         />
       )}
 
-      {filteredVideos.length === 0 && (
+      {filteredVideos.length === 0 && !selectedStreamerId && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <h2 className="text-white text-xl font-bold mb-2">No Live Streams</h2>
           <p className="text-gray-400 text-center px-8">
