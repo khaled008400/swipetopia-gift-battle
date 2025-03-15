@@ -54,13 +54,13 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         interests: data.interests || undefined,
         shop_name: data.shop_name || undefined,
         stream_key: data.stream_key || undefined,
-        payment_methods: [], // Default empty array for payment methods
-        notification_preferences: {
+        payment_methods: data.payment_methods || [], 
+        notification_preferences: data.notification_preferences || {
           battles: true,
           orders: true,
           messages: true,
           followers: true
-        } // Default notification preferences
+        }
       };
     }
     return null;

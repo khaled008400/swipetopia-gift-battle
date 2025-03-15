@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { UserRole } from "@/types/auth.types";
-import { Crown, ShoppingBag, Video } from "lucide-react";
+import { Crown, ShoppingBag, User, Video } from "lucide-react";
 
 interface RolesDisplayProps {
   roles: UserRole[];
@@ -28,14 +28,20 @@ const RolesDisplay = ({ roles }: RolesDisplayProps) => {
             <Video className="w-3 h-3 mr-1" /> Streamer
           </Badge>
         );
+      case "user":
+        return (
+          <Badge key={role} variant="secondary" className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">
+            <User className="w-3 h-3 mr-1" /> User
+          </Badge>
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="flex justify-center gap-2 mt-2">
-      {roles.map(role => getRoleBadge(role))}
+    <div className="flex flex-wrap justify-center gap-2 mt-2">
+      {roles.map(role => getRoleBadge(role)).filter(Boolean)}
     </div>
   );
 };
