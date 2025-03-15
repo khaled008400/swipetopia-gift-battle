@@ -1,6 +1,7 @@
+
 import { UserProfile, UserRole } from '@/types/auth.types';
 import { Video } from '@/types/video.types';
-import { Product, AdminProduct } from '@/types/product.types';
+import { Product } from '@/types/product.types';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ifeuccpukdosoxtufxzi.supabase.co';
@@ -201,8 +202,12 @@ export interface VirtualGift {
   soundUrl?: string;
 }
 
+// Define AdminProduct type
+export interface AdminProduct extends Product {
+  // Any additional properties for admin view
+}
+
 class AdminService {
-  // For AdminReports.tsx
   async getUserGrowthData(period: string = 'month') {
     return {
       userGrowth: [],
@@ -262,7 +267,28 @@ class AdminService {
   }
 
   // For AdminCoupons.tsx
-  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'created_at' | 'updated_at' | 'usage_count'>) {
+  async getCouponAnalytics() {
+    try {
+      return {
+        usage_over_time: [
+          { date: '2023-01', count: 45 },
+          { date: '2023-02', count: 67 },
+          { date: '2023-03', count: 89 }
+        ],
+        most_used_coupons: [
+          { code: 'SUMMER25', usage_count: 156 },
+          { code: 'WELCOME10', usage_count: 124 },
+          { code: 'FLASH50', usage_count: 98 }
+        ]
+      };
+    } catch (error) {
+      console.error('Error fetching coupon analytics:', error);
+      throw error;
+    }
+  }
+
+  // For AdminCoupons.tsx
+  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>) {
     try {
       // Convert between type and discount_type if needed
       const completeData = {
@@ -276,6 +302,28 @@ class AdminService {
       return { success: true, id: 'new-coupon-id' };
     } catch (error) {
       console.error('Error creating coupon:', error);
+      throw error;
+    }
+  }
+
+  // For AdminCoupons.tsx
+  async updateCoupon(id: string, data: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>>) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating coupon:', error);
+      throw error;
+    }
+  }
+
+  // For AdminCoupons.tsx
+  async deleteCoupon(id: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
       throw error;
     }
   }
@@ -304,6 +352,32 @@ class AdminService {
   }
 
   // For AdminOffers
+  async getOfferAnalytics() {
+    try {
+      return {
+        usage_over_time: [
+          { date: '2023-01', count: 45 },
+          { date: '2023-02', count: 67 },
+          { date: '2023-03', count: 89 }
+        ],
+        most_used_offers: [
+          { name: 'Summer Sale', usage_count: 156 },
+          { name: 'Black Friday', usage_count: 124 },
+          { name: 'Holiday Special', usage_count: 98 }
+        ],
+        revenue_impact: [
+          { name: 'Summer Sale', revenue: 12500 },
+          { name: 'Black Friday', revenue: 22400 },
+          { name: 'Holiday Special', revenue: 15600 }
+        ]
+      };
+    } catch (error) {
+      console.error('Error fetching offer analytics:', error);
+      throw error;
+    }
+  }
+
+  // For AdminOffers
   async createOffer(offerData: Partial<AdminOffer>) {
     try {
       // Add missing required properties
@@ -324,12 +398,23 @@ class AdminService {
   }
 
   // For AdminOffers
-  async updateOffer(id: string, data: Partial<AdminOffer>) {
+  async updateOffer(id: string, data: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>) {
     try {
       // Mock implementation
       return { success: true };
     } catch (error) {
       console.error('Error updating offer:', error);
+      throw error;
+    }
+  }
+
+  // For AdminOffers
+  async deleteOffer(id: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting offer:', error);
       throw error;
     }
   }
@@ -356,11 +441,44 @@ class AdminService {
     }
   }
 
+  // For AdminShipping
+  async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id' | 'created_at' | 'updated_at'>) {
+    try {
+      // Mock implementation
+      return { success: true, id: 'new-shipping-method-id' };
+    } catch (error) {
+      console.error('Error creating shipping method:', error);
+      throw error;
+    }
+  }
+
+  // For AdminShipping
+  async updateShippingMethod(id: string, data: Partial<Omit<AdminShippingMethod, 'id' | 'created_at' | 'updated_at'>>) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating shipping method:', error);
+      throw error;
+    }
+  }
+
+  // For AdminShipping
+  async deleteShippingMethod(id: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting shipping method:', error);
+      throw error;
+    }
+  }
+
   // For AdminOrders
   async getOrders(page: number = 1, perPage: number = 10, status = '', search = '') {
     try {
-      // Mock implementation returning array directly
-      return [
+      // Mock implementation returning structured array with pagination data
+      const orders = [
         {
           id: '1',
           user_id: 'user-1',
@@ -374,8 +492,28 @@ class AdminService {
           products: []
         }
       ];
+
+      return {
+        data: orders,
+        pagination: {
+          total: 100,
+          last_page: 10,
+          current_page: page
+        }
+      };
     } catch (error) {
       console.error('Error fetching orders:', error);
+      throw error;
+    }
+  }
+
+  // For AdminOrders
+  async updateOrderStatus(orderId: string, status: 'pending' | 'completed' | 'cancelled') {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating order status:', error);
       throw error;
     }
   }
@@ -383,28 +521,30 @@ class AdminService {
   // For AdminVirtualGifts
   async getVirtualGifts() {
     try {
-      // Mock implementation returning array directly
-      return [
-        {
-          id: '1',
-          name: 'Diamond',
-          description: 'A shiny diamond gift',
-          price: 100,
-          image_url: '/images/diamond.svg',
-          image_type: 'svg' as const,
-          has_sound: false,
-          category: 'premium',
-          available: true,
-          value: 100,
-          color: '#3498db',
-          icon: '💎',
-          created_at: new Date().toISOString(),
-          // Compatibility properties
-          imageUrl: '/images/diamond.svg',
-          imageType: 'svg' as const,
-          hasSound: false
-        }
-      ];
+      // Mock implementation returning structured array
+      return {
+        data: [
+          {
+            id: '1',
+            name: 'Diamond',
+            description: 'A shiny diamond gift',
+            price: 100,
+            image_url: '/images/diamond.svg',
+            image_type: 'svg' as const,
+            has_sound: false,
+            category: 'premium',
+            available: true,
+            value: 100,
+            color: '#3498db',
+            icon: '💎',
+            created_at: new Date().toISOString(),
+            // Compatibility properties
+            imageUrl: '/images/diamond.svg',
+            imageType: 'svg' as const,
+            hasSound: false
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error fetching virtual gifts:', error);
       throw error;
@@ -440,13 +580,126 @@ class AdminService {
   }
 
   // For AdminVirtualGifts
+  async updateVirtualGift(id: string, data: Partial<Omit<VirtualGift, 'id' | 'created_at'>>) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating virtual gift:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVirtualGifts
+  async deleteVirtualGift(id: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting virtual gift:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVirtualGifts
+  async toggleGiftAvailability(id: string, available: boolean) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error toggling gift availability:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVirtualGifts
   async getGiftUsageStats() {
     return {
       topGifts: [],
       giftsByDay: [],
       totalRevenue: 1200,
-      totalGifts: 150
+      totalGifts: 150,
+      totalSent: 450,
+      mostPopular: { name: 'Diamond', count: 125 },
+      topStreamers: [
+        { username: 'streamer1', giftsReceived: 78 },
+        { username: 'streamer2', giftsReceived: 56 }
+      ]
     };
+  }
+
+  // For AdminVideos
+  async getVideosList(page: number = 1, filter: string = '', status: string = '') {
+    try {
+      // Mock implementation returning structured array with pagination
+      const videos = [
+        {
+          id: '1',
+          title: 'Sample Video',
+          description: 'This is a sample video',
+          video_url: '/videos/sample.mp4',
+          thumbnail_url: '/thumbnails/sample.jpg',
+          status: 'active' as const,
+          user_id: 'user-1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          likes_count: 10,
+          comments_count: 5,
+          shares_count: 3,
+          view_count: 100,
+          user: {
+            username: 'user1',
+            avatar_url: '/avatars/user1.jpg',
+            id: 'user-1'
+          }
+        }
+      ];
+
+      return {
+        data: videos,
+        pagination: {
+          total: 100,
+          last_page: 10,
+          current_page: page
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching videos list:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVideos
+  async updateVideoStatus(videoId: string, status: 'active' | 'flagged' | 'removed') {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating video status:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVideos
+  async sendUserWarning(userId: string, message: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending user warning:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVideos
+  async restrictUser(userId: string, reason: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error restricting user:', error);
+      throw error;
+    }
   }
 
   // For AdminVideos
@@ -460,7 +713,57 @@ class AdminService {
     }
   }
 
-  // For AdminVideos
+  // For AdminUsers
+  async getUsersList(page = 1, perPage = 10, role = '', search = '') {
+    try {
+      // Mock implementation returning structured array with pagination
+      const users = [
+        {
+          id: '1',
+          username: 'user1',
+          email: 'user1@example.com',
+          status: 'active' as const,
+          role: 'user',
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+          total_videos: 0,
+          total_followers: 0,
+          verified: false,
+          avatar_url: '/avatars/default.png',
+          roles: ['user'] as UserRole[],
+          // For compatibility
+          createdAt: new Date().toISOString(),
+          videosCount: 0,
+          ordersCount: 0
+        }
+      ];
+
+      return {
+        data: users,
+        pagination: {
+          total: 100,
+          last_page: 10,
+          current_page: page
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching users list:', error);
+      throw error;
+    }
+  }
+
+  // For AdminUser
+  async updateUserStatus(userId: string, status: 'active' | 'suspended' | 'banned') {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      throw error;
+    }
+  }
+
+  // For AdminUser
   async getUser(userId: string) {
     try {
       // Mock implementation
@@ -471,7 +774,7 @@ class AdminService {
         avatar_url: '/avatars/default.png',
         roles: ['user'] as UserRole[],
         role: 'user',
-        status: 'active',
+        status: 'active' as const,
         created_at: new Date().toISOString(),
         last_login: new Date().toISOString(),
         total_videos: 0,
@@ -484,6 +787,163 @@ class AdminService {
       };
     } catch (error) {
       console.error('Error fetching user:', error);
+      throw error;
+    }
+  }
+
+  // For ProductAttributes
+  async getProductAttributes(page = '1') {
+    try {
+      // Mock implementation returning structured array with pagination
+      const attributes = [
+        {
+          id: '1',
+          name: 'Color',
+          value_options: ['Red', 'Blue', 'Green'],
+          values: ['Red', 'Blue', 'Green'],
+          color: '#ff0000',
+          status: 'active' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      ];
+
+      return {
+        data: attributes,
+        pagination: {
+          total: 100,
+          last_page: 10,
+          current_page: parseInt(page)
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching product attributes:', error);
+      throw error;
+    }
+  }
+
+  async createProductAttribute(attributeData: Partial<ProductAttribute>) {
+    try {
+      // Add missing required properties
+      const completeData = {
+        name: attributeData.name || '',
+        value_options: attributeData.values || [],
+        values: attributeData.values || [],
+        color: attributeData.color || '#000000',
+        status: attributeData.status || 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Mock implementation
+      return { success: true, id: 'new-attribute-id' };
+    } catch (error) {
+      console.error('Error creating product attribute:', error);
+      throw error;
+    }
+  }
+
+  // For ProductAttributes
+  async updateProductAttribute(id: string, data: Partial<Omit<ProductAttribute, 'id'>>) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating product attribute:', error);
+      throw error;
+    }
+  }
+
+  // For ProductAttributes
+  async deleteProductAttribute(id: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting product attribute:', error);
+      throw error;
+    }
+  }
+
+  // For AdminProductAnalytics
+  async getProductSalesData(period: string = 'month', category: string = '') {
+    return {
+      salesByCategory: [],
+      topProducts: [],
+      salesTrend: [],
+      salesData: [],
+      conversionData: [],
+      revenueData: [],
+      channelData: [],
+      customerData: []
+    };
+  }
+
+  // For AdminLiveStreams
+  async getLiveStreams(status: string = 'current', search: string = '') {
+    try {
+      // Mock implementation returning structured array with stats
+      const streams = [
+        {
+          id: '1',
+          user_id: 'user-1',
+          title: 'Live Stream',
+          description: 'Live stream description',
+          status: 'active' as const,
+          start_time: new Date().toISOString(),
+          viewer_count: 100,
+          max_viewers: 150,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          channel_name: 'channel-1',
+          stream_key: 'stream-key-1',
+          durationMinutes: 30,
+          currentViewers: 80,
+          giftsReceived: 25,
+          topGiftName: 'Diamond',
+          revenue: 250.50,
+          peakViewers: 120,
+          endedAt: new Date().toISOString(),
+          user: {
+            username: 'user1',
+            avatar_url: '/avatars/user1.jpg',
+            id: 'user-1'
+          }
+        }
+      ];
+
+      return {
+        data: streams,
+        stats: {
+          activeCount: 10,
+          totalViewers: 850,
+          totalGiftRevenue: 1250.75
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching live streams:', error);
+      throw error;
+    }
+  }
+
+  // For AdminLiveStreams
+  async shutdownStream(streamId: string, reason: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error shutting down stream:', error);
+      throw error;
+    }
+  }
+
+  // For AdminLiveStreams
+  async sendStreamMessage(streamId: string, message: string) {
+    try {
+      // Mock implementation
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending stream message:', error);
       throw error;
     }
   }
@@ -504,90 +964,6 @@ class AdminService {
       revenueTotal: 12485.50,
       revenueToday: 457.25
     };
-  }
-
-  // For ProductAttributes
-  async getProductAttributes(page = '1') {
-    try {
-      // Mock implementation returning array directly
-      return [
-        {
-          id: '1',
-          name: 'Color',
-          value_options: ['Red', 'Blue', 'Green'],
-          values: ['Red', 'Blue', 'Green'],
-          color: '#ff0000',
-          status: 'active' as const,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching product attributes:', error);
-      throw error;
-    }
-  }
-
-  async createProductAttribute(attributeData: Partial<ProductAttribute>) {
-    try {
-      // Add missing required properties
-      const completeData = {
-        ...attributeData,
-        value_options: attributeData.values || [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      // Mock implementation
-      return { success: true, id: 'new-attribute-id' };
-    } catch (error) {
-      console.error('Error creating product attribute:', error);
-      throw error;
-    }
-  }
-
-  // For AdminProductAnalytics
-  async getProductSalesData(period: string = 'month', category: string = '') {
-    return {
-      salesByCategory: [],
-      topProducts: [],
-      salesTrend: [],
-      salesData: [],
-      conversionData: [],
-      revenueData: [],
-      channelData: [],
-      customerData: []
-    };
-  }
-
-  // For AdminUser
-  async getUsersList(page = 1, perPage = 10, role = '', search = '') {
-    try {
-      // Mock implementation returning array directly
-      return [
-        {
-          id: '1',
-          username: 'user1',
-          email: 'user1@example.com',
-          status: 'active',
-          role: 'user',
-          createdAt: new Date().toISOString(),
-          videosCount: 0,
-          ordersCount: 0,
-          // Full AdminUser properties
-          avatar_url: '/avatars/default.png',
-          roles: ['user'] as UserRole[],
-          created_at: new Date().toISOString(),
-          last_login: new Date().toISOString(),
-          total_videos: 0,
-          total_followers: 0,
-          verified: false
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching users list:', error);
-      throw error;
-    }
   }
 }
 
