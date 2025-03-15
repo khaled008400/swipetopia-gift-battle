@@ -41,7 +41,7 @@ export interface AuthContextType {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<Session | null | undefined>;
   signup: (email: string, username: string, password: string, roles?: UserRole[]) => Promise<void>;
   logout: () => Promise<void>;
   isAdmin: () => boolean;
