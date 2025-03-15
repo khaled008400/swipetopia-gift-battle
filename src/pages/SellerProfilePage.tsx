@@ -19,6 +19,7 @@ import { format } from "date-fns";
 interface ExtendedProduct extends Product {
   isLive?: boolean;
   rating?: number;
+  status?: "active" | "draft" | "unavailable";
 }
 
 const SellerProfilePage = () => {
@@ -70,7 +71,8 @@ const SellerProfilePage = () => {
           const extendedProducts: ExtendedProduct[] = productsData.map(p => ({
             ...p,
             rating: 4.5,
-            isLive: Math.random() > 0.7
+            isLive: Math.random() > 0.7,
+            status: (p.status as "active" | "draft" | "unavailable") || "active"
           }));
           setProducts(extendedProducts);
         }

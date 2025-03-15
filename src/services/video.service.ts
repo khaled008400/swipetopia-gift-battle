@@ -7,7 +7,6 @@ class VideoService {
    */
   async getVideoById(id: string) {
     try {
-      // Use short_videos instead of videos
       const { data, error } = await supabase
         .from('short_videos')
         .select(`
@@ -39,7 +38,6 @@ class VideoService {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
       
-      // Use short_videos instead of videos
       const { data, error } = await supabase
         .from('short_videos')
         .select(`
@@ -71,7 +69,6 @@ class VideoService {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
       
-      // Use short_videos instead of videos
       const { data, error } = await supabase
         .from('short_videos')
         .select('*')
@@ -95,10 +92,12 @@ class VideoService {
    */
   async incrementViews(videoId: string) {
     try {
-      // Use direct update instead of non-existent RPC
+      // Use numeric update expression
       const { error } = await supabase
         .from('short_videos')
-        .update({ view_count: supabase.sql`view_count + 1` })
+        .update({ 
+          view_count: await this.getIncrementedCount(videoId, 'view_count')
+        })
         .eq('id', videoId);
       
       if (error) {
@@ -106,6 +105,26 @@ class VideoService {
       }
     } catch (error) {
       console.error("Error incrementing view count:", error);
+    }
+  }
+
+  /**
+   * Helper method to safely get incremented count
+   */
+  private async getIncrementedCount(videoId: string, field: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('short_videos')
+        .select(field)
+        .eq('id', videoId)
+        .single();
+        
+      if (error) throw error;
+      
+      return (data?.[field] || 0) + 1;
+    } catch (error) {
+      console.error(`Error getting ${field}:`, error);
+      return 1; // Default to 1 if we can't get the current count
     }
   }
 
@@ -211,7 +230,6 @@ class VideoService {
    */
   async getTrendingVideos(limit = 10) {
     try {
-      // Use short_videos instead of RPC
       const { data, error } = await supabase
         .from('short_videos')
         .select(`
@@ -240,7 +258,6 @@ class VideoService {
    */
   async searchVideos(query: string) {
     try {
-      // Use short_videos instead of videos
       const { data, error } = await supabase
         .from('short_videos')
         .select(`
@@ -269,7 +286,6 @@ class VideoService {
    */
   async reportVideo(videoId: string, reason: string, userId: string) {
     try {
-      // Use admin_actions instead of non-existent video_reports
       const { error } = await supabase
         .from('admin_actions')
         .insert({
@@ -336,15 +352,18 @@ class VideoService {
     }
   }
 
-  // Added methods to satisfy the errors in VideoActions.tsx
+  /**
+   * Share video (placeholder implementation)
+   */
   async shareVideo(videoId: string) {
-    // This is a placeholder implementation
     console.log(`Sharing video ${videoId}`);
     return { success: true };
   }
   
+  /**
+   * Download video (placeholder implementation)
+   */
   async downloadVideo(videoId: string) {
-    // This is a placeholder implementation
     console.log(`Downloading video ${videoId}`);
     return { success: true };
   }

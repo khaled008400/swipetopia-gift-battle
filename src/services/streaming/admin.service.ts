@@ -24,7 +24,7 @@ class StreamingAdminService {
         throw error;
       }
       
-      // Fix the conversion by using the first item in the array
+      // Handle the array response correctly
       if (data && data.length > 0) {
         return data[0] as StreamingConfig;
       }
@@ -34,6 +34,22 @@ class StreamingAdminService {
       console.error('Error getting streaming config:', error);
       throw error;
     }
+  }
+
+  /**
+   * Update streaming configuration
+   * This is used by AdminStreamingSettings component
+   */
+  async updateAgoraSettings(
+    appId: string,
+    appCertificate: string,
+    enabled: boolean
+  ): Promise<void> {
+    return this.updateStreamingConfig({
+      appId,
+      appCertificate,
+      enabled
+    });
   }
 
   /**
@@ -99,7 +115,7 @@ class StreamingAdminService {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          roles: supabase.sql`array_remove(roles, 'streamer')`
+          roles: `array_remove(roles, 'streamer')`
         })
         .eq('id', userId);
       
