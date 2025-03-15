@@ -13,6 +13,7 @@ import Layout from './components/Layout';
 import { CartProvider } from './context/CartContext';
 import ShopPage from './pages/ShopPage';
 import ExplorePage from './pages/ExplorePage';
+import SignupPage from './pages/SignupPage';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/signup" element={<SignupPage />} />
               <Route path="/" element={<Layout><HomePage /></Layout>} />
               <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
               <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />

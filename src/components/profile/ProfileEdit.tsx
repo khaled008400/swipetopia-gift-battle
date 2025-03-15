@@ -32,7 +32,7 @@ interface ProfileEditProps {
 
 const ProfileEdit = ({ onComplete }: ProfileEditProps) => {
   const { user: authUser, hasRole } = useAuth();
-  const { profile, updateProfile } = useUserProfile(authUser?.session?.user || null);
+  const { profile, updateProfile } = useUserProfile(authUser || null);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
