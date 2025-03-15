@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -92,7 +91,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         if (progress >= 100) {
           clearInterval(interval);
           
-          // The function is now async, so we can use await here
           const processUpload = async () => {
             const finalVideoFile = videoFile || (recordedVideoUrl ? await fetch(recordedVideoUrl).then(r => r.blob()).then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) : null);
                 
@@ -100,7 +98,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
               throw new Error("No video file available");
             }
             
-            // Fix the uploadVideo call by adding a metadata object as the second parameter
             const response = await VideoService.uploadVideo(finalVideoFile, {
               title,
               description,
