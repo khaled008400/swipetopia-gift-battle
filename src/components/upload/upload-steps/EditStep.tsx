@@ -30,6 +30,7 @@ const EditStep = ({
   description,
   setDescription,
   hashtags,
+  setHashtags,
   setPrivacy,
   privacy,
   allowDownloads,
