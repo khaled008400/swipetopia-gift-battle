@@ -3,7 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import VideoPage from './pages/VideoPage';
+import HomePage from './pages/HomePage';
 import VideosPage from './pages/VideosPage';
 import ProfilePage from './pages/ProfilePage';
 import WalletPage from './pages/WalletPage';
@@ -24,7 +24,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/" element={<Layout><VideoPage /></Layout>} />
+              <Route path="/" element={<Layout><HomePage /></Layout>} />
               <Route path="/videos" element={<Layout><VideosPage /></Layout>} />
               <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
               <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
