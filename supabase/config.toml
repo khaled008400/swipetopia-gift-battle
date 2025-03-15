@@ -49,6 +49,3 @@ path = "supabase/functions/hooks"
 
 [functions.serve_flowtron]
 enabled = true
-
-[realtime]
-enabled = true
