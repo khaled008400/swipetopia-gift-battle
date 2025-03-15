@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { X, Send, Heart } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Comment {
   id: string;
@@ -121,36 +122,38 @@ const VideoComments = ({ isOpen, onClose, videoId }: VideoCommentsProps) => {
           </div>
         </SheetHeader>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black to-[#1a1a1a] h-[calc(80vh-150px)]">
-          {comments.map((comment) => (
-            <div key={comment.id} className="flex space-x-3 animate-in fade-in slide-in-from-bottom-5 duration-300">
-              <img 
-                src={comment.avatar} 
-                alt={comment.username} 
-                className="w-10 h-10 rounded-full border border-white/20"
-              />
-              <div className="flex-1">
-                <div className="bg-black/40 backdrop-blur-sm p-3 rounded-lg border border-white/10">
-                  <div className="flex justify-between items-start">
-                    <p className="font-semibold text-sm text-white">@{comment.username}</p>
-                    <span className="text-xs text-gray-400">{comment.timestamp}</span>
+        <ScrollArea className="flex-1 h-[calc(80vh-150px)]">
+          <div className="p-4 space-y-4 bg-gradient-to-b from-black to-[#1a1a1a]">
+            {comments.map((comment) => (
+              <div key={comment.id} className="flex space-x-3 animate-in fade-in slide-in-from-bottom-5 duration-300">
+                <img 
+                  src={comment.avatar} 
+                  alt={comment.username} 
+                  className="w-10 h-10 rounded-full border border-white/20"
+                />
+                <div className="flex-1">
+                  <div className="bg-black/40 backdrop-blur-sm p-3 rounded-lg border border-white/10">
+                    <div className="flex justify-between items-start">
+                      <p className="font-semibold text-sm text-white">@{comment.username}</p>
+                      <span className="text-xs text-gray-400">{comment.timestamp}</span>
+                    </div>
+                    <p className="mt-1 text-sm text-white">{comment.text}</p>
                   </div>
-                  <p className="mt-1 text-sm text-white">{comment.text}</p>
-                </div>
-                <div className="mt-2 flex items-center space-x-4 text-xs text-gray-400">
-                  <button 
-                    className="flex items-center space-x-1 hover:text-white transition-colors"
-                    onClick={() => handleLikeComment(comment.id)}
-                  >
-                    <Heart className={`h-3.5 w-3.5 ${comment.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                    <span>{comment.likes > 0 && comment.likes}</span>
-                  </button>
-                  <button className="hover:text-white transition-colors">Reply</button>
+                  <div className="mt-2 flex items-center space-x-4 text-xs text-gray-400">
+                    <button 
+                      className="flex items-center space-x-1 hover:text-white transition-colors"
+                      onClick={() => handleLikeComment(comment.id)}
+                    >
+                      <Heart className={`h-3.5 w-3.5 ${comment.isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                      <span>{comment.likes > 0 && comment.likes}</span>
+                    </button>
+                    <button className="hover:text-white transition-colors">Reply</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
         
         <div className="p-4 border-t border-white/20 bg-black">
           <div className="flex items-center space-x-2">
