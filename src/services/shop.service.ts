@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types/product.types';
 
@@ -178,7 +179,8 @@ class ShopService {
 
   async toggleProductLike(productId: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase.rpc('toggle_product_like', { product_id: productId });
+      // We need to cast the RPC call result as it's not included in the allowed RPCs list
+      const { data, error } = await supabase.rpc('toggle_product_like' as any, { product_id: productId });
       if (error) throw error;
       return data;
     } catch (error) {
@@ -189,7 +191,8 @@ class ShopService {
 
   async getUserLikedProducts(userId: string): Promise<Product[]> {
     try {
-      const { data, error } = await supabase.rpc('get_user_liked_products', { user_id: userId });
+      // We need to cast the RPC call result as it's not included in the allowed RPCs list
+      const { data, error } = await supabase.rpc('get_user_liked_products' as any, { user_id: userId });
       if (error) throw error;
       
       // Type assertion since we know the structure of the returned data
@@ -208,7 +211,8 @@ class ShopService {
 
   async getUserLikedProductIds(userId: string): Promise<string[]> {
     try {
-      const { data, error } = await supabase.rpc('get_user_liked_product_ids', { user_id: userId });
+      // We need to cast the RPC call result as it's not included in the allowed RPCs list
+      const { data, error } = await supabase.rpc('get_user_liked_product_ids' as any, { user_id: userId });
       if (error) throw error;
       
       // Type assertion since we know the structure of the returned data
@@ -221,21 +225,7 @@ class ShopService {
       return [];
     }
   }
-  
-  return {
-    getProducts,
-    getProductById,
-    getFeaturedProducts,
-    getCategories,
-    getSellerProducts,
-    getBestSellers,
-    getNewArrivals,
-    getProductReviews,
-    getLiveSellers,
-    toggleProductLike,
-    getUserLikedProducts,
-    getUserLikedProductIds
-  };
 }
 
-export default new ShopService();
+const shopService = new ShopService();
+export default shopService;
