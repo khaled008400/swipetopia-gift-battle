@@ -13,6 +13,7 @@ interface BattleVideoPlayerProps {
 
 const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }: BattleVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { videoError, loadAttempts, handleVideoError, handleRetry, resetError, setVideoError } = useVideoError();
 
   const tryPlayVideo = async () => {
@@ -21,9 +22,11 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
     try {
       setVideoError(false);
       await videoRef.current.play();
+      setIsLoading(false);
     } catch (err) {
       console.error("Error playing battle video:", err);
       handleVideoError(videoUrl);
+      setIsLoading(false);
     }
   };
 
@@ -38,7 +41,12 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
   // Reset error state when video changes
   useEffect(() => {
     resetError();
+    setIsLoading(true);
   }, [videoUrl, resetError]);
+
+  const onVideoLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
     <div className="h-full w-full relative overflow-hidden">
@@ -48,16 +56,25 @@ const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }
           message={loadAttempts >= 3 ? "Unable to load video after multiple attempts" : undefined}
         />
       ) : (
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="h-full w-full object-cover"
-          loop
-          muted
-          playsInline
-          onClick={onVideoTap}
-          onError={() => handleVideoError(videoUrl)}
-        />
+        <>
+          {isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
+            </div>
+          )}
+          
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            className="h-full w-full object-cover"
+            loop
+            muted
+            playsInline
+            onClick={onVideoTap}
+            onError={() => handleVideoError(videoUrl)}
+            onLoadedData={onVideoLoad}
+          />
+        </>
       )}
       
       {!videoError && (

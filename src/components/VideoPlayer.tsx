@@ -145,7 +145,8 @@ const VideoPlayer = ({
     setIsLoading(false);
   };
 
-  const handleVideoError = () => {
+  // Fixed: Renamed to onVideoError to avoid duplicate declaration
+  const onVideoError = () => {
     setIsLoading(false);
     handleVideoError(video.url);
   };
@@ -176,7 +177,7 @@ const VideoPlayer = ({
             muted 
             playsInline 
             onClick={handleVideoPress}
-            onError={handleVideoError}
+            onError={onVideoError}
             onLoadedData={handleVideoLoad}
           />
           

@@ -27,7 +27,21 @@ const VideosPage = () => {
       try {
         setIsLoading(true);
         const feedVideos = await VideoService.getFeedVideos();
-        setVideos(feedVideos || []);
+        
+        // Ensure we have valid videos with proper URLs
+        if (feedVideos?.length > 0) {
+          setVideos(feedVideos);
+        } else {
+          // Fallback to example videos with reliable sources
+          console.log("Using fallback videos due to empty response");
+          setVideos(exampleVideos);
+          toast({
+            title: "Using example videos",
+            description: "Using reliable example videos for demonstration.",
+            variant: "default",
+            duration: 3000,
+          });
+        }
       } catch (error) {
         console.error("Error fetching videos:", error);
         // Fallback to example videos with reliable sources
@@ -110,43 +124,55 @@ const VideosPage = () => {
       id: "1",
       url: RELIABLE_VIDEOS[0],
       user: {
+        id: "user1",
         username: "fashionista",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png",
+        isFollowing: false
       },
       description: "Check out my new collection! #fashion #style #trending",
       likes: 1243,
       comments: 89,
       shares: 56,
       allowDownloads: true,
-      isPublic: true
+      isPublic: true,
+      isSaved: false,
+      isLiked: false
     },
     {
       id: "2",
       url: RELIABLE_VIDEOS[1],
       user: {
+        id: "user2",
         username: "makeup_artist",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png",
+        isFollowing: true
       },
       description: "New makeup tutorial for the weekend party! #makeup #glam",
       likes: 2467,
       comments: 134,
       shares: 89,
       allowDownloads: false,
-      isPublic: true
+      isPublic: true,
+      isSaved: true,
+      isLiked: true
     },
     {
       id: "3",
       url: RELIABLE_VIDEOS[2],
       user: {
+        id: "user3",
         username: "travel_vibes",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png",
+        isFollowing: false
       },
       description: "Sunset vibes in Bali 🌴 #travel #sunset #bali",
       likes: 5698,
       comments: 241,
       shares: 178,
       allowDownloads: true,
-      isPublic: true
+      isPublic: true,
+      isSaved: false,
+      isLiked: false
     }
   ];
 
