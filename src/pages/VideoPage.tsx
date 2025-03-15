@@ -1,7 +1,4 @@
-
 import { useEffect, useState } from "react";
-import PopularLiveSection from "../components/PopularLiveSection";
-import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
 import { useAuth } from "../context/AuthContext";
@@ -118,9 +115,7 @@ const VideoPage = () => {
 
   return (
     <div className="h-full w-full overflow-hidden">
-      {/* Component-based layout - these components are positioned absolutely */}
-      <PopularLiveSection creators={liveCreators} />
-      <TrendingVideosSection videos={trendingVideos} />
+      {/* Only keep the UserVideosCarousel component */}
       <UserVideosCarousel videos={userCreatedVideos} title="Following" />
       
       {/* The VideoFeed is the main background content with z-index below the UI components */}
