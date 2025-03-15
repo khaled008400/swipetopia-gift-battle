@@ -15,7 +15,7 @@ const StreamService = {
           user_id: streamerId,
           title,
           description,
-          status: 'live',
+          status: 'live' as const,
           started_at: new Date().toISOString(),
           viewer_count: 0
         })
@@ -37,7 +37,7 @@ const StreamService = {
       const { error } = await supabase
         .from('streams')
         .update({
-          status: 'ended',
+          status: 'ended' as const,
           ended_at: new Date().toISOString()
         })
         .eq('id', streamId);
@@ -76,11 +76,12 @@ const StreamService = {
         streamer_id: stream.user_id,
         title: stream.title,
         description: stream.description,
-        status: stream.status,
+        status: stream.status as 'live' | 'offline' | 'ended',
         viewer_count: stream.viewer_count,
         started_at: stream.started_at,
         ended_at: stream.ended_at,
-        profiles: stream.profiles
+        profiles: stream.profiles,
+        is_live: stream.status === 'live'
       }));
       
       return streams;
@@ -117,11 +118,12 @@ const StreamService = {
         streamer_id: data.user_id,
         title: data.title,
         description: data.description,
-        status: data.status,
+        status: data.status as 'live' | 'offline' | 'ended',
         viewer_count: data.viewer_count,
         started_at: data.started_at,
         ended_at: data.ended_at,
-        profiles: data.profiles
+        profiles: data.profiles,
+        is_live: data.status === 'live'
       };
       
       return stream;

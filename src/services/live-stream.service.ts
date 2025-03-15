@@ -5,10 +5,13 @@ import {
   StreamService,
   BattleService,
   GiftService,
-  ProductService,
-  LiveStream,
-  Battle,
-  BattleRequest,
+  ProductService
+} from './streaming';
+
+import type {
+  LiveStream, 
+  Battle, 
+  BattleRequest, 
   StreamProduct
 } from './streaming';
 
@@ -33,7 +36,12 @@ const LiveStreamService = {
   StreamService,
   BattleService,
   GiftService,
-  ProductService
+  ProductService,
+  // Direct method access for components using the old API
+  endBattle: (battleId: string, winnerId?: string) => BattleService.endBattle(battleId, winnerId),
+  tagProduct: (productId: string, streamId: string, featured: boolean = false, discountPercentage?: number) => 
+    ProductService.tagProduct(productId, streamId, featured, discountPercentage),
+  acceptBattle: (battleId: string) => BattleService.acceptBattle(battleId)
 };
 
 export default LiveStreamService;

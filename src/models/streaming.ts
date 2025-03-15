@@ -6,7 +6,7 @@ export interface LiveStream {
   streamer_id: string;
   title: string;
   description?: string;
-  status?: 'live' | 'offline' | 'ended';
+  status: 'live' | 'offline' | 'ended';
   viewer_count: number;
   started_at: string;
   ended_at?: string;
@@ -14,10 +14,7 @@ export interface LiveStream {
     username: string;
     avatar_url?: string;
   };
-  // Computed property for compatibility
-  get is_live(): boolean {
-    return this.status === 'live';
-  }
+  is_live: boolean; // Define as a property, not a getter
 }
 
 export interface Battle {
