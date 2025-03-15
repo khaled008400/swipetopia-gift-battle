@@ -21,6 +21,8 @@ import SearchPage from '@/pages/SearchPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import AdminPage from '@/pages/AdminPage';
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import ExplorePage from '@/pages/ExplorePage';
+import VideosPage from '@/pages/VideosPage';
 
 const queryClient = new QueryClient();
 
@@ -48,7 +50,9 @@ const AppContent = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/live/:streamId" element={<LivePage />} />
+        <Route path="/live" element={<LivePage />} />
+        <Route path="/videos" element={<VideosPage />} />
+        <Route path="/explore" element={<ExplorePage />} />
         <Route path="/watch/:videoId" element={<WatchPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/category/:categoryName" element={<CategoryPage />} />

@@ -5,11 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { ShoppingBag, User, Menu, X, Shield } from 'lucide-react';
 import SearchBar from './SearchBar';
+import BottomNavigation from './BottomNavigation';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { items } = useCart();
   const { user, isAdmin } = useAuth();
+  const isMobile = useIsMobile();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -71,11 +74,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
       
-      <main className="flex-grow">
+      <main className="flex-grow pb-20">
         <div className="container mx-auto px-4 py-8">
           {children}
         </div>
       </main>
+      
+      {isMobile && <BottomNavigation />}
       
       <footer className="py-4 px-4 border-t">
         <div className="container mx-auto text-center text-sm text-gray-500">

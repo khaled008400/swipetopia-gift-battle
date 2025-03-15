@@ -17,10 +17,10 @@ const BottomNavigation = () => {
       <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <Home className={`nav-icon h-5 w-5 ${isActive('/') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <Link to="/explore" className={`group nav-item ${isActive('/explore') ? 'text-app-yellow' : 'text-gray-400'}`}>
+      <Link to="/explore" className={`group nav-item ${isActive('/explore') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <Search className={`nav-icon h-5 w-5 ${isActive('/explore') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <Link to="/videos" className={`group nav-item ${isActive('/videos') ? 'text-app-yellow' : 'text-gray-400'}`}>
+      <Link to="/videos" className={`group nav-item ${isActive('/videos') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <Video className={`nav-icon h-5 w-5 ${isActive('/videos') ? 'text-app-yellow' : ''}`} />
       </Link>
       <button 
@@ -29,10 +29,10 @@ const BottomNavigation = () => {
       >
         <Plus className="h-6 w-6" />
       </button>
-      <Link to="/live" className={`group nav-item ${isActive('/live') ? 'text-app-yellow' : 'text-gray-400'}`}>
+      <Link to="/live" className={`group nav-item ${isActive('/live') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <Zap className={`nav-icon h-5 w-5 ${isActive('/live') ? 'text-app-yellow' : ''}`} />
       </Link>
-      <Link to="/shop" className={`group relative nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
+      <Link to="/shop" className={`group relative nav-item ${isActive('/shop') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
         {itemCount > 0 && !isActive('/shop') && (
           <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-app-yellow text-app-black text-[10px]">
@@ -40,7 +40,7 @@ const BottomNavigation = () => {
           </Badge>
         )}
       </Link>
-      <Link to="/profile" className={`group nav-item ${isActive('/profile') ? 'text-app-yellow' : 'text-gray-400'}`}>
+      <Link to="/profile" className={`group nav-item ${isActive('/profile') ? 'text-app-yellow bg-app-black rounded-full p-2' : 'text-gray-400'}`}>
         <User className={`nav-icon h-5 w-5 ${isActive('/profile') ? 'text-app-yellow' : ''}`} />
       </Link>
     </div>
