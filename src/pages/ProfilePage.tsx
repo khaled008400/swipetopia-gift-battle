@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ProfileHeader from '@/components/profile/ProfileHeader';
@@ -13,9 +14,8 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { profile, loading } = useUserProfile(user?.id || null);
+  const { profile, isLoading } = useUserProfile(user?.id || null);
   
-  // Remove the reference to session in the line below
   const isCurrentUserProfile = !!user && !!profile;
 
   const handleSignOut = async () => {
@@ -23,7 +23,7 @@ const ProfilePage = () => {
     navigate('/login');
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading profile...</div>;
   }
 

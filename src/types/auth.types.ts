@@ -14,3 +14,29 @@ export interface UserProfile {
   following?: number;
   email?: string;
 }
+
+export type UserRole = 'user' | 'admin' | 'streamer' | 'seller' | 'moderator';
+
+export interface NotificationPreferences {
+  battles: boolean;
+  orders: boolean;
+  messages: boolean;
+  followers: boolean;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: 'card' | 'paypal' | 'bank';
+  last4?: string;
+  name?: string;
+  isDefault: boolean;
+}
+
+export interface AuthContextType {
+  user: UserProfile | null;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  loading: boolean;
+  error: string | null;
+}
