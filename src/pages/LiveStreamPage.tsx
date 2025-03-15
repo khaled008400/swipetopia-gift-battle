@@ -172,7 +172,7 @@ const LiveStreamPage = () => {
         <LiveBattleFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} mode={battleMode} />
       )}
       
-      <BattleProgressIndicators videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
+      <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
 
       <div className="absolute top-4 left-4 z-30 flex items-center">
         <Link to="/">
