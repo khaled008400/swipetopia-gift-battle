@@ -55,6 +55,42 @@ const FollowerService = {
   },
   
   /**
+   * Get the number of followers for a user
+   * @param userId The user ID to get follower count for
+   * @returns A promise that resolves to the number of followers
+   */
+  getFollowerCount: async (userId: string): Promise<number> => {
+    try {
+      // First try to get from the profiles table which has a cached count
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('followers')
+        .eq('id', userId)
+        .single();
+        
+      if (!profileError && profileData) {
+        return profileData.followers || 0;
+      }
+      
+      // If that fails, count directly from followers table
+      const { count, error } = await supabase
+        .from('followers')
+        .select('id', { count: 'exact' })
+        .eq('following_id', userId);
+        
+      if (error) {
+        console.error('Error getting follower count:', error);
+        return 0;
+      }
+      
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting follower count:', error);
+      return 0;
+    }
+  },
+  
+  /**
    * Get followers for a user
    * @param userId The user ID to get followers for
    * @returns A promise that resolves to an array of followers

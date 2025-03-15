@@ -11,18 +11,23 @@ export function useFollower(userId?: string) {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   
-  // Check follow status on mount
+  // Check follow status and get follower count on mount
   useEffect(() => {
     if (!userId || !isAuthenticated) {
       setLoading(false);
       return;
     }
     
-    const checkFollowStatus = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
+        // Check if the current user is following this user
         const following = await FollowerService.isFollowing(userId);
         setIsFollowing(following);
+        
+        // Get follower count
+        const count = await FollowerService.getFollowerCount(userId);
+        setFollowerCount(count);
       } catch (error) {
         console.error('Error checking follow status:', error);
       } finally {
@@ -30,7 +35,7 @@ export function useFollower(userId?: string) {
       }
     };
     
-    checkFollowStatus();
+    fetchData();
   }, [userId, isAuthenticated]);
   
   // Function to toggle follow

@@ -177,6 +177,65 @@ export type Database = {
           },
         ]
       }
+      followers: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      gift_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          gift_id: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          video_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          gift_id: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          video_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          gift_id?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_transactions_gift_id_fkey"
+            columns: ["gift_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_gifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gifts: {
         Row: {
           color: string
@@ -865,11 +924,68 @@ export type Database = {
           },
         ]
       }
+      virtual_gifts: {
+        Row: {
+          available: boolean | null
+          category: string | null
+          color: string
+          created_at: string
+          description: string | null
+          has_sound: boolean | null
+          icon: string
+          id: string
+          image_type: string | null
+          image_url: string | null
+          is_premium: boolean | null
+          name: string
+          price: number
+          value: number
+        }
+        Insert: {
+          available?: boolean | null
+          category?: string | null
+          color: string
+          created_at?: string
+          description?: string | null
+          has_sound?: boolean | null
+          icon: string
+          id?: string
+          image_type?: string | null
+          image_url?: string | null
+          is_premium?: boolean | null
+          name: string
+          price: number
+          value: number
+        }
+        Update: {
+          available?: boolean | null
+          category?: string | null
+          color?: string
+          created_at?: string
+          description?: string | null
+          has_sound?: boolean | null
+          icon?: string
+          id?: string
+          image_type?: string | null
+          image_url?: string | null
+          is_premium?: boolean | null
+          name?: string
+          price?: number
+          value?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      decrement_followers: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
+      }
       get_streaming_config: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -889,6 +1005,12 @@ export type Database = {
           counter_name: string
         }
         Returns: number
+      }
+      increment_followers: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
       }
       log_admin_action: {
         Args: {
