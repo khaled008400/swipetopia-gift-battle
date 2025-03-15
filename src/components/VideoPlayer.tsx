@@ -1,31 +1,21 @@
 
 import { useRef, useState, useEffect } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, Flag } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Flag, Download, User, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useVideoError } from "@/hooks/useVideoError";
+import { Video } from "@/types/video.types";
+import { cn } from "@/lib/utils";
 
 interface VideoPlayerProps {
-  video: {
-    id: string;
-    url: string;
-    user: {
-      username: string;
-      avatar: string;
-      isFollowing?: boolean;
-    };
-    description: string;
-    likes: number;
-    comments: number;
-    shares: number;
-    isLive?: boolean;
-    isLiked?: boolean;
-    allowDownloads?: boolean;
-    isSaved?: boolean;
-  };
+  video: Video;
   isActive?: boolean;
   onLike?: () => void;
   onSave?: () => void;
   onFollow?: () => void;
+  onShare?: () => void;
+  onComment?: () => void;
+  onReport?: () => void;
+  onDownload?: () => void;
 }
 
 const VideoPlayer = ({
@@ -33,7 +23,11 @@ const VideoPlayer = ({
   isActive = false,
   onLike,
   onSave,
-  onFollow
+  onFollow,
+  onShare,
+  onComment,
+  onReport,
+  onDownload
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -41,7 +35,7 @@ const VideoPlayer = ({
   const [showHeart, setShowHeart] = useState(false);
   const [doubleTapTimer, setDoubleTapTimer] = useState<number | null>(null);
   const { toast } = useToast();
-  const { videoError, loadAttempts, handleVideoError, handleRetry, resetError } = useVideoError();
+  const { videoError, loadAttempts, handleVideoError, resetError } = useVideoError();
 
   // Reset error state when video changes
   useEffect(() => {
@@ -109,10 +103,21 @@ const VideoPlayer = ({
     setTimeout(() => setShowHeart(false), 800);
   };
 
+  const handleRetry = () => {
+    if (videoRef.current) {
+      resetError();
+      videoRef.current.load();
+      videoRef.current.play().catch(err => {
+        console.error("Error retrying video:", err);
+        handleVideoError(video.url);
+      });
+    }
+  };
+
   return (
-    <div className="h-full w-full relative overflow-hidden">
+    <div className="h-full w-full relative overflow-hidden bg-black">
       {videoError ? (
-        <div className="h-full w-full flex items-center justify-center bg-black">
+        <div className="h-full w-full flex items-center justify-center">
           <div className="text-center p-4">
             <p className="text-white text-lg mb-3">
               {loadAttempts >= 3 
@@ -122,16 +127,7 @@ const VideoPlayer = ({
             
             {loadAttempts < 3 && (
               <button 
-                onClick={() => {
-                  if (videoRef.current) {
-                    resetError();
-                    videoRef.current.load();
-                    videoRef.current.play().catch(err => {
-                      console.error("Error retrying video:", err);
-                      handleVideoError(video.url);
-                    });
-                  }
-                }}
+                onClick={handleRetry}
                 className="bg-white text-black px-4 py-2 rounded-full font-medium"
               >
                 Retry
@@ -170,93 +166,110 @@ const VideoPlayer = ({
             </div>
           )}
           
-          {/* Simplified video controls and info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 pb-16 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-            <div className="flex justify-between items-end">
-              {/* Video info and user section */}
-              <div className="flex-1">
+          {/* Side interaction buttons */}
+          <div className="absolute right-3 bottom-32 flex flex-col items-center space-y-5 z-10">
+            <div className="flex flex-col items-center">
+              <button
+                className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+                onClick={onLike}
+              >
+                <Heart
+                  className={cn(
+                    "h-6 w-6",
+                    video.isLiked ? "fill-red-500 text-red-500" : "text-white"
+                  )}
+                />
+              </button>
+              <span className="text-white text-xs mt-1">{video.likes}</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <button
+                className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+                onClick={onComment}
+              >
+                <MessageCircle className="h-6 w-6 text-white" />
+              </button>
+              <span className="text-white text-xs mt-1">{video.comments}</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <button
+                className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+                onClick={onShare}
+              >
+                <Share2 className="h-6 w-6 text-white" />
+              </button>
+              <span className="text-white text-xs mt-1">{video.shares}</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <button
+                className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+                onClick={onSave}
+              >
+                <Bookmark 
+                  className={cn(
+                    "h-6 w-6",
+                    video.isSaved ? "fill-yellow-500 text-yellow-500" : "text-white"
+                  )}
+                />
+              </button>
+              <span className="text-white text-xs mt-1">Save</span>
+            </div>
+
+            {video.allowDownloads && (
+              <div className="flex flex-col items-center">
+                <button
+                  className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+                  onClick={onDownload}
+                >
+                  <Download className="h-6 w-6 text-white" />
+                </button>
+                <span className="text-white text-xs mt-1">Download</span>
+              </div>
+            )}
+
+            <div className="flex flex-col items-center">
+              <button
+                className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
+                onClick={onReport}
+              >
+                <Flag className="h-6 w-6 text-white" />
+              </button>
+              <span className="text-white text-xs mt-1">Report</span>
+            </div>
+          </div>
+
+          {/* User info and video description */}
+          <div className="absolute bottom-0 left-0 right-14 p-4 bg-gradient-to-t from-black/80 to-transparent z-10">
+            <div className="flex items-center mb-3">
+              <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-white">
+                <img src={video.user.avatar} alt={video.user.username} className="h-full w-full object-cover" />
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-white font-bold">@{video.user.username}</p>
                 {video.isLive && (
-                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full mb-2 inline-block">
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full inline-block mr-2">
                     LIVE
                   </span>
                 )}
-                
-                <p className="text-white text-sm mb-3">{video.description}</p>
-                
-                <div className="flex items-center">
-                  <img 
-                    src={video.user.avatar} 
-                    alt={video.user.username} 
-                    className="w-10 h-10 rounded-full border-2 border-white" 
-                  />
-                  <div className="ml-2">
-                    <p className="text-white text-sm font-bold">@{video.user.username}</p>
-                  </div>
-                  <button 
-                    onClick={onFollow}
-                    className={`ml-3 px-3 py-1 rounded-full text-xs ${
-                      video.user.isFollowing 
-                        ? "bg-transparent border border-white text-white" 
-                        : "bg-white text-black"
-                    }`}
-                  >
-                    {video.user.isFollowing ? "Following" : "Follow"}
-                  </button>
-                </div>
               </div>
-              
-              {/* Action buttons */}
-              <div className="flex flex-col items-center space-y-4 ml-4">
-                <div className="flex flex-col items-center">
-                  <button 
-                    onClick={onLike}
-                    className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
-                  >
-                    <Heart 
-                      className={`h-6 w-6 ${video.isLiked ? "fill-red-500 text-red-500" : "text-white"}`} 
-                    />
-                  </button>
-                  <span className="text-white text-xs mt-1">{video.likes}</span>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <button 
-                    className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
-                  >
-                    <MessageCircle className="h-6 w-6 text-white" />
-                  </button>
-                  <span className="text-white text-xs mt-1">{video.comments}</span>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <button 
-                    className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
-                  >
-                    <Share2 className="h-6 w-6 text-white" />
-                  </button>
-                  <span className="text-white text-xs mt-1">{video.shares}</span>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <button 
-                    onClick={onSave}
-                    className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
-                  >
-                    <Bookmark className={`h-6 w-6 ${video.isSaved ? "fill-yellow-500 text-yellow-500" : "text-white"}`} />
-                  </button>
-                  <span className="text-white text-xs mt-1">Save</span>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  <button 
-                    className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center"
-                  >
-                    <Flag className="h-6 w-6 text-white" />
-                  </button>
-                  <span className="text-white text-xs mt-1">Report</span>
-                </div>
-              </div>
+              <button
+                onClick={onFollow}
+                className={cn(
+                  "px-3 py-1 rounded-full text-sm",
+                  video.user.isFollowing
+                    ? "bg-transparent border border-white text-white"
+                    : "bg-white text-black"
+                )}
+              >
+                {video.user.isFollowing ? "Following" : "Follow"}
+              </button>
             </div>
+            <p className="text-white mb-4 overflow-hidden text-ellipsis">
+              {video.description}
+            </p>
           </div>
         </>
       )}

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Video } from "@/types/video.types";
+import VideoService from "@/services/video.service";
 
 export function useVideoInteractions(
   videos: Video[],
@@ -10,18 +11,45 @@ export function useVideoInteractions(
 ) {
   const { toast } = useToast();
 
-  const handleLike = () => {
-    const updatedVideos = [...videos];
-    const video = updatedVideos[activeVideoIndex];
-    video.isLiked = !video.isLiked;
-    video.likes = video.isLiked ? video.likes + 1 : video.likes - 1;
-    setVideos(updatedVideos);
-    
-    toast({
-      title: video.isLiked ? "Added like" : "Removed like",
-      description: video.isLiked ? "You've liked this video" : "You've removed your like from this video",
-      duration: 2000,
-    });
+  const handleLike = async () => {
+    try {
+      const updatedVideos = [...videos];
+      const video = updatedVideos[activeVideoIndex];
+      const wasLiked = video.isLiked;
+      
+      // Update UI immediately for better experience
+      video.isLiked = !video.isLiked;
+      video.likes = video.isLiked ? video.likes + 1 : video.likes - 1;
+      setVideos(updatedVideos);
+      
+      // Call API in the background
+      if (video.isLiked) {
+        await VideoService.likeVideo(video.id);
+      } else {
+        await VideoService.unlikeVideo(video.id);
+      }
+      
+      toast({
+        title: video.isLiked ? "Added like" : "Removed like",
+        description: video.isLiked ? "You've liked this video" : "You've removed your like from this video",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error liking/unliking video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to like/unlike this video",
+        variant: "destructive",
+        duration: 2000,
+      });
+      
+      // Revert the UI changes on error
+      const updatedVideos = [...videos];
+      const video = updatedVideos[activeVideoIndex];
+      video.isLiked = !video.isLiked;
+      video.likes = video.isLiked ? video.likes + 1 : video.likes - 1;
+      setVideos(updatedVideos);
+    }
   };
 
   const handleSave = () => {

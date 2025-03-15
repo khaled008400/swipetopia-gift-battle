@@ -15,6 +15,9 @@ export interface Video {
   isSaved?: boolean;
   allowDownloads?: boolean;
   isLive?: boolean;
+  hashtags?: string[];
+  privacy?: "public" | "private" | "followers";
+  createdAt?: string;
 }
 
 export type VideoActionHandler = () => void;

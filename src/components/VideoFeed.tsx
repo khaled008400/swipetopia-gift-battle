@@ -11,6 +11,10 @@ interface VideoFeedProps {
   onLike?: () => void;
   onSave?: () => void;
   onFollow?: () => void;
+  onShare?: () => void;
+  onComment?: () => void;
+  onReport?: () => void;
+  onDownload?: () => void;
 }
 
 const VideoFeed = ({ 
@@ -19,7 +23,11 @@ const VideoFeed = ({
   isBattlePage = false,
   onLike,
   onSave,
-  onFollow
+  onFollow,
+  onShare,
+  onComment,
+  onReport,
+  onDownload
 }: VideoFeedProps) => {
   return (
     <div className="h-full w-full">
@@ -42,6 +50,10 @@ const VideoFeed = ({
               onLike={onLike}
               onSave={onSave}
               onFollow={onFollow}
+              onShare={onShare}
+              onComment={onComment}
+              onReport={onReport}
+              onDownload={onDownload}
             />
           )}
         </div>
