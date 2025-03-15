@@ -113,14 +113,12 @@ const StreamingAdminService = {
       if (error) throw error;
 
       // Log the action using an RPC function
-      const { error: logError } = await supabase
+      await supabase
         .rpc('log_admin_action', {
           p_action_type: 'shutdown_stream',
           p_target_id: streamId,
           p_reason: reason
         });
-
-      if (logError) console.error('Error logging admin action:', logError);
 
       return { success: true };
     } catch (err) {

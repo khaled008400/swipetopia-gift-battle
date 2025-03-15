@@ -12,7 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, 
   DialogTitle, DialogTrigger, DialogClose 
 } from "@/components/ui/dialog";
-import { Product } from "@/services/shop.service";
+import { Product, AdminProduct } from "@/services/shop.service";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -44,7 +44,21 @@ const ProductListings = () => {
         if (error) throw error;
         
         if (data) {
-          setProducts(data as Product[]);
+          // Map the database products to our Product interface
+          const formattedProducts: Product[] = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            description: item.description || "",
+            image_url: item.image_url || "",
+            stock_quantity: item.stock_quantity || 0,
+            category: item.category || "other",
+            status: item.status || "active",
+            seller_id: item.seller_id,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          }));
+          setProducts(formattedProducts);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -323,6 +337,7 @@ const ProductListings = () => {
           
           <ProductForm
             initialData={editProduct ? {
+              id: editProduct.id,
               name: editProduct.name,
               price: editProduct.price,
               description: editProduct.description || "",

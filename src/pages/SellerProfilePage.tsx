@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,12 +16,17 @@ import { Product } from "@/services/shop.service";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 
+interface ExtendedProduct extends Product {
+  isLive?: boolean;
+  rating?: number;
+}
+
 const SellerProfilePage = () => {
   const { sellerId } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [sellerProfile, setSellerProfile] = useState<any>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ExtendedProduct[]>([]);
   const [liveStreams, setLiveStreams] = useState<any[]>([]);
   const [upcomingStreams, setUpcomingStreams] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -31,14 +35,12 @@ const SellerProfilePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("products");
 
-  // Fetch seller profile and products
   useEffect(() => {
     const fetchSellerData = async () => {
       if (!sellerId) return;
       
       setLoading(true);
       try {
-        // Fetch seller profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -53,13 +55,10 @@ const SellerProfilePage = () => {
         
         setSellerProfile(profileData);
         
-        // Check if following
         if (user) {
-          // This would be a real follower check in a full implementation
-          setIsFollowing(Math.random() > 0.5); // Random for demo
+          setIsFollowing(Math.random() > 0.5);
         }
         
-        // Fetch products
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select('*')
@@ -67,46 +66,40 @@ const SellerProfilePage = () => {
           
         if (productsError) throw productsError;
         
-        setProducts(productsData.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          description: p.description || "",
-          image: p.image_url || "https://placehold.co/400x400/333/FFF?text=Product",
-          rating: 4.5, // Dummy rating
-          inventory: p.stock_quantity || 0,
-          isLive: Math.random() > 0.7 // Randomly mark some products as featured in live streams
-        })) || []);
+        if (productsData) {
+          const extendedProducts: ExtendedProduct[] = productsData.map(p => ({
+            ...p,
+            rating: 4.5,
+            isLive: Math.random() > 0.7
+          }));
+          setProducts(extendedProducts);
+        }
         
-        // For demo purposes, we'll use dummy data for streams and reviews
-        // Generate dummy live streams
         setLiveStreams([
           {
             id: "live1",
             title: "Summer Collection Preview",
             viewers: 156,
             thumbnail: "https://placehold.co/400x225/333/FFF?text=Live",
-            started_at: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
+            started_at: new Date(Date.now() - 1000 * 60 * 30)
           }
         ]);
         
-        // Generate dummy upcoming streams
         setUpcomingStreams([
           {
             id: "upcoming1",
             title: "New Arrivals Showcase",
-            scheduled_at: new Date(Date.now() + 1000 * 60 * 60 * 24), // Tomorrow
+            scheduled_at: new Date(Date.now() + 1000 * 60 * 60 * 24),
             thumbnail: "https://placehold.co/400x225/333/FFF?text=Upcoming"
           },
           {
             id: "upcoming2",
             title: "Weekend Flash Sale",
-            scheduled_at: new Date(Date.now() + 1000 * 60 * 60 * 48), // In 2 days
+            scheduled_at: new Date(Date.now() + 1000 * 60 * 60 * 48),
             thumbnail: "https://placehold.co/400x225/333/FFF?text=Weekend"
           }
         ]);
         
-        // Generate dummy reviews
         setReviews([
           {
             id: "review1",
@@ -114,7 +107,7 @@ const SellerProfilePage = () => {
             avatar: "https://i.pravatar.cc/150?u=shopper123",
             rating: 5,
             comment: "Great products and fast shipping! The quality exceeded my expectations.",
-            date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3) // 3 days ago
+            date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3)
           },
           {
             id: "review2",
@@ -122,7 +115,7 @@ const SellerProfilePage = () => {
             avatar: "https://i.pravatar.cc/150?u=fashionlover",
             rating: 4,
             comment: "Love the style and customer service was very helpful.",
-            date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) // 7 days ago
+            date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7)
           },
           {
             id: "review3",
@@ -130,7 +123,7 @@ const SellerProfilePage = () => {
             avatar: "https://i.pravatar.cc/150?u=regular_buyer",
             rating: 5,
             comment: "One of my favorite sellers on the platform. Always finds unique items!",
-            date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14) // 14 days ago
+            date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14)
           }
         ]);
         
@@ -149,13 +142,11 @@ const SellerProfilePage = () => {
     fetchSellerData();
   }, [sellerId, user]);
 
-  // Filter products based on search term
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleFollow = () => {
-    // In a real app, this would call your backend API
     setIsFollowing(!isFollowing);
     toast({
       description: isFollowing ? "Unfollowed seller" : "Now following seller",
@@ -187,7 +178,6 @@ const SellerProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-app-black pb-16">
-      {/* Seller Header */}
       <div className="bg-app-gray-dark p-4">
         <div className="flex items-center gap-4">
           <Avatar className="h-20 w-20 border-2 border-app-yellow">
@@ -240,7 +230,6 @@ const SellerProfilePage = () => {
           <p className="mt-3 text-sm">{sellerProfile.bio}</p>
         )}
         
-        {/* Verified Badge */}
         <div className="flex items-center mt-2">
           <Badge className="bg-green-600 flex items-center">
             <CheckCircle className="h-3 w-3 mr-1" /> Verified Seller
@@ -251,7 +240,6 @@ const SellerProfilePage = () => {
         </div>
       </div>
 
-      {/* Live Stream Banner (if active) */}
       {liveStreams.length > 0 && (
         <div className="p-4">
           <Card className="bg-app-gray-dark border-app-yellow border overflow-hidden">
@@ -305,7 +293,6 @@ const SellerProfilePage = () => {
         </TabsList>
         
         <TabsContent value="products">
-          {/* Products Search & Filter */}
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Input
@@ -325,7 +312,6 @@ const SellerProfilePage = () => {
             </Button>
           </div>
           
-          {/* Products Grid */}
           {filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <ShoppingBag className="h-12 w-12 mb-2" />
@@ -337,7 +323,7 @@ const SellerProfilePage = () => {
                 <Card key={product.id} className="bg-app-gray-dark overflow-hidden">
                   <div className="aspect-square relative">
                     <img 
-                      src={product.image} 
+                      src={product.image_url} 
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
@@ -365,7 +351,6 @@ const SellerProfilePage = () => {
         
         <TabsContent value="streams">
           <div className="space-y-6">
-            {/* Currently Live */}
             {liveStreams.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-3">Live Now</h3>
@@ -409,7 +394,6 @@ const SellerProfilePage = () => {
               </div>
             )}
             
-            {/* Upcoming Streams */}
             {upcomingStreams.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-3">Upcoming Streams</h3>
@@ -443,7 +427,6 @@ const SellerProfilePage = () => {
               </div>
             )}
             
-            {/* Past Streams */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Past Streams</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -492,7 +475,6 @@ const SellerProfilePage = () => {
               </div>
             </div>
             
-            {/* Review List */}
             <div className="space-y-4">
               {reviews.map(review => (
                 <Card key={review.id} className="bg-app-gray-dark">
@@ -525,7 +507,6 @@ const SellerProfilePage = () => {
               ))}
             </div>
             
-            {/* View more button */}
             <div className="text-center mt-6">
               <Button variant="outline" className="border-app-yellow text-app-yellow">
                 View All Reviews

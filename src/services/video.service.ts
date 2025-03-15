@@ -93,7 +93,9 @@ const VideoService = {
 
   downloadVideo: async (videoId: string) => {
     // Log the download action
-    await supabase.rpc('log_video_download', { video_id: videoId });
+    await supabase.rpc('log_video_download', { 
+      video_id: videoId 
+    });
     
     // Get the video URL
     const { data } = await supabase
@@ -107,7 +109,9 @@ const VideoService = {
 
   shareVideo: async (videoId: string) => {
     // Log the share action
-    await supabase.rpc('log_video_share', { video_id: videoId });
+    await supabase.rpc('log_video_share', { 
+      video_id: videoId 
+    });
     return true;
   },
 
@@ -147,16 +151,11 @@ const VideoService = {
     }
     
     // Log the report
-    const { error } = await supabase.rpc('report_video', { 
+    await supabase.rpc('report_video', { 
       p_video_id: videoId, 
       p_reason: reason,
       p_reporter_id: user.id
     });
-
-    if (error) {
-      console.error('Error reporting video:', error);
-      return false;
-    }
 
     return true;
   },

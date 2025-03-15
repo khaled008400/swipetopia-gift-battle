@@ -99,15 +99,7 @@ const ProductDetailPage: React.FC = () => {
           <p className="text-gray-700">{product.description}</p>
           
           <div className="flex flex-wrap gap-2">
-            {product.categories && product.categories.map((category) => (
-              <span 
-                key={category} 
-                className="px-3 py-1 bg-gray-100 rounded-full text-sm"
-              >
-                {category}
-              </span>
-            ))}
-            {product.category && !product.categories && (
+            {product.category && (
               <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">
                 {product.category}
               </span>

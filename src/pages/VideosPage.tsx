@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import VideoActions from "@/components/video/VideoActions";
-import { VideoService } from "@/services/video.service";
+import VideoService from "@/services/video.service";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 

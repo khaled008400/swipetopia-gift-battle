@@ -63,8 +63,8 @@ const WatchPage: React.FC = () => {
           <div className="rounded-lg overflow-hidden">
             <VideoPlayer 
               videoId={video.id}
-              src={video.video_url} 
-              poster={video.thumbnail_url} 
+              src={video.video_url || ''} 
+              poster={video.thumbnail_url || ''} 
               autoPlay={true}
             />
           </div>
@@ -74,12 +74,12 @@ const WatchPage: React.FC = () => {
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={video.profiles?.avatar_url || video.creator?.avatar_url || ''} />
-                  <AvatarFallback>{(video.profiles?.username || video.creator?.username || '').charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={video.profiles?.avatar_url || ''} />
+                  <AvatarFallback>{(video.profiles?.username || '').charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="ml-3">
-                  <p className="font-medium">{video.profiles?.username || video.creator?.username}</p>
-                  <p className="text-sm text-gray-500">{video.view_count || video.views || 0} views</p>
+                  <p className="font-medium">{video.profiles?.username}</p>
+                  <p className="text-sm text-gray-500">{video.view_count || 0} views</p>
                 </div>
               </div>
               

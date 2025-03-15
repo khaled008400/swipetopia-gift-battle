@@ -39,7 +39,6 @@ export const useVideoInteractions = (
     });
 
     try {
-      // Use methods that now exist in VideoService
       if (newLikedState) {
         await VideoService.likeVideo(video.id, user.id);
       } else {
