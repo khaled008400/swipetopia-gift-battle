@@ -29,13 +29,13 @@ const AgoraVideoStream: React.FC<AgoraVideoStreamProps> = ({
     }
     
     // Join the channel when component mounts
-    join(channel, token);
+    join(channel);
     
     // Leave the channel when component unmounts
     return () => {
       leave();
     };
-  }, [join, leave, channel, token, role, localTracks]);
+  }, [join, leave, channel, role, localTracks]);
 
   return (
     <div className="relative w-full h-full bg-black">

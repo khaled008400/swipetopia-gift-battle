@@ -32,29 +32,44 @@ const LiveChat: React.FC<LiveChatProps> = ({ streamId }) => {
     // Fetch initial messages
     const fetchMessages = async () => {
       try {
-        const { data, error } = await supabase
+        // First, get the messages
+        const { data: messagesData, error: messagesError } = await supabase
           .from('chat_messages')
           .select(`
             id,
             message,
             created_at,
-            sender_id,
-            profiles:sender_id (username, avatar_url)
+            sender_id
           `)
           .eq('stream_id', streamId)
           .order('created_at', { ascending: true })
           .limit(50);
         
-        if (error) throw error;
+        if (messagesError) throw messagesError;
         
-        // Transform the data to make it easier to work with
-        const formattedMessages = data.map(msg => ({
+        // Then, get the profiles for these messages
+        const senderIds = messagesData.map(msg => msg.sender_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', senderIds);
+          
+        if (profilesError) throw profilesError;
+        
+        // Map profiles to a dictionary for quick lookup
+        const profilesMap = profilesData.reduce((acc: Record<string, any>, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {});
+        
+        // Combine messages with profiles
+        const formattedMessages = messagesData.map(msg => ({
           id: msg.id,
           message: msg.message,
           created_at: msg.created_at,
           sender: {
-            username: msg.profiles?.username || 'Unknown User',
-            avatar_url: msg.profiles?.avatar_url || ''
+            username: profilesMap[msg.sender_id]?.username || 'Unknown User',
+            avatar_url: profilesMap[msg.sender_id]?.avatar_url || ''
           }
         }));
         

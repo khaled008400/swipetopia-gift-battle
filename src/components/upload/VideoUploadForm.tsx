@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -91,34 +92,47 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         if (progress >= 100) {
           clearInterval(interval);
           
-          const finalVideoFile = videoFile || (recordedVideoUrl ? await fetch(recordedVideoUrl).then(r => r.blob()).then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) : null);
-              
-          if (!finalVideoFile) {
-            throw new Error("No video file available");
-          }
-              
-          const response = await VideoService.uploadVideo({
-            title,
-            description,
-            hashtags,
-            isPublic: privacy === "public",
-            allowDownloads,
-            videoFile: finalVideoFile
+          // The function is now async, so we can use await here
+          const processUpload = async () => {
+            const finalVideoFile = videoFile || (recordedVideoUrl ? await fetch(recordedVideoUrl).then(r => r.blob()).then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) : null);
+                
+            if (!finalVideoFile) {
+              throw new Error("No video file available");
+            }
+                
+            const response = await VideoService.uploadVideo({
+              title,
+              description,
+              hashtags,
+              isPublic: privacy === "public",
+              allowDownloads,
+              videoFile: finalVideoFile
+            });
+                
+            console.log("Upload response:", response);
+            setUploadedVideoData(response);
+            setStep("complete");
+            setIsUploading(false);
+                
+            toast({
+              title: "Upload successful",
+              description: "Your video has been uploaded"
+            });
+                
+            if (onSuccess && response?.id) {
+              onSuccess(response.id);
+            }
+          };
+          
+          processUpload().catch(error => {
+            console.error("Error processing upload:", error);
+            toast({
+              title: "Upload failed",
+              description: "There was an error uploading your video",
+              variant: "destructive",
+            });
+            setIsUploading(false);
           });
-              
-          console.log("Upload response:", response);
-          setUploadedVideoData(response);
-          setStep("complete");
-          setIsUploading(false);
-              
-          toast({
-            title: "Upload successful",
-            description: "Your video has been uploaded"
-          });
-              
-          if (onSuccess && response?.id) {
-            onSuccess(response.id);
-          }
         }
       }, 100);
     } catch (error) {

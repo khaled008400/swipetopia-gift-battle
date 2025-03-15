@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,18 +42,10 @@ const ProductListings = () => {
           .eq('seller_id', user.id);
           
         if (error) throw error;
-        setProducts(data.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          description: p.description || "",
-          image: p.image_url || "https://placehold.co/400x400/333/FFF?text=Product",
-          rating: 0,
-          inventory: p.stock_quantity || 0,
-          category: p.category || "other",
-          status: p.status || "active",
-          seller_id: p.seller_id
-        })) || []);
+        
+        if (data) {
+          setProducts(data as Product[]);
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
         toast({
@@ -138,8 +131,8 @@ const ProductListings = () => {
                 name: data.name,
                 price: data.price,
                 description: data.description || "",
-                image: data.image,
-                inventory: data.inventory,
+                image_url: data.image,
+                stock_quantity: data.inventory,
                 category: data.category,
                 status: data.status
               } 
@@ -168,18 +161,9 @@ const ProductListings = () => {
           
         if (error) throw error;
         
-        setProducts([...products, {
-          id: newProduct.id,
-          name: newProduct.name,
-          price: newProduct.price,
-          description: newProduct.description || "",
-          image: newProduct.image_url || "https://placehold.co/400x400/333/FFF?text=Product",
-          rating: 0,
-          inventory: newProduct.stock_quantity || 0,
-          category: newProduct.category || "other",
-          status: newProduct.status || "active",
-          seller_id: newProduct.seller_id
-        }]);
+        if (newProduct) {
+          setProducts([...products, newProduct as Product]);
+        }
         
         toast({
           title: "Product created",
@@ -252,7 +236,7 @@ const ProductListings = () => {
               <Card key={product.id} className="bg-app-gray-dark overflow-hidden">
                 <div className="aspect-square relative">
                   <img 
-                    src={product.image} 
+                    src={product.image_url} 
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
@@ -271,7 +255,7 @@ const ProductListings = () => {
                     <span className="text-app-yellow font-bold">${product.price.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm text-muted-foreground mb-4">
-                    <span>Inventory: {product.inventory}</span>
+                    <span>Inventory: {product.stock_quantity}</span>
                     <span>{product.category}</span>
                   </div>
                   <div className="flex gap-2">
@@ -338,7 +322,15 @@ const ProductListings = () => {
           </DialogHeader>
           
           <ProductForm
-            initialData={editProduct as any}
+            initialData={editProduct ? {
+              name: editProduct.name,
+              price: editProduct.price,
+              description: editProduct.description || "",
+              image: editProduct.image_url || "",
+              inventory: editProduct.stock_quantity || 0,
+              category: editProduct.category || "other",
+              status: editProduct.status || "active",
+            } : undefined}
             onSubmit={handleSubmit}
             mode={editProduct ? 'edit' : 'create'}
           />

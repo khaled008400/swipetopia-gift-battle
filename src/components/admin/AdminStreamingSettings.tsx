@@ -1,147 +1,178 @@
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import StreamingAdminService from '@/services/streaming/admin.service';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import StreamingAdminService from "@/services/streaming/admin.service";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 const AdminStreamingSettings = () => {
-  const [agoraAppId, setAgoraAppId] = useState('');
-  const [agoraCertificate, setAgoraCertificate] = useState('');
+  const { toast } = useToast();
+  const [agoraAppId, setAgoraAppId] = useState("");
+  const [agoraAppCertificate, setAgoraAppCertificate] = useState("");
   const [agoraEnabled, setAgoraEnabled] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Fetch current streaming configuration
-  const { data: config, isLoading, refetch } = useQuery({
-    queryKey: ['streaming-config'],
+  // Query to fetch streaming configuration
+  const { data: streamingConfig, isLoading, error } = useQuery({
+    queryKey: ["streamingConfig"],
     queryFn: StreamingAdminService.getStreamingConfig,
   });
 
-  // Set state when data is loaded
-  React.useEffect(() => {
-    if (config) {
-      setAgoraAppId(config.agora_app_id || '');
-      setAgoraCertificate(config.agora_app_certificate || '');
-      setAgoraEnabled(config.agora_enabled);
-    }
-  }, [config]);
+  // Update settings mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data: { appId: string; appCertificate: string; enabled: boolean }) => 
+      StreamingAdminService.updateAgoraSettings(
+        data.appId, 
+        data.appCertificate, 
+        data.enabled
+      ),
+    onSuccess: () => {
+      toast({
+        title: "Settings updated",
+        description: "The streaming settings have been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating settings",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleUpdateSettings = async () => {
-    try {
-      setIsUpdating(true);
-      await StreamingAdminService.updateAgoraSettings(
-        agoraAppId,
-        agoraCertificate,
-        agoraEnabled
-      );
-      toast.success('Streaming settings updated successfully');
-      refetch();
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      toast.error('Failed to update streaming settings');
-    } finally {
-      setIsUpdating(false);
+  // Populate form when data is loaded
+  useEffect(() => {
+    if (streamingConfig) {
+      setAgoraAppId(streamingConfig.agora_app_id || "");
+      setAgoraAppCertificate(streamingConfig.agora_app_certificate || "");
+      setAgoraEnabled(streamingConfig.agora_enabled);
     }
+  }, [streamingConfig]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSettingsMutation.mutate({
+      appId: agoraAppId,
+      appCertificate: agoraAppCertificate,
+      enabled: agoraEnabled,
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-red-300">
+        <CardHeader>
+          <CardTitle className="text-red-500">Error Loading Settings</CardTitle>
+          <CardDescription>
+            Unable to load streaming settings. Please try refreshing the page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Agora.io Integration</CardTitle>
+          <CardTitle>Agora Integration Settings</CardTitle>
           <CardDescription>
-            Configure Agora.io settings for live streaming and real-time communication
+            Configure the Agora integration for video streaming functionality
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="appId">App ID</Label>
-            <Input
-              id="appId"
-              placeholder="Enter your Agora App ID"
-              value={agoraAppId}
-              onChange={(e) => setAgoraAppId(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="certificate">App Certificate</Label>
-            <Input
-              id="certificate"
-              type="password"
-              placeholder="Enter your Agora App Certificate"
-              value={agoraCertificate}
-              onChange={(e) => setAgoraCertificate(e.target.value)}
-            />
-            <p className="text-xs text-gray-500">
-              This is used for generating secure tokens for user authentication
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="enableAgora">Enable Agora Integration</Label>
-              <p className="text-xs text-gray-500">
-                Toggle to enable or disable Agora services across the platform
-              </p>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="appId">Agora App ID</Label>
+              <Input
+                id="appId"
+                value={agoraAppId}
+                onChange={(e) => setAgoraAppId(e.target.value)}
+                placeholder="Enter your Agora App ID"
+              />
             </div>
-            <Switch
-              id="enableAgora"
-              checked={agoraEnabled}
-              onCheckedChange={setAgoraEnabled}
-            />
-          </div>
-          
-          <Button 
-            onClick={handleUpdateSettings} 
-            disabled={isUpdating || isLoading}
-            className="mt-4"
-          >
-            {isUpdating ? 'Updating...' : 'Save Settings'}
-          </Button>
+
+            <div className="space-y-2">
+              <Label htmlFor="appCertificate">Agora App Certificate</Label>
+              <Input
+                id="appCertificate"
+                value={agoraAppCertificate}
+                onChange={(e) => setAgoraAppCertificate(e.target.value)}
+                type="password"
+                placeholder="Enter your Agora App Certificate"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="enabled" className="cursor-pointer">
+                Enable Agora Streaming
+              </Label>
+              <Switch
+                id="enabled"
+                checked={agoraEnabled}
+                onCheckedChange={setAgoraEnabled}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={updateSettingsMutation.isPending}
+            >
+              {updateSettingsMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Save Settings"
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
-          <CardTitle>Streaming Limits</CardTitle>
-          <CardDescription>
-            Configure global streaming parameters
-          </CardDescription>
+          <CardTitle>Stream Limits</CardTitle>
+          <CardDescription>Configure stream duration and cooldown limits</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="maxDuration">Maximum Stream Duration (minutes)</Label>
-            <Input
-              id="maxDuration"
-              type="number"
-              placeholder="120"
-              min={10}
-              disabled
-              value={config?.max_stream_duration || 120}
-            />
-            <p className="text-xs text-gray-500">
-              The maximum time a stream can be active (Premium feature)
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="cooldown">Streamer Cooldown Period (minutes)</Label>
-            <Input
-              id="cooldown"
-              type="number"
-              placeholder="15"
-              min={0}
-              disabled
-              value={config?.streamer_cooldown || 15}
-            />
-            <p className="text-xs text-gray-500">
-              The required waiting period between streams (Premium feature)
-            </p>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Maximum Stream Duration</Label>
+              <span className="font-medium">
+                {streamingConfig?.max_stream_duration || 120} minutes
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Streamer Cooldown Period</Label>
+              <span className="font-medium">
+                {streamingConfig?.streamer_cooldown || 15} minutes
+              </span>
+            </div>
+            <Button variant="outline" className="w-full">
+              Configure Limits
+            </Button>
           </div>
         </CardContent>
       </Card>

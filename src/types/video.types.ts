@@ -18,6 +18,12 @@ export interface Video {
   hashtags?: string[];
   privacy?: "public" | "private" | "followers";
   createdAt?: string;
+  title?: string;
+  isPublic?: boolean;
+  profiles?: {
+    username: string;
+    avatar_url: string;
+  };
 }
 
 export type VideoActionHandler = () => void;

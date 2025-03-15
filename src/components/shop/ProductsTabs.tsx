@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsGrid from "./ProductsGrid";
+import ShopService from "@/services/shop.service";
 
 interface ProductsTabsProps {
   activeTab: string;
@@ -11,6 +12,32 @@ interface ProductsTabsProps {
 }
 
 const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: ProductsTabsProps) => {
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [newProducts, setNewProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const allProducts = await ShopService.getProducts();
+        
+        // For demo purposes, we'll just split the products
+        const featured = allProducts.filter((_, index) => index % 2 === 0);
+        const newArrivals = allProducts.filter((_, index) => index % 2 === 1);
+        
+        setFeaturedProducts(featured);
+        setNewProducts(newArrivals);
+      } catch (error) {
+        console.error("Error loading products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadProducts();
+  }, []);
+
   return (
     <div className="px-4 mb-20">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -31,6 +58,7 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
 
         <TabsContent value="featured" className="animate-fade-in">
           <ProductsGrid 
+            products={featuredProducts}
             activeTab="featured"
             likedProducts={likedProducts}
             toggleLike={toggleLike}
@@ -39,6 +67,7 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
 
         <TabsContent value="new" className="animate-fade-in">
           <ProductsGrid 
+            products={newProducts}
             activeTab="new"
             likedProducts={likedProducts}
             toggleLike={toggleLike}
