@@ -6,12 +6,21 @@ import { Link } from "react-router-dom";
 import VideoActions from "@/components/video/VideoActions";
 import { VideoService } from "@/services/video.service";
 import VideoUploadModal from "@/components/upload/VideoUploadModal";
+import { useToast } from "@/hooks/use-toast";
+
+// Use more reliable video sources
+const RELIABLE_VIDEOS = [
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", 
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+];
 
 const VideosPage = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -21,15 +30,21 @@ const VideosPage = () => {
         setVideos(feedVideos || []);
       } catch (error) {
         console.error("Error fetching videos:", error);
-        // Fallback to example videos if API fails
+        // Fallback to example videos with reliable sources
         setVideos(exampleVideos);
+        toast({
+          title: "Using fallback videos",
+          description: "Could not load videos from server. Using example videos instead.",
+          variant: "default",
+          duration: 3000,
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchVideos();
-  }, []);
+  }, [toast]);
 
   // Handle scroll to change videos
   useEffect(() => {
@@ -82,15 +97,18 @@ const VideosPage = () => {
     console.log("New video uploaded:", videoId);
     setShowUploadModal(false);
     
-    // In a real app, we would fetch the new video and add it to the feed
-    // For this demo, we'll just show a success message
+    toast({
+      title: "Video uploaded successfully",
+      description: "Your video has been uploaded and is being processed.",
+      duration: 3000,
+    });
   };
 
-  // Example video data - in a real app, this would come from an API
+  // Example video data with reliable sources
   const exampleVideos = [
     {
       id: "1",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
+      url: RELIABLE_VIDEOS[0],
       user: {
         username: "fashionista",
         avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
@@ -104,7 +122,7 @@ const VideosPage = () => {
     },
     {
       id: "2",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
+      url: RELIABLE_VIDEOS[1],
       user: {
         username: "makeup_artist",
         avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
@@ -118,7 +136,7 @@ const VideosPage = () => {
     },
     {
       id: "3",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-girl-dancing-happily-in-a-field-at-sunset-1230-large.mp4",
+      url: RELIABLE_VIDEOS[2],
       user: {
         username: "travel_vibes",
         avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"

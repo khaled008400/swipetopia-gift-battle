@@ -18,8 +18,17 @@ const VideoPlayerCore = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const [isNotFound, setIsNotFound] = useState(false);
+
+  useEffect(() => {
+    // Reset error and loading states when video URL changes
+    setLoadError(false);
+    setIsNotFound(false);
+    setLoadAttempts(0);
+    setIsLoading(true);
+  }, [videoUrl]);
 
   const tryPlayVideo = async () => {
     if (!videoRef.current || !isActive || loadError) return;
@@ -30,6 +39,7 @@ const VideoPlayerCore = ({
       // Reset error state on successful play
       setLoadError(false);
       setIsNotFound(false);
+      setIsLoading(false);
     } catch (err) {
       console.error("Error playing video:", err);
       setIsPlaying(false);
@@ -56,6 +66,7 @@ const VideoPlayerCore = ({
       setLoadError(false);
       setIsNotFound(false);
       setLoadAttempts(0);
+      setIsLoading(true);
       videoRef.current.load();
       // Short delay before retry
       setTimeout(() => {
@@ -67,6 +78,7 @@ const VideoPlayerCore = ({
   const handleError = () => {
     console.error("Video error event triggered for:", videoUrl);
     setLoadAttempts(prev => prev + 1);
+    setIsLoading(false);
     
     // Check if video source is invalid
     if (videoRef.current?.error?.code === 4) {
@@ -84,13 +96,7 @@ const VideoPlayerCore = ({
     }
   };
 
-  useEffect(() => {
-    // Reset error state when video URL changes
-    setLoadError(false);
-    setIsNotFound(false);
-    setLoadAttempts(0);
-  }, [videoUrl]);
-
+  // Handle playback when active state changes
   useEffect(() => {
     if (isActive && !loadError) {
       tryPlayVideo();
@@ -101,6 +107,11 @@ const VideoPlayerCore = ({
       }
     }
   }, [isActive, loadError]);
+
+  // Handle when the video loads
+  const handleVideoLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
     <>
@@ -113,16 +124,23 @@ const VideoPlayerCore = ({
           notFound={isNotFound}
         />
       ) : (
-        <video 
-          ref={videoRef} 
-          src={videoUrl} 
-          className="h-full w-full object-cover" 
-          loop 
-          muted 
-          playsInline 
-          onClick={onVideoPress}
-          onError={handleError}
-        />
+        <>
+          {isLoading && !loadError && (
+            <VideoErrorDisplay isLoading={true} />
+          )}
+          <video 
+            ref={videoRef} 
+            src={videoUrl} 
+            className="h-full w-full object-cover" 
+            loop 
+            muted 
+            playsInline 
+            onClick={onVideoPress}
+            onError={handleError}
+            onLoadedData={handleVideoLoad}
+            style={{ display: isLoading ? 'none' : 'block' }}
+          />
+        </>
       )}
     </>
   );

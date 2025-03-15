@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useVideoError } from "@/hooks/useVideoError";
 import { Video } from "@/types/video.types";
 import { cn } from "@/lib/utils";
+import VideoErrorDisplay from "./video/VideoErrorDisplay";
 
 interface VideoPlayerProps {
   video: Video;
@@ -31,28 +32,48 @@ const VideoPlayer = ({
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [tapPosition, setTapPosition] = useState({ x: 0, y: 0 });
   const [showHeart, setShowHeart] = useState(false);
   const [doubleTapTimer, setDoubleTapTimer] = useState<number | null>(null);
   const { toast } = useToast();
-  const { videoError, loadAttempts, handleVideoError, resetError } = useVideoError();
+  const { videoError, loadAttempts, handleVideoError, handleRetry, resetError } = useVideoError();
 
   // Reset error state when video changes
   useEffect(() => {
     resetError();
+    setIsLoading(true);
   }, [video.id, resetError]);
 
   // Handle video playback when active state changes
   useEffect(() => {
     if (isActive && !videoError) {
-      videoRef.current?.play().catch(err => {
-        console.error("Error auto-playing video:", err);
-        handleVideoError(video.url);
-      });
-      setIsPlaying(true);
+      const playVideo = async () => {
+        try {
+          if (videoRef.current) {
+            // Make sure the video has loaded metadata before playing
+            if (videoRef.current.readyState === 0) {
+              await new Promise((resolve) => {
+                videoRef.current!.onloadedmetadata = resolve;
+              });
+            }
+            await videoRef.current.play();
+            setIsPlaying(true);
+            setIsLoading(false);
+          }
+        } catch (err) {
+          console.error("Error auto-playing video:", err);
+          handleVideoError(video.url);
+          setIsLoading(false);
+        }
+      };
+      
+      playVideo();
     } else {
-      videoRef.current?.pause();
-      setIsPlaying(false);
+      if (videoRef.current) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
     }
   }, [isActive, videoError, video.url, handleVideoError]);
 
@@ -103,40 +124,50 @@ const VideoPlayer = ({
     setTimeout(() => setShowHeart(false), 800);
   };
 
-  const handleRetry = () => {
+  const onRetry = () => {
     if (videoRef.current) {
       resetError();
+      setIsLoading(true);
       videoRef.current.load();
-      videoRef.current.play().catch(err => {
-        console.error("Error retrying video:", err);
-        handleVideoError(video.url);
-      });
+      
+      // Try playing after a short delay
+      setTimeout(() => {
+        videoRef.current?.play().catch(err => {
+          console.error("Error retrying video:", err);
+          handleVideoError(video.url);
+          setIsLoading(false);
+        });
+      }, 500);
     }
+  };
+
+  const handleVideoLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleVideoError = () => {
+    setIsLoading(false);
+    handleVideoError(video.url);
   };
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-black">
       {videoError ? (
-        <div className="h-full w-full flex items-center justify-center">
-          <div className="text-center p-4">
-            <p className="text-white text-lg mb-3">
-              {loadAttempts >= 3 
-                ? "Unable to load video after multiple attempts" 
-                : "Error loading video"}
-            </p>
-            
-            {loadAttempts < 3 && (
-              <button 
-                onClick={handleRetry}
-                className="bg-white text-black px-4 py-2 rounded-full font-medium"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        </div>
+        <VideoErrorDisplay 
+          message={loadAttempts >= 3 
+            ? "Unable to load this video after multiple attempts" 
+            : "This video could not be played"
+          }
+          onRetry={loadAttempts < 3 ? onRetry : undefined}
+        />
       ) : (
         <>
+          {isLoading && !videoError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
+            </div>
+          )}
+          
           <video 
             ref={videoRef} 
             src={video.url} 
@@ -145,7 +176,8 @@ const VideoPlayer = ({
             muted 
             playsInline 
             onClick={handleVideoPress}
-            onError={() => handleVideoError(video.url)}
+            onError={handleVideoError}
+            onLoadedData={handleVideoLoad}
           />
           
           {/* Double tap heart animation */}
