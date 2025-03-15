@@ -101,6 +101,7 @@ const FollowerService = {
       .select(`
         id,
         follower_id,
+        following_id,
         created_at,
         profiles:follower_id (
           username,
@@ -114,7 +115,13 @@ const FollowerService = {
       return [];
     }
     
-    return data || [];
+    // Transform the data to match the Follower interface
+    return (data || []).map(item => ({
+      id: item.id,
+      follower_id: item.follower_id,
+      following_id: item.following_id,
+      created_at: item.created_at
+    }));
   },
   
   /**
@@ -127,6 +134,7 @@ const FollowerService = {
       .from('followers')
       .select(`
         id,
+        follower_id,
         following_id,
         created_at,
         profiles:following_id (
@@ -141,7 +149,13 @@ const FollowerService = {
       return [];
     }
     
-    return data || [];
+    // Transform the data to match the Follower interface
+    return (data || []).map(item => ({
+      id: item.id,
+      follower_id: item.follower_id,
+      following_id: item.following_id,
+      created_at: item.created_at
+    }));
   }
 };
 

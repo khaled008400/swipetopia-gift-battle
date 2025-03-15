@@ -82,20 +82,26 @@ const GiftService = {
       
       // 5. Deduct coins from sender
       const { error: deductError } = await supabase
-        .rpc('deduct_coins', {
-          user_id: user.id,
-          coin_amount: totalCost
-        });
+        .from('profiles')
+        .update({ coins: (senderData.coins || 0) - totalCost })
+        .eq('id', user.id);
       
       if (deductError) throw deductError;
       
       // 6. Add coins to receiver
       const coinValue = giftData.value * amount;
+      const { data: receiverData, error: receiverError } = await supabase
+        .from('profiles')
+        .select('coins')
+        .eq('id', receiverId)
+        .single();
+        
+      if (receiverError) throw receiverError;
+      
       const { error: addError } = await supabase
-        .rpc('add_coins', {
-          user_id: receiverId,
-          coin_amount: coinValue
-        });
+        .from('profiles')
+        .update({ coins: (receiverData.coins || 0) + coinValue })
+        .eq('id', receiverId);
       
       if (addError) throw addError;
       
