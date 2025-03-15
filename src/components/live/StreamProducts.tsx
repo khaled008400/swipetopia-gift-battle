@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Tag, X, Star, Percent } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { StreamProductService } from '@/services/streaming';
+import { ProductService } from '@/services/streaming';
 import { StreamProduct } from '@/models/streaming';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,7 +25,7 @@ const StreamProducts = ({ streamId, isStreamer = false }: StreamProductsProps) =
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const streamProducts = await StreamProductService.getStreamProducts(streamId);
+        const streamProducts = await ProductService.getStreamProducts(streamId);
         setProducts(streamProducts);
       } catch (error) {
         console.error('Error fetching stream products:', error);
@@ -67,7 +66,7 @@ const StreamProducts = ({ streamId, isStreamer = false }: StreamProductsProps) =
 
   const handleRemoveProduct = async (streamProductId: string) => {
     try {
-      await StreamProductService.removeProductTag(streamProductId);
+      await ProductService.removeProductTag(streamProductId);
       setProducts(products.filter(p => p.id !== streamProductId));
       toast({
         title: 'Product removed',
@@ -85,7 +84,7 @@ const StreamProducts = ({ streamId, isStreamer = false }: StreamProductsProps) =
 
   const toggleFeatured = async (streamProductId: string, currentFeatured: boolean) => {
     try {
-      await StreamProductService.updateStreamProduct(streamProductId, { featured: !currentFeatured });
+      await ProductService.updateStreamProduct(streamProductId, { featured: !currentFeatured });
       toast({
         title: currentFeatured ? 'Product unfeatured' : 'Product featured',
         description: `Product has been ${currentFeatured ? 'unfeatured' : 'featured'}`

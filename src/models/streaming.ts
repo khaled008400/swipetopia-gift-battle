@@ -6,10 +6,18 @@ export interface LiveStream {
   streamer_id: string;
   title: string;
   description?: string;
-  is_live: boolean;
+  status?: 'live' | 'offline' | 'ended';
   viewer_count: number;
   started_at: string;
   ended_at?: string;
+  profiles?: {
+    username: string;
+    avatar_url?: string;
+  };
+  // Computed property for compatibility
+  get is_live(): boolean {
+    return this.status === 'live';
+  }
 }
 
 export interface Battle {

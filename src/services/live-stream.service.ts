@@ -1,11 +1,15 @@
 
 // This file is maintained for backward compatibility
 // Import from new module structure for future development
-import LiveStreamService, { 
+import { 
   StreamService,
   BattleService,
   GiftService,
-  StreamProductService
+  ProductService,
+  LiveStream,
+  Battle,
+  BattleRequest,
+  StreamProduct
 } from './streaming';
 
 // Re-export types for backward compatibility
@@ -14,14 +18,22 @@ export type {
   Battle, 
   BattleRequest, 
   StreamProduct 
-} from './streaming';
+};
 
 // Re-export services for backward compatibility
 export { 
   StreamService,
   BattleService,
   GiftService,
-  StreamProductService
+  ProductService
+};
+
+// Backward compatibility default export
+const LiveStreamService = {
+  StreamService,
+  BattleService,
+  GiftService,
+  ProductService
 };
 
 export default LiveStreamService;

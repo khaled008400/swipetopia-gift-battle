@@ -56,9 +56,9 @@ const StreamService = {
         .from('streams')
         .select(`
           id,
+          user_id,
           title,
           description,
-          user_id as streamer_id,
           status,
           viewer_count,
           started_at,
@@ -70,10 +70,23 @@ const StreamService = {
 
       if (error) throw error;
       
-      return data || [];
+      // Transform the data to match the LiveStream interface
+      const streams: LiveStream[] = data.map(stream => ({
+        id: stream.id,
+        streamer_id: stream.user_id,
+        title: stream.title,
+        description: stream.description,
+        status: stream.status,
+        viewer_count: stream.viewer_count,
+        started_at: stream.started_at,
+        ended_at: stream.ended_at,
+        profiles: stream.profiles
+      }));
+      
+      return streams;
     } catch (err) {
       console.error('Error fetching active streams:', err);
-      throw err;
+      return [];
     }
   },
 
@@ -84,9 +97,9 @@ const StreamService = {
         .from('streams')
         .select(`
           id,
+          user_id,
           title,
           description,
-          user_id as streamer_id,
           status,
           viewer_count,
           started_at,
@@ -98,7 +111,20 @@ const StreamService = {
 
       if (error) throw error;
       
-      return data;
+      // Transform the data to match the LiveStream interface
+      const stream: LiveStream = {
+        id: data.id,
+        streamer_id: data.user_id,
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        viewer_count: data.viewer_count,
+        started_at: data.started_at,
+        ended_at: data.ended_at,
+        profiles: data.profiles
+      };
+      
+      return stream;
     } catch (err) {
       console.error('Error fetching stream:', err);
       return null;

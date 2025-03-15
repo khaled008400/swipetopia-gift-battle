@@ -1,11 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { StreamProduct, LiveStream } from "@/models/streaming";
+import { StreamProduct } from "@/models/streaming";
 
 /**
  * Service for managing products during live streams
  */
-const StreamProductService = {
+const ProductService = {
   // Tag a product in a live stream
   tagProduct: async (productId: string, streamId: string, featured: boolean = false, discountPercentage?: number): Promise<StreamProduct | null> => {
     const { data, error } = await supabase
@@ -69,7 +69,7 @@ const StreamProductService = {
   },
   
   // Get all streams that have a specific product tagged
-  getStreamsByProduct: async (productId: string): Promise<LiveStream[]> => {
+  getStreamsByProduct: async (productId: string): Promise<any[]> => {
     const { data, error } = await supabase
       .from('live_stream_products')
       .select('stream:streams(*)')
@@ -89,6 +89,7 @@ const StreamProductService = {
           streamer_id: item.stream.user_id,
           title: item.stream.title,
           description: item.stream.description,
+          status: item.stream.status,
           is_live: item.stream.status === 'live',
           viewer_count: item.stream.viewer_count || 0,
           started_at: item.stream.started_at,
@@ -101,4 +102,4 @@ const StreamProductService = {
   },
 };
 
-export default StreamProductService;
+export default ProductService;
