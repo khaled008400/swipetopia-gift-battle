@@ -10,23 +10,35 @@ import { useToast } from "@/components/ui/use-toast";
 interface VideoActionsProps {
   videoId: string;
   isLiked?: boolean;
+  isSaved?: boolean;
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  allowDownloads?: boolean;
   onLike?: () => void;
   onComment?: () => void;
   onShare?: () => void;
   onReport?: () => void;
   onDownload?: () => void;
   onGift?: () => void;
+  onSave?: () => void;
 }
 
 const VideoActions = ({ 
   videoId, 
   isLiked = false,
+  isSaved = false,
+  likes,
+  comments,
+  shares,
+  allowDownloads = true,
   onLike, 
   onComment, 
   onShare, 
   onReport, 
   onDownload,
-  onGift
+  onGift,
+  onSave
 }: VideoActionsProps) => {
   const { requiresAuth, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +57,7 @@ const VideoActions = ({
         onClick={() => handleAction(onLike || (() => {}), 'like')}
       >
         <Heart className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+        {likes !== undefined && <span className="text-white text-xs mt-1">{likes}</span>}
       </Button>
       
       <Button
@@ -54,6 +67,7 @@ const VideoActions = ({
         onClick={() => handleAction(onComment || (() => {}), 'comment')}
       >
         <MessageCircle className="h-6 w-6" />
+        {comments !== undefined && <span className="text-white text-xs mt-1">{comments}</span>}
       </Button>
       
       <Button
@@ -63,6 +77,7 @@ const VideoActions = ({
         onClick={onShare || (() => {})}
       >
         <Share2 className="h-6 w-6" />
+        {shares !== undefined && <span className="text-white text-xs mt-1">{shares}</span>}
       </Button>
       
       <Button
@@ -74,14 +89,16 @@ const VideoActions = ({
         <Gift className="h-6 w-6" />
       </Button>
       
-      <Button
-        variant="ghost"
-        size="icon"
-        className="rounded-full bg-black bg-opacity-50 text-white"
-        onClick={onDownload || (() => {})}
-      >
-        <Download className="h-6 w-6" />
-      </Button>
+      {allowDownloads && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full bg-black bg-opacity-50 text-white"
+          onClick={onDownload || (() => {})}
+        >
+          <Download className="h-6 w-6" />
+        </Button>
+      )}
       
       <Button
         variant="ghost"
@@ -91,6 +108,19 @@ const VideoActions = ({
       >
         <Flag className="h-6 w-6" />
       </Button>
+      
+      {onSave && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full bg-black bg-opacity-50 text-white"
+          onClick={() => handleAction(onSave, 'save')}
+        >
+          <span className={`text-sm ${isSaved ? 'text-yellow-500' : 'text-white'}`}>
+            {isSaved ? '★' : '☆'}
+          </span>
+        </Button>
+      )}
     </div>
   );
 };

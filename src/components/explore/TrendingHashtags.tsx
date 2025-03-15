@@ -1,5 +1,5 @@
 
-import { Trending, Zap } from "lucide-react";
+import { TrendingUp, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,7 +110,7 @@ const TrendingHashtags = () => {
     return (
       <div className="space-y-4">
         <div className="flex items-center mb-2">
-          <Trending className="w-5 h-5 mr-2 text-app-yellow" />
+          <TrendingUp className="w-5 h-5 mr-2 text-app-yellow" />
           <h2 className="text-lg font-medium">Trending Hashtags</h2>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -131,7 +131,7 @@ const TrendingHashtags = () => {
       
       <div>
         <div className="flex items-center mb-4">
-          <Trending className="w-5 h-5 mr-2 text-app-yellow" />
+          <TrendingUp className="w-5 h-5 mr-2 text-app-yellow" />
           <h2 className="text-lg font-medium">Trending Hashtags</h2>
         </div>
         
