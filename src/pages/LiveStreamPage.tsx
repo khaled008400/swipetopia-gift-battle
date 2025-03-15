@@ -197,7 +197,7 @@ const LiveStreamPage = () => {
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {battleMode === 'normal' ? (
         selectedStreamerId ? (
-          <AgoraVideoStream channelName={selectedStreamerId} isHost={false} />
+          <AgoraVideoStream streamId={selectedStreamerId} channelName={selectedStreamerId} role="audience" />
         ) : (
           <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
         )
@@ -364,6 +364,7 @@ const LiveStreamPage = () => {
       
       {currentGiftAnimation && (
         <GiftAnimation 
+          streamId={selectedStreamerId || ''}
           type={currentGiftAnimation.type}
           sender={currentGiftAnimation.sender}
           amount={currentGiftAnimation.amount}

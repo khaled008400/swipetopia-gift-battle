@@ -62,6 +62,7 @@ const WatchPage: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="rounded-lg overflow-hidden">
             <VideoPlayer 
+              videoId={video.id}
               src={video.video_url} 
               poster={video.thumbnail_url} 
               autoPlay={true}
@@ -73,12 +74,12 @@ const WatchPage: React.FC = () => {
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={video.creator?.avatar_url || ''} />
-                  <AvatarFallback>{video.creator?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={video.profiles?.avatar_url || video.creator?.avatar_url || ''} />
+                  <AvatarFallback>{(video.profiles?.username || video.creator?.username || '').charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="ml-3">
-                  <p className="font-medium">{video.creator?.username}</p>
-                  <p className="text-sm text-gray-500">{video.views} views</p>
+                  <p className="font-medium">{video.profiles?.username || video.creator?.username}</p>
+                  <p className="text-sm text-gray-500">{video.view_count || video.views || 0} views</p>
                 </div>
               </div>
               
@@ -102,7 +103,10 @@ const WatchPage: React.FC = () => {
           </div>
           
           <Card className="mt-6 p-4">
-            <VideoInfo video={video} />
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <h3>Description</h3>
+              <p>{video.description || 'No description provided.'}</p>
+            </div>
           </Card>
           
           <Separator className="my-8" />
@@ -116,7 +120,7 @@ const WatchPage: React.FC = () => {
               </Button>
             </div>
             
-            <VideoComments videoId={video.id} />
+            <VideoComments videoId={video.id} isOpen={true} onClose={() => {}} />
           </div>
         </div>
         

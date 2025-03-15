@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { LiveStream } from "@/models/streaming";
-import { adminApi } from "../api";
 import axios from "axios";
 
 // Define types for streaming config and admin actions
@@ -21,14 +20,12 @@ interface StreamingConfig {
  */
 const StreamingAdminService = {
   // Get streaming configuration
-  getStreamingConfig: async () => {
+  getStreamingConfig: async (): Promise<StreamingConfig | null> => {
     try {
-      // Use a raw query since the table doesn't exist in the types yet
+      // Use raw RPC call since we don't have the appropriate typing
       const { data, error } = await supabase
-        .rpc('get_streaming_config')
-        .limit(1)
-        .single();
-
+        .rpc('get_streaming_config');
+      
       if (error) throw error;
       return data as StreamingConfig;
     } catch (err) {
@@ -40,7 +37,7 @@ const StreamingAdminService = {
   // Update Agora API settings
   updateAgoraSettings: async (appId: string, appCertificate: string, enabled: boolean) => {
     try {
-      // Use a raw query since the table doesn't exist in the types
+      // Use raw RPC call since we don't have the appropriate typing
       const { error } = await supabase.rpc('update_streaming_config', { 
         p_app_id: appId,
         p_app_certificate: appCertificate,
@@ -115,7 +112,7 @@ const StreamingAdminService = {
 
       if (error) throw error;
 
-      // Log the action in admin_actions using a function
+      // Log the action using an RPC function
       const { error: logError } = await supabase
         .rpc('log_admin_action', {
           p_action_type: 'shutdown_stream',
@@ -140,7 +137,7 @@ const StreamingAdminService = {
       });
       
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching stream analytics:', err);
       return {
         dailyStreamCounts: [],
@@ -159,7 +156,7 @@ const StreamingAdminService = {
       });
       
       return response.data;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching gift analytics:', err);
       return {
         popularGifts: [],

@@ -1,8 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Video } from "@/services/video.service";
+import { Video } from "@/types/video.types";
 import { toast } from "sonner";
 
 interface CompleteStepProps {

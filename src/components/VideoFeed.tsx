@@ -74,15 +74,10 @@ const VideoFeed = ({
             />
           ) : (
             <VideoPlayer 
-              video={video} 
-              isActive={index === activeVideoIndex}
-              onLike={onLike}
-              onSave={onSave}
-              onFollow={onFollow}
-              onShare={onShare}
-              onComment={onComment}
-              onReport={onReport}
-              onDownload={onDownload}
+              videoId={video.id}
+              src={video.url || video.video_url}
+              poster={video.thumbnail_url}
+              autoPlay={index === activeVideoIndex}
             />
           )}
         </div>

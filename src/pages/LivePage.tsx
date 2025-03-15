@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { StreamService } from '@/services/streaming';
-import { LiveStream } from '@/models/streaming';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,10 +21,13 @@ const LivePage: React.FC = () => {
   
   const { data: stream, isLoading, error } = useQuery({
     queryKey: ['stream', streamId],
-    queryFn: () => StreamService.getStreamById(streamId || ''),
+    queryFn: () => StreamService.getStream(streamId || ''),
     enabled: !!streamId,
   });
   
+  // Since we don't have implementations for joinStream and leaveStream,
+  // we'll comment these out for now
+  /*
   useEffect(() => {
     // Join stream presence
     if (stream?.id) {
@@ -37,6 +39,7 @@ const LivePage: React.FC = () => {
       };
     }
   }, [stream?.id]);
+  */
   
   if (isLoading) {
     return (
@@ -78,7 +81,7 @@ const LivePage: React.FC = () => {
         <div className="lg:col-span-3">
           <div className="rounded-lg overflow-hidden bg-black relative">
             <LiveStreamIndicator viewerCount={stream.viewer_count} />
-            <AgoraVideoStream streamerId={stream.streamer_id} streamId={stream.id} />
+            <AgoraVideoStream streamId={stream.id} />
             <GiftAnimation streamId={stream.id} />
           </div>
           

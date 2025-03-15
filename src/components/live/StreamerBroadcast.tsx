@@ -26,7 +26,6 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
     try {
       // Start a stream in the database
       const newStreamId = await StreamService.startStream(
-        // Pass title and description as separate parameters
         streamerId,
         `${streamerName}'s Live Stream`,
         `Live stream by ${streamerName}`
@@ -95,8 +94,8 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
         {isStreaming ? (
           <>
             <AgoraVideoStream 
-              channelName={streamId || streamerId} 
-              isHost={true} 
+              streamId={streamId || streamerId} 
+              role="host"
             />
             
             {/* Stream info overlay */}

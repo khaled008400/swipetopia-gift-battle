@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Heart, MessageCircle, Share2, Coins, Download, Flag, Bookmark } from "lucide-react";
 import VideoComments from "./VideoComments";
 import { useToast } from "@/hooks/use-toast";
-import { VideoService } from "@/services/video.service";
+import VideoService from '@/services/video.service';
 import ReportVideoDialog from "./ReportVideoDialog";
 
 interface VideoActionsProps {

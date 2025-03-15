@@ -19,14 +19,16 @@ const AdminStreamingSettings = () => {
   const { data: config, isLoading, refetch } = useQuery({
     queryKey: ['streaming-config'],
     queryFn: StreamingAdminService.getStreamingConfig,
-    onSuccess: (data) => {
-      if (data) {
-        setAgoraAppId(data.agora_app_id || '');
-        setAgoraCertificate(data.agora_app_certificate || '');
-        setAgoraEnabled(data.agora_enabled);
-      }
-    }
   });
+
+  // Set state when data is loaded
+  React.useEffect(() => {
+    if (config) {
+      setAgoraAppId(config.agora_app_id || '');
+      setAgoraCertificate(config.agora_app_certificate || '');
+      setAgoraEnabled(config.agora_enabled);
+    }
+  }, [config]);
 
   const handleUpdateSettings = async () => {
     try {

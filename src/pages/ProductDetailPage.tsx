@@ -31,6 +31,8 @@ const ProductDetailPage: React.FC = () => {
       image: product.image_url,
       original_price: product.original_price
     });
+    
+    toast.success(`${product.name} added to cart`);
   };
   
   if (isLoading) {
@@ -105,6 +107,11 @@ const ProductDetailPage: React.FC = () => {
                 {category}
               </span>
             ))}
+            {product.category && !product.categories && (
+              <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                {product.category}
+              </span>
+            )}
           </div>
           
           <div className="flex gap-4">
@@ -144,7 +151,7 @@ const ProductDetailPage: React.FC = () => {
                 {product.specifications && Object.entries(product.specifications).map(([key, value]) => (
                   <li key={key} className="flex justify-between">
                     <span className="font-medium">{key}</span>
-                    <span>{value}</span>
+                    <span>{String(value)}</span>
                   </li>
                 ))}
                 {!product.specifications && (

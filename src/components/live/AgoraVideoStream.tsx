@@ -16,26 +16,26 @@ const AgoraVideoStream: React.FC<AgoraVideoStreamProps> = ({
   role = 'audience'
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
-  const { client, localAudioTrack, localVideoTrack, remoteUsers, joinChannel, leaveChannel } = useAgoraClient();
+  const { client, localTracks, remoteUsers, join, leave } = useAgoraClient();
 
   // Use the streamId as channel name if not provided
   const channel = channelName || `stream-${streamId}`;
 
   useEffect(() => {
     if (videoRef.current) {
-      if (role === 'host' && localVideoTrack) {
-        localVideoTrack.play(videoRef.current);
+      if (role === 'host' && localTracks?.videoTrack) {
+        localTracks.videoTrack.play(videoRef.current);
       }
     }
     
     // Join the channel when component mounts
-    joinChannel(channel, token);
+    join(channel, token);
     
     // Leave the channel when component unmounts
     return () => {
-      leaveChannel();
+      leave();
     };
-  }, [joinChannel, leaveChannel, channel, token, role, localVideoTrack]);
+  }, [join, leave, channel, token, role, localTracks]);
 
   return (
     <div className="relative w-full h-full bg-black">

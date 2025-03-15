@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Avatar } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface LiveChatProps {
+interface LiveChatProps {
   streamId: string;
 }
 
@@ -15,26 +15,30 @@ interface ChatMessage {
   id: string;
   message: string;
   created_at: string;
-  sender_id: string;
-  sender_username?: string;
-  sender_avatar?: string;
+  sender: {
+    username: string;
+    avatar_url: string;
+  };
 }
 
 const LiveChat: React.FC<LiveChatProps> = ({ streamId }) => {
-  const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [messageText, setMessageText] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   
-  // Fetch initial messages
   useEffect(() => {
+    // Fetch initial messages
     const fetchMessages = async () => {
       try {
         const { data, error } = await supabase
           .from('chat_messages')
           .select(`
-            *,
+            id,
+            message,
+            created_at,
+            sender_id,
             profiles:sender_id (username, avatar_url)
           `)
           .eq('stream_id', streamId)
@@ -43,113 +47,133 @@ const LiveChat: React.FC<LiveChatProps> = ({ streamId }) => {
         
         if (error) throw error;
         
+        // Transform the data to make it easier to work with
         const formattedMessages = data.map(msg => ({
           id: msg.id,
           message: msg.message,
           created_at: msg.created_at,
-          sender_id: msg.sender_id,
-          sender_username: msg.profiles?.username || 'Anonymous',
-          sender_avatar: msg.profiles?.avatar_url
+          sender: {
+            username: msg.profiles?.username || 'Unknown User',
+            avatar_url: msg.profiles?.avatar_url || ''
+          }
         }));
         
         setMessages(formattedMessages);
       } catch (error) {
         console.error('Error fetching chat messages:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
     fetchMessages();
-  }, [streamId]);
-  
-  // Subscribe to new messages
-  useEffect(() => {
-    const chatSubscription = supabase
-      .channel(`chat-${streamId}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
+    
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('chat-messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
         table: 'chat_messages',
         filter: `stream_id=eq.${streamId}`
       }, async (payload) => {
-        try {
-          // Get the sender profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username, avatar_url')
-            .eq('id', payload.new.sender_id)
-            .single();
-          
-          const newMessage: ChatMessage = {
-            id: payload.new.id,
-            message: payload.new.message,
-            created_at: payload.new.created_at,
-            sender_id: payload.new.sender_id,
-            sender_username: profile?.username || 'Anonymous',
-            sender_avatar: profile?.avatar_url
-          };
-          
-          setMessages(prev => [...prev, newMessage]);
-        } catch (error) {
-          console.error('Error fetching message sender:', error);
+        // Fetch the user info for the new message
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', payload.new.sender_id)
+          .single();
+        
+        if (userError) {
+          console.error('Error fetching sender data:', userError);
+          return;
         }
+        
+        const newMessage: ChatMessage = {
+          id: payload.new.id,
+          message: payload.new.message,
+          created_at: payload.new.created_at,
+          sender: {
+            username: userData?.username || 'Unknown User',
+            avatar_url: userData?.avatar_url || ''
+          }
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
       })
       .subscribe();
     
     return () => {
-      supabase.removeChannel(chatSubscription);
+      supabase.removeChannel(subscription);
     };
   }, [streamId]);
   
-  // Auto-scroll to bottom when new messages arrive
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  // Send message
-  const sendMessage = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!messageText.trim() || !user) return;
+    if (!message.trim() || !user) return;
     
     try {
-      setLoading(true);
-      
       const { error } = await supabase
         .from('chat_messages')
         .insert({
           stream_id: streamId,
           sender_id: user.id,
-          message: messageText.trim()
+          message: message.trim()
         });
       
       if (error) throw error;
       
-      setMessageText('');
+      setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-    } finally {
-      setLoading(false);
     }
   };
   
   return (
-    <div className="h-full flex flex-col bg-background border rounded-md">
-      <div className="p-3 border-b">
-        <h3 className="font-semibold">Live Chat</h3>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {messages.length === 0 ? (
-          <p className="text-center text-gray-500 text-sm">No messages yet</p>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 p-3 overflow-y-auto">
+        {loading ? (
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-start space-x-2 animate-pulse">
+              <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                <div className="h-10 bg-gray-200 rounded w-full"></div>
+              </div>
+            </div>
+            <div className="flex items-start space-x-2 animate-pulse">
+              <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                <div className="h-10 bg-gray-200 rounded w-full"></div>
+              </div>
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-center">
+            <div className="text-gray-500">
+              <p>No chat messages yet</p>
+              <p className="text-sm">Be the first to say hello!</p>
+            </div>
+          </div>
         ) : (
           messages.map(msg => (
-            <div key={msg.id} className="flex items-start space-x-2">
-              <Avatar className="h-8 w-8">
-                {msg.sender_avatar && <img src={msg.sender_avatar} alt={msg.sender_username} />}
-              </Avatar>
-              <div>
-                <p className="text-sm font-semibold">{msg.sender_username}</p>
-                <p className="text-sm">{msg.message}</p>
+            <div key={msg.id} className="mb-3">
+              <div className="flex items-start space-x-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={msg.sender.avatar_url} />
+                  <AvatarFallback>{msg.sender.username.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">{msg.sender.username}</p>
+                  <p className="text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded-md">{msg.message}</p>
+                </div>
               </div>
             </div>
           ))
@@ -157,20 +181,14 @@ const LiveChat: React.FC<LiveChatProps> = ({ streamId }) => {
         <div ref={messagesEndRef} />
       </div>
       
-      <form onSubmit={sendMessage} className="p-3 border-t flex">
+      <form onSubmit={handleSubmit} className="p-3 border-t flex gap-2">
         <Input
-          value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
           placeholder="Type a message..."
-          disabled={!user || loading}
-          className="flex-1"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          disabled={!user}
         />
-        <Button 
-          type="submit" 
-          size="icon" 
-          disabled={!user || !messageText.trim() || loading}
-          className="ml-2"
-        >
+        <Button type="submit" size="sm" disabled={!user || !message.trim()}>
           <Send className="h-4 w-4" />
         </Button>
       </form>

@@ -1,54 +1,69 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Video } from "@/types/video.types";
 import VideoService from "@/services/video.service";
+import { useAuth } from "@/hooks/use-auth";
 
-export function useVideoInteractions(
-  videos: Video[],
+export const useVideoInteractions = (
+  videos: any[],
   activeVideoIndex: number,
-  setVideos: (videos: Video[]) => void
-) {
+  setVideos: React.Dispatch<React.SetStateAction<any[]>>
+) => {
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const handleLike = async () => {
-    try {
-      const updatedVideos = [...videos];
-      const video = updatedVideos[activeVideoIndex];
-      const wasLiked = video.isLiked;
-      
-      // Update UI immediately for better experience
-      video.isLiked = !video.isLiked;
-      video.likes = video.isLiked ? video.likes + 1 : video.likes - 1;
-      setVideos(updatedVideos);
-      
-      // Call API in the background
-      if (video.isLiked) {
-        await VideoService.likeVideo(video.id);
-      } else {
-        await VideoService.unlikeVideo(video.id);
-      }
-      
+    if (!user) {
       toast({
-        title: video.isLiked ? "Added like" : "Removed like",
-        description: video.isLiked ? "You've liked this video" : "You've removed your like from this video",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error liking/unliking video:", error);
-      toast({
-        title: "Error",
-        description: "Failed to like/unlike this video",
+        title: "Authentication required",
+        description: "You need to be logged in to like videos",
         variant: "destructive",
         duration: 2000,
       });
+      return;
+    }
+
+    const video = videos[activeVideoIndex];
+    const newLikedState = !video.isLiked;
+    
+    // Update optimistically
+    setVideos(prevVideos => {
+      const newVideos = [...prevVideos];
+      newVideos[activeVideoIndex] = {
+        ...video,
+        isLiked: newLikedState,
+        likes: newLikedState ? (video.likes || 0) + 1 : (video.likes || 1) - 1,
+      };
+      return newVideos;
+    });
+
+    try {
+      // Use methods that now exist in VideoService
+      if (newLikedState) {
+        await VideoService.likeVideo(video.id, user.id);
+      } else {
+        await VideoService.unlikeVideo(video.id, user.id);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
       
-      // Revert the UI changes on error
-      const updatedVideos = [...videos];
-      const video = updatedVideos[activeVideoIndex];
-      video.isLiked = !video.isLiked;
-      video.likes = video.isLiked ? video.likes + 1 : video.likes - 1;
-      setVideos(updatedVideos);
+      // Revert on error
+      setVideos(prevVideos => {
+        const newVideos = [...prevVideos];
+        newVideos[activeVideoIndex] = {
+          ...video,
+          isLiked: !newLikedState,
+          likes: !newLikedState ? (video.likes || 0) + 1 : (video.likes || 1) - 1,
+        };
+        return newVideos;
+      });
+      
+      toast({
+        title: "Error",
+        description: "Could not update like status",
+        variant: "destructive",
+        duration: 2000,
+      });
     }
   };
 
@@ -86,9 +101,5 @@ export function useVideoInteractions(
     });
   };
 
-  return {
-    handleLike,
-    handleSave,
-    handleFollow
-  };
-}
+  return { handleLike, handleSave, handleFollow };
+};

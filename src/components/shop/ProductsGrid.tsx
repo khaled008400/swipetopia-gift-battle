@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -6,9 +7,18 @@ import { Badge } from '@/components/ui/badge';
 export interface ProductsGridProps {
   products: any[];
   showCategory?: boolean;
+  activeTab?: string;
+  likedProducts?: string[];
+  toggleLike?: (id: string) => void;
 }
 
-const ProductsGrid: React.FC<ProductsGridProps> = ({ products, showCategory = true }) => {
+const ProductsGrid: React.FC<ProductsGridProps> = ({ 
+  products, 
+  showCategory = true,
+  activeTab,
+  likedProducts = [],
+  toggleLike
+}) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
       {products.map((product) => (

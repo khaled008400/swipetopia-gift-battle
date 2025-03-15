@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { VideoService } from "@/services/video.service";
+import VideoService from '@/services/video.service';
 import { X } from "lucide-react";
 import UploadStep from "./upload-steps/UploadStep";
 import EditStep from "./upload-steps/EditStep";
@@ -41,7 +40,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check if file is a video
     if (!file.type.startsWith("video/")) {
       toast({
         title: "Invalid file type",
@@ -51,7 +49,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       return;
     }
 
-    // Check file size (max 100MB)
     if (file.size > 100 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -87,8 +84,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       setStep("processing");
       setIsUploading(true);
 
-      // In a real app, we would upload to server/storage here
-      // Simulate upload progress for demo
       let progress = 0;
       const interval = setInterval(() => {
         progress += 5;
@@ -96,50 +91,34 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         if (progress >= 100) {
           clearInterval(interval);
           
-          // Simulate API call to save video metadata
-          setTimeout(async () => {
-            try {
-              // Get final video file (either from upload or recording)
-              const finalVideoFile = videoFile || (recordedVideoUrl ? await fetch(recordedVideoUrl).then(r => r.blob()).then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) : null);
+          const finalVideoFile = videoFile || (recordedVideoUrl ? await fetch(recordedVideoUrl).then(r => r.blob()).then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) : null);
               
-              if (!finalVideoFile) {
-                throw new Error("No video file available");
-              }
+          if (!finalVideoFile) {
+            throw new Error("No video file available");
+          }
               
-              // For demo, we'll just call the mock service
-              const response = await VideoService.uploadVideo({
-                title,
-                description,
-                hashtags,
-                isPublic: privacy === "public",
-                allowDownloads,
-                videoFile: finalVideoFile
-              });
+          const response = await VideoService.uploadVideo({
+            title,
+            description,
+            hashtags,
+            isPublic: privacy === "public",
+            allowDownloads,
+            videoFile: finalVideoFile
+          });
               
-              console.log("Upload response:", response);
-              setUploadedVideoData(response);
-              setStep("complete");
-              setIsUploading(false);
+          console.log("Upload response:", response);
+          setUploadedVideoData(response);
+          setStep("complete");
+          setIsUploading(false);
               
-              toast({
-                title: "Upload successful",
-                description: "Your video has been uploaded"
-              });
+          toast({
+            title: "Upload successful",
+            description: "Your video has been uploaded"
+          });
               
-              if (onSuccess && response?.id) {
-                onSuccess(response.id);
-              }
-            } catch (error) {
-              console.error("Error uploading video:", error);
-              toast({
-                title: "Upload failed",
-                description: "There was an error uploading your video",
-                variant: "destructive",
-              });
-              setIsUploading(false);
-              setStep("edit");
-            }
-          }, 1000);
+          if (onSuccess && response?.id) {
+            onSuccess(response.id);
+          }
         }
       }, 100);
     } catch (error) {
@@ -153,7 +132,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
     }
   };
 
-  // Camera & Recording functions
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -206,13 +184,11 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
     mediaRecorder.start();
     setIsRecording(true);
     
-    // Set a timer to show recording duration
     let duration = 0;
     const timer = window.setInterval(() => {
       duration += 1;
       setRecordingDuration(duration);
       
-      // Automatically stop recording after 60 seconds
       if (duration >= 60) {
         stopRecording();
       }
@@ -234,7 +210,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
     }
   };
 
-  // Clean up camera resources when tab changes
   useEffect(() => {
     if (activeTab === "record") {
       startCamera();
