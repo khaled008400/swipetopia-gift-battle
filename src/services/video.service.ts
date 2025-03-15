@@ -318,42 +318,65 @@ class VideoService {
    */
   async uploadVideo(file: File, metadata: any) {
     try {
+      console.log('Starting video upload with metadata:', metadata);
+      
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated to upload videos");
+      }
+      
+      console.log('Authenticated user:', user.id);
+      
       // Generate a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `videos/${fileName}`;
+      const filePath = `${fileName}`;
+      
+      console.log('Uploading file to storage:', filePath);
       
       // Upload to storage
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('videos')
         .upload(filePath, file);
       
       if (uploadError) {
+        console.error('Storage upload error:', uploadError);
         throw uploadError;
       }
+      
+      console.log('File uploaded successfully:', uploadData);
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('videos')
         .getPublicUrl(filePath);
       
+      console.log('Public URL:', publicUrl);
+      
       // Create video record
+      const videoData = {
+        title: metadata.title,
+        description: metadata.description || '',
+        video_url: publicUrl,
+        user_id: user.id,
+        thumbnail_url: metadata.thumbnail || null,
+      };
+      
+      console.log('Creating video record:', videoData);
+      
       const { data, error } = await supabase
         .from('short_videos')
-        .insert({
-          title: metadata.title,
-          description: metadata.description || '',
-          video_url: publicUrl,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          thumbnail_url: metadata.thumbnail || null,
-        })
+        .insert(videoData)
         .select()
         .single();
       
       if (error) {
+        console.error('Database insert error:', error);
         throw error;
       }
       
+      console.log('Video record created:', data);
       return data;
     } catch (error) {
       console.error("Error uploading video:", error);

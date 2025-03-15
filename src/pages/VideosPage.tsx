@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Video } from '@/types/video.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const VideosPage: React.FC = () => {
   const location = useLocation();
@@ -20,14 +20,31 @@ const VideosPage: React.FC = () => {
 
   useEffect(() => {
     fetchVideos();
+
+    // Set up realtime subscription for new videos
+    const channel = supabase
+      .channel('videos-changes')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'short_videos' }, 
+        (payload) => {
+          console.log('New video added:', payload);
+          fetchVideos();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchVideos = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching videos...');
       const fetchedVideos = await VideoService.getVideos();
+      console.log('Fetched videos:', fetchedVideos);
       setVideos(fetchedVideos);
-      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching videos:', error);
       toast({
@@ -35,6 +52,7 @@ const VideosPage: React.FC = () => {
         description: 'Failed to load videos',
         variant: 'destructive',
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -48,8 +66,14 @@ const VideosPage: React.FC = () => {
   };
 
   const handleVideoUploadSuccess = (videoId: string) => {
+    console.log('Video uploaded successfully, ID:', videoId);
     // Refresh the video list after successful upload
     fetchVideos();
+    
+    toast({
+      title: 'Success!',
+      description: 'Your video has been uploaded',
+    });
   };
 
   return (
@@ -94,6 +118,7 @@ const VideosPage: React.FC = () => {
 
 // Video card component to display each video
 const VideoCard = ({ video }: { video: Video }) => {
+  console.log('Rendering video card:', video);
   return (
     <div className="rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
       <div className="aspect-[9/16] bg-black relative">
@@ -121,7 +146,7 @@ const VideoCard = ({ video }: { video: Video }) => {
       <div className="p-3">
         <h3 className="font-medium text-sm line-clamp-1">{video.title}</h3>
         <div className="flex items-center mt-2 text-xs text-gray-500">
-          <span>{video.profiles?.username}</span>
+          <span>{video.profiles?.username || 'User'}</span>
           <span className="mx-1">•</span>
           <span>{new Date(video.created_at || '').toLocaleDateString()}</span>
         </div>

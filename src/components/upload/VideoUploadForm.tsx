@@ -7,6 +7,7 @@ import UploadStep from "./upload-steps/UploadStep";
 import EditStep from "./upload-steps/EditStep";
 import ProcessingStep from "./upload-steps/ProcessingStep";
 import CompleteStep from "./upload-steps/CompleteStep";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoUploadFormProps {
   onClose: () => void;
@@ -84,62 +85,83 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       setStep("processing");
       setIsUploading(true);
 
-      let progress = 0;
+      const progressSteps = [10, 25, 45, 60, 75, 90, 95, 100];
+      let currentStepIndex = 0;
+
       const interval = setInterval(() => {
-        progress += 5;
-        setUploadProgress(progress);
-        if (progress >= 100) {
+        if (currentStepIndex < progressSteps.length) {
+          setUploadProgress(progressSteps[currentStepIndex]);
+          currentStepIndex++;
+        } else {
           clearInterval(interval);
-          
-          const processUpload = async () => {
-            const finalVideoFile = videoFile || (recordedVideoUrl ? await fetch(recordedVideoUrl).then(r => r.blob()).then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) : null);
-                
-            if (!finalVideoFile) {
-              throw new Error("No video file available");
-            }
-            
-            const response = await VideoService.uploadVideo(finalVideoFile, {
-              title,
-              description,
-              hashtags,
-              isPublic: privacy === "public",
-              allowDownloads
-            });
-                
-            console.log("Upload response:", response);
-            setUploadedVideoData(response);
-            setStep("complete");
-            setIsUploading(false);
-                
-            toast({
-              title: "Upload successful",
-              description: "Your video has been uploaded"
-            });
-                
-            if (onSuccess && response?.id) {
-              onSuccess(response.id);
-            }
-          };
-          
-          processUpload().catch(error => {
-            console.error("Error processing upload:", error);
-            toast({
-              title: "Upload failed",
-              description: "There was an error uploading your video",
-              variant: "destructive",
-            });
-            setIsUploading(false);
-          });
         }
-      }, 100);
+      }, 500);
+
+      try {
+        const finalVideoFile = videoFile || 
+          (recordedVideoUrl ? 
+            await fetch(recordedVideoUrl)
+              .then(r => r.blob())
+              .then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) 
+            : null);
+              
+        if (!finalVideoFile) {
+          throw new Error("No video file available");
+        }
+        
+        console.log('Preparing to upload file:', finalVideoFile.name, finalVideoFile.size, finalVideoFile.type);
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Current user:', user);
+        
+        if (!user) {
+          throw new Error("You need to be logged in to upload videos");
+        }
+        
+        const response = await VideoService.uploadVideo(finalVideoFile, {
+          title,
+          description,
+          hashtags,
+          isPublic: privacy === "public",
+          allowDownloads
+        });
+              
+        console.log("Upload response:", response);
+        setUploadedVideoData(response);
+        setStep("complete");
+              
+        toast({
+          title: "Upload successful",
+          description: "Your video has been uploaded"
+        });
+              
+        if (onSuccess && response?.id) {
+          onSuccess(response.id);
+        }
+      } catch (error) {
+        console.error("Error processing upload:", error);
+        clearInterval(interval);
+        
+        toast({
+          title: "Upload failed",
+          description: error instanceof Error ? error.message : "There was an error uploading your video",
+          variant: "destructive",
+        });
+        
+        setStep("edit");
+      } finally {
+        setIsUploading(false);
+      }
     } catch (error) {
-      console.error("Error uploading video:", error);
+      console.error("Error in upload process:", error);
+      setIsUploading(false);
+      setStep("edit");
+      
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your video",
+        description: "There was an error processing your video",
         variant: "destructive",
       });
-      setIsUploading(false);
     }
   };
 
