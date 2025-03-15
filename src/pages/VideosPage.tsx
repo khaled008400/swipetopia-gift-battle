@@ -1,11 +1,10 @@
 
 import { useState, useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import VideoActions from "@/components/video/VideoActions";
 import { VideoService } from "@/services/video.service";
-import VideoUploadModal from "@/components/upload/VideoUploadModal";
 import { useToast } from "@/hooks/use-toast";
 
 // Use more reliable video sources
@@ -19,7 +18,6 @@ const VideosPage = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -107,17 +105,6 @@ const VideosPage = () => {
     };
   }, [activeVideoIndex, videos.length]);
 
-  const handleVideoUpload = (videoId: string) => {
-    console.log("New video uploaded:", videoId);
-    setShowUploadModal(false);
-    
-    toast({
-      title: "Video uploaded successfully",
-      description: "Your video has been uploaded and is being processed.",
-      duration: 3000,
-    });
-  };
-
   // Example video data with reliable sources
   const exampleVideos = [
     {
@@ -199,16 +186,6 @@ const VideosPage = () => {
         </h1>
       </div>
       
-      {/* Upload button */}
-      <div className="absolute top-4 right-4 z-30">
-        <button 
-          onClick={() => setShowUploadModal(true)}
-          className="p-2 bg-app-yellow rounded-full shadow-lg"
-        >
-          <Plus className="w-5 h-5 text-black" />
-        </button>
-      </div>
-      
       {/* Video actions */}
       <div className="absolute bottom-20 right-3 z-30">
         {videos[activeVideoIndex] && (
@@ -225,13 +202,6 @@ const VideosPage = () => {
           />
         )}
       </div>
-
-      {/* Upload Modal */}
-      <VideoUploadModal 
-        isOpen={showUploadModal} 
-        onClose={() => setShowUploadModal(false)} 
-        onSuccess={handleVideoUpload}
-      />
     </div>
   );
 };
