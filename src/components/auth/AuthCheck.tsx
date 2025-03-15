@@ -7,21 +7,27 @@ import { Loader2 } from 'lucide-react';
 interface AuthCheckProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  requireAdmin?: boolean;
 }
 
 /**
  * Wrapper component to check if user is authenticated
  * Redirects to login page if not authenticated
  */
-const AuthCheck = ({ children, fallback }: AuthCheckProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps) => {
+  const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        navigate('/login');
+      } else if (requireAdmin && !isAdmin()) {
+        // Redirect non-admin users to home page
+        navigate('/');
+      }
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, requireAdmin, isAdmin]);
 
   if (isLoading) {
     return fallback || (
@@ -31,7 +37,7 @@ const AuthCheck = ({ children, fallback }: AuthCheckProps) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || (requireAdmin && !isAdmin())) {
     return null;
   }
 

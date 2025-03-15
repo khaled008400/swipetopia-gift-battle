@@ -51,12 +51,12 @@ function App() {
               <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
               <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
               <Route path="/admin" element={
-                <AuthCheck>
+                <AuthCheck requireAdmin={true}>
                   <Layout><AdminPage /></Layout>
                 </AuthCheck>
               } />
               <Route path="/admin-dashboard" element={
-                <AuthCheck>
+                <AuthCheck requireAdmin={true}>
                   <Layout><AdminDashboardPage /></Layout>
                 </AuthCheck>
               } />

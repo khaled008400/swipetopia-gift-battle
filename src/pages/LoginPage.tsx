@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,25 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, isLoading: authLoading, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  // Check if user is already authenticated and redirect accordingly
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = new URLSearchParams(location.search).get('from');
+      
+      if (from?.startsWith('/admin') && isAdmin()) {
+        navigate(from);
+      } else if (isAdmin()) {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isAuthenticated, isAdmin, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +45,7 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate("/");
+      // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error("Login error:", error);
       // The error toast is handled in the AuthContext
