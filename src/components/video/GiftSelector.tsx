@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Heart, Star, Diamond, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -13,19 +13,19 @@ interface GiftSelectorProps {
 }
 
 const GIFTS = [
-  { id: 1, name: "Heart", icon: <Heart className="h-6 w-6 text-red-500" />, value: 10, color: "bg-red-100" },
-  { id: 2, name: "Star", icon: <Star className="h-6 w-6 text-yellow-500" />, value: 50, color: "bg-yellow-100" },
-  { id: 3, name: "Diamond", icon: <Diamond className="h-6 w-6 text-blue-500" />, value: 100, color: "bg-blue-100" },
-  { id: 4, name: "Crown", icon: <Gift className="h-6 w-6 text-purple-500" />, value: 500, color: "bg-purple-100" },
+  { id: "1", name: "Heart", icon: <Heart className="h-6 w-6 text-red-500" />, value: 10, color: "bg-red-100" },
+  { id: "2", name: "Star", icon: <Star className="h-6 w-6 text-yellow-500" />, value: 50, color: "bg-yellow-100" },
+  { id: "3", name: "Diamond", icon: <Diamond className="h-6 w-6 text-blue-500" />, value: 100, color: "bg-blue-100" },
+  { id: "4", name: "Crown", icon: <Gift className="h-6 w-6 text-purple-500" />, value: 500, color: "bg-purple-100" },
 ];
 
 const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
-  const [selectedGift, setSelectedGift] = useState<number | null>(null);
+  const [selectedGift, setSelectedGift] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const { user, requiresAuth } = useAuth();
 
-  const handleSelectGift = (giftId: number) => {
+  const handleSelectGift = (giftId: string) => {
     setSelectedGift(giftId);
   };
 
@@ -60,11 +60,11 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
           return;
         }
 
-        // 1. First deduct coins from sender
-        const { error: deductError } = await supabase.rpc('deduct_coins', {
-          user_id: user!.id,
-          coin_amount: giftValue
-        });
+        // 1. First deduct coins from sender using direct update instead of RPC
+        const { error: deductError } = await supabase
+          .from('profiles')
+          .update({ coins: (user?.coins || 0) - giftValue })
+          .eq('id', user!.id);
 
         if (deductError) {
           throw deductError;
@@ -73,7 +73,7 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
         // 2. Get creator's ID from username
         const { data: creatorData, error: creatorError } = await supabase
           .from('profiles')
-          .select('id')
+          .select('id, coins')
           .eq('username', creatorId)
           .single();
 
@@ -81,17 +81,17 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
           throw new Error("Creator not found");
         }
 
-        // 3. Add coins to creator
-        const { error: addError } = await supabase.rpc('add_coins', {
-          user_id: creatorData.id,
-          coin_amount: giftValue
-        });
+        // 3. Add coins to creator using direct update instead of RPC
+        const { error: addError } = await supabase
+          .from('profiles')
+          .update({ coins: (creatorData.coins || 0) + giftValue })
+          .eq('id', creatorData.id);
 
         if (addError) {
           throw addError;
         }
 
-        // 4. Record transaction
+        // 4. Record transaction - fixed the type issue with gift_id being a string
         const { error: transactionError } = await supabase
           .from('gift_transactions')
           .insert({
