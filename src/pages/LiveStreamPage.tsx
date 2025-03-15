@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
 import VideoActions from "@/components/video/VideoActions";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Gift, Zap, X } from "lucide-react";
+import { ArrowLeft, Users, Gift, Zap, X, ShoppingBag } from "lucide-react";
 import BattleModeSelector from "@/components/live/BattleModeSelector";
 import ActiveStreamers from "@/components/live/ActiveStreamers";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,6 +16,11 @@ import BattleInterface from "@/components/live/BattleInterface";
 import GiftAnimation from "@/components/live/GiftAnimation";
 import LiveStreamIndicator from "@/components/live/LiveStreamIndicator";
 import { useViewerPresence } from "@/hooks/useViewerPresence";
+import StreamProducts from "@/components/live/StreamProducts";
+import ProductTagger from "@/components/live/ProductTagger";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type BattleMode = 'normal' | '1v1' | '2v2';
 
@@ -41,10 +47,13 @@ const LiveStreamPage = () => {
   const [battleMode, setBattleMode] = useState<BattleMode>('normal');
   const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
   const [showGiftMenu, setShowGiftMenu] = useState<boolean>(false);
+  const [showProductsMenu, setShowProductsMenu] = useState<boolean>(false);
   const [currentGiftAnimation, setCurrentGiftAnimation] = useState<any>(null);
+  const [sidebarTab, setSidebarTab] = useState<'gifts' | 'products'>('gifts');
   const { toast } = useToast();
   const { user } = useAuth();
   const [battleRequests, setBattleRequests] = useState<BattleRequest[]>([]);
+  const [isStreamerView, setIsStreamerView] = useState<boolean>(false);
   
   const {
     activeVideoIndex,
@@ -72,6 +81,30 @@ const LiveStreamPage = () => {
     }
   }, [realtimeBattleRequests]);
 
+  // Check if the current user is the streamer of the selected stream
+  useEffect(() => {
+    const checkIfStreamer = async () => {
+      if (!user || !selectedStreamerId) {
+        setIsStreamerView(false);
+        return;
+      }
+      
+      try {
+        const { data } = await supabase
+          .from('streams')
+          .select('user_id')
+          .eq('id', selectedStreamerId)
+          .single();
+          
+        setIsStreamerView(data?.user_id === user.id);
+      } catch (error) {
+        setIsStreamerView(false);
+      }
+    };
+    
+    checkIfStreamer();
+  }, [user, selectedStreamerId]);
+
   const handleStreamerSelect = (streamerId: string) => {
     setSelectedStreamerId(streamerId);
     const streamerVideoIds = STREAMER_VIDEO_MAPPING[streamerId] || [];
@@ -96,7 +129,7 @@ const LiveStreamPage = () => {
     }
     
     try {
-      await LiveStreamService.sendGift(selectedStreamerId, giftType, amount, activeBattle || undefined);
+      await LiveStreamService.sendGift(selectedStreamerId, giftType, amount, activeBattle || null);
       
       toast({
         title: "Gift Sent!",
@@ -164,6 +197,24 @@ const LiveStreamPage = () => {
     };
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
   
+  // Toggle products sidebar
+  const toggleProductsSidebar = () => {
+    if (showGiftMenu) {
+      setShowGiftMenu(false);
+    }
+    setShowProductsMenu(!showProductsMenu);
+    setSidebarTab('products');
+  };
+  
+  // Toggle gifts sidebar
+  const toggleGiftsSidebar = () => {
+    if (showProductsMenu) {
+      setShowProductsMenu(false);
+    }
+    setShowGiftMenu(!showGiftMenu);
+    setSidebarTab('gifts');
+  };
+  
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {battleMode === 'normal' ? (
@@ -186,40 +237,103 @@ const LiveStreamPage = () => {
         <BattleModeSelector currentMode={battleMode} onModeChange={setBattleMode} />
       </div>
       
-      {/* Gift button and live indicator */}
+      {/* Live indicator and action buttons */}
       <div className="absolute top-4 right-4 z-30 flex flex-col items-end space-y-2">
         {selectedStreamerId && (
           <>
             <LiveStreamIndicator viewerCount={viewerCount} />
             
-            <button 
-              onClick={() => setShowGiftMenu(!showGiftMenu)}
-              className="flex items-center bg-gradient-to-r from-pink-500 to-purple-500 px-3 py-1.5 rounded-full shadow-lg"
-            >
-              <Gift className="h-4 w-4 text-white mr-1" />
-              <span className="text-white text-sm font-medium">Send Gift</span>
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={toggleGiftsSidebar}
+                className={`flex items-center px-3 py-1.5 rounded-full shadow-lg 
+                  ${showGiftMenu ? 'bg-purple-600' : 'bg-gradient-to-r from-pink-500 to-purple-500'}`}
+              >
+                <Gift className="h-4 w-4 text-white mr-1" />
+                <span className="text-white text-sm font-medium">Gifts</span>
+              </button>
+              
+              <button 
+                onClick={toggleProductsSidebar}
+                className={`flex items-center px-3 py-1.5 rounded-full shadow-lg 
+                  ${showProductsMenu ? 'bg-blue-600' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}
+              >
+                <ShoppingBag className="h-4 w-4 text-white mr-1" />
+                <span className="text-white text-sm font-medium">Shop</span>
+              </button>
+            </div>
           </>
         )}
       </div>
       
-      {/* Gift menu */}
-      {showGiftMenu && (
-        <div className="absolute bottom-24 left-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-xl z-40 border border-white/20">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-white font-medium">Send a Gift</h3>
-            <button onClick={() => setShowGiftMenu(false)} className="text-white/70">
+      {/* Sidebar for gifts or products */}
+      {(showGiftMenu || showProductsMenu) && (
+        <div className="absolute bottom-0 right-0 top-20 w-64 md:w-72 bg-black/80 backdrop-blur-md z-40 border-l border-white/20 flex flex-col">
+          <div className="flex justify-between items-center p-3 border-b border-white/20">
+            <h3 className="text-white font-medium">
+              {sidebarTab === 'gifts' ? 'Send a Gift' : 'Shop Products'}
+            </h3>
+            <button 
+              onClick={() => {
+                setShowGiftMenu(false);
+                setShowProductsMenu(false);
+              }} 
+              className="text-white/70"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="grid grid-cols-3 gap-3">
-            <GiftButton type="heart" amount={10} onClick={() => handleSendGift("heart", 10)} />
-            <GiftButton type="star" amount={50} onClick={() => handleSendGift("star", 50)} />
-            <GiftButton type="rocket" amount={100} onClick={() => handleSendGift("rocket", 100)} />
-            <GiftButton type="crown" amount={200} onClick={() => handleSendGift("crown", 200)} />
-            <GiftButton type="diamond" amount={500} onClick={() => handleSendGift("diamond", 500)} />
-          </div>
+          <Tabs value={sidebarTab} onValueChange={(val) => setSidebarTab(val as 'gifts' | 'products')} className="flex-1 flex flex-col">
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="gifts" onClick={() => {
+                setShowGiftMenu(true);
+                setShowProductsMenu(false);
+              }}>
+                <Gift className="h-4 w-4 mr-2" />
+                Gifts
+              </TabsTrigger>
+              <TabsTrigger value="products" onClick={() => {
+                setShowProductsMenu(true);
+                setShowGiftMenu(false);
+              }}>
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Shop
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="gifts" className="p-3 overflow-y-auto flex-1">
+              <div className="grid grid-cols-3 gap-3">
+                <GiftButton type="heart" amount={10} onClick={() => handleSendGift("heart", 10)} />
+                <GiftButton type="star" amount={50} onClick={() => handleSendGift("star", 50)} />
+                <GiftButton type="rocket" amount={100} onClick={() => handleSendGift("rocket", 100)} />
+                <GiftButton type="crown" amount={200} onClick={() => handleSendGift("crown", 200)} />
+                <GiftButton type="diamond" amount={500} onClick={() => handleSendGift("diamond", 500)} />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="products" className="flex-1 flex flex-col">
+              <div className="p-3 border-b border-white/10 flex justify-between items-center">
+                {isStreamerView && (
+                  <ProductTagger 
+                    streamId={selectedStreamerId || ''} 
+                  />
+                )}
+                {!isStreamerView && (
+                  <Badge variant="outline">Products for Sale</Badge>
+                )}
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                {selectedStreamerId && (
+                  <StreamProducts 
+                    streamId={selectedStreamerId} 
+                    isStreamer={isStreamerView}
+                  />
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       )}
       

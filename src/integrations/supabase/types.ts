@@ -148,6 +148,48 @@ export type Database = {
         }
         Relationships: []
       }
+      live_stream_products: {
+        Row: {
+          created_at: string | null
+          discount_percentage: number | null
+          featured: boolean | null
+          id: string
+          product_id: string
+          stream_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discount_percentage?: number | null
+          featured?: boolean | null
+          id?: string
+          product_id: string
+          stream_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discount_percentage?: number | null
+          featured?: boolean | null
+          id?: string
+          product_id?: string
+          stream_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_stream_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_stream_products_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null

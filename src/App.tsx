@@ -1,71 +1,73 @@
 
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Layout from "./components/Layout";
-import HomePage from "./pages/HomePage";
-import ExplorePage from "./pages/ExplorePage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import ProfilePage from "./pages/ProfilePage";
-import ShopPage from "./pages/ShopPage";
-import ActivityPage from "./pages/ActivityPage";
-import LiveStreamPage from "./pages/LiveStreamPage";
-import BattlePage from "./pages/BattlePage";
-import AdminPage from "./pages/AdminPage";
-import WalletPage from "./pages/WalletPage";
-import VideoPage from "./pages/VideoPage";
-import VideosPage from "./pages/VideosPage";
-import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
-import SellerDashboardPage from "./pages/SellerDashboardPage";
-import SellerProfilePage from "./pages/SellerProfilePage";
-import StreamerProfilePage from "./pages/StreamerProfilePage";
+import { Suspense, lazy } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
+import Layout from "@/components/Layout";
+import BottomNavigation from "@/components/BottomNavigation";
+import "./App.css";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-      staleTime: 1000 * 60 * 5,
-    },
-  },
-});
+// Lazy-loaded page components
+const HomePage = lazy(() => import("@/pages/HomePage"));
+const ExplorePage = lazy(() => import("@/pages/ExplorePage"));
+const ShopPage = lazy(() => import("@/pages/ShopPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const VideoPage = lazy(() => import("@/pages/VideoPage"));
+const VideosPage = lazy(() => import("@/pages/VideosPage"));
+const BattlePage = lazy(() => import("@/pages/BattlePage"));
+const LiveStreamPage = lazy(() => import("@/pages/LiveStreamPage"));
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const SignupPage = lazy(() => import("@/pages/SignupPage"));
+const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
+const WalletPage = lazy(() => import("@/pages/WalletPage"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const SellerDashboardPage = lazy(() => import("@/pages/SellerDashboardPage"));
+const SellerProfilePage = lazy(() => import("@/pages/SellerProfilePage"));
+const StreamerProfilePage = lazy(() => import("@/pages/StreamerProfilePage"));
+const AdminPage = lazy(() => import("@/pages/AdminPage"));
+const CheckoutPage = lazy(() => import("@/pages/CheckoutPage"));
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <Router>
+    <AuthProvider>
+      <CartProvider>
+        <Router>
+          <Suspense
+            fallback={
+              <div className="h-screen w-screen flex items-center justify-center bg-app-black">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
+              </div>
+            }
+          >
             <Routes>
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
-                <Route path="explore" element={<ExplorePage />} />
-                <Route path="shop" element={<ShopPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="activity" element={<ActivityPage />} />
-                <Route path="wallet" element={<WalletPage />} />
-                <Route path="videos" element={<VideosPage />} />
-                <Route path="video/:videoId" element={<VideoPage />} />
-                <Route path="admin" element={<AdminPage />} />
-                <Route path="live/:streamId" element={<LiveStreamPage />} />
-                <Route path="battle/:battleId" element={<BattlePage />} />
-                <Route path="seller/dashboard" element={<SellerDashboardPage />} />
-                <Route path="seller/:sellerId" element={<SellerProfilePage />} />
-                <Route path="streamer/:streamerId" element={<StreamerProfilePage />} />
+                <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/shop" element={<ShopPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/video/:id" element={<VideoPage />} />
+                <Route path="/videos" element={<VideosPage />} />
+                <Route path="/battle" element={<BattlePage />} />
+                <Route path="/live" element={<LiveStreamPage />} />
+                <Route path="/activity" element={<ActivityPage />} />
+                <Route path="/wallet" element={<WalletPage />} />
+                <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
+                <Route path="/seller/:id" element={<SellerProfilePage />} />
+                <Route path="/streamer/:id" element={<StreamerProfilePage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/admin/*" element={<AdminPage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
             </Routes>
-          </Router>
+          </Suspense>
+          <BottomNavigation />
           <Toaster />
-        </CartProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+        </Router>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 
