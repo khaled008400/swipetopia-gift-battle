@@ -243,6 +243,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const hasRole = (role: UserRole) => {
     if (!user) return false;
+    // Also check for strings since role might be a string
+    if (typeof role === 'string') {
+      return user.roles?.includes(role as any) || user.role === role;
+    }
     return user.roles?.includes(role) || user.role === role;
   };
 

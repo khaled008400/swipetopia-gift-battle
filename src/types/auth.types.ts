@@ -1,5 +1,5 @@
 
-export type UserRole = 'admin' | 'user' | 'seller' | 'streamer' | 'moderator';
+export type UserRole = 'admin' | 'user' | 'seller' | 'streamer' | 'moderator' | 'owner';
 
 export interface NotificationPreferences {
   battles: boolean;
