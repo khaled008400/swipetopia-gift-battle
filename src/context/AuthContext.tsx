@@ -212,21 +212,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   };
 
   const isAdmin = () => {
-    if (!user) return false;
-    
-    const hasAdminRole = user.roles?.includes('admin') || user.role === 'admin';
-    
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.roles?.includes('admin')) {
-          return true;
+    if (!user) {
+      // If no user is authenticated, check localStorage as fallback
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          if (parsedUser && parsedUser.roles && 
+             (parsedUser.roles.includes('admin') || parsedUser.roles.includes('owner'))) {
+            console.log("Admin detected from localStorage", parsedUser.roles);
+            return true;
+          }
+        } catch (e) {
+          console.error("Error parsing stored user:", e);
         }
-      } catch (e) {
-        console.error("Error parsing stored user:", e);
       }
+      return false;
     }
+    
+    // Check if user has admin role directly in the user object
+    const hasAdminRole = 
+      (user.roles && (user.roles.includes('admin') || user.roles.includes('owner'))) || 
+      user.role === 'admin' || 
+      user.role === 'owner';
+    
+    console.log("Checking admin status from user object:", hasAdminRole, user.roles);
     
     return hasAdminRole;
   };

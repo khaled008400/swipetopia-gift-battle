@@ -50,7 +50,7 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
   }, [isAuthenticated, isLoading, navigate, requireAdmin, isAdmin]);
 
   // Show loading state
-  if (isLoading) {
+  if (isLoading || isAuthorized === null) {
     return fallback || (
       <div className="flex justify-center items-center h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-app-yellow" />

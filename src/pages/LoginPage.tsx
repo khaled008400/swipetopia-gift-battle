@@ -20,15 +20,15 @@ const LoginPage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       const from = new URLSearchParams(location.search).get('from');
-      const isUserAdmin = isAdmin();
+      const userIsAdmin = isAdmin();
       
       // Debug logs to see what's happening
-      console.log("User is authenticated", { from, isAdmin: isUserAdmin, email });
+      console.log("User is authenticated", { from, isAdmin: userIsAdmin, email });
       
-      if (from && from.startsWith('/admin') && isUserAdmin) {
+      if (from && from.startsWith('/admin') && userIsAdmin) {
         console.log("Redirecting to admin page:", from);
         navigate(from);
-      } else if (isUserAdmin) {
+      } else if (userIsAdmin) {
         console.log("Admin user detected, redirecting to admin dashboard");
         navigate('/admin-dashboard');
       } else {
@@ -54,6 +54,13 @@ const LoginPage = () => {
       console.log("Attempting login with:", email, "password:", password ? "********" : "empty");
       const result = await login(email, password);
       console.log("Login result:", result);
+      
+      // Show success message
+      toast({
+        title: "Login successful",
+        description: isAdmin() ? "Welcome to the admin panel" : "Welcome back!",
+      });
+      
       // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error("Login error:", error);
@@ -129,6 +136,10 @@ const LoginPage = () => {
               Sign up
             </Link>
           </p>
+          <div className="mt-4 text-sm text-gray-500">
+            <p>Admin login: admin@flytick.net / 123456</p>
+            <p>Regular admin: admin@example.com / any password</p>
+          </div>
         </div>
       </div>
     </div>
