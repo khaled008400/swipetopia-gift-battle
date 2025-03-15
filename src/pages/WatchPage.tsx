@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -52,6 +51,12 @@ const WatchPage: React.FC = () => {
     );
   }
   
+  const likesCount = video.likes || 0;
+  const commentsCount = video.comments_count || 0;
+  const username = video.profiles?.username || '';
+  const avatarUrl = video.profiles?.avatar_url || '';
+  const viewCount = video.view_count || 0;
+  
   return (
     <div className="container mx-auto p-4">
       <Button variant="ghost" onClick={() => window.history.back()} className="mb-4">
@@ -74,19 +79,19 @@ const WatchPage: React.FC = () => {
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={video.profiles?.avatar_url || ''} />
-                  <AvatarFallback>{(video.profiles?.username || '').charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={avatarUrl} />
+                  <AvatarFallback>{username.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="ml-3">
-                  <p className="font-medium">{video.profiles?.username}</p>
-                  <p className="text-sm text-gray-500">{video.view_count || 0} views</p>
+                  <p className="font-medium">{username}</p>
+                  <p className="text-sm text-gray-500">{viewCount} views</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">
                   <ThumbsUp className="h-4 w-4 mr-2" />
-                  {video.likes || 0}
+                  {likesCount}
                 </Button>
                 <Button variant="outline" size="sm">
                   <Share2 className="h-4 w-4 mr-2" />
@@ -113,7 +118,7 @@ const WatchPage: React.FC = () => {
           
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Comments ({video.comments_count || 0})</h2>
+              <h2 className="text-xl font-semibold">Comments ({commentsCount})</h2>
               <Button variant="outline" size="sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Add Comment
@@ -127,7 +132,6 @@ const WatchPage: React.FC = () => {
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold mb-4">Recommended Videos</h2>
           <div className="space-y-4">
-            {/* This would be populated with related videos */}
             <p className="text-gray-500 text-center p-4">
               Related videos will appear here
             </p>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,6 @@ const ProductListings = () => {
         if (error) throw error;
         
         if (data) {
-          // Map the database products to our Product interface
           const formattedProducts: Product[] = data.map(item => ({
             id: item.id,
             name: item.name,
@@ -132,7 +130,7 @@ const ProductListings = () => {
             image_url: data.image,
             stock_quantity: data.inventory,
             category: data.category,
-            status: data.status
+            status: data.status as "active" | "draft" | "unavailable"
           })
           .eq('id', editProduct.id);
           
@@ -148,7 +146,7 @@ const ProductListings = () => {
                 image_url: data.image,
                 stock_quantity: data.inventory,
                 category: data.category,
-                status: data.status
+                status: data.status as "active" | "draft" | "unavailable"
               } 
             : p
         ));
@@ -168,7 +166,7 @@ const ProductListings = () => {
             stock_quantity: data.inventory,
             category: data.category,
             seller_id: user?.id,
-            status: data.status
+            status: data.status as "active" | "draft" | "unavailable"
           })
           .select()
           .single();
@@ -176,7 +174,7 @@ const ProductListings = () => {
         if (error) throw error;
         
         if (newProduct) {
-          setProducts([...products, newProduct as Product]);
+          setProducts([...products, newProduct as unknown as Product]);
         }
         
         toast({

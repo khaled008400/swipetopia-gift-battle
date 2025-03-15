@@ -22,9 +22,9 @@ const StreamingAdminService = {
   // Get streaming configuration
   getStreamingConfig: async (): Promise<StreamingConfig | null> => {
     try {
-      // Use raw RPC call since we don't have the appropriate typing
+      // Use raw RPC call with an empty object instead of a string parameter
       const { data, error } = await supabase
-        .rpc('get_streaming_config');
+        .rpc('get_streaming_config', {});
       
       if (error) throw error;
       return data as StreamingConfig;
@@ -37,7 +37,7 @@ const StreamingAdminService = {
   // Update Agora API settings
   updateAgoraSettings: async (appId: string, appCertificate: string, enabled: boolean) => {
     try {
-      // Use raw RPC call since we don't have the appropriate typing
+      // Use correct parameter object
       const { error } = await supabase.rpc('update_streaming_config', { 
         p_app_id: appId,
         p_app_certificate: appCertificate,
@@ -112,7 +112,7 @@ const StreamingAdminService = {
 
       if (error) throw error;
 
-      // Log the action using an RPC function
+      // Log the action using an RPC function with an object parameter
       await supabase
         .rpc('log_admin_action', {
           p_action_type: 'shutdown_stream',

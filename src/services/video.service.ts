@@ -92,7 +92,7 @@ const VideoService = {
   },
 
   downloadVideo: async (videoId: string) => {
-    // Log the download action
+    // Log the download action with an object parameter
     await supabase.rpc('log_video_download', { 
       video_id: videoId 
     });
@@ -108,7 +108,7 @@ const VideoService = {
   },
 
   shareVideo: async (videoId: string) => {
-    // Log the share action
+    // Log the share action with an object parameter
     await supabase.rpc('log_video_share', { 
       video_id: videoId 
     });
@@ -150,7 +150,7 @@ const VideoService = {
       throw new Error('User must be authenticated to report videos');
     }
     
-    // Log the report
+    // Log the report with an object parameter
     await supabase.rpc('report_video', { 
       p_video_id: videoId, 
       p_reason: reason,

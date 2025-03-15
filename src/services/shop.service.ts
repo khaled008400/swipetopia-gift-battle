@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Product {
@@ -9,7 +8,7 @@ export interface Product {
   image_url?: string;
   stock_quantity?: number;
   category?: string;
-  status?: string;
+  status?: 'active' | 'draft' | 'unavailable';
   seller_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -31,7 +30,7 @@ export interface AdminProduct {
   image: string;
   inventory: number;
   category: string;
-  status: string;
+  status: 'active' | 'draft' | 'unavailable';
 }
 
 const ShopService = {
