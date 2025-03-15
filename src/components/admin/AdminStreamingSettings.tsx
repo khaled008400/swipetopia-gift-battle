@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { StreamingAdminService } from '@/services/streaming';
 import { Button } from '@/components/ui/button';
@@ -23,14 +23,16 @@ const AdminStreamingSettings = () => {
   const { data: streamingConfig, isLoading } = useQuery({
     queryKey: ['streamingConfig'],
     queryFn: StreamingAdminService.getStreamingConfig,
-    onSuccess: (data) => {
-      if (data) {
-        setAgoraAppId(data.agora_app_id || '');
-        setAgoraAppCertificate(data.agora_app_certificate || '');
-        setAgoraEnabled(data.agora_enabled || false);
-      }
-    }
   });
+  
+  // Set form values when data is loaded
+  useEffect(() => {
+    if (streamingConfig) {
+      setAgoraAppId(streamingConfig.agora_app_id || '');
+      setAgoraAppCertificate(streamingConfig.agora_app_certificate || '');
+      setAgoraEnabled(streamingConfig.agora_enabled || false);
+    }
+  }, [streamingConfig]);
   
   // Update Agora settings mutation
   const updateAgoraMutation = useMutation({
@@ -43,7 +45,7 @@ const AdminStreamingSettings = () => {
         description: "Agora API settings have been updated successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error updating settings",
         description: error.message || "Failed to update Agora API settings",

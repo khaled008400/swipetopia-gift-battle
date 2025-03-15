@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -7,7 +8,7 @@ import SearchBar from './SearchBar';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { cart } = useCart();
+  const { items } = useCart();
   const { user, isAdmin } = useAuth();
 
   const toggleMenu = () => {
@@ -46,9 +47,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             
             <Link to="/cart" className="relative text-sm font-medium text-app-black hover:text-app-yellow">
               <ShoppingBag className="h-5 w-5" />
-              {cart.length > 0 && (
+              {items.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-app-yellow text-white text-xs rounded-full px-1.5 py-0 h-5 w-5 flex items-center justify-center">
-                  {cart.length}
+                  {items.length}
                 </span>
               )}
             </Link>

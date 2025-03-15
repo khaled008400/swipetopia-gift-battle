@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { LiveStream } from "@/models/streaming";
 import { adminApi } from "../api";
+import axios from "axios";
 
 /**
  * Service for administering streaming features
@@ -13,7 +14,7 @@ const StreamingAdminService = {
       const { data, error } = await supabase
         .from('streaming_config')
         .select('*')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -26,14 +27,19 @@ const StreamingAdminService = {
   // Update Agora API settings
   updateAgoraSettings: async (appId: string, appCertificate: string, enabled: boolean) => {
     try {
-      const { data, error } = await adminApi.put('/streaming/config', {
-        agora_app_id: appId,
-        agora_app_certificate: appCertificate,
-        agora_enabled: enabled
-      });
-
+      // Using regular supabase query since we already have the streaming_config table
+      const { error } = await supabase
+        .from('streaming_config')
+        .update({
+          agora_app_id: appId,
+          agora_app_certificate: appCertificate,
+          agora_enabled: enabled,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);  // Assuming there's only one config row
+      
       if (error) throw error;
-      return data;
+      return { success: true };
     } catch (err) {
       console.error('Error updating Agora settings:', err);
       throw err;
@@ -122,12 +128,11 @@ const StreamingAdminService = {
   // Get stream analytics data
   getStreamAnalytics: async (period = 'week') => {
     try {
-      const { data, error } = await adminApi.get('/analytics/streams', {
+      const response = await axios.get('/api/analytics/streams', {
         params: { period }
       });
-
-      if (error) throw error;
-      return data;
+      
+      return response.data;
     } catch (err) {
       console.error('Error fetching stream analytics:', err);
       return {
@@ -142,12 +147,11 @@ const StreamingAdminService = {
   // Get gift usage analytics
   getGiftAnalytics: async (period = 'week') => {
     try {
-      const { data, error } = await adminApi.get('/analytics/gifts', {
+      const response = await axios.get('/api/analytics/gifts', {
         params: { period }
       });
-
-      if (error) throw error;
-      return data;
+      
+      return response.data;
     } catch (err) {
       console.error('Error fetching gift analytics:', err);
       return {
