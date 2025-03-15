@@ -2,18 +2,42 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import VideoUploadModal from '@/components/upload/VideoUploadModal';
 import VideoService from '@/services/video.service';
+import { Video } from '@/types/video.types';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 
 const VideosPage: React.FC = () => {
   const location = useLocation();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // You can perform actions based on the route here
-    console.log('Current route:', location.pathname);
-  }, [location]);
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      setIsLoading(true);
+      const fetchedVideos = await VideoService.getVideos();
+      setVideos(fetchedVideos);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load videos',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+    }
+  };
 
   const handleOpenUploadModal = () => {
     setIsUploadModalOpen(true);
@@ -23,15 +47,85 @@ const VideosPage: React.FC = () => {
     setIsUploadModalOpen(false);
   };
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Videos</h1>
-      <Button onClick={handleOpenUploadModal}>
-        <Plus className="mr-2 h-4 w-4" />
-        Upload Video
-      </Button>
+  const handleVideoUploadSuccess = (videoId: string) => {
+    // Refresh the video list after successful upload
+    fetchVideos();
+  };
 
-      <VideoUploadModal isOpen={isUploadModalOpen} onClose={handleCloseUploadModal} />
+  return (
+    <div className="container mx-auto p-4 max-w-7xl">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Videos</h1>
+        <Button onClick={handleOpenUploadModal}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Video
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      ) : videos.length > 0 ? (
+        <ScrollArea className="h-[calc(100vh-180px)]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {videos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
+        </ScrollArea>
+      ) : (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <Upload className="h-16 w-16 text-gray-400 mb-4" />
+          <h3 className="text-xl font-medium mb-2">No videos yet</h3>
+          <p className="text-gray-500 mb-4">Upload your first video to get started</p>
+          <Button onClick={handleOpenUploadModal}>Upload Video</Button>
+        </div>
+      )}
+
+      <VideoUploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={handleCloseUploadModal} 
+        onSuccess={handleVideoUploadSuccess}
+      />
+    </div>
+  );
+};
+
+// Video card component to display each video
+const VideoCard = ({ video }: { video: Video }) => {
+  return (
+    <div className="rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
+      <div className="aspect-[9/16] bg-black relative">
+        {video.thumbnail_url ? (
+          <img 
+            src={video.thumbnail_url} 
+            alt={video.title} 
+            className="w-full h-full object-cover"
+          />
+        ) : video.video_url ? (
+          <video 
+            src={video.video_url} 
+            className="w-full h-full object-cover" 
+            preload="metadata"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-900">
+            <span className="text-white">Video Preview</span>
+          </div>
+        )}
+        <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+          {video.view_count || 0} views
+        </div>
+      </div>
+      <div className="p-3">
+        <h3 className="font-medium text-sm line-clamp-1">{video.title}</h3>
+        <div className="flex items-center mt-2 text-xs text-gray-500">
+          <span>{video.profiles?.username}</span>
+          <span className="mx-1">•</span>
+          <span>{new Date(video.created_at || '').toLocaleDateString()}</span>
+        </div>
+      </div>
     </div>
   );
 };
