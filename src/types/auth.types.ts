@@ -42,14 +42,14 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   
-  // Added missing methods/properties
+  // Added methods/properties
   isAuthenticated?: boolean;
   isLoading?: boolean;
   login?: (email: string, password: string) => Promise<any>;
   signup?: (email: string, username: string, password: string, roles?: UserRole[]) => Promise<void>;
   logout?: () => Promise<void>;
   isAdmin?: () => boolean;
-  hasRole?: (role: UserRole) => boolean;
+  hasRole?: (role: UserRole | string) => boolean;
   requiresAuth?: (action: () => void, redirectUrl?: string) => void;
   session?: any;
 }

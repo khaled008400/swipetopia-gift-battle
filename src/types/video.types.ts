@@ -22,12 +22,15 @@ export interface Video {
   shares?: number;
   is_liked?: boolean;
   is_saved?: boolean;
+  url?: string; // Add URL property
+  isPublic?: boolean; // Add isPublic property
   user: {
     username: string;
     avatar: string;
     avatar_url?: string;
     isFollowing?: boolean;
   };
+  profiles?: any; // Add profiles property for VideoPlayerPage
 }
 
 export interface BattleVideo extends Video {

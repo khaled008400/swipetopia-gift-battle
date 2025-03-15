@@ -274,19 +274,19 @@ const VideoFeed = ({ videos, activeVideoIndex, onVideoView, isBattlePage }: Vide
           }`}
         >
           <VideoPlayer
-            videoUrl={video.url}
+            videoUrl={video.video_url || video.url}
             isActive={index === activeVideoIndex}
           />
           <VideoOverlay
             video={{
               id: video.id,
               description: video.description || "",
-              likes: video.likes || 0,
-              comments: video.comments || 0,
-              shares: video.shares || 0,
+              likes: video.likes || video.likes_count || 0,
+              comments: video.comments || video.comments_count || 0,
+              shares: video.shares || video.shares_count || 0,
               user: {
                 username: video.user?.username || "",
-                avatar: video.user?.avatar_url || "",
+                avatar: video.user?.avatar_url || video.user?.avatar || "",
                 isFollowing: false
               }
             }}

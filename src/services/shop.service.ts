@@ -74,7 +74,7 @@ const formatProduct = (product: any): Product => {
   };
 };
 
-const ShopService = {
+export const ShopService = {
   getProducts: async (category?: string) => {
     let query = supabase
       .from('products')
@@ -258,66 +258,9 @@ const ShopService = {
     return order;
   },
 
-  toggleProductLike: async (productId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('You must be logged in to like products');
-    }
-    
-    try {
-      const { data, error } = await supabase.rpc('toggle_product_like', {
-        p_user_id: user.id,
-        p_product_id: productId
-      });
-      
-      if (error) throw error;
-      
-      return { liked: data };
-    } catch (err) {
-      console.error('Error toggling product like:', err);
-      throw err;
-    }
-  },
-
-  getUserLikedProducts: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return [];
-    }
-    
-    try {
-      const { data, error } = await supabase.rpc('get_user_liked_products', {
-        p_user_id: user.id
-      });
-      
-      if (error) throw error;
-      
-      return (data || []).map(formatProduct);
-    } catch (err) {
-      console.error('Error fetching liked products:', err);
-      return [];
-    }
-  },
-
-  getUserLikedProductIds: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return [];
-    }
-    
-    try {
-      const { data, error } = await supabase.rpc('get_user_liked_product_ids', {
-        p_user_id: user.id
-      });
-      
-      if (error) throw error;
-      
-      return data || [];
-    } catch (err) {
-      console.error('Error fetching liked product IDs:', err);
-      return [];
-    }
-  }
+  toggleProductLike,
+  getUserLikedProducts,
+  getUserLikedProductIds
 };
 
 export default ShopService;
