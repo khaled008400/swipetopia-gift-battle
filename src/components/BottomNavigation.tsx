@@ -1,12 +1,14 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, ShoppingBag, User, Zap, Search, Video, Settings } from "lucide-react";
+import { Home, Plus, ShoppingBag, User, Settings, Search, Video } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
 
 const BottomNavigation = () => {
   const location = useLocation();
-  const { itemCount } = useCart();
+  const cartContext = useCart();
+  // Use a default value if cart context is not available
+  const itemCount = cartContext?.itemCount || 0;
   
   const isActive = (path: string) => {
     return location.pathname === path;
