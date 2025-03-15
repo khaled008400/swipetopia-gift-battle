@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ShopHeader from "../components/shop/ShopHeader";
 import ShopSearch from "../components/shop/ShopSearch";
@@ -11,27 +11,70 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { StoreIcon } from "lucide-react";
+import ShopService from "@/services/shop.service";
 
 const ShopPage = () => {
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [activeTab, setActiveTab] = useState("featured");
   const [likedProducts, setLikedProducts] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
 
-  const toggleLike = (productId: string) => {
-    if (likedProducts.includes(productId)) {
-      setLikedProducts(likedProducts.filter(id => id !== productId));
+  // Fetch user's liked products when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchLikedProducts();
+    }
+  }, [user]);
+
+  const fetchLikedProducts = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const likedProductIds = await ShopService.getUserLikedProductIds();
+      setLikedProducts(likedProductIds);
+    } catch (error) {
+      console.error("Error fetching liked products:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleLike = async (productId: string) => {
+    if (!user) {
       toast({
-        description: "Removed from favorites",
-        duration: 2000,
+        description: "Please log in to save products",
+        duration: 3000,
       });
-    } else {
-      setLikedProducts([...likedProducts, productId]);
+      return;
+    }
+
+    try {
+      const result = await ShopService.toggleProductLike(productId);
+      
+      if (result.liked) {
+        setLikedProducts([...likedProducts, productId]);
+        toast({
+          description: "Added to favorites",
+          duration: 2000,
+        });
+      } else {
+        setLikedProducts(likedProducts.filter(id => id !== productId));
+        toast({
+          description: "Removed from favorites",
+          duration: 2000,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling product like:", error);
       toast({
-        description: "Added to favorites",
-        duration: 2000,
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+        duration: 3000,
       });
     }
   };

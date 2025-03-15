@@ -57,7 +57,7 @@ serve(async (req) => {
     }
 
     // Parse the request body
-    const { action, videoId, status, videoData } = await req.json();
+    const { action, videoId, status, videoData, productId, productData } = await req.json();
 
     // Handle different actions
     switch (action) {
@@ -126,6 +126,83 @@ serve(async (req) => {
 
         return new Response(
           JSON.stringify({ success: true, message: "Video deleted successfully" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+
+      // Add shop-related endpoints
+      case "listProducts":
+        const { data: products, error: productsError, count: productsCount } = await supabase
+          .from("products")
+          .select(`
+            *,
+            profiles:seller_id (username, avatar_url)
+          `, { count: "exact" })
+          .order("created_at", { ascending: false });
+
+        if (productsError) throw productsError;
+
+        return new Response(
+          JSON.stringify({ products, total: productsCount }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+
+      case "updateProduct":
+        if (!productId) {
+          return new Response(
+            JSON.stringify({ error: "Product ID is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const { error: productUpdateError } = await supabase
+          .from("products")
+          .update({ 
+            ...productData,
+            updated_at: new Date().toISOString() 
+          })
+          .eq("id", productId);
+
+        if (productUpdateError) throw productUpdateError;
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Product updated successfully" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+
+      case "deleteProduct":
+        if (!productId) {
+          return new Response(
+            JSON.stringify({ error: "Product ID is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // First delete any stream products relations
+        const { error: streamProductsDeleteError } = await supabase
+          .from("live_stream_products")
+          .delete()
+          .eq("product_id", productId);
+
+        if (streamProductsDeleteError) throw streamProductsDeleteError;
+
+        // Then delete any order items related to this product
+        const { error: orderItemsDeleteError } = await supabase
+          .from("order_items")
+          .delete()
+          .eq("product_id", productId);
+
+        if (orderItemsDeleteError) throw orderItemsDeleteError;
+
+        // Finally delete the product
+        const { error: productDeleteError } = await supabase
+          .from("products")
+          .delete()
+          .eq("id", productId);
+
+        if (productDeleteError) throw productDeleteError;
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Product deleted successfully" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
 

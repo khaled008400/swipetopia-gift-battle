@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AdminVideos from './AdminVideos';
+import AdminProducts from './AdminProducts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,6 +64,7 @@ const ContentModeration = () => {
           <TabsTrigger value="videos">Videos</TabsTrigger>
           <TabsTrigger value="comments">Comments</TabsTrigger>
           <TabsTrigger value="users">User Content</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
         </TabsList>
         
         <TabsContent value="videos" className="space-y-4">
@@ -81,6 +83,10 @@ const ContentModeration = () => {
             <h3 className="text-lg font-medium mb-2">User Content</h3>
             <p className="text-gray-500">Manage user profiles and content</p>
           </div>
+        </TabsContent>
+        
+        <TabsContent value="products" className="space-y-4">
+          <AdminProducts />
         </TabsContent>
       </Tabs>
     </div>
