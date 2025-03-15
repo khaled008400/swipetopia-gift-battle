@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, ShoppingBag, User, Settings, Search, Video } from "lucide-react";
+import { Home, Plus, ShoppingBag, User, Settings, Search, Video, ShoppingCart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
 
@@ -31,6 +31,9 @@ const BottomNavigation = () => {
       >
         <Plus className="h-6 w-6" />
       </button>
+      <Link to="/shop" className={`group nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <ShoppingCart className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
+      </Link>
       <Link to="/wallet" className={`group nav-item ${isActive('/wallet') ? 'text-app-yellow' : 'text-gray-400'}`}>
         <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/wallet') ? 'text-app-yellow' : ''}`} />
         {itemCount > 0 && !isActive('/wallet') && (

@@ -12,6 +12,8 @@ import { AuthProvider } from './context/AuthContext';
 import VideoPlayerPage from './pages/VideoPlayerPage';
 import Layout from './components/Layout';
 import { CartProvider } from './context/CartContext';
+import ShopPage from './pages/ShopPage';
+import ExplorePage from './pages/ExplorePage';
 
 function App() {
   return (
@@ -28,7 +30,8 @@ function App() {
               <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
               <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
               <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
-              <Route path="/explore" element={<Layout><HomePage /></Layout>} />
+              <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
+              <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
             </Routes>
           </Router>
         </CartProvider>
