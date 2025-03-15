@@ -6,35 +6,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
   Loader2, Grid, Lock, Settings, Edit2, Activity, ChevronRight, 
-  ShoppingBag, Video, Gift, Users, Calendar, Award, StoreIcon
+  ShoppingBag, Video, Users, Calendar, Award, StoreIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStats from "@/components/profile/ProfileStats";
 import RolesDisplay from "@/components/profile/RolesDisplay";
 import ProfileEdit from "@/components/profile/ProfileEdit";
-import { UserRole } from "@/types/auth.types";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import WalletSection from "@/components/profile/WalletSection";
+import { useToast } from "@/components/ui/use-toast";
 
 const ProfilePage = () => {
-  const { user, logout, hasRole } = useAuth();
+  const { user: authUser, logout, hasRole } = useAuth();
+  const { profile, isLoading: profileLoading, refreshProfile } = useUserProfile(authUser?.session?.user || null);
+  
   const [activeTab, setActiveTab] = useState("videos");
   const [userVideos, setUserVideos] = useState<any[]>([]);
   const [likedVideos, setLikedVideos] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUserContent = async () => {
-      if (!user) return;
+      if (!profile) return;
       
-      setIsLoading(true);
+      setIsLoadingVideos(true);
       try {
         const { data: videos, error: videosError } = await supabase
           .from('short_videos')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', profile.id);
           
         if (videosError) throw videosError;
         setUserVideos(videos || []);
@@ -42,7 +46,7 @@ const ProfilePage = () => {
         const { data: likes, error: likesError } = await supabase
           .from('video_likes')
           .select('video_id')
-          .eq('user_id', user.id);
+          .eq('user_id', profile.id);
           
         if (likesError) throw likesError;
         
@@ -55,23 +59,60 @@ const ProfilePage = () => {
             
           if (likedVideosError) throw likedVideosError;
           setLikedVideos(likedVideosData || []);
+        } else {
+          setLikedVideos([]);
         }
       } catch (error) {
         console.error("Error fetching user content:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load your content"
+        });
       } finally {
-        setIsLoading(false);
+        setIsLoadingVideos(false);
       }
     };
     
     fetchUserContent();
-  }, [user]);
+  }, [profile]);
 
-  if (!user) {
-    return null;
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-app-black">
+        <Loader2 className="h-12 w-12 animate-spin text-app-yellow mb-4" />
+        <p className="text-gray-400">Loading your profile...</p>
+      </div>
+    );
   }
 
-  const renderVideoGrid = (videos: any[]) => {
-    if (isLoading) {
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-app-black">
+        <div className="bg-app-gray-dark p-8 rounded-lg text-center max-w-md">
+          <h2 className="text-xl font-bold mb-4">Profile Not Available</h2>
+          <p className="text-gray-400 mb-6">
+            You need to be logged in to view your profile. Please log in or create an account.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => navigate('/login')} className="bg-app-yellow text-app-black">
+              Login
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/signup')}
+              className="border-app-yellow text-app-yellow"
+            >
+              Sign Up
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderVideoGrid = (videos: any[], loading: boolean) => {
+    if (loading) {
       return (
         <div className="flex justify-center items-center h-48">
           <Loader2 className="h-8 w-8 animate-spin text-app-yellow" />
@@ -91,7 +132,11 @@ const ProfilePage = () => {
     return (
       <div className="grid grid-cols-3 gap-1">
         {videos.map((video, i) => (
-          <div key={video.id} className="aspect-[9/16] bg-app-gray-light flex items-center justify-center relative overflow-hidden">
+          <div 
+            key={video.id} 
+            className="aspect-[9/16] bg-app-gray-light flex items-center justify-center relative overflow-hidden"
+            onClick={() => navigate(`/video/${video.id}`)}
+          >
             <img 
               src={video.thumbnail_url || `https://picsum.photos/id/${10 + i}/300/500`} 
               alt={`Video thumbnail`}
@@ -138,7 +183,12 @@ const ProfilePage = () => {
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold">Your Products</h3>
-              <Button size="sm" variant="outline" className="border-app-yellow text-app-yellow">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-app-yellow text-app-yellow"
+                onClick={() => navigate('/seller/products/new')}
+              >
                 + Add Product
               </Button>
             </div>
@@ -168,7 +218,11 @@ const ProfilePage = () => {
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold">Your Streams</h3>
-              <Button size="sm" className="bg-app-yellow text-app-black">
+              <Button 
+                size="sm" 
+                className="bg-app-yellow text-app-black"
+                onClick={() => navigate('/streamer/broadcast')}
+              >
                 Go Live
               </Button>
             </div>
@@ -202,6 +256,20 @@ const ProfilePage = () => {
     return roleContent;
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to log out. Please try again."
+      });
+    }
+  };
+
   if (editMode) {
     return (
       <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black p-4">
@@ -215,16 +283,21 @@ const ProfilePage = () => {
             Cancel
           </Button>
         </div>
-        <ProfileEdit />
+        <ProfileEdit 
+          onComplete={() => {
+            setEditMode(false);
+            refreshProfile();
+          }}
+        />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black">
-      <ProfileHeader user={user} />
-      <RolesDisplay roles={user?.roles || []} />
-      <ProfileStats user={user} />
+      <ProfileHeader user={profile} />
+      <RolesDisplay roles={profile?.roles || []} />
+      <ProfileStats user={profile} />
 
       <div className="mt-4 flex gap-3 w-full justify-center px-4">
         <Button 
@@ -237,14 +310,14 @@ const ProfilePage = () => {
         <Button 
           variant="outline" 
           className="bg-transparent border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black" 
-          onClick={() => logout()}
+          onClick={handleLogout}
         >
           <Settings className="w-4 h-4 mr-2" /> Logout
         </Button>
       </div>
       
       {/* Wallet Section */}
-      <WalletSection user={user} />
+      <WalletSection user={profile} />
       
       <div className="mt-4 px-4 space-y-3">
         <Link to="/activity">
@@ -301,11 +374,11 @@ const ProfilePage = () => {
         </TabsList>
         
         <TabsContent value="videos" className="mt-4 px-4">
-          {renderVideoGrid(userVideos)}
+          {renderVideoGrid(userVideos, isLoadingVideos)}
         </TabsContent>
         
         <TabsContent value="liked" className="mt-4 px-4">
-          {renderVideoGrid(likedVideos)}
+          {renderVideoGrid(likedVideos, isLoadingVideos)}
         </TabsContent>
         
         {getRoleContent()}

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Camera, LoaderCircle, Store, Video } from "lucide-react";
 import { UserProfile } from "@/types/auth.types";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 // Profile validation schema
 const profileSchema = z.object({
@@ -25,25 +26,45 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-const ProfileEdit = () => {
-  const { user, hasRole } = useAuth();
+interface ProfileEditProps {
+  onComplete?: () => void;
+}
+
+const ProfileEdit = ({ onComplete }: ProfileEditProps) => {
+  const { user: authUser, hasRole } = useAuth();
+  const { profile, updateProfile } = useUserProfile(authUser?.session?.user || null);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url || null);
 
   // Initialize form with current user data
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      username: user?.username || "",
-      bio: user?.bio || "",
-      location: user?.location || "",
-      interests: user?.interests ? user.interests.join(", ") : "",
-      shop_name: user?.shop_name || "",
-      stream_key: user?.stream_key || "",
+      username: profile?.username || "",
+      bio: profile?.bio || "",
+      location: profile?.location || "",
+      interests: profile?.interests ? profile.interests.join(", ") : "",
+      shop_name: profile?.shop_name || "",
+      stream_key: profile?.stream_key || "",
     },
   });
+
+  // Update form when profile changes
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        username: profile.username || "",
+        bio: profile.bio || "",
+        location: profile.location || "",
+        interests: profile.interests ? profile.interests.join(", ") : "",
+        shop_name: profile.shop_name || "",
+        stream_key: profile.stream_key || "",
+      });
+      setAvatarPreview(profile.avatar_url);
+    }
+  }, [profile, form]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -54,7 +75,7 @@ const ProfileEdit = () => {
   };
 
   const onSubmit = async (values: ProfileFormValues) => {
-    if (!user) return;
+    if (!profile) return;
     
     setIsLoading(true);
     try {
@@ -64,10 +85,10 @@ const ProfileEdit = () => {
         : undefined;
 
       // Upload avatar if changed
-      let avatarUrl = user.avatar_url;
+      let avatarUrl = profile.avatar_url;
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const fileName = `${profile.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `avatars/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
@@ -82,26 +103,20 @@ const ProfileEdit = () => {
         avatarUrl = data.publicUrl;
       }
 
-      // Update profile in database
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: values.username,
-          avatar_url: avatarUrl,
-          bio: values.bio,
-          location: values.location,
-          interests: interestsArray,
-          shop_name: hasRole("seller") ? values.shop_name : null,
-          stream_key: hasRole("streamer") ? values.stream_key : null,
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
+      // Update profile using the hook
+      const result = await updateProfile({
+        username: values.username,
+        avatar_url: avatarUrl,
+        bio: values.bio,
+        location: values.location,
+        interests: interestsArray,
+        shop_name: hasRole("seller") ? values.shop_name : undefined,
+        stream_key: hasRole("streamer") ? values.stream_key : undefined,
       });
+
+      if (result.success && onComplete) {
+        onComplete();
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
@@ -114,7 +129,7 @@ const ProfileEdit = () => {
     }
   };
 
-  if (!user) return null;
+  if (!profile) return null;
 
   return (
     <div className="w-full max-w-md mx-auto pb-8">
@@ -122,7 +137,7 @@ const ProfileEdit = () => {
         <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-app-gray-dark mb-2 bg-app-gray-light">
           <img
             src={avatarPreview || "https://via.placeholder.com/150"}
-            alt={user.username}
+            alt={profile.username}
             className="w-full h-full object-cover"
           />
           <label className="absolute bottom-0 right-0 bg-app-yellow text-app-black p-1 rounded-full cursor-pointer">
