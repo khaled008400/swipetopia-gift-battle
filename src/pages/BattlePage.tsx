@@ -83,6 +83,7 @@ const BattlePage = () => {
       <div className="absolute bottom-20 right-3 z-30">
         {filteredVideos[activeVideoIndex] && (
           <VideoActions 
+            videoId={filteredVideos[activeVideoIndex].id} // Add videoId here
             likes={filteredVideos[activeVideoIndex].likes} 
             comments={filteredVideos[activeVideoIndex].comments} 
             shares={filteredVideos[activeVideoIndex].shares}

@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 
 interface VideoActionsProps {
-  videoId: string;
+  videoId?: string; // Made optional
   isLiked?: boolean;
   isSaved?: boolean;
   likes?: number;
@@ -25,7 +25,7 @@ interface VideoActionsProps {
 }
 
 const VideoActions = ({ 
-  videoId, 
+  videoId = '', // Default to empty string
   isLiked = false,
   isSaved = false,
   likes,

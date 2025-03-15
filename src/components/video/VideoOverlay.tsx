@@ -101,6 +101,7 @@ const VideoOverlay = ({
           )}
           
           <VideoActions 
+            videoId={video.id} // Ensure videoId is properly passed
             likes={video.likes}
             comments={video.comments}
             shares={video.shares}
@@ -108,7 +109,6 @@ const VideoOverlay = ({
             isSaved={isSaved}
             onLike={onLike}
             onSave={onSave}
-            videoId={video.id}
             allowDownloads={video.allowDownloads}
           />
         </div>

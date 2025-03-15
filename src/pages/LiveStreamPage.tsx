@@ -318,6 +318,7 @@ const LiveStreamPage = () => {
       )}
       
       {filteredVideos[activeVideoIndex] && <VideoActions 
+        videoId={filteredVideos[activeVideoIndex].id}
         likes={filteredVideos[activeVideoIndex].likes} 
         comments={filteredVideos[activeVideoIndex].comments} 
         shares={filteredVideos[activeVideoIndex].shares} 
