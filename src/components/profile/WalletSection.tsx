@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/types/auth.types";
-import { Wallet, Gift, ArrowRight } from "lucide-react";
+import { Wallet, Gift, ArrowRight, CreditCard, History, Coins } from "lucide-react";
 
 interface WalletSectionProps {
   user: UserProfile;
@@ -24,10 +24,23 @@ const WalletSection = ({ user }: WalletSectionProps) => {
           </div>
           <ArrowRight className="h-5 w-5 text-gray-400" />
         </div>
-        <div className="flex items-baseline">
-          <span className="text-2xl font-bold mr-2">{user.coins}</span>
-          <span className="text-app-yellow text-sm">coins</span>
+        
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="flex items-baseline">
+              <Coins className="h-4 w-4 text-app-yellow mr-1" />
+              <span className="text-2xl font-bold mr-2">{user.coins}</span>
+              <span className="text-app-yellow text-sm">coins</span>
+            </div>
+            {user.payment_methods && user.payment_methods.length > 0 && (
+              <div className="flex items-center mt-1 text-xs text-gray-400">
+                <CreditCard className="h-3 w-3 mr-1" />
+                <span>Payment methods: {user.payment_methods.length}</span>
+              </div>
+            )}
+          </div>
         </div>
+        
         <div className="mt-3 flex gap-2">
           <Button 
             size="sm" 
@@ -49,6 +62,7 @@ const WalletSection = ({ user }: WalletSectionProps) => {
               navigate("/wallet?tab=history");
             }}
           >
+            <History className="h-4 w-4 mr-1" />
             Transaction History
           </Button>
         </div>
