@@ -13,6 +13,7 @@ import ProfileStats from "@/components/profile/ProfileStats";
 import RolesDisplay from "@/components/profile/RolesDisplay";
 import ProfileEdit from "@/components/profile/ProfileEdit";
 import { UserRole } from "@/types/auth.types";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
   const { user, logout, hasRole } = useAuth();
@@ -21,6 +22,7 @@ const ProfilePage = () => {
   const [likedVideos, setLikedVideos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserContent = async () => {
@@ -220,7 +222,7 @@ const ProfilePage = () => {
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black">
       <ProfileHeader user={user} />
-      <RolesDisplay roles={user.roles} />
+      <RolesDisplay roles={user?.roles || []} />
       <ProfileStats user={user} />
 
       <div className="mt-4 flex gap-3 w-full justify-center px-4">
@@ -241,6 +243,19 @@ const ProfilePage = () => {
       </div>
       
       <div className="mt-4 px-4 space-y-3">
+        <Link to="/wallet">
+          <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+            <div className="flex items-center">
+              <Gift className="h-5 w-5 text-app-yellow mr-2" />
+              <span className="text-white">Wallet & Coins</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-app-yellow mr-2">{user?.coins || 0} coins</span>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+        </Link>
+        
         <Link to="/activity">
           <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
             <div className="flex items-center">
@@ -262,6 +277,16 @@ const ProfilePage = () => {
             </div>
           </Link>
         )}
+        
+        <Link to="/settings">
+          <div className="bg-app-gray-dark p-3 rounded-lg flex justify-between items-center">
+            <div className="flex items-center">
+              <Settings className="h-5 w-5 text-app-yellow mr-2" />
+              <span className="text-white">App Settings</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </div>
+        </Link>
       </div>
 
       <Tabs defaultValue="videos" className="w-full mt-8">

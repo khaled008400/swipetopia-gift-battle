@@ -1,70 +1,156 @@
 
-import { Hash, ChevronRight, Activity, Video } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Trending, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PopularLiveSection } from "@/components/explore/PopularLiveSection";
+import { TrendingVideosSection } from "@/components/explore/TrendingVideosSection";
 
 const TrendingHashtags = () => {
-  // Mock data for trending hashtags
-  const trendingHashtags = [
-    { name: "dance", count: "1.2M", videos: 12500 },
-    { name: "viral", count: "986K", videos: 8700 },
-    { name: "challenge", count: "752K", videos: 6300 },
-    { name: "music", count: "684K", videos: 5900 },
-    { name: "comedy", count: "547K", videos: 4800 },
-  ];
+  const [hashtags, setHashtags] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creators, setCreators] = useState<any[]>([]);
+  const [trendingVideos, setTrendingVideos] = useState<any[]>([]);
   
-  // Mock data for trending categories
-  const trendingCategories = [
-    { name: "Live Streams", icon: Activity },
-    { name: "Latest Videos", icon: Video },
-  ];
-
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch hashtags (could be from video descriptions)
+        const { data: videos } = await supabase
+          .from('short_videos')
+          .select('description, id, view_count, thumbnail_url, title')
+          .order('view_count', { ascending: false })
+          .limit(10);
+          
+        // Extract hashtags from video descriptions
+        const extractedHashtags: {tag: string, count: number}[] = [];
+        const hashtagMap = new Map();
+        
+        videos?.forEach(video => {
+          if (video.description) {
+            const matches = video.description.match(/#(\w+)/g);
+            if (matches) {
+              matches.forEach((tag: string) => {
+                const count = hashtagMap.get(tag) || 0;
+                hashtagMap.set(tag, count + 1);
+              });
+            }
+          }
+        });
+        
+        hashtagMap.forEach((count, tag) => {
+          extractedHashtags.push({ tag, count });
+        });
+        
+        setHashtags(extractedHashtags.sort((a, b) => b.count - a.count).slice(0, 10));
+        
+        // Fetch live streamers for popular live section
+        const { data: streams } = await supabase
+          .from('streams')
+          .select(`
+            id, 
+            title, 
+            viewer_count,
+            profiles:user_id (
+              id, 
+              username, 
+              avatar_url
+            )
+          `)
+          .eq('status', 'live')
+          .order('viewer_count', { ascending: false })
+          .limit(5);
+          
+        const liveCreators = streams?.map(stream => ({
+          id: stream.id,
+          name: stream.profiles?.username || 'Anonymous',
+          avatar: stream.profiles?.avatar_url || '/placeholder.svg',
+          viewerCount: stream.viewer_count || 0,
+          title: stream.title
+        })) || [];
+        
+        setCreators(liveCreators);
+        
+        // Fetch trending videos
+        const { data: trendingVids } = await supabase
+          .from('short_videos')
+          .select(`
+            id,
+            title,
+            thumbnail_url,
+            view_count,
+            profiles:user_id (
+              username,
+              avatar_url
+            )
+          `)
+          .order('view_count', { ascending: false })
+          .limit(5);
+          
+        setTrendingVideos(trendingVids?.map(video => ({
+          id: video.id,
+          thumbnail: video.thumbnail_url || `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/500`,
+          username: video.profiles?.username || 'Anonymous',
+          viewCount: video.view_count || 0,
+          title: video.title
+        })) || []);
+        
+      } catch (error) {
+        console.error("Error fetching explore data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+  
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center mb-2">
+          <Trending className="w-5 h-5 mr-2 text-app-yellow" />
+          <h2 className="text-lg font-medium">Trending Hashtags</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-8 w-20 rounded-full" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full rounded-lg mt-8" />
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-6">
+      <PopularLiveSection creators={creators} />
+      
+      <TrendingVideosSection videos={trendingVideos} />
+      
       <div>
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xl font-semibold">Trending Hashtags</h2>
-          <Button variant="ghost" className="text-sm text-gray-400">
-            See all
-          </Button>
+        <div className="flex items-center mb-4">
+          <Trending className="w-5 h-5 mr-2 text-app-yellow" />
+          <h2 className="text-lg font-medium">Trending Hashtags</h2>
         </div>
         
-        <div className="space-y-2">
-          {trendingHashtags.map((tag, index) => (
-            <Card key={index} className="bg-app-gray-dark border-none p-3">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 rounded-full bg-app-gray flex items-center justify-center mr-3">
-                    <Hash className="h-5 w-5 text-app-yellow" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">#{tag.name}</h3>
-                    <p className="text-xs text-gray-400">{tag.count} views • {tag.videos} videos</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
+        <div className="flex flex-wrap gap-2">
+          {hashtags.length > 0 ? (
+            hashtags.map((tag, index) => (
+              <div 
+                key={index} 
+                className="px-3 py-1.5 bg-gradient-to-r from-app-yellow to-amber-500 rounded-full text-app-black font-medium text-sm flex items-center"
+              >
+                #{tag.tag.replace('#', '')}
+                <span className="ml-1.5 bg-app-black bg-opacity-20 px-1.5 rounded-full text-xs">
+                  {tag.count}
+                </span>
               </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-      
-      <Separator className="bg-app-gray-dark" />
-      
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Explore Categories</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {trendingCategories.map((category, index) => (
-            <Card key={index} className="bg-app-gray-dark border-none p-4">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-app-gray flex items-center justify-center mb-2">
-                  <category.icon className="h-6 w-6 text-app-yellow" />
-                </div>
-                <h3 className="font-medium text-center">{category.name}</h3>
-              </div>
-            </Card>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-400">No trending hashtags found</p>
+          )}
         </div>
       </div>
     </div>

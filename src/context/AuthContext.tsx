@@ -146,6 +146,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return user?.roles.includes(role) || false;
   };
 
+  // Check if a feature requires authentication
+  const requiresAuth = (action: () => void, redirectUrl?: string) => {
+    if (session && user) {
+      action();
+    } else {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to continue",
+        variant: "destructive"
+      });
+      
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -157,7 +174,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         signup,
         logout,
         isAdmin,
-        hasRole
+        hasRole,
+        requiresAuth
       }}
     >
       {children}

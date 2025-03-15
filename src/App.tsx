@@ -23,6 +23,7 @@ import AdminPage from '@/pages/AdminPage';
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import ExplorePage from '@/pages/ExplorePage';
 import VideosPage from '@/pages/VideosPage';
+import WalletPage from '@/pages/WalletPage';
 
 const queryClient = new QueryClient();
 
@@ -44,10 +45,12 @@ const AppContent = () => {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        {/* Redirect from index to videos page */}
+        <Route path="/" element={<Navigate to="/videos" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/wallet" element={<WalletPage />} />
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/live" element={<LivePage />} />

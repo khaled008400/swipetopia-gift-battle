@@ -1,5 +1,6 @@
 
 import { Search } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 
 interface ExploreSearchProps {
@@ -8,17 +9,30 @@ interface ExploreSearchProps {
 }
 
 const ExploreSearch = ({ searchQuery, setSearchQuery }: ExploreSearchProps) => {
+  const [inputValue, setInputValue] = useState(searchQuery);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputValue !== searchQuery) {
+        setSearchQuery(inputValue);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [inputValue, searchQuery, setSearchQuery]);
+  
   return (
-    <div className="relative mb-6">
-      <div className="relative flex items-center">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          placeholder="Search hashtags, users, videos, lives..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-app-gray-dark pl-9 pr-4 border-app-gray-light text-white rounded-full h-11"
-        />
+    <div className="relative mb-4">
+      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+        <Search className="h-4 w-4 text-gray-400" />
       </div>
+      <Input
+        type="text"
+        placeholder="Search users, videos, hashtags..."
+        className="pl-10 bg-app-gray-dark border-app-gray-light text-white"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+      />
     </div>
   );
 };

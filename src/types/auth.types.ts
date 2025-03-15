@@ -46,4 +46,5 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   isAdmin: () => boolean;
   hasRole: (role: UserRole) => boolean;
+  requiresAuth: (action: () => void, redirectUrl?: string) => void;
 }
