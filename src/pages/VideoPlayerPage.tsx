@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import VideoPlayer from '@/components/VideoPlayer';
 import { Video } from '@/types/video.types';
 import { Sheet } from '@/components/ui/sheet';
+import VideoComments from '@/components/video/VideoComments';
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
