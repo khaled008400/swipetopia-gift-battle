@@ -21,6 +21,7 @@ import ProductTagger from "@/components/live/ProductTagger";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GiftService } from '@/services/streaming';
 
 type BattleMode = 'normal' | '1v1' | '2v2';
 
@@ -123,7 +124,7 @@ const LiveStreamPage = () => {
     }
     
     try {
-      await LiveStreamService.sendGift(selectedStreamerId, giftType, amount, activeBattle || null);
+      await GiftService.sendGift(selectedStreamerId, giftType, amount, activeBattle);
       
       toast({
         title: "Gift Sent!",
