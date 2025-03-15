@@ -44,7 +44,7 @@ enable_signup = true
 enable_confirmations = false
 
 [functions]
-serve_flowtron = true
+# Removed the problematic serve_flowtron = true line
 
 [realtime]
 enabled = true

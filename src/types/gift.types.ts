@@ -24,6 +24,16 @@ export interface GiftTransaction {
   gift_id: string;
   amount: number;
   created_at?: string;
+  // Add the missing properties that are used in RecentGifts.tsx
+  sender?: {
+    username: string;
+    avatar_url?: string;
+  };
+  gift?: {
+    name: string;
+    icon: string;
+    color: string;
+  };
 }
 
 export interface Follower {
