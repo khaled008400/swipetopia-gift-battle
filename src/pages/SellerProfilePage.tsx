@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -70,8 +68,14 @@ const SellerProfilePage = () => {
         
         // Check if the current user is following this seller
         if (user && user.id) {
-          // In a real app, you would check against a followers table
-          setIsFollowing(Math.random() > 0.7);
+          const { data: followData, error: followError } = await supabase
+            .from("followers")
+            .select("*")
+            .eq("follower_id", user.id)
+            .eq("following_id", sellerId)
+            .single();
+            
+          setIsFollowing(!!followData);
         }
       } catch (error) {
         console.error("Error fetching seller info:", error);
@@ -88,17 +92,44 @@ const SellerProfilePage = () => {
     fetchSellerInfo();
   }, [sellerId, user, toast]);
 
-  const handleFollow = () => {
+  const handleFollow = async () => {
     if (!user) {
       navigate("/login");
       return;
     }
     
-    setIsFollowing(!isFollowing);
-    toast({
-      title: isFollowing ? "Unfollowed" : "Following",
-      description: isFollowing ? "You've unfollowed this seller" : "You're now following this seller",
-    });
+    try {
+      if (isFollowing) {
+        // Unfollow
+        await supabase
+          .from("followers")
+          .delete()
+          .eq("follower_id", user.id)
+          .eq("following_id", sellerId);
+      } else {
+        // Follow
+        await supabase
+          .from("followers")
+          .insert({
+            follower_id: user.id,
+            following_id: sellerId
+          });
+      }
+      
+      setIsFollowing(!isFollowing);
+      toast({
+        title: isFollowing ? "Unfollowed" : "Following",
+        description: isFollowing ? "You've unfollowed this seller" : "You're now following this seller",
+      });
+      
+    } catch (error) {
+      console.error("Error following/unfollowing:", error);
+      toast({
+        title: "Error",
+        description: "Could not update follow status",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
