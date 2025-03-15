@@ -24,6 +24,7 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
       // First check if user is authenticated
       if (!isAuthenticated) {
         // If not authenticated, redirect to login with a return path
+        console.log("User is not authenticated, redirecting to login");
         const returnPath = window.location.pathname;
         navigate(`/login?from=${returnPath}`);
         setIsAuthorized(false);
@@ -31,6 +32,8 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
       // If admin access is required, check if user is admin
       else if (requireAdmin) {
         const userIsAdmin = isAdmin();
+        console.log("Checking admin status:", userIsAdmin);
+        
         if (!userIsAdmin) {
           console.log("User is not an admin, redirecting to home");
           navigate('/');

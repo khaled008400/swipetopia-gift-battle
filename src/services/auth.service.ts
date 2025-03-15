@@ -36,6 +36,18 @@ const MOCK_USER: User = {
   roles: ["admin"] // Adding the admin role to the mock user
 };
 
+// Additional admin user for owner
+const OWNER_USER: User = {
+  id: "owner-user-456",
+  username: "owner",
+  email: "admin@flytick.net",
+  avatar: "/placeholder.svg",
+  coins: 1000,
+  followers: 250,
+  following: 100,
+  roles: ["admin", "owner"] // Owner has additional privileges
+};
+
 // Check if we're in development mode
 const isDevelopment = import.meta.env.DEV;
 
@@ -56,6 +68,19 @@ const AuthService = {
       // In development, allow mock login if API is unavailable
       if (isDevelopment) {
         console.warn("Using mock login for development. In production, this would fail.");
+        
+        // Special case for owner login
+        if (credentials.username === 'admin@flytick.net' && credentials.password === '123456') {
+          console.log("Owner login detected!");
+          const mockResponse = {
+            token: "mock-token-for-owner",
+            user: OWNER_USER
+          };
+          
+          localStorage.setItem('auth_token', mockResponse.token);
+          localStorage.setItem('user', JSON.stringify(mockResponse.user));
+          return mockResponse;
+        }
         
         // Use admin@example.com/admin for admin login, otherwise regular user
         const isAdminLogin = credentials.username === 'admin@example.com' || credentials.username === 'admin';

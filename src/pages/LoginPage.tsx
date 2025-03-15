@@ -23,9 +23,9 @@ const LoginPage = () => {
       const isUserAdmin = isAdmin();
       
       // Debug logs to see what's happening
-      console.log("User is authenticated", { from, isAdmin: isUserAdmin });
+      console.log("User is authenticated", { from, isAdmin: isUserAdmin, email });
       
-      if (from?.startsWith('/admin') && isUserAdmin) {
+      if (from && from.startsWith('/admin') && isUserAdmin) {
         console.log("Redirecting to admin page:", from);
         navigate(from);
       } else if (isUserAdmin) {
@@ -36,7 +36,7 @@ const LoginPage = () => {
         navigate('/');
       }
     }
-  }, [isAuthenticated, isAdmin, navigate, location]);
+  }, [isAuthenticated, isAdmin, navigate, location, email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +51,17 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      console.log("Attempting login with:", email);
+      console.log("Attempting login with:", email, "password:", password ? "********" : "empty");
       const result = await login(email, password);
       console.log("Login result:", result);
       // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error("Login error:", error);
-      // The error toast is handled in the AuthContext
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
