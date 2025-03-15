@@ -305,7 +305,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center border-b p-4">
+      <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-background z-10">
         <h2 className="text-xl font-bold">
           {step === "upload" ? "Upload video" : 
            step === "edit" ? "Edit video" :
