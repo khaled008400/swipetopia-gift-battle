@@ -149,11 +149,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         if (email === 'admin@flytick.net' && password === '123456') {
           console.log("Using owner mock login");
           // Create mock user with owner role
-          const mockUser = {
+          const mockUser: UserProfile = {
             id: 'owner-user-456',
             email: email,
             username: 'owner',
-            roles: ['admin', 'owner'],
+            roles: ['admin', 'owner'] as UserRole[],
             role: 'owner'
           };
           
@@ -165,11 +165,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         else if (email === 'admin@example.com') {
           console.log("Using admin mock login");
           // Create mock user with admin role
-          const mockUser = {
+          const mockUser: UserProfile = {
             id: 'mock-user-123',
             email: email,
             username: 'admin',
-            roles: ['admin'],
+            roles: ['admin'] as UserRole[],
             role: 'admin'
           };
           
@@ -288,8 +288,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return hasAdminRole;
   };
 
-  const hasRole = (role: UserRole) => {
+  const hasRole = (role: UserRole | string) => {
     if (!user) return false;
+    
     // Also check for strings since role might be a string
     if (typeof role === 'string') {
       return user.roles?.includes(role as any) || user.role === role;

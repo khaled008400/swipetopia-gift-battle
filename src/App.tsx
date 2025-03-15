@@ -20,18 +20,38 @@ import AuthCheck from './components/auth/AuthCheck';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
-// Create a mock supabase client for now until we properly integrate it
+// Create a supabase client with environment variables or fallback to placeholders
 const supabaseClient = createClient(
-  'https://placeholder-url.supabase.co',
-  'placeholder-key'
+  import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
 );
 
 function App() {
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-    // Mock session setup for now
-    setSession(null);
+    // Log configuration for debugging
+    console.log("App initialized with Supabase client");
+
+    // Check for existing session on mount
+    const checkSession = async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      setSession(data?.session || null);
+    };
+    
+    checkSession();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      (_event, newSession) => {
+        console.log("Auth state changed:", _event);
+        setSession(newSession);
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   return (

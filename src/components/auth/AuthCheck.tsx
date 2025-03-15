@@ -20,6 +20,13 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
+    console.log("AuthCheck rendering with:", { 
+      isAuthenticated, 
+      isLoading, 
+      requireAdmin,
+      isAdmin: isAdmin()
+    });
+    
     if (!isLoading) {
       // First check if user is authenticated
       if (!isAuthenticated) {
@@ -52,8 +59,11 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
   // Show loading state
   if (isLoading || isAuthorized === null) {
     return fallback || (
-      <div className="flex justify-center items-center h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-app-yellow" />
+      <div className="flex justify-center items-center h-[50vh] bg-app-black text-white">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-app-yellow mx-auto mb-2" />
+          <p className="text-sm text-gray-400">Checking permissions...</p>
+        </div>
       </div>
     );
   }
