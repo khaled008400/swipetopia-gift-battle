@@ -5,18 +5,21 @@ interface VideoErrorDisplayProps {
   isLive?: boolean;
   message?: string;
   onRetry?: () => void;
+  notFound?: boolean;
 }
 
-const VideoErrorDisplay = ({ isLive, message, onRetry }: VideoErrorDisplayProps) => {
+const VideoErrorDisplay = ({ isLive, message, onRetry, notFound }: VideoErrorDisplayProps) => {
   return (
     <div className="h-full w-full flex items-center justify-center bg-gray-900 text-white">
       <div className="text-center p-4">
         <div className="flex justify-center mb-4">
           <AlertTriangle className="h-12 w-12 text-yellow-500" />
         </div>
-        <p className="text-xl mb-2">Video unavailable</p>
+        <p className="text-xl mb-2">
+          {notFound ? "Video not found" : "Video unavailable"}
+        </p>
         <p className="text-sm text-gray-400 mb-4">
-          {message || `${isLive ? "Live stream" : "Video"} could not be loaded`}
+          {message || `${isLive ? "Live stream" : "Video"} could not be loaded. It may be unavailable or restricted.`}
         </p>
         {onRetry && (
           <button 

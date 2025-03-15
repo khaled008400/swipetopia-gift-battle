@@ -19,6 +19,7 @@ const VideoPlayerCore = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   const tryPlayVideo = async () => {
     if (!videoRef.current || !isActive || loadError) return;
@@ -26,12 +27,21 @@ const VideoPlayerCore = ({
     try {
       await videoRef.current.play();
       setIsPlaying(true);
+      // Reset error state on successful play
+      setLoadError(false);
+      setIsNotFound(false);
     } catch (err) {
       console.error("Error playing video:", err);
       setIsPlaying(false);
       
-      // Only increment attempts if it's a media error, not a user interaction error
+      // Check specific error types
       if (videoRef.current?.error) {
+        const errorCode = videoRef.current.error.code;
+        // MEDIA_ERR_SRC_NOT_SUPPORTED = 4
+        if (errorCode === 4) {
+          setIsNotFound(true);
+        }
+        
         setLoadAttempts(prev => prev + 1);
         if (loadAttempts >= 2) {
           setLoadError(true);
@@ -44,14 +54,24 @@ const VideoPlayerCore = ({
   const handleRetry = () => {
     if (videoRef.current) {
       setLoadError(false);
+      setIsNotFound(false);
+      setLoadAttempts(0);
       videoRef.current.load();
-      tryPlayVideo();
+      // Short delay before retry
+      setTimeout(() => {
+        tryPlayVideo();
+      }, 500);
     }
   };
 
   const handleError = () => {
     console.error("Video error event triggered for:", videoUrl);
     setLoadAttempts(prev => prev + 1);
+    
+    // Check if video source is invalid
+    if (videoRef.current?.error?.code === 4) {
+      setIsNotFound(true);
+    }
     
     if (loadAttempts >= 2) {
       setLoadError(true);
@@ -67,6 +87,7 @@ const VideoPlayerCore = ({
   useEffect(() => {
     // Reset error state when video URL changes
     setLoadError(false);
+    setIsNotFound(false);
     setLoadAttempts(0);
   }, [videoUrl]);
 
@@ -85,8 +106,11 @@ const VideoPlayerCore = ({
     <>
       {loadError ? (
         <VideoErrorDisplay 
-          message="This video could not be loaded" 
-          onRetry={handleRetry} 
+          message={isNotFound 
+            ? "This video source cannot be played" 
+            : "This video could not be loaded"} 
+          onRetry={handleRetry}
+          notFound={isNotFound}
         />
       ) : (
         <video 

@@ -16,6 +16,7 @@ const VideoPlaybackController = ({
   setIsPlaying 
 }: VideoPlaybackControllerProps) => {
   const [playAttempts, setPlayAttempts] = useState(0);
+  const [lastErrorTime, setLastErrorTime] = useState(0);
   const { toast } = useToast();
   
   const tryPlayVideo = async () => {
@@ -28,25 +29,38 @@ const VideoPlaybackController = ({
       setPlayAttempts(0);
     } catch (err) {
       console.error("Error playing video:", err);
-      setPlayAttempts(prev => prev + 1);
+      
+      // Only count as a new attempt if more than 2 seconds have passed since last error
+      const now = Date.now();
+      if (now - lastErrorTime > 2000) {
+        setPlayAttempts(prev => prev + 1);
+        setLastErrorTime(now);
+      }
       
       // After multiple attempts, show an error toast
       if (playAttempts >= 2) {
         onError();
         setIsPlaying(false);
-        toast({
-          title: "Playback error",
-          description: "There was a problem playing this video. Try again later.",
-          variant: "destructive",
-        });
+        
+        // Only show toast if we haven't shown one recently
+        if (now - lastErrorTime > 5000) {
+          toast({
+            title: "Playback error",
+            description: "There was a problem playing this video. Try again later.",
+            variant: "destructive",
+          });
+        }
       } else {
-        // Try again with a delay
+        // Try again with a delay but with backoff
+        const delay = playAttempts === 0 ? 1000 : 2000;
         setTimeout(() => {
           if (isActive && videoRef.current) {
             videoRef.current.load();
-            videoRef.current.play().catch(() => onError());
+            videoRef.current.play().catch(() => {
+              // Silent catch - we'll handle in the next iteration
+            });
           }
-        }, 1000);
+        }, delay);
       }
     }
   };
@@ -65,6 +79,7 @@ const VideoPlaybackController = ({
   // Reset play attempts when video changes
   useEffect(() => {
     setPlayAttempts(0);
+    setLastErrorTime(0);
   }, [videoRef.current?.src]);
 
   return null; // This is a controller component with no UI
