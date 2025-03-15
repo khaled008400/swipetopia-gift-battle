@@ -16,7 +16,7 @@ interface GiftEvent {
   battle_id?: string;
 }
 
-interface BattleRequest {
+export interface BattleRequest {
   id: string;
   stream_a_id: string;
   stream_b_id: string;

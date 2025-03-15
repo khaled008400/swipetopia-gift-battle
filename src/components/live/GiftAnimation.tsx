@@ -10,7 +10,7 @@ interface GiftAnimationProps {
 }
 
 // Mock gift animations based on type
-const giftAnimations = {
+const giftAnimations: Record<string, { icon: string; color: string; className: string }> = {
   "heart": {
     icon: "❤️",
     color: "bg-red-500",

@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 
 export interface LiveStream {
   id: string;
@@ -57,7 +56,17 @@ const LiveStreamService = {
       throw error;
     }
     
-    return data;
+    // Map the returned data to match the LiveStream interface
+    return {
+      id: data.id,
+      streamer_id: data.user_id,
+      title: data.title,
+      description: data.description,
+      is_live: data.status === 'live',
+      viewer_count: data.viewer_count,
+      started_at: data.started_at,
+      ended_at: data.ended_at
+    };
   },
   
   // End a live stream
@@ -82,10 +91,10 @@ const LiveStreamService = {
       .from('streams')
       .select(`
         id,
-        user_id as streamer_id,
+        user_id,
         title,
         description,
-        status as is_live,
+        status,
         viewer_count,
         started_at,
         ended_at
@@ -97,9 +106,16 @@ const LiveStreamService = {
       throw error;
     }
     
+    // Map the returned data to match the LiveStream interface
     return data.map(stream => ({
-      ...stream,
-      is_live: stream.is_live === 'live'
+      id: stream.id,
+      streamer_id: stream.user_id,
+      title: stream.title,
+      description: stream.description,
+      is_live: stream.status === 'live',
+      viewer_count: stream.viewer_count,
+      started_at: stream.started_at,
+      ended_at: stream.ended_at
     }));
   },
   
@@ -197,7 +213,7 @@ const LiveStreamService = {
       p_receiver_id: receiverId,
       p_gift_type: giftType,
       p_amount: amount,
-      p_battle_id: battleId
+      p_battle_id: battleId || null
     });
     
     if (rpcError) {

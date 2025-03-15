@@ -4,12 +4,12 @@ import BattleProgressIndicators from "@/components/battle/BattleProgressIndicato
 import { useBattleVideos } from "@/hooks/useBattleVideos";
 import VideoActions from "@/components/video/VideoActions";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Gift, Zap } from "lucide-react";
+import { ArrowLeft, Users, Gift, Zap, X } from "lucide-react";
 import BattleModeSelector from "@/components/live/BattleModeSelector";
 import ActiveStreamers from "@/components/live/ActiveStreamers";
 import { useToast } from "@/components/ui/use-toast";
 import LiveStreamService from "@/services/live-stream.service";
-import { useLiveStreamRealtime } from "@/hooks/useLiveStreamRealtime";
+import { useLiveStreamRealtime, BattleRequest } from "@/hooks/useLiveStreamRealtime";
 import { useAuth } from "@/context/AuthContext";
 import BattleInterface from "@/components/live/BattleInterface";
 import GiftAnimation from "@/components/live/GiftAnimation";
@@ -30,6 +30,13 @@ const STREAMER_VIDEO_MAPPING: Record<string, string[]> = {
   "5": ["5", "1"] // gamerpro videos
 };
 
+// Add type definition for GiftButton component
+interface GiftButtonProps {
+  type: string;
+  amount: number;
+  onClick: () => void;
+}
+
 const LiveStreamPage = () => {
   const [battleMode, setBattleMode] = useState<BattleMode>('normal');
   const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
@@ -37,6 +44,7 @@ const LiveStreamPage = () => {
   const [currentGiftAnimation, setCurrentGiftAnimation] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [battleRequests, setBattleRequests] = useState<BattleRequest[]>([]);
   
   const {
     activeVideoIndex,
@@ -51,12 +59,19 @@ const LiveStreamPage = () => {
   // Get real-time updates for the selected stream
   const {
     incomingGifts,
-    battleRequests,
+    battleRequests: realtimeBattleRequests,
     activeBattle,
     streamScore,
     opponentScore
   } = useLiveStreamRealtime(selectedStreamerId || undefined);
   
+  // Update local battle requests state when realtime updates come in
+  useEffect(() => {
+    if (realtimeBattleRequests.length > 0) {
+      setBattleRequests(realtimeBattleRequests);
+    }
+  }, [realtimeBattleRequests]);
+
   const handleStreamerSelect = (streamerId: string) => {
     setSelectedStreamerId(streamerId);
     const streamerVideoIds = STREAMER_VIDEO_MAPPING[streamerId] || [];
@@ -157,7 +172,7 @@ const LiveStreamPage = () => {
         <LiveBattleFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} mode={battleMode} />
       )}
       
-      <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
+      <BattleProgressIndicators videos={filteredVideos} activeVideoIndex={activeVideoIndex} />
 
       <div className="absolute top-4 left-4 z-30 flex items-center">
         <Link to="/">
@@ -282,8 +297,8 @@ const LiveStreamPage = () => {
 };
 
 // Gift button component for the gift menu
-const GiftButton = ({ type, amount, onClick }) => {
-  const giftIcons = {
+const GiftButton = ({ type, amount, onClick }: GiftButtonProps) => {
+  const giftIcons: Record<string, string> = {
     heart: "❤️",
     star: "⭐",
     rocket: "🚀",
