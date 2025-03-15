@@ -8,11 +8,13 @@ import {
   Package, 
   PercentCircle, 
   Radio, 
+  Settings,
   ShoppingCart, 
   Ticket, 
   Truck, 
   Users, 
   Video,
+  Wallet,
   Loader2
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
@@ -28,6 +30,9 @@ import AdminReports from './AdminReports';
 import AdminLiveStreams from './AdminLiveStreams';
 import VirtualGifts from './VirtualGifts';
 import TestUsersGenerator from './TestUsersGenerator';
+import AdminStreamingSettings from './AdminStreamingSettings';
+import AdminVirtualGifts from './AdminVirtualGifts';
+import AdminWallets from './AdminWallets';
 
 interface AdminTabbedInterfaceProps {
   stats: AdminStats;
@@ -55,11 +60,13 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
     { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "videos", label: "Videos", icon: Video },
     { id: "virtual-gifts", label: "Virtual Gifts", icon: Gift },
+    { id: "wallets", label: "Wallets", icon: Wallet },
     { id: "coupons", label: "Coupons", icon: Ticket },
     { id: "offers", label: "Offers", icon: PercentCircle },
     { id: "shipping", label: "Shipping", icon: Truck },
+    { id: "streaming", label: "Streaming", icon: Radio },
     { id: "reports", label: "Reports", icon: BarChart },
-    { id: "live-streams", label: "Live Streams", icon: Radio },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -77,11 +84,11 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-11 w-full">
+        <TabsList className="flex flex-wrap">
           {tabs.map(tab => (
-            <TabsTrigger key={tab.id} value={tab.id}>
-              <tab.icon className="w-4 h-4" />
-              <span className="ml-2">{tab.label}</span>
+            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
+              <tab.icon className="w-4 h-4 mr-2" />
+              <span>{tab.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -98,8 +105,8 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
           <AdminVideos />
         </TabsContent>
         
-        <TabsContent value="live-streams">
-          <AdminLiveStreams />
+        <TabsContent value="streaming">
+          <AdminStreamingSettings />
         </TabsContent>
         
         <TabsContent value="orders">
@@ -126,8 +133,18 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
           <AdminReports />
         </TabsContent>
         
-        <TabsContent value="virtual-gifts" className="p-0">
-          <VirtualGifts />
+        <TabsContent value="virtual-gifts">
+          <AdminVirtualGifts />
+        </TabsContent>
+        
+        <TabsContent value="wallets">
+          <AdminWallets />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AdminLiveStreams />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

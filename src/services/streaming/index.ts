@@ -3,6 +3,7 @@ import BattleService from './battle.service';
 import ProductService from './product.service';
 import StreamService from './stream.service';
 import GiftService from './gift.service';
+import StreamingAdminService from './admin.service';
 import type { LiveStream, Battle, BattleRequest, StreamProduct } from '@/models/streaming';
 
 // Export individual services
@@ -10,7 +11,8 @@ export {
   BattleService,
   ProductService,
   StreamService,
-  GiftService
+  GiftService,
+  StreamingAdminService
 };
 
 // Export types properly with 'export type'

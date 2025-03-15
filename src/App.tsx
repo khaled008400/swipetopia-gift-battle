@@ -1,73 +1,71 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Suspense, lazy } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/context/AuthContext";
-import { CartProvider } from "@/context/CartContext";
-import Layout from "@/components/Layout";
-import BottomNavigation from "@/components/BottomNavigation";
-import "./App.css";
-import StreamerBroadcastPage from "./pages/StreamerBroadcastPage";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
+import { CartProvider } from '@/context/CartContext';
+import Layout from '@/components/Layout';
+import HomePage from '@/pages/HomePage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import ProfilePage from '@/pages/ProfilePage';
+import ShopPage from '@/pages/ShopPage';
+import ProductDetailPage from '@/pages/ProductDetailPage';
+import LivePage from '@/pages/LivePage';
+import WatchPage from '@/pages/WatchPage';
+import CheckoutPage from '@/pages/CheckoutPage';
+import CategoryPage from '@/pages/CategoryPage';
+import SearchPage from '@/pages/SearchPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import AdminPage from '@/pages/AdminPage';
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
-// Lazy-loaded page components
-const HomePage = lazy(() => import("@/pages/HomePage"));
-const ExplorePage = lazy(() => import("@/pages/ExplorePage"));
-const ShopPage = lazy(() => import("@/pages/ShopPage"));
-const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
-const VideoPage = lazy(() => import("@/pages/VideoPage"));
-const VideosPage = lazy(() => import("@/pages/VideosPage"));
-const BattlePage = lazy(() => import("@/pages/BattlePage"));
-const LiveStreamPage = lazy(() => import("@/pages/LiveStreamPage"));
-const LoginPage = lazy(() => import("@/pages/LoginPage"));
-const SignupPage = lazy(() => import("@/pages/SignupPage"));
-const ActivityPage = lazy(() => import("@/pages/ActivityPage"));
-const WalletPage = lazy(() => import("@/pages/WalletPage"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const SellerDashboardPage = lazy(() => import("@/pages/SellerDashboardPage"));
-const SellerProfilePage = lazy(() => import("@/pages/SellerProfilePage"));
-const StreamerProfilePage = lazy(() => import("@/pages/StreamerProfilePage"));
-const AdminPage = lazy(() => import("@/pages/AdminPage"));
-const CheckoutPage = lazy(() => import("@/pages/CheckoutPage"));
+const queryClient = new QueryClient();
 
 function App() {
+  const [loading, setLoading] = useState(true);
+  const { checkAuth } = useAuth();
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      await checkAuth();
+      setLoading(false);
+    };
+
+    initializeAuth();
+  }, [checkAuth]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <AuthProvider>
-      <CartProvider>
-        <Router>
-          <Suspense
-            fallback={
-              <div className="h-screen w-screen flex items-center justify-center bg-app-black">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
-              </div>
-            }
-          >
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<HomePage />} />
-                <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/shop" element={<ShopPage />} />
+      <QueryClientProvider client={queryClient}>
+        <CartProvider>
+          <Router>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/video/:id" element={<VideoPage />} />
-                <Route path="/videos" element={<VideosPage />} />
-                <Route path="/battle" element={<BattlePage />} />
-                <Route path="/live" element={<LiveStreamPage />} />
-                <Route path="/activity" element={<ActivityPage />} />
-                <Route path="/wallet" element={<WalletPage />} />
-                <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
-                <Route path="/seller/:id" element={<SellerProfilePage />} />
-                <Route path="/streamer/:id" element={<StreamerProfilePage />} />
+                <Route path="/shop" element={<ShopPage />} />
+                <Route path="/product/:id" element={<ProductDetailPage />} />
+                <Route path="/live/:streamId" element={<LivePage />} />
+                <Route path="/watch/:videoId" element={<WatchPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/admin/*" element={<AdminPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/live/new" element={<StreamerBroadcastPage />} />
-            </Routes>
-          </Suspense>
-          <BottomNavigation />
-          <Toaster />
-        </Router>
-      </CartProvider>
+                <Route path="/category/:categoryName" element={<CategoryPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Layout>
+          </Router>
+          <Toaster richColors closeButton />
+        </CartProvider>
+      </QueryClientProvider>
     </AuthProvider>
   );
 }
