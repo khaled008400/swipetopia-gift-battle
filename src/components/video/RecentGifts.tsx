@@ -19,7 +19,7 @@ const RecentGifts = ({ videoId, limit = 5 }: RecentGiftsProps) => {
       try {
         setLoading(true);
         
-        // Get initial gifts - Modified query to join properly with profiles and virtual_gifts
+        // Get initial gift transactions
         const { data: initialGiftsData, error } = await supabase
           .from('gift_transactions')
           .select(`
@@ -29,9 +29,7 @@ const RecentGifts = ({ videoId, limit = 5 }: RecentGiftsProps) => {
             video_id,
             gift_id,
             amount,
-            created_at,
-            profiles:profiles!sender_id(username, avatar_url),
-            gift:virtual_gifts!gift_id(name, icon, color)
+            created_at
           `)
           .eq('video_id', videoId)
           .order('created_at', { ascending: false })
@@ -42,28 +40,38 @@ const RecentGifts = ({ videoId, limit = 5 }: RecentGiftsProps) => {
           return;
         }
           
-        if (initialGiftsData) {
-          // Transform the data to match our GiftTransaction type
-          const transformedGifts = initialGiftsData.map(item => ({
-            id: item.id,
-            sender_id: item.sender_id,
-            receiver_id: item.receiver_id,
-            video_id: item.video_id,
-            gift_id: item.gift_id,
-            amount: item.amount,
-            created_at: item.created_at,
-            sender: {
-              username: item.profiles?.username || 'Anonymous',
-              avatar_url: item.profiles?.avatar_url
-            },
-            gift: {
-              name: item.gift?.name || 'Gift',
-              icon: item.gift?.icon || '🎁',
-              color: item.gift?.color || '#6366f1'
-            }
-          })) as GiftTransaction[];
+        if (initialGiftsData && initialGiftsData.length > 0) {
+          // Enrich transactions with sender and gift data
+          const enrichedGifts = await Promise.all(initialGiftsData.map(async (transaction) => {
+            // Get sender information
+            const { data: senderData } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', transaction.sender_id)
+              .single();
+            
+            // Get gift information
+            const { data: giftData } = await supabase
+              .from('virtual_gifts')
+              .select('name, icon, color')
+              .eq('id', transaction.gift_id)
+              .single();
+            
+            return {
+              ...transaction,
+              sender: {
+                username: senderData?.username || 'Anonymous',
+                avatar_url: senderData?.avatar_url
+              },
+              gift: {
+                name: giftData?.name || 'Gift',
+                icon: giftData?.icon || '🎁',
+                color: giftData?.color || '#6366f1'
+              }
+            } as GiftTransaction;
+          }));
           
-          setGifts(transformedGifts);
+          setGifts(enrichedGifts);
         }
       } catch (error) {
         console.error('Error loading recent gifts:', error);
@@ -87,50 +95,40 @@ const RecentGifts = ({ videoId, limit = 5 }: RecentGiftsProps) => {
       },
       async (payload) => {
         // When a new gift is received, fetch the complete gift details
-        const { data: newGiftData, error } = await supabase
-          .from('gift_transactions')
-          .select(`
-            id,
-            sender_id,
-            receiver_id,
-            video_id,
-            gift_id,
-            amount,
-            created_at,
-            profiles:profiles!sender_id(username, avatar_url),
-            gift:virtual_gifts!gift_id(name, icon, color)
-          `)
-          .eq('id', payload.new.id)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching new gift:', error);
-          return;
-        }
-          
-        if (newGiftData) {
-          // Transform the new gift data
-          const newGift = {
-            id: newGiftData.id,
-            sender_id: newGiftData.sender_id,
-            receiver_id: newGiftData.receiver_id,
-            video_id: newGiftData.video_id,
-            gift_id: newGiftData.gift_id,
-            amount: newGiftData.amount,
-            created_at: newGiftData.created_at,
-            sender: {
-              username: newGiftData.profiles?.username || 'Anonymous',
-              avatar_url: newGiftData.profiles?.avatar_url
-            },
-            gift: {
-              name: newGiftData.gift?.name || 'Gift',
-              icon: newGiftData.gift?.icon || '🎁',
-              color: newGiftData.gift?.color || '#6366f1'
-            }
-          } as GiftTransaction;
-          
-          // Add the new gift to the top of the list and keep only the last 'limit' gifts
-          setGifts(prev => [newGift, ...prev.slice(0, limit - 1)]);
+        if (payload.new) {
+          try {
+            // Get sender information
+            const { data: senderData } = await supabase
+              .from('profiles')
+              .select('username, avatar_url')
+              .eq('id', payload.new.sender_id)
+              .single();
+            
+            // Get gift information
+            const { data: giftData } = await supabase
+              .from('virtual_gifts')
+              .select('name, icon, color')
+              .eq('id', payload.new.gift_id)
+              .single();
+            
+            const newGift = {
+              ...payload.new,
+              sender: {
+                username: senderData?.username || 'Anonymous',
+                avatar_url: senderData?.avatar_url
+              },
+              gift: {
+                name: giftData?.name || 'Gift',
+                icon: giftData?.icon || '🎁',
+                color: giftData?.color || '#6366f1'
+              }
+            } as GiftTransaction;
+            
+            // Add the new gift to the top of the list and keep only the last 'limit' gifts
+            setGifts(prev => [newGift, ...prev.slice(0, limit - 1)]);
+          } catch (error) {
+            console.error('Error processing new gift:', error);
+          }
         }
       }
     ).subscribe();
