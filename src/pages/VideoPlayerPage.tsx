@@ -4,16 +4,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import VideoPlayerCore from '@/components/video/VideoPlayerCore';
-import VideoInfo from '@/components/video/VideoInfo';
-import VideoComments from '@/components/video/VideoComments';
+import VideoPlayer from '@/components/VideoPlayer';
+import { Video } from '@/types/video.types';
+import { Sheet } from '@/components/ui/sheet';
 
 const VideoPlayerPage = () => {
   const { videoId } = useParams();
   const navigate = useNavigate();
-  const [video, setVideo] = useState<any>(null);
+  const [video, setVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   useEffect(() => {
     const fetchVideo = async () => {
@@ -36,9 +37,8 @@ const VideoPlayerPage = () => {
           
           // Increment view count
           await supabase.rpc('increment_counter', {
-            table_name: 'short_videos',
-            column_name: 'view_count',
-            row_id: videoId
+            row_id: videoId,
+            counter_name: 'view_count'
           });
         }
       } catch (err) {
@@ -54,6 +54,10 @@ const VideoPlayerPage = () => {
 
   const handleBackClick = () => {
     navigate(-1);
+  };
+
+  const toggleComments = () => {
+    setCommentsOpen(!commentsOpen);
   };
 
   if (loading) {
@@ -75,6 +79,13 @@ const VideoPlayerPage = () => {
       </div>
     );
   }
+  
+  // Create a compatible user object for VideoInfo
+  const user = {
+    username: video.profiles?.username || video.creator?.username || 'Unknown User',
+    avatar: video.profiles?.avatar_url || video.creator?.avatar_url || '',
+    isFollowing: false
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-app-black text-white">
@@ -92,32 +103,42 @@ const VideoPlayerPage = () => {
       <div className="flex flex-col md:flex-row max-w-7xl mx-auto w-full">
         <div className="w-full md:w-2/3 bg-app-black">
           <div className="aspect-[9/16] md:aspect-video max-h-[calc(100vh-120px)] relative mx-auto">
-            <VideoPlayerCore
-              videoUrl={video.video_url}
-              thumbnailUrl={video.thumbnail_url}
+            <VideoPlayer
               videoId={video.id}
               autoPlay={true}
+              src={video.video_url}
+              poster={video.thumbnail_url}
             />
           </div>
         </div>
         
         <div className="w-full md:w-1/3 p-4">
-          <VideoInfo 
-            title={video.title || 'Untitled Video'}
-            username={video.profiles?.username || 'Unknown User'}
-            avatarUrl={video.profiles?.avatar_url}
-            userId={video.profiles?.id}
-            description={video.description || ''}
-            hashtags={video.hashtags || []}
-            likeCount={video.like_count || 0}
-            commentCount={video.comment_count || 0}
-            videoId={video.id}
-          />
-          
-          <div className="mt-6">
-            <h3 className="font-bold text-lg mb-3">Comments</h3>
-            <VideoComments videoId={video.id} />
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-2">{video.title || 'Untitled Video'}</h2>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center">
+                <span className="text-gray-400 text-sm">{video.view_count || 0} views</span>
+              </div>
+            </div>
           </div>
+
+          <div onClick={toggleComments} className="cursor-pointer">
+            <h3 className="font-bold text-lg mb-3">Comments</h3>
+            <Button variant="outline" className="w-full">View Comments</Button>
+          </div>
+          
+          <Sheet open={commentsOpen} onOpenChange={setCommentsOpen}>
+            {/* VideoComments will only be included when the Sheet is open */}
+            {commentsOpen && (
+              <div className="mt-6">
+                <VideoComments 
+                  videoId={video.id} 
+                  isOpen={commentsOpen} 
+                  onClose={() => setCommentsOpen(false)} 
+                />
+              </div>
+            )}
+          </Sheet>
         </div>
       </div>
     </div>
