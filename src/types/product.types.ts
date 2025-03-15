@@ -2,32 +2,40 @@
 export interface Product {
   id: string;
   name: string;
-  description: string;
   price: number;
+  description: string;
   image_url: string;
-  category: string;
   stock_quantity: number;
+  category: string;
+  status: "active" | "draft" | "unavailable";
   seller_id: string;
-  status: 'active' | 'draft' | 'unavailable';
-  is_featured: boolean;
   created_at: string;
   updated_at: string;
-  seller?: {
-    username: string;
-    avatar_url: string;
-  };
+  is_featured: boolean;
+  suction_score?: number;
 }
 
-export interface LimitedOffer {
+export interface ProductProps {
+  product: Product;
+  onLike?: (productId: string) => void;
+  onAddToCart?: (product: Product) => void;
+  isLiked?: boolean;
+}
+
+export interface AdminProduct {
   id: string;
-  product_id: string;
-  discount_percentage: number;
-  original_price: number;
-  discounted_price: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
+  name: string;
+  price: number;
+  description: string;
+  image_url: string;
+  stock_quantity: number;
+  category: string;
+  status: "active" | "draft" | "unavailable";
+  seller_id: string;
   created_at: string;
   updated_at: string;
-  product: Product;
+  is_featured: boolean;
+  suction_score?: number;
+  image?: string; // For compatibility with existing code
+  inventory?: number; // For compatibility with existing code
 }

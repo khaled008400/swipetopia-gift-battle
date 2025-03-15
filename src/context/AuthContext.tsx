@@ -1,5 +1,6 @@
-import { createContext, useContext } from 'react';
-import { UserProfile, UserRole } from '@/types/auth.types';
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
 
 export const AuthContext = createContext<AuthContextType>({

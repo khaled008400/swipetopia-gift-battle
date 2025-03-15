@@ -1,20 +1,30 @@
+import { Video } from '@/types/video.types';
 
-import { Video } from "@/types/video.types";
-
-export const VIDEOS: Video[] = [
+export const videosMock: Video[] = [
   {
     id: "1",
-    url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    title: "Exciting Dance Moves",
+    description: "Learn these amazing dance steps in just 30 seconds!",
+    video_url: "/videos/dance.mp4",
+    thumbnail_url: "/thumbnails/dance.jpg",
+    user_id: "user1",
+    created_at: "2023-04-10T10:00:00Z",
+    updated_at: "2023-04-10T10:00:00Z",
+    view_count: 1200,
+    likes_count: 340,
+    comments_count: 56,
+    shares_count: 23,
+    is_live: false,
+    is_private: false,
+    duration: 30,
+    category: "dance",
+    hashtags: ["dance", "tutorial", "viral"],
+    url: "/video/1",
+    is_liked: true,
     user: {
-      username: "dancequeen",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      isFollowing: false
-    },
-    description: "Dance Battle Finals 🏆 #dance #competition #finals",
-    likes: 1432,
-    comments: 87,
-    shares: 34,
-    isLiked: false
+      username: "dancepro",
+      avatar: "/avatars/dancepro.jpg",
+    }
   },
   {
     id: "2",
@@ -28,7 +38,7 @@ export const VIDEOS: Video[] = [
     likes: 2651,
     comments: 132,
     shares: 76,
-    isLiked: false
+    is_liked: false
   },
   {
     id: "3",
@@ -41,7 +51,7 @@ export const VIDEOS: Video[] = [
     likes: 3219,
     comments: 201,
     shares: 97,
-    isLiked: false
+    is_liked: false
   },
   {
     id: "4",
@@ -54,7 +64,7 @@ export const VIDEOS: Video[] = [
     likes: 2876,
     comments: 143,
     shares: 87,
-    isLiked: false
+    is_liked: false
   },
   {
     id: "5",
@@ -67,6 +77,8 @@ export const VIDEOS: Video[] = [
     likes: 4532,
     comments: 234,
     shares: 123,
-    isLiked: false
+    is_liked: false
   },
 ];
+
+export default videosMock;

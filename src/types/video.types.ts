@@ -31,6 +31,7 @@ export interface Video {
     isFollowing?: boolean;
   };
   profiles?: any; // Add profiles property for VideoPlayerPage
+  creator?: any; // Add creator property
 }
 
 export interface BattleVideo extends Video {

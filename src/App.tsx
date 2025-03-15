@@ -14,11 +14,26 @@ import { CartProvider } from './context/CartContext';
 import ShopPage from './pages/ShopPage';
 import ExplorePage from './pages/ExplorePage';
 import SignupPage from './pages/SignupPage';
+import { createClient } from '@supabase/supabase-js';
+import { useState, useEffect } from 'react';
+
+// Create a mock supabase client for now until we properly integrate it
+const supabaseClient = createClient(
+  'https://placeholder-url.supabase.co',
+  'placeholder-key'
+);
 
 function App() {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    // Mock session setup for now
+    setSession(null);
+  }, []);
+
   return (
     <div className="App flex flex-col min-h-screen bg-app-black text-white">
-      <AuthProvider>
+      <AuthProvider supabaseClient={supabaseClient} session={session}>
         <CartProvider>
           <Router>
             <Routes>
