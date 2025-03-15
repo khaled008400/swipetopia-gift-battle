@@ -5,12 +5,14 @@ import { User } from "@supabase/supabase-js";
 import { UserProfile, UserRole } from "@/types/auth.types";
 import { useToast } from "@/components/ui/use-toast";
 
-export const fetchUserProfile = async (authUser: User): Promise<UserProfile | null> => {
+export const fetchUserProfile = async (authUser: User | string): Promise<UserProfile | null> => {
   try {
+    const userId = typeof authUser === 'string' ? authUser : authUser.id;
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', authUser.id)
+      .eq('id', userId)
       .single();
     
     if (error) {
@@ -30,22 +32,17 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
       else if (data.role) {
         userRoles = [data.role as UserRole];
       } 
-      // Check in user metadata for roles array
-      else if (authUser.user_metadata?.roles && Array.isArray(authUser.user_metadata.roles)) {
-        userRoles = authUser.user_metadata.roles as UserRole[];
-      } 
-      // Check in user metadata for single role
-      else if (authUser.user_metadata?.role) {
-        userRoles = [authUser.user_metadata.role as UserRole];
-      } 
+      // Default role if none found
       else {
         userRoles = ["user"]; // Default role
       }
 
+      const userEmail = typeof authUser === 'string' ? data.email : authUser.email;
+
       return {
         id: data.id,
         username: data.username,
-        email: authUser.email || '',
+        email: userEmail || '',
         avatar_url: data.avatar_url,
         coins: data.coins || 0,
         roles: userRoles,
@@ -56,7 +53,7 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
         interests: data.interests || undefined,
         shop_name: data.shop_name || undefined,
         stream_key: data.stream_key || undefined,
-        payment_methods: [], // Default empty array since it doesn't exist in the database
+        payment_methods: [], // Default empty array
         notification_preferences: {
           battles: true,
           orders: true,
@@ -72,7 +69,7 @@ export const fetchUserProfile = async (authUser: User): Promise<UserProfile | nu
   }
 };
 
-export const useUserProfile = (authUser: User | null) => {
+export const useUserProfile = (authUser: User | string | null) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +110,8 @@ export const useUserProfile = (authUser: User | null) => {
   useEffect(() => {
     if (!authUser) return;
     
+    const userId = typeof authUser === 'string' ? authUser : authUser.id;
+    
     const profileSubscription = supabase
       .channel('profile-updates')
       .on(
@@ -121,7 +120,7 @@ export const useUserProfile = (authUser: User | null) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
-          filter: `id=eq.${authUser.id}`,
+          filter: `id=eq.${userId}`,
         },
         () => {
           // Refresh the profile when changes are detected
@@ -149,13 +148,15 @@ export const useUserProfile = (authUser: User | null) => {
     try {
       setIsLoading(true);
       
+      const userId = typeof authUser === 'string' ? authUser : authUser.id;
+      
       // Prepare the data for update, excluding fields that aren't in the database schema
       const { payment_methods, notification_preferences, email, ...dbUpdates } = updates;
       
       const { error } = await supabase
         .from('profiles')
         .update(dbUpdates)
-        .eq('id', authUser.id);
+        .eq('id', userId);
 
       if (error) throw error;
       

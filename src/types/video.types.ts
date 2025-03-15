@@ -1,40 +1,51 @@
 
 export interface Video {
   id: string;
-  url?: string;
-  video_url?: string;
-  user?: {
-    username: string;
-    avatar: string;
-    isFollowing?: boolean;
-  };
+  title: string;
   description: string;
+  video_url: string;
+  thumbnail_url: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  view_count: number;
+  likes_count: number;
+  comments_count: number;
+  shares_count: number;
+  is_live: boolean;
+  is_private: boolean;
+  duration: number;
+  category: string;
+  hashtags?: string[];
   likes?: number;
   comments?: number;
-  comments_count?: number;
   shares?: number;
-  isLiked?: boolean;
-  isSaved?: boolean;
-  allowDownloads?: boolean;
-  isLive?: boolean;
-  hashtags?: string[];
-  privacy?: "public" | "private" | "followers";
-  createdAt?: string;
-  created_at?: string;
-  title?: string;
-  isPublic?: boolean;
-  profiles?: {
+  is_liked?: boolean;
+  is_saved?: boolean;
+  user: {
     username: string;
-    avatar_url: string;
+    avatar: string;
+    avatar_url?: string;
+    isFollowing?: boolean;
   };
-  creator?: {
-    username: string;
-    avatar_url: string;
-  };
-  views?: number;
-  view_count?: number;
-  thumbnail_url?: string;
-  user_id?: string;
 }
 
-export type VideoActionHandler = () => void;
+export interface BattleVideo extends Video {
+  battle_id: string;
+  score: number;
+  position: 'left' | 'right';
+}
+
+export interface Comment {
+  id: string;
+  user_id: string;
+  video_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  likes_count: number;
+  user: {
+    username: string;
+    avatar_url: string;
+  };
+}

@@ -7,7 +7,6 @@ import ProfileContent from '@/components/profile/ProfileContent';
 import ProfileEdit from '@/components/profile/ProfileEdit';
 import { Button } from '@/components/ui/button';
 import { Edit, LogOut } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {

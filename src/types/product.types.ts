@@ -2,41 +2,32 @@
 export interface Product {
   id: string;
   name: string;
+  description: string;
   price: number;
-  description?: string;
-  image_url?: string;
-  stock_quantity?: number;
-  category?: string;
+  image_url: string;
+  category: string;
+  stock_quantity: number;
+  seller_id: string;
   status: 'active' | 'draft' | 'unavailable';
-  seller_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+  seller?: {
+    username: string;
+    avatar_url: string;
+  };
 }
 
-export interface ExtendedProduct extends Product {
-  rating?: number;
-  isLive?: boolean;
-}
-
-export interface AdminProduct extends Product {
-  inventory: number;
-  status: 'active' | 'draft' | 'unavailable';
-}
-
-// For product filtering and search
-export interface ProductFilterOptions {
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  search?: string;
-  status?: 'active' | 'draft' | 'unavailable';
-  sort?: 'newest' | 'price_asc' | 'price_desc' | 'popular';
-}
-
-export interface ProductCategory {
+export interface LimitedOffer {
   id: string;
-  name: string;
-  slug: string;
-  image?: string;
-  count?: number;
+  product_id: string;
+  discount_percentage: number;
+  original_price: number;
+  discounted_price: number;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  product: Product;
 }

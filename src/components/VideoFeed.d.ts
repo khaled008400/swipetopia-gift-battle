@@ -7,6 +7,8 @@ export interface VideoFeedProps {
   activeVideoIndex: number;
   onVideoView?: (videoId: string) => void;
   isBattlePage?: boolean;
+  videoUrl?: string;
+  isActive?: boolean;
 }
 
 declare const VideoFeed: FC<VideoFeedProps>;
