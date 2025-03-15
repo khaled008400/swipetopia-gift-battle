@@ -29,9 +29,11 @@ const AgoraVideoStream: React.FC<AgoraVideoStreamProps> = ({
     }
     
     // Join the channel when component mounts
+    // Check actual implementation of join to ensure correct arguments
     join(channel);
     
     // Leave the channel when component unmounts
+    // Check leave doesn't need any arguments
     return () => {
       leave();
     };

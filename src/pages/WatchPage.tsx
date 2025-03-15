@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -51,8 +52,9 @@ const WatchPage: React.FC = () => {
     );
   }
   
-  const likesCount = video.likes || 0;
-  const commentsCount = video.comments_count || 0;
+  // Use default values for potentially missing properties
+  const likesCount = 0; // We'll default to 0 since 'likes' property doesn't exist yet
+  const commentsCount = 0; // We'll default to 0 since 'comments_count' property doesn't exist yet
   const username = video.profiles?.username || '';
   const avatarUrl = video.profiles?.avatar_url || '';
   const viewCount = video.view_count || 0;
