@@ -22,7 +22,6 @@ const LoginPage = () => {
       const from = new URLSearchParams(location.search).get('from');
       const userIsAdmin = isAdmin();
       
-      // Debug logs to see what's happening
       console.log("User is authenticated", { from, isAdmin: userIsAdmin, email });
       
       if (from && from.startsWith('/admin') && userIsAdmin) {
@@ -52,21 +51,26 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       console.log("Attempting login with:", email, "password:", password ? "********" : "empty");
+      
       const result = await login(email, password);
       console.log("Login result:", result);
+      
+      // Check if user is admin
+      const userIsAdmin = isAdmin();
+      console.log("Is admin?", userIsAdmin);
       
       // Show success message
       toast({
         title: "Login successful",
-        description: isAdmin() ? "Welcome to the admin panel" : "Welcome back!",
+        description: userIsAdmin ? "Welcome to the admin panel" : "Welcome back!",
       });
       
       // The redirect will be handled by the useEffect above
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again",
+        description: error.message || "Please check your credentials and try again",
         variant: "destructive",
       });
     } finally {
