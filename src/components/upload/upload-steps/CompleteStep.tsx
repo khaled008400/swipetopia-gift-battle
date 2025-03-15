@@ -2,11 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Video } from "@/services/video.service";
+import { toast } from "sonner";
 
 interface CompleteStepProps {
   onClose: () => void;
   onReset: () => void;
-  videoData?: any;
+  videoData?: Video;
 }
 
 const CompleteStep = ({ onClose, onReset, videoData }: CompleteStepProps) => {
@@ -14,6 +16,7 @@ const CompleteStep = ({ onClose, onReset, videoData }: CompleteStepProps) => {
 
   const handleViewVideo = () => {
     if (videoData?.id) {
+      toast.success("Navigating to your video");
       navigate(`/videos`);
     }
     onClose();
@@ -27,7 +30,7 @@ const CompleteStep = ({ onClose, onReset, videoData }: CompleteStepProps) => {
       
       <h3 className="text-2xl font-bold mb-2">Upload successful!</h3>
       <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md">
-        Your video has been successfully uploaded and is now being processed. It will be available soon.
+        Your video has been successfully uploaded to Supabase and is now being processed. It will be available soon.
       </p>
       
       {videoData && (
@@ -43,6 +46,9 @@ const CompleteStep = ({ onClose, onReset, videoData }: CompleteStepProps) => {
             )}
             <p>
               <span className="font-medium">Visibility:</span> {videoData.isPublic ? "Public" : "Private"}
+            </p>
+            <p>
+              <span className="font-medium">ID:</span> {videoData.id.substring(0, 8)}...
             </p>
           </div>
         </div>
