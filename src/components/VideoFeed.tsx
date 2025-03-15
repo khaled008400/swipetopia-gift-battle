@@ -11,9 +11,10 @@ interface VideoFeedProps {
   videos: Video[];
   activeVideoIndex: number;
   onVideoView?: (videoId: string) => void;
+  isBattlePage?: boolean; // Added to support BattlePage component
 }
 
-const VideoFeed = ({ videos, activeVideoIndex, onVideoView }: VideoFeedProps) => {
+const VideoFeed = ({ videos, activeVideoIndex, onVideoView, isBattlePage }: VideoFeedProps) => {
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [userSaves, setUserSaves] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
@@ -277,7 +278,18 @@ const VideoFeed = ({ videos, activeVideoIndex, onVideoView }: VideoFeedProps) =>
             isActive={index === activeVideoIndex}
           />
           <VideoOverlay
-            video={video}
+            video={{
+              id: video.id,
+              description: video.description || "",
+              likes: video.likes || 0,
+              comments: video.comments || 0,
+              shares: video.shares || 0,
+              user: {
+                username: video.user?.username || "",
+                avatar: video.user?.avatar_url || "",
+                isFollowing: false
+              }
+            }}
             isLiked={userLikes[video.id] || false}
             isSaved={userSaves[video.id] || false}
             onLike={() => video.id && handleLike(video.id)}

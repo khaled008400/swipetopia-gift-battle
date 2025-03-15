@@ -8,7 +8,7 @@ export interface Product {
   image_url?: string;
   stock_quantity?: number;
   category?: string;
-  status?: 'active' | 'draft' | 'unavailable';
+  status: 'active' | 'draft' | 'unavailable';
   seller_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -22,6 +22,10 @@ export interface Product {
   rating?: number;
   is_featured?: boolean;
   suction_score?: number;
+  seller?: {
+    username?: string;
+    avatar_url?: string;
+  };
 }
 
 export interface AdminProduct {
@@ -56,6 +60,20 @@ export interface LimitedOffer {
   product?: Product;
 }
 
+const formatProductStatus = (status: string): 'active' | 'draft' | 'unavailable' => {
+  if (status === 'active' || status === 'draft' || status === 'unavailable') {
+    return status;
+  }
+  return 'active';
+};
+
+const formatProduct = (product: any): Product => {
+  return {
+    ...product,
+    status: formatProductStatus(product.status || 'active')
+  };
+};
+
 const ShopService = {
   getProducts: async (category?: string) => {
     let query = supabase
@@ -65,7 +83,6 @@ const ShopService = {
     if (category && category !== 'all') {
       query = query.eq('category', category);
     } else {
-      // Default to only active products unless specified
       query = query.eq('status', 'active');
     }
     
@@ -76,7 +93,7 @@ const ShopService = {
       return [];
     }
     
-    return data || [];
+    return (data || []).map(formatProduct);
   },
 
   getProductById: async (id: string) => {
@@ -97,7 +114,7 @@ const ShopService = {
       return null;
     }
     
-    return data as Product;
+    return formatProduct(data);
   },
 
   getFeaturedProducts: async () => {
@@ -113,7 +130,7 @@ const ShopService = {
       return [];
     }
     
-    return data || [];
+    return (data || []).map(formatProduct);
   },
 
   getLimitedOffers: async () => {
@@ -132,11 +149,11 @@ const ShopService = {
     
     return data.map(offer => ({
       ...offer,
-      product: {
+      product: offer.product ? formatProduct({
         ...offer.product,
         original_price: offer.product.price,
         price: offer.product.price * (1 - offer.discount_percentage / 100)
-      }
+      }) : undefined
     })) || [];
   },
 
@@ -158,8 +175,8 @@ const ShopService = {
     
     return data.map(seller => ({
       ...seller,
-      username: seller.profiles?.username,
-      avatar_url: seller.profiles?.avatar_url
+      username: seller.profiles ? seller.profiles.username : undefined,
+      avatar_url: seller.profiles ? seller.profiles.avatar_url : undefined
     })) || [];
   },
 
@@ -175,7 +192,6 @@ const ShopService = {
       return ["ALL"];
     }
     
-    // Extract unique categories and add ALL at the beginning
     const categories = ["ALL", ...new Set(data.map(p => p.category?.toUpperCase()))];
     return categories;
   },
@@ -188,7 +204,6 @@ const ShopService = {
     
     const normalizedQuery = query.toLowerCase().trim();
     
-    // Search in name, description, and category
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -201,7 +216,7 @@ const ShopService = {
     }
     
     console.log(`Found ${data.length} products matching "${query}"`);
-    return data || [];
+    return (data || []).map(formatProduct);
   },
 
   createOrder: async (orderData: {
@@ -224,7 +239,6 @@ const ShopService = {
       throw orderError;
     }
     
-    // Insert order items
     const orderItems = orderData.items.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
@@ -245,100 +259,64 @@ const ShopService = {
   },
 
   toggleProductLike: async (productId: string) => {
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('You must be logged in to like products');
     }
     
-    // Check if this product is already liked
-    const { data: existingLike, error: checkError } = await supabase
-      .from('product_likes')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('product_id', productId)
-      .single();
+    try {
+      const { data, error } = await supabase.rpc('toggle_product_like', {
+        p_user_id: user.id,
+        p_product_id: productId
+      });
       
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error checking product like:', checkError);
-      throw checkError;
-    }
-    
-    // If already liked, remove the like
-    if (existingLike) {
-      const { error: deleteError } = await supabase
-        .from('product_likes')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('product_id', productId);
-        
-      if (deleteError) {
-        console.error('Error unliking product:', deleteError);
-        throw deleteError;
-      }
+      if (error) throw error;
       
-      return { liked: false };
-    } 
-    // If not liked, add the like
-    else {
-      const { error: insertError } = await supabase
-        .from('product_likes')
-        .insert({
-          user_id: user.id,
-          product_id: productId
-        });
-        
-      if (insertError) {
-        console.error('Error liking product:', insertError);
-        throw insertError;
-      }
-      
-      return { liked: true };
+      return { liked: data };
+    } catch (err) {
+      console.error('Error toggling product like:', err);
+      throw err;
     }
   },
 
   getUserLikedProducts: async () => {
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return [];
     }
     
-    const { data, error } = await supabase
-      .from('product_likes')
-      .select(`
-        product_id,
-        products:product_id (*)
-      `)
-      .eq('user_id', user.id);
+    try {
+      const { data, error } = await supabase.rpc('get_user_liked_products', {
+        p_user_id: user.id
+      });
       
-    if (error) {
-      console.error('Error fetching liked products:', error);
+      if (error) throw error;
+      
+      return (data || []).map(formatProduct);
+    } catch (err) {
+      console.error('Error fetching liked products:', err);
       return [];
     }
-    
-    // Extract the product data from the joined query
-    return data.map(item => item.products) || [];
   },
 
   getUserLikedProductIds: async () => {
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return [];
     }
     
-    const { data, error } = await supabase
-      .from('product_likes')
-      .select('product_id')
-      .eq('user_id', user.id);
+    try {
+      const { data, error } = await supabase.rpc('get_user_liked_product_ids', {
+        p_user_id: user.id
+      });
       
-    if (error) {
-      console.error('Error fetching liked product IDs:', error);
+      if (error) throw error;
+      
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching liked product IDs:', err);
       return [];
     }
-    
-    return data.map(item => item.product_id) || [];
   }
 };
 

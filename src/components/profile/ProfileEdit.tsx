@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +10,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Camera, LoaderCircle, Store, Video } from "lucide-react";
-import { UserProfile } from "@/types/auth.types";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 // Profile validation schema
@@ -32,7 +30,7 @@ interface ProfileEditProps {
 
 const ProfileEdit = ({ onComplete }: ProfileEditProps) => {
   const { user: authUser, hasRole } = useAuth();
-  const { profile, updateProfile } = useUserProfile(authUser || null);
+  const { profile, updateProfile } = useUserProfile(authUser?.id || null);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
