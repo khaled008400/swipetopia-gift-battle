@@ -20,12 +20,19 @@ const LoginPage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       const from = new URLSearchParams(location.search).get('from');
+      const isUserAdmin = isAdmin();
       
-      if (from?.startsWith('/admin') && isAdmin()) {
+      // Debug logs to see what's happening
+      console.log("User is authenticated", { from, isAdmin: isUserAdmin });
+      
+      if (from?.startsWith('/admin') && isUserAdmin) {
+        console.log("Redirecting to admin page:", from);
         navigate(from);
-      } else if (isAdmin()) {
+      } else if (isUserAdmin) {
+        console.log("Admin user detected, redirecting to admin dashboard");
         navigate('/admin-dashboard');
       } else {
+        console.log("Regular user detected, redirecting to home");
         navigate('/');
       }
     }
@@ -44,7 +51,9 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      console.log("Attempting login with:", email);
+      const result = await login(email, password);
+      console.log("Login result:", result);
       // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error("Login error:", error);

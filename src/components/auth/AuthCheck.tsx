@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -17,18 +17,36 @@ interface AuthCheckProps {
 const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps) => {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!isLoading) {
+      // First check if user is authenticated
       if (!isAuthenticated) {
-        navigate('/login');
-      } else if (requireAdmin && !isAdmin()) {
-        // Redirect non-admin users to home page
-        navigate('/');
+        // If not authenticated, redirect to login with a return path
+        const returnPath = window.location.pathname;
+        navigate(`/login?from=${returnPath}`);
+        setIsAuthorized(false);
+      } 
+      // If admin access is required, check if user is admin
+      else if (requireAdmin) {
+        const userIsAdmin = isAdmin();
+        if (!userIsAdmin) {
+          console.log("User is not an admin, redirecting to home");
+          navigate('/');
+          setIsAuthorized(false);
+        } else {
+          console.log("User is an admin, access granted");
+          setIsAuthorized(true);
+        }
+      } else {
+        // Regular authenticated access
+        setIsAuthorized(true);
       }
     }
   }, [isAuthenticated, isLoading, navigate, requireAdmin, isAdmin]);
 
+  // Show loading state
   if (isLoading) {
     return fallback || (
       <div className="flex justify-center items-center h-[50vh]">
@@ -37,11 +55,8 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
     );
   }
 
-  if (!isAuthenticated || (requireAdmin && !isAdmin())) {
-    return null;
-  }
-
-  return <>{children}</>;
+  // If authorization check is complete and user is authorized, render children
+  return isAuthorized ? <>{children}</> : null;
 };
 
 export default AuthCheck;

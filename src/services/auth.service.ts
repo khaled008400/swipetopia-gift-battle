@@ -21,17 +21,19 @@ export interface User {
   coins: number;
   followers: number;
   following: number;
+  roles?: string[];
 }
 
-// For development mode - simulates successful authentication
+// For development mode - simulates successful authentication with admin role
 const MOCK_USER: User = {
   id: "mock-user-123",
-  username: "demouser",
-  email: "demo@example.com",
+  username: "admin",
+  email: "admin@example.com",
   avatar: "/placeholder.svg",
   coins: 500,
   followers: 120,
-  following: 45
+  following: 45,
+  roles: ["admin"] // Adding the admin role to the mock user
 };
 
 // Check if we're in development mode
@@ -54,10 +56,15 @@ const AuthService = {
       // In development, allow mock login if API is unavailable
       if (isDevelopment) {
         console.warn("Using mock login for development. In production, this would fail.");
+        
+        // Use admin@example.com/admin for admin login, otherwise regular user
+        const isAdminLogin = credentials.username === 'admin@example.com' || credentials.username === 'admin';
+        
         const mockResponse = {
           token: "mock-token-for-development",
-          user: MOCK_USER
+          user: isAdminLogin ? MOCK_USER : { ...MOCK_USER, username: credentials.username, email: credentials.username, roles: ["user"] }
         };
+        
         localStorage.setItem('auth_token', mockResponse.token);
         localStorage.setItem('user', JSON.stringify(mockResponse.user));
         return mockResponse;

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -13,7 +12,7 @@ export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: false,
   login: async () => null,
-  register: async () => ({}), // Changed to return empty object
+  register: async () => ({}),
   logout: async () => {},
   updateProfile: async () => false,
   addPaymentMethod: async () => false,
@@ -167,7 +166,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
       if (error) throw new Error(error.message);
 
-      // Create user profile in 'profiles' table
       await supabaseClient
         .from('profiles')
         .insert([
@@ -206,18 +204,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   };
 
   const addPaymentMethod = async (method: any) => {
-    // Implementation would go here
     return true;
   };
 
   const removePaymentMethod = async (id: string) => {
-    // Implementation would go here
     return true;
   };
 
   const isAdmin = () => {
     if (!user) return false;
-    return user.roles?.includes('admin') || user.role === 'admin';
+    
+    const hasAdminRole = user.roles?.includes('admin') || user.role === 'admin';
+    
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser.roles?.includes('admin')) {
+          return true;
+        }
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+      }
+    }
+    
+    return hasAdminRole;
   };
 
   const hasRole = (role: UserRole) => {
@@ -229,7 +240,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (user) {
       action();
     } else {
-      // Here you would typically redirect to login page
       console.log('Authentication required, redirecting to', redirectUrl || '/login');
     }
   };
