@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Product {
@@ -177,22 +176,31 @@ const ShopService = {
     }
     
     // Extract unique categories and add ALL at the beginning
-    const categories = ["ALL", ...new Set(data.map(p => p.category.toUpperCase()))];
+    const categories = ["ALL", ...new Set(data.map(p => p.category?.toUpperCase()))];
     return categories;
   },
 
   searchProducts: async (query: string) => {
+    console.log("Searching products with query:", query);
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+    
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // Search in name, description, and category
     const { data, error } = await supabase
       .from('products')
       .select('*')
       .eq('status', 'active')
-      .or(`name.ilike.%${query}%,description.ilike.%${query}%`);
+      .or(`name.ilike.%${normalizedQuery}%,description.ilike.%${normalizedQuery}%,category.ilike.%${normalizedQuery}%`);
       
     if (error) {
       console.error('Error searching products:', error);
       return [];
     }
     
+    console.log(`Found ${data.length} products matching "${query}"`);
     return data || [];
   },
 
@@ -236,7 +244,6 @@ const ShopService = {
     return order;
   },
 
-  // Add a product to the user's liked products (favorites)
   toggleProductLike: async (productId: string) => {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
@@ -290,7 +297,6 @@ const ShopService = {
     }
   },
 
-  // Get user's liked products
   getUserLikedProducts: async () => {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
@@ -315,7 +321,6 @@ const ShopService = {
     return data.map(item => item.products) || [];
   },
 
-  // Get only the IDs of products a user has liked
   getUserLikedProductIds: async () => {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();

@@ -2,23 +2,38 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductsGrid from "./ProductsGrid";
-import ShopService from "@/services/shop.service";
+import ShopService, { Product } from "@/services/shop.service";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ProductsTabsProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
   likedProducts: string[];
   toggleLike: (id: string) => void;
+  products?: Product[];
+  searchMode?: boolean;
 }
 
-const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: ProductsTabsProps) => {
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [newProducts, setNewProducts] = useState([]);
+const ProductsTabs = ({ 
+  activeTab = "featured", 
+  setActiveTab, 
+  likedProducts, 
+  toggleLike,
+  products: providedProducts,
+  searchMode = false
+}: ProductsTabsProps) => {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
+    // If products are provided (search results), don't fetch from API
+    if (providedProducts || searchMode) {
+      setLoading(false);
+      return;
+    }
+    
     const loadProducts = async () => {
       setLoading(true);
       try {
@@ -29,7 +44,7 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
         const allProducts = await ShopService.getProducts();
         const newArrivals = [...allProducts]
           .filter(p => p.status === 'active')
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
           .slice(0, 8);
         
         setFeaturedProducts(featured);
@@ -47,11 +62,26 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
     };
     
     loadProducts();
-  }, [toast]);
+  }, [toast, providedProducts, searchMode]);
+
+  // If in search mode, just show the search results grid
+  if (searchMode && providedProducts) {
+    return (
+      <ProductsGrid 
+        products={providedProducts}
+        likedProducts={likedProducts}
+        toggleLike={toggleLike}
+      />
+    );
+  }
 
   return (
     <div className="px-4 mb-20">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs 
+        value={activeTab} 
+        onValueChange={setActiveTab ? setActiveTab : undefined} 
+        className="w-full"
+      >
         <TabsList className="w-full grid grid-cols-2 mb-6 bg-app-gray-dark">
           <TabsTrigger 
             value="featured" 
@@ -72,9 +102,9 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[...Array(8)].map((_, index) => (
                 <div key={index} className="animate-pulse">
-                  <div className="aspect-square bg-gray-300 rounded-md mb-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                  <div className="aspect-square bg-gray-700 rounded-md mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-1/2"></div>
                 </div>
               ))}
             </div>
@@ -97,9 +127,9 @@ const ProductsTabs = ({ activeTab, setActiveTab, likedProducts, toggleLike }: Pr
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[...Array(8)].map((_, index) => (
                 <div key={index} className="animate-pulse">
-                  <div className="aspect-square bg-gray-300 rounded-md mb-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                  <div className="aspect-square bg-gray-700 rounded-md mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-1/2"></div>
                 </div>
               ))}
             </div>
