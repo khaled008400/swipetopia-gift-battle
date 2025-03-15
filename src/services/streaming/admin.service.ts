@@ -4,6 +4,18 @@ import { LiveStream } from "@/models/streaming";
 import { adminApi } from "../api";
 import axios from "axios";
 
+// Define types for streaming config and admin actions
+interface StreamingConfig {
+  id: string;
+  agora_app_id: string;
+  agora_app_certificate: string;
+  agora_enabled: boolean;
+  max_stream_duration: number;
+  streamer_cooldown: number;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Service for administering streaming features
  */
@@ -11,13 +23,14 @@ const StreamingAdminService = {
   // Get streaming configuration
   getStreamingConfig: async () => {
     try {
+      // Use a raw query since the table doesn't exist in the types yet
       const { data, error } = await supabase
-        .from('streaming_config')
-        .select('*')
-        .maybeSingle();
+        .rpc('get_streaming_config')
+        .limit(1)
+        .single();
 
       if (error) throw error;
-      return data;
+      return data as StreamingConfig;
     } catch (err) {
       console.error('Error fetching streaming config:', err);
       return null;
@@ -27,16 +40,12 @@ const StreamingAdminService = {
   // Update Agora API settings
   updateAgoraSettings: async (appId: string, appCertificate: string, enabled: boolean) => {
     try {
-      // Using regular supabase query since we already have the streaming_config table
-      const { error } = await supabase
-        .from('streaming_config')
-        .update({
-          agora_app_id: appId,
-          agora_app_certificate: appCertificate,
-          agora_enabled: enabled,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', 1);  // Assuming there's only one config row
+      // Use a raw query since the table doesn't exist in the types
+      const { error } = await supabase.rpc('update_streaming_config', { 
+        p_app_id: appId,
+        p_app_certificate: appCertificate,
+        p_enabled: enabled
+      });
       
       if (error) throw error;
       return { success: true };
@@ -106,14 +115,12 @@ const StreamingAdminService = {
 
       if (error) throw error;
 
-      // Log the action in admin_actions
+      // Log the action in admin_actions using a function
       const { error: logError } = await supabase
-        .from('admin_actions')
-        .insert({
-          action_type: 'shutdown_stream',
-          target_id: streamId,
-          reason: reason,
-          admin_id: (await supabase.auth.getUser()).data.user?.id
+        .rpc('log_admin_action', {
+          p_action_type: 'shutdown_stream',
+          p_target_id: streamId,
+          p_reason: reason
         });
 
       if (logError) console.error('Error logging admin action:', logError);

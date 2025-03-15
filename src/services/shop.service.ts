@@ -1,190 +1,136 @@
 
-import api from './api';
-
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  image: string;
-  rating: number;
-  inventory?: number;
-  category?: string;
-  original_price?: number;
-  discount_percentage?: number;
-  attributes?: Record<string, string[]>;
-  status?: string;
-  isLive?: boolean;
-  seller_id?: string;
-}
-
-export interface Order {
-  id: string;
-  products: Array<{
-    product: Product;
-    quantity: number;
-  }>;
-  total: number;
-  subtotal: number;
-  shipping_cost: number;
-  discount_amount: number;
-  tax_amount: number;
-  additional_fees: number;
-  shipping_method: {
-    id: string;
-    name: string;
-  };
-  coupon_codes?: string[];
-  applied_offers?: Array<{
-    id: string;
-    name: string;
-  }>;
-  status: string;
-  created_at: string;
-  shipping_address?: {
-    full_name: string;
-    address: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-  };
-}
-
-export interface ShippingMethod {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  estimated_days: string;
-}
-
-export interface Coupon {
-  id: string;
-  code: string;
-  type: 'percentage' | 'fixed';
-  value: number;
-  minimum_purchase?: number;
-  expiry_date: string;
-}
-
-export interface Offer {
-  id: string;
-  name: string;
-  description: string;
-  discount_value: number;
-  discount_type: 'percentage' | 'fixed' | 'special';
-}
+import { supabase } from "@/integrations/supabase/client";
 
 const ShopService = {
-  async getProducts(category?: string) {
-    const params = category ? { category } : {};
-    const response = await api.get('/shop/products', { params });
-    return response.data;
-  },
-
-  async getFeaturedProducts() {
-    const response = await api.get('/shop/products/featured');
-    return response.data;
-  },
-
-  async getNewArrivals() {
-    const response = await api.get('/shop/products/new');
-    return response.data;
-  },
-
-  async getProductDetails(productId: string) {
-    const response = await api.get(`/shop/products/${productId}`);
-    return response.data;
-  },
-
-  async toggleFavorite(productId: string) {
-    const response = await api.post(`/shop/products/${productId}/favorite`);
-    return response.data;
-  },
-
-  async getFavorites() {
-    const response = await api.get('/shop/favorites');
-    return response.data;
-  },
-
-  async getOrders() {
-    const response = await api.get('/shop/orders');
-    return response.data;
-  },
-
-  async getProductsWithPricing(category?: string, withDiscounts = true) {
-    const params = { 
-      category, 
-      with_discounts: withDiscounts 
-    };
-    const response = await api.get('/shop/products/with-pricing', { params });
-    return response.data;
-  },
-
-  async getActiveOffers() {
-    const response = await api.get('/shop/offers/active');
-    return response.data;
-  },
-
-  async getAvailableCoupons() {
-    const response = await api.get('/shop/coupons/available');
-    return response.data;
-  },
-
-  async validateCoupon(code: string) {
+  // Get all products with optional category filter
+  getProducts: async (category?: string) => {
     try {
-      const response = await api.get(`/shop/coupons/validate/${code}`);
-      return response.data;
+      let query = supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active');
+      
+      if (category) {
+        query = query.eq('category', category);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data;
     } catch (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
+  },
+  
+  // Get featured products
+  getFeaturedProducts: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active')
+        .limit(8);
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      return [];
+    }
+  },
+  
+  // Get new arrivals (most recently added products)
+  getNewArrivals: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(8);
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching new arrivals:', error);
+      return [];
+    }
+  },
+  
+  // Get product details by ID
+  getProductDetails: async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          profiles:seller_id (username, avatar_url)
+        `)
+        .eq('id', productId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching product details:', error);
       return null;
     }
   },
-
-  async getShippingMethods(orderValue: number, region?: string) {
-    const params = { order_value: orderValue };
-    if (region) params['region'] = region;
-    
-    const response = await api.get('/shop/shipping/methods', { params });
-    return response.data;
+  
+  // Search products by query
+  searchProducts: async (query: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`);
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
+    }
   },
-
-  async calculatePrice(
-    items: Array<{id: string, quantity: number}>,
-    couponCodes?: string[],
-    shippingMethodId?: string,
-    region?: string
-  ) {
-    const payload = {
-      items,
-      coupon_codes: couponCodes || [],
-      shipping_method_id: shippingMethodId,
-      region
-    };
-    
-    const response = await api.post('/shop/calculate-price', payload);
-    return response.data;
-  },
-
-  async createOrder(orderData: {
-    products: Array<{id: string, quantity: number}>;
-    shipping_method_id: string;
-    coupon_codes?: string[];
-    shipping_address: {
-      full_name: string;
-      address: string;
-      city: string;
-      state: string;
-      postal_code: string;
-      country: string;
-    };
-    payment_method: {
-      type: string;
-      details: any;
-    };
-  }) {
-    const response = await api.post('/shop/orders', orderData);
-    return response.data;
+  
+  // Create a new order
+  createOrder: async (orderData: { user_id: string, total_amount: number, items: any[] }) => {
+    try {
+      // Create the order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: orderData.user_id,
+          total_amount: orderData.total_amount,
+          status: 'pending'
+        })
+        .select()
+        .single();
+      
+      if (orderError) throw orderError;
+      
+      // Create order items
+      const orderItems = orderData.items.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.price
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+      
+      if (itemsError) throw itemsError;
+      
+      return order;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
   }
 };
 

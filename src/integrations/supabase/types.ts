@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_id: string | null
+          created_at: string | null
+          id: string
+          reason: string | null
+          target_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          target_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          target_id?: string | null
+        }
+        Relationships: []
+      }
       battle_history: {
         Row: {
           created_at: string | null
@@ -640,6 +667,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      streaming_config: {
+        Row: {
+          agora_app_certificate: string | null
+          agora_app_id: string | null
+          agora_enabled: boolean | null
+          created_at: string | null
+          id: string
+          max_stream_duration: number | null
+          streamer_cooldown: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          agora_app_certificate?: string | null
+          agora_app_id?: string | null
+          agora_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          max_stream_duration?: number | null
+          streamer_cooldown?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          agora_app_certificate?: string | null
+          agora_app_id?: string | null
+          agora_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          max_stream_duration?: number | null
+          streamer_cooldown?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       streams: {
         Row: {

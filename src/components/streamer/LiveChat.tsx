@@ -1,321 +1,179 @@
 
-import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Gift, Heart, Send } from "lucide-react";
-import { useViewerPresence } from "@/hooks/useViewerPresence";
-import { useToast } from "@/components/ui/use-toast";
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Avatar } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Send } from 'lucide-react';
 
-interface Message {
+export interface LiveChatProps {
+  streamId: string;
+}
+
+interface ChatMessage {
   id: string;
-  userId: string;
-  username: string;
-  avatar: string | null;
-  text: string;
-  type: 'text' | 'gift' | 'join' | 'like';
-  timestamp: string;
+  message: string;
+  created_at: string;
+  sender_id: string;
+  sender_username?: string;
+  sender_avatar?: string;
 }
 
-interface LiveChatProps {
-  streamerId: string;
-}
-
-const LiveChat = ({ streamerId }: LiveChatProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
+const LiveChat: React.FC<LiveChatProps> = ({ streamId }) => {
   const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messageText, setMessageText] = useState('');
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { viewers, viewerCount } = useViewerPresence(streamerId);
-  const { toast } = useToast();
-
-  // Automatically scroll to bottom when new messages arrive
+  
+  // Fetch initial messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
+    const fetchMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select(`
+            *,
+            profiles:sender_id (username, avatar_url)
+          `)
+          .eq('stream_id', streamId)
+          .order('created_at', { ascending: true })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        const formattedMessages = data.map(msg => ({
+          id: msg.id,
+          message: msg.message,
+          created_at: msg.created_at,
+          sender_id: msg.sender_id,
+          sender_username: msg.profiles?.username || 'Anonymous',
+          sender_avatar: msg.profiles?.avatar_url
+        }));
+        
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error('Error fetching chat messages:', error);
+      }
+    };
+    
+    fetchMessages();
+  }, [streamId]);
+  
+  // Subscribe to new messages
   useEffect(() => {
-    // First set up realtime subscription to chat_messages table
-    const chatMessagesChannel = supabase
-      .channel('public:chat_messages')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'chat_messages'
-        }, 
-        async (payload) => {
-          console.log('New chat message:', payload);
-          
-          // Get the user profile info for the message
-          const { data: profileData } = await supabase
+    const chatSubscription = supabase
+      .channel(`chat-${streamId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'chat_messages',
+        filter: `stream_id=eq.${streamId}`
+      }, async (payload) => {
+        try {
+          // Get the sender profile
+          const { data: profile } = await supabase
             .from('profiles')
             .select('username, avatar_url')
             .eq('id', payload.new.sender_id)
             .single();
-            
-          const newChatMessage: Message = {
+          
+          const newMessage: ChatMessage = {
             id: payload.new.id,
-            userId: payload.new.sender_id,
-            username: profileData?.username || 'Anonymous',
-            avatar: profileData?.avatar_url,
-            text: payload.new.message,
-            type: 'text',
-            timestamp: payload.new.created_at
+            message: payload.new.message,
+            created_at: payload.new.created_at,
+            sender_id: payload.new.sender_id,
+            sender_username: profile?.username || 'Anonymous',
+            sender_avatar: profile?.avatar_url
           };
           
-          setMessages((prev) => [...prev, newChatMessage]);
+          setMessages(prev => [...prev, newMessage]);
+        } catch (error) {
+          console.error('Error fetching message sender:', error);
         }
-      )
-      .subscribe((status) => {
-        console.log('Chat messages subscription status:', status);
-        setIsConnected(status === 'SUBSCRIBED');
-      });
-
-    // Then set up the presence channel for join/leave events
-    const chatChannel = supabase.channel(`chat:${streamerId}`);
-
-    // Listen for chat messages from the presence channel (gifts, likes, etc.)
-    chatChannel
-      .on('broadcast', { event: 'chat-message' }, (payload) => {
-        setMessages((prev) => [...prev, payload.payload as Message]);
       })
-      .subscribe((status) => {
-        console.log('Presence channel status:', status);
-        
-        // Add a system message when connected
-        if (status === 'SUBSCRIBED') {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              userId: 'system',
-              username: 'System',
-              avatar: null,
-              text: 'Welcome to the chat!',
-              type: 'text',
-              timestamp: new Date().toISOString()
-            }
-          ]);
-        }
-      });
-
-    // Clean up
+      .subscribe();
+    
     return () => {
-      supabase.removeChannel(chatMessagesChannel);
-      supabase.removeChannel(chatChannel);
+      supabase.removeChannel(chatSubscription);
     };
-  }, [streamerId]);
-
-  // When a new viewer joins, add a message
+  }, [streamId]);
+  
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (viewers.length > 0) {
-      const lastViewer = viewers[viewers.length - 1];
-      // Only add new join messages
-      if (!messages.some(m => m.type === 'join' && m.userId === lastViewer.id)) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            userId: lastViewer.id,
-            username: lastViewer.username,
-            avatar: lastViewer.avatar,
-            text: 'joined the stream',
-            type: 'join',
-            timestamp: new Date().toISOString()
-          }
-        ]);
-      }
-    }
-  }, [viewers, messages]);
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user || !isConnected) return;
-
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  
+  // Send message
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!messageText.trim() || !user) return;
+    
     try {
-      // Get user profile info
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', user.id)
-        .single();
-
-      // Insert message into the chat_messages table
+      setLoading(true);
+      
       const { error } = await supabase
         .from('chat_messages')
         .insert({
+          stream_id: streamId,
           sender_id: user.id,
-          stream_id: streamerId,
-          message: newMessage
+          message: messageText.trim()
         });
-
-      if (error) {
-        throw error;
-      }
-
-      // Clear input field after successful send
-      setNewMessage('');
+      
+      if (error) throw error;
+      
+      setMessageText('');
     } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "Error sending message",
-        description: "Your message could not be sent. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error sending message:', error);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const simulateGift = async () => {
-    if (!user || !isConnected) return;
-
-    try {
-      // Get user profile info
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', user.id)
-        .single();
-
-      const giftMessage: Message = {
-        id: crypto.randomUUID(),
-        userId: user.id,
-        username: profileData?.username || 'Anonymous',
-        avatar: profileData?.avatar_url,
-        text: 'sent a gift!',
-        type: 'gift',
-        timestamp: new Date().toISOString()
-      };
-
-      // Broadcast the gift message
-      await supabase.channel(`chat:${streamerId}`).send({
-        type: 'broadcast',
-        event: 'chat-message',
-        payload: giftMessage
-      });
-    } catch (error) {
-      console.error("Error sending gift:", error);
-    }
-  };
-
-  const simulateLike = async () => {
-    if (!user || !isConnected) return;
-
-    try {
-      // Get user profile info
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', user.id)
-        .single();
-
-      const likeMessage: Message = {
-        id: crypto.randomUUID(),
-        userId: user.id,
-        username: profileData?.username || 'Anonymous',
-        avatar: profileData?.avatar_url,
-        text: 'liked the stream!',
-        type: 'like',
-        timestamp: new Date().toISOString()
-      };
-
-      // Broadcast the like message
-      await supabase.channel(`chat:${streamerId}`).send({
-        type: 'broadcast',
-        event: 'chat-message',
-        payload: likeMessage
-      });
-    } catch (error) {
-      console.error("Error sending like:", error);
-    }
-  };
-
+  
   return (
-    <div className="flex flex-col h-full bg-app-gray-dark border border-app-gray-light rounded-lg overflow-hidden">
-      <div className="p-3 border-b border-app-gray-light flex items-center justify-between">
-        <div className="flex items-center">
-          <MessageSquare className="h-5 w-5 mr-2 text-app-yellow" />
-          <span className="font-medium">Live Chat</span>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {viewerCount} viewer{viewerCount !== 1 ? 's' : ''}
-        </div>
+    <div className="h-full flex flex-col bg-background border rounded-md">
+      <div className="p-3 border-b">
+        <h3 className="font-semibold">Live Chat</h3>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {messages.map((message) => (
-          <div key={message.id} className="flex items-start gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={message.avatar || ''} />
-              <AvatarFallback>{message.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1">
-              <div className="flex items-center">
-                <span className="font-medium text-sm mr-1">{message.username}</span>
-                {message.type === 'gift' && (
-                  <Gift className="h-3 w-3 text-purple-400" />
-                )}
-                {message.type === 'join' && (
-                  <span className="text-green-400 text-xs">•</span>
-                )}
-                {message.type === 'like' && (
-                  <Heart className="h-3 w-3 text-red-400" />
-                )}
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        {messages.length === 0 ? (
+          <p className="text-center text-gray-500 text-sm">No messages yet</p>
+        ) : (
+          messages.map(msg => (
+            <div key={msg.id} className="flex items-start space-x-2">
+              <Avatar className="h-8 w-8">
+                {msg.sender_avatar && <img src={msg.sender_avatar} alt={msg.sender_username} />}
+              </Avatar>
+              <div>
+                <p className="text-sm font-semibold">{msg.sender_username}</p>
+                <p className="text-sm">{msg.message}</p>
               </div>
-              <p className={`text-sm ${
-                message.type === 'join' 
-                  ? 'text-green-400' 
-                  : message.type === 'gift' 
-                    ? 'text-purple-400' 
-                    : message.type === 'like'
-                      ? 'text-red-400'
-                      : 'text-gray-200'
-              }`}>
-                {message.text}
-              </p>
             </div>
-          </div>
-        ))}
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
       
-      <div className="p-3 border-t border-app-gray-light">
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-8 w-8 text-purple-400" 
-            onClick={simulateGift}
-          >
-            <Gift className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-8 w-8 text-red-400" 
-            onClick={simulateLike}
-          >
-            <Heart className="h-4 w-4" />
-          </Button>
-          <Input 
-            className="flex-1 h-8 bg-app-gray-light border-app-gray-light"
-            placeholder="Type a message..." 
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-          />
-          <Button 
-            size="icon" 
-            className="h-8 w-8 bg-app-yellow text-app-black hover:bg-app-yellow/90"
-            onClick={handleSendMessage}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <form onSubmit={sendMessage} className="p-3 border-t flex">
+        <Input
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          placeholder="Type a message..."
+          disabled={!user || loading}
+          className="flex-1"
+        />
+        <Button 
+          type="submit" 
+          size="icon" 
+          disabled={!user || !messageText.trim() || loading}
+          className="ml-2"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
     </div>
   );
 };

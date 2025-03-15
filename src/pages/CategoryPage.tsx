@@ -14,7 +14,7 @@ const CategoryPage: React.FC = () => {
   
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', 'category', decodedCategory],
-    queryFn: () => ShopService.getProductsByCategory(decodedCategory),
+    queryFn: () => ShopService.getProducts(decodedCategory),
     enabled: !!decodedCategory,
   });
   

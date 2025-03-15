@@ -1,81 +1,101 @@
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
-interface GiftAnimationProps {
-  type: string;
-  sender: string;
-  amount: number;
-  onComplete?: () => void;
+export interface GiftAnimationProps {
+  streamId: string;
 }
 
-// Mock gift animations based on type
-const giftAnimations: Record<string, { icon: string; color: string; className: string }> = {
-  "heart": {
-    icon: "❤️",
-    color: "bg-red-500",
-    className: "animate-bounce"
-  },
-  "star": {
-    icon: "⭐",
-    color: "bg-yellow-500",
-    className: "animate-spin"
-  },
-  "rocket": {
-    icon: "🚀",
-    color: "bg-blue-500",
-    className: "animate-pulse"
-  },
-  "crown": {
-    icon: "👑",
-    color: "bg-purple-500",
-    className: "animate-ping"
-  },
-  "diamond": {
-    icon: "💎",
-    color: "bg-cyan-500",
-    className: "animate-bounce"
-  }
-};
+interface Gift {
+  id: string;
+  sender_username: string;
+  gift_type: string;
+  coins_amount: number;
+}
 
-const GiftAnimation = ({ type, sender, amount, onComplete }: GiftAnimationProps) => {
-  const [visible, setVisible] = useState(true);
+const GiftAnimation: React.FC<GiftAnimationProps> = ({ streamId }) => {
+  const [currentGift, setCurrentGift] = useState<Gift | null>(null);
+  const [queue, setQueue] = useState<Gift[]>([]);
   
-  // Get gift animation details, default to heart if type not found
-  const giftAnimation = giftAnimations[type.toLowerCase()] || giftAnimations.heart;
-  
-  // Auto-hide the animation after 3 seconds
+  // Subscribe to gift events
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-      if (onComplete) {
-        onComplete();
-      }
-    }, 3000);
+    const giftSubscription = supabase
+      .channel(`stream-gifts-${streamId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'stream_gifts',
+        filter: `stream_id=eq.${streamId}`
+      }, async (payload) => {
+        try {
+          // Get the sender username
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', payload.new.sender_id)
+            .single();
+          
+          const newGift: Gift = {
+            id: payload.new.id,
+            sender_username: profile?.username || 'Anonymous',
+            gift_type: payload.new.gift_type,
+            coins_amount: payload.new.coins_amount
+          };
+          
+          // Add to queue
+          setQueue(prev => [...prev, newGift]);
+        } catch (error) {
+          console.error('Error fetching gift sender:', error);
+        }
+      })
+      .subscribe();
     
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+    return () => {
+      supabase.removeChannel(giftSubscription);
+    };
+  }, [streamId]);
+  
+  // Process the queue
+  useEffect(() => {
+    if (queue.length > 0 && !currentGift) {
+      // Take the first gift from the queue
+      const nextGift = queue[0];
+      setCurrentGift(nextGift);
+      setQueue(prev => prev.slice(1));
+      
+      // Clear after animation duration
+      const timer = setTimeout(() => {
+        setCurrentGift(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [queue, currentGift]);
   
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ y: 200, opacity: 0, scale: 0.5 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: -200, opacity: 0, scale: 0.5 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center"
-        >
-          <div className={`px-4 py-2 rounded-full ${giftAnimation.color} bg-opacity-80 text-white text-sm backdrop-blur-sm mb-2`}>
-            <span className="font-medium">{sender}</span> sent {amount} {type}!
-          </div>
-          
-          <div className={`text-6xl ${giftAnimation.className}`} style={{ filter: "drop-shadow(0 0 8px rgba(0,0,0,0.5))" }}>
-            {giftAnimation.icon}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="absolute top-0 left-0 right-0 pointer-events-none overflow-hidden z-10">
+      <AnimatePresence>
+        {currentGift && (
+          <motion.div
+            key={currentGift.id}
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 300, opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg p-3 m-4 text-white flex items-center"
+          >
+            <div className="mr-3">
+              <span className="text-xl">🎁</span>
+            </div>
+            <div>
+              <p className="font-bold">{currentGift.sender_username}</p>
+              <p>Sent a {currentGift.gift_type} ({currentGift.coins_amount} coins)</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
