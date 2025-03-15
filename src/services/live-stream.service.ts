@@ -2,22 +2,22 @@
 // This file is maintained for backward compatibility
 // Import from new module structure for future development
 import LiveStreamService, { 
-  LiveStream, 
-  Battle, 
-  BattleRequest, 
-  StreamProduct,
   StreamService,
   BattleService,
   GiftService,
   StreamProductService
 } from './streaming';
 
-// Re-export everything for backward compatibility
-export { 
+// Re-export types for backward compatibility
+export type { 
   LiveStream, 
   Battle, 
   BattleRequest, 
-  StreamProduct,
+  StreamProduct 
+} from './streaming';
+
+// Re-export services for backward compatibility
+export { 
   StreamService,
   BattleService,
   GiftService,

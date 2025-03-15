@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Tag, X, Star, Percent } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { StreamProductService } from '@/services/streaming';
+import { StreamProduct } from '@/models/streaming';
 import { useAuth } from '@/context/AuthContext';
 
 interface StreamProductsProps {

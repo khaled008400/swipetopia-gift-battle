@@ -6,7 +6,7 @@ import StreamProductService from './product.service';
 import { LiveStream, Battle, BattleRequest, StreamProduct } from '@/models/streaming';
 
 // Re-export types for backward compatibility
-export { LiveStream, Battle, BattleRequest, StreamProduct };
+export type { LiveStream, Battle, BattleRequest, StreamProduct };
 
 // Combine all services into a single object to maintain backward compatibility
 const LiveStreamService = {
