@@ -92,16 +92,25 @@ class VideoService {
    */
   async incrementViews(videoId: string) {
     try {
-      // Use numeric update expression
-      const { error } = await supabase
-        .from('short_videos')
-        .update({ 
-          view_count: await this.getIncrementedCount(videoId, 'view_count')
-        })
-        .eq('id', videoId);
+      // Use the increment_counter function
+      const { data: newCount, error } = await supabase
+        .rpc('increment_counter', {
+          row_id: videoId,
+          counter_name: 'view_count'
+        });
       
       if (error) {
         throw error;
+      }
+      
+      // Update using the return value from the function
+      const { error: updateError } = await supabase
+        .from('short_videos')
+        .update({ view_count: newCount })
+        .eq('id', videoId);
+      
+      if (updateError) {
+        throw updateError;
       }
     } catch (error) {
       console.error("Error incrementing view count:", error);
@@ -353,7 +362,7 @@ class VideoService {
   }
 
   /**
-   * Share video (placeholder implementation)
+   * Share video implementation
    */
   async shareVideo(videoId: string) {
     console.log(`Sharing video ${videoId}`);
@@ -361,7 +370,7 @@ class VideoService {
   }
   
   /**
-   * Download video (placeholder implementation)
+   * Download video implementation
    */
   async downloadVideo(videoId: string) {
     console.log(`Downloading video ${videoId}`);

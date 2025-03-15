@@ -883,6 +883,13 @@ export type Database = {
           updated_at: string
         }[]
       }
+      increment_counter: {
+        Args: {
+          row_id: string
+          counter_name: string
+        }
+        Returns: number
+      }
       log_admin_action: {
         Args: {
           p_action_type: string

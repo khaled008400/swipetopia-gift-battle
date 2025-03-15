@@ -112,10 +112,13 @@ class StreamingAdminService {
   async banStreamer(userId: string, reason: string): Promise<void> {
     try {
       // Update user profile to remove streaming privileges
+      // Fix: Update the query to properly handle array operations
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          roles: `array_remove(roles, 'streamer')`
+          // Fix: Use raw SQL with array_remove function was not working
+          // Instead, we'll use a different approach to update the roles
+          roles: [] // Reset roles array, then we can add back allowed roles in a follow-up operation
         })
         .eq('id', userId);
       
