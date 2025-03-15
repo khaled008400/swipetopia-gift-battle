@@ -1,5 +1,5 @@
-
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
 import { useBattleVideos } from "@/hooks/useBattleVideos";
@@ -36,7 +36,6 @@ const STREAMER_VIDEO_MAPPING: Record<string, string[]> = {
   "5": ["5", "1"] // gamerpro videos
 };
 
-// Add type definition for GiftButton component
 interface GiftButtonProps {
   type: string;
   amount: number;
@@ -60,12 +59,10 @@ const LiveStreamPage = () => {
     setActiveVideoIndex,
     filteredVideos,
     setStreamerFilter
-  } = useBattleVideos(true); // true = live streams only
+  } = useBattleVideos(true);
   
-  // When a streamer is selected, get their viewerCount using the hook
   const { viewerCount } = useViewerPresence(selectedStreamerId || '');
   
-  // Get real-time updates for the selected stream
   const {
     incomingGifts,
     battleRequests: realtimeBattleRequests,
@@ -74,14 +71,12 @@ const LiveStreamPage = () => {
     opponentScore
   } = useLiveStreamRealtime(selectedStreamerId || undefined);
   
-  // Update local battle requests state when realtime updates come in
   useEffect(() => {
     if (realtimeBattleRequests.length > 0) {
       setBattleRequests(realtimeBattleRequests);
     }
   }, [realtimeBattleRequests]);
 
-  // Check if the current user is the streamer of the selected stream
   useEffect(() => {
     const checkIfStreamer = async () => {
       if (!user || !selectedStreamerId) {
@@ -117,7 +112,6 @@ const LiveStreamPage = () => {
     });
   };
   
-  // Handle gift sending
   const handleSendGift = async (giftType: string, amount: number) => {
     if (!selectedStreamerId || !user) {
       toast({
@@ -148,7 +142,6 @@ const LiveStreamPage = () => {
     }
   };
   
-  // Show gift animations for incoming gifts
   useEffect(() => {
     if (incomingGifts.length > 0 && !currentGiftAnimation) {
       const latestGift = incomingGifts[0];
@@ -159,21 +152,6 @@ const LiveStreamPage = () => {
       });
     }
   }, [incomingGifts, currentGiftAnimation]);
-  
-  // Handle scroll/swipe navigation
-  useEffect(() => {
-    const handleScroll = (e: WheelEvent) => {
-      if (e.deltaY > 0 && activeVideoIndex < filteredVideos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
-      }
-    };
-    window.addEventListener('wheel', handleScroll);
-    return () => {
-      window.removeEventListener('wheel', handleScroll);
-    };
-  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
   
   useEffect(() => {
     let touchStartY = 0;
@@ -197,7 +175,6 @@ const LiveStreamPage = () => {
     };
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
   
-  // Toggle products sidebar
   const toggleProductsSidebar = () => {
     if (showGiftMenu) {
       setShowGiftMenu(false);
@@ -206,7 +183,6 @@ const LiveStreamPage = () => {
     setSidebarTab('products');
   };
   
-  // Toggle gifts sidebar
   const toggleGiftsSidebar = () => {
     if (showProductsMenu) {
       setShowProductsMenu(false);
@@ -237,7 +213,6 @@ const LiveStreamPage = () => {
         <BattleModeSelector currentMode={battleMode} onModeChange={setBattleMode} />
       </div>
       
-      {/* Live indicator and action buttons */}
       <div className="absolute top-4 right-4 z-30 flex flex-col items-end space-y-2">
         {selectedStreamerId && (
           <>
@@ -266,7 +241,6 @@ const LiveStreamPage = () => {
         )}
       </div>
       
-      {/* Sidebar for gifts or products */}
       {(showGiftMenu || showProductsMenu) && (
         <div className="absolute bottom-0 right-0 top-20 w-64 md:w-72 bg-black/80 backdrop-blur-md z-40 border-l border-white/20 flex flex-col">
           <div className="flex justify-between items-center p-3 border-b border-white/20">
@@ -337,20 +311,16 @@ const LiveStreamPage = () => {
         </div>
       )}
       
-      {/* Video actions */}
-      <div className="absolute bottom-20 right-3 z-30">
-        {filteredVideos[activeVideoIndex] && <VideoActions 
-          likes={filteredVideos[activeVideoIndex].likes} 
-          comments={filteredVideos[activeVideoIndex].comments} 
-          shares={filteredVideos[activeVideoIndex].shares} 
-          isLiked={filteredVideos[activeVideoIndex].isLiked || false} 
-          onLike={() => {
-            console.log('Video liked:', filteredVideos[activeVideoIndex]);
-          }} 
-        />}
-      </div>
+      {filteredVideos[activeVideoIndex] && <VideoActions 
+        likes={filteredVideos[activeVideoIndex].likes} 
+        comments={filteredVideos[activeVideoIndex].comments} 
+        shares={filteredVideos[activeVideoIndex].shares} 
+        isLiked={filteredVideos[activeVideoIndex].isLiked || false} 
+        onLike={() => {
+          console.log('Video liked:', filteredVideos[activeVideoIndex]);
+        }} 
+      />}
       
-      {/* Battle requests notification */}
       {battleRequests.length > 0 && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-lg z-40 border border-purple-500/50">
           <div className="flex items-center space-x-2 mb-2">
@@ -375,20 +345,17 @@ const LiveStreamPage = () => {
         </div>
       )}
       
-      {/* Active battle UI */}
       {activeBattle && selectedStreamerId && (
         <BattleInterface 
           streamId={selectedStreamerId}
-          opponentId="opponent-id" // This would come from the actual battle data
+          opponentId="opponent-id"
           opponentName="Challenger"
           battleId={activeBattle}
           onEndBattle={() => {
-            // Handled internally in the component
           }}
         />
       )}
       
-      {/* Gift animation */}
       {currentGiftAnimation && (
         <GiftAnimation 
           type={currentGiftAnimation.type}
@@ -410,7 +377,6 @@ const LiveStreamPage = () => {
   );
 };
 
-// Gift button component for the gift menu
 const GiftButton = ({ type, amount, onClick }: GiftButtonProps) => {
   const giftIcons: Record<string, string> = {
     heart: "❤️",

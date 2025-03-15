@@ -217,7 +217,7 @@ const LiveStreamService = {
   },
   
   // Send a gift during a stream/battle
-  sendGift: async (receiverId: string, giftType: string, amount: number, battleId?: string | null): Promise<void> => {
+  sendGift: async (receiverId: string, giftType: string, amount: number, battleId: string | null = null): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -230,7 +230,7 @@ const LiveStreamService = {
       p_receiver_id: receiverId,
       p_gift_type: giftType,
       p_amount: amount,
-      p_battle_id: battleId || null
+      p_battle_id: battleId
     });
     
     if (rpcError) {
