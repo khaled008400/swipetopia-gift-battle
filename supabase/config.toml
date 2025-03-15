@@ -44,11 +44,7 @@ enable_signup = true
 enable_confirmations = false
 
 [functions]
-[functions.hooks]
-path = "supabase/functions/hooks"
-
-[functions.serve_flowtron]
-enabled = true
+serve_flowtron = true
 
 [realtime]
 enabled = true

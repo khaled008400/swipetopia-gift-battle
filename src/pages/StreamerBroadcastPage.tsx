@@ -21,27 +21,25 @@ const StreamerBroadcastPage = () => {
       }
       
       try {
-        // Check if user has streamer role
+        // Check if user has streamer role in profiles table
         const { data, error } = await supabase
-          .from('user_roles')
+          .from('profiles')
           .select('*')
-          .eq('user_id', user.id)
-          .eq('role', 'streamer')
+          .eq('id', user.id)
           .single();
         
         if (error) throw error;
         
-        setIsAuthorized(!!data);
+        // Check if the user has the 'streamer' role
+        const hasStreamerRole = data.role === 'streamer' || 
+                               (data.roles && Array.isArray(data.roles) && 
+                                data.roles.includes('streamer'));
         
-        // Get user profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, full_name')
-          .eq('id', user.id)
-          .single();
+        setIsAuthorized(hasStreamerRole);
         
-        if (profile) {
-          setStreamerName(profile.full_name || profile.username || 'Streamer');
+        // Get username from the profile
+        if (data) {
+          setStreamerName(data.username || 'Streamer');
         }
       } catch (error) {
         console.error('Error checking authorization:', error);
