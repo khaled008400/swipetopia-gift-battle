@@ -117,12 +117,19 @@ const GiftService = {
    * @returns A promise that resolves to an array of gift transactions
    */
   getGiftsForVideo: async (videoId: string): Promise<GiftTransaction[]> => {
+    // Modified to properly join with profiles and virtual_gifts tables
     const { data, error } = await supabase
       .from('gift_transactions')
       .select(`
-        *,
-        sender:sender_id (username, avatar_url),
-        gift:gift_id (*)
+        id,
+        sender_id,
+        receiver_id,
+        video_id,
+        gift_id,
+        amount,
+        created_at,
+        profiles:profiles!sender_id(username, avatar_url),
+        gift:virtual_gifts!gift_id(name, icon, color)
       `)
       .eq('video_id', videoId);
       
@@ -131,7 +138,27 @@ const GiftService = {
       return [];
     }
     
-    return data || [];
+    // Transform the data to match our GiftTransaction type
+    const transformedData = data.map(item => ({
+      id: item.id,
+      sender_id: item.sender_id,
+      receiver_id: item.receiver_id,
+      video_id: item.video_id,
+      gift_id: item.gift_id,
+      amount: item.amount,
+      created_at: item.created_at,
+      sender: {
+        username: item.profiles?.username || 'Anonymous',
+        avatar_url: item.profiles?.avatar_url
+      },
+      gift: {
+        name: item.gift?.name || 'Gift',
+        icon: item.gift?.icon || '🎁',
+        color: item.gift?.color || '#6366f1'
+      }
+    })) as GiftTransaction[];
+    
+    return transformedData;
   }
 };
 
