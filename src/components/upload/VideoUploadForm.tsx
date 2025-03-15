@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -8,6 +9,7 @@ import EditStep from "./upload-steps/EditStep";
 import ProcessingStep from "./upload-steps/ProcessingStep";
 import CompleteStep from "./upload-steps/CompleteStep";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface VideoUploadFormProps {
   onClose: () => void;
@@ -26,6 +28,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [allowDownloads, setAllowDownloads] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -36,6 +39,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [uploadedVideoData, setUploadedVideoData] = useState(null);
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,9 +85,20 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       return;
     }
 
+    // Check if user is authenticated
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You need to be logged in to upload videos",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setStep("processing");
       setIsUploading(true);
+      setUploadError(null);
 
       const progressSteps = [10, 25, 45, 60, 75, 90, 95, 100];
       let currentStepIndex = 0;
@@ -110,13 +125,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         }
         
         console.log('Preparing to upload file:', finalVideoFile.name, finalVideoFile.size, finalVideoFile.type);
-        
-        const { data: { user } } = await supabase.auth.getUser();
         console.log('Current user:', user);
-        
-        if (!user) {
-          throw new Error("You need to be logged in to upload videos");
-        }
         
         const response = await VideoService.uploadVideo(finalVideoFile, {
           title,
@@ -142,9 +151,12 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         console.error("Error processing upload:", error);
         clearInterval(interval);
         
+        const errorMessage = error instanceof Error ? error.message : "There was an error uploading your video";
+        setUploadError(errorMessage);
+        
         toast({
           title: "Upload failed",
-          description: error instanceof Error ? error.message : "There was an error uploading your video",
+          description: errorMessage,
           variant: "destructive",
         });
         
@@ -296,6 +308,8 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
             onClose={onClose}
             handleUpload={handleUpload}
             videoPreviewUrl={videoPreviewUrl}
+            isAuthenticated={!!user}
+            error={uploadError}
           />
         );
       

@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Globe, Lock, Users } from "lucide-react";
+import { Globe, Lock, Users, AlertCircle } from "lucide-react";
 import HashtagInput from "../HashtagInput";
 import VideoPreview from "../VideoPreview";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EditStepProps {
   title: string;
@@ -23,6 +24,8 @@ interface EditStepProps {
   onClose: () => void;
   handleUpload: () => void;
   videoPreviewUrl: string | null;
+  isAuthenticated?: boolean;
+  error?: string | null;
 }
 
 const EditStep = ({
@@ -38,7 +41,9 @@ const EditStep = ({
   setAllowDownloads,
   onClose,
   handleUpload,
-  videoPreviewUrl
+  videoPreviewUrl,
+  isAuthenticated = true,
+  error = null
 }: EditStepProps) => {
   const handleAddHashtag = (tag: string) => {
     if (!hashtags.includes(tag)) {
@@ -54,6 +59,24 @@ const EditStep = ({
     <ScrollArea className="h-[calc(100vh-240px)]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
         <div className="flex flex-col space-y-4">
+          {!isAuthenticated && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You need to be logged in to upload videos
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div>
             <Label htmlFor="title" className="mb-2 block">Title</Label>
             <Input 
@@ -128,7 +151,11 @@ const EditStep = ({
             <Button variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleUpload} className="flex-1" disabled={!title.trim()}>
+            <Button 
+              onClick={handleUpload} 
+              className="flex-1" 
+              disabled={!title.trim() || !isAuthenticated}
+            >
               Upload
             </Button>
           </div>

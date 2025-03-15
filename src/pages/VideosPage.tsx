@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,7 @@ const VideosPage: React.FC = () => {
     
     toast({
       title: 'Success!',
-      description: 'Your video has been uploaded',
+      description: 'Your video has been uploaded and will appear shortly',
     });
   };
 

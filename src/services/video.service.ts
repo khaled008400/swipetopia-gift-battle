@@ -33,8 +33,9 @@ class VideoService {
   /**
    * Get a list of videos
    */
-  async getVideos(page = 1, limit = 10) {
+  async getVideos(page = 1, limit = 50) {
     try {
+      console.log("Fetching videos with page:", page, "limit:", limit);
       const from = (page - 1) * limit;
       const to = from + limit - 1;
       
@@ -51,9 +52,11 @@ class VideoService {
         .range(from, to);
       
       if (error) {
+        console.error("Error in getVideos:", error);
         throw error;
       }
       
+      console.log("Retrieved videos count:", data?.length || 0);
       return data || [];
     } catch (error) {
       console.error("Error fetching videos:", error);
@@ -321,16 +324,24 @@ class VideoService {
       console.log('Starting video upload with metadata:', metadata);
       
       // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User must be authenticated to upload videos");
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session data:', sessionData);
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw new Error("Failed to verify authentication: " + sessionError.message);
       }
       
+      if (!sessionData.session) {
+        throw new Error("You must be logged in to upload videos");
+      }
+      
+      const user = sessionData.session.user;
       console.log('Authenticated user:', user.id);
       
       // Generate a unique file name
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
       
       console.log('Uploading file to storage:', filePath);
@@ -338,11 +349,14 @@ class VideoService {
       // Upload to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('videos')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
       
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        throw uploadError;
+        throw new Error("Failed to upload video: " + uploadError.message);
       }
       
       console.log('File uploaded successfully:', uploadData);
@@ -373,7 +387,7 @@ class VideoService {
       
       if (error) {
         console.error('Database insert error:', error);
-        throw error;
+        throw new Error("Failed to create video record: " + error.message);
       }
       
       console.log('Video record created:', data);
