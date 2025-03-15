@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, 
   DialogTitle, DialogTrigger, DialogClose 
 } from "@/components/ui/dialog";
-import { Product, AdminProduct } from "@/services/shop.service";
+import { Product } from "@/types/product.types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -51,7 +52,7 @@ const ProductListings = () => {
             image_url: item.image_url || "",
             stock_quantity: item.stock_quantity || 0,
             category: item.category || "other",
-            status: item.status || "active",
+            status: (item.status as 'active' | 'draft' | 'unavailable') || "active",
             seller_id: item.seller_id,
             created_at: item.created_at,
             updated_at: item.updated_at

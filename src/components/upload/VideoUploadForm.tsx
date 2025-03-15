@@ -99,14 +99,14 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
             if (!finalVideoFile) {
               throw new Error("No video file available");
             }
-                
-            const response = await VideoService.uploadVideo({
+            
+            // Fix the uploadVideo call by adding a metadata object as the second parameter
+            const response = await VideoService.uploadVideo(finalVideoFile, {
               title,
               description,
               hashtags,
               isPublic: privacy === "public",
-              allowDownloads,
-              videoFile: finalVideoFile
+              allowDownloads
             });
                 
             console.log("Upload response:", response);

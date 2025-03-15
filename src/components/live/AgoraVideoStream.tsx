@@ -32,7 +32,11 @@ const AgoraVideoStream: React.FC<AgoraVideoStreamProps> = ({
     }
     
     // Join the channel when component mounts
-    join(channel);
+    const joinChannel = async () => {
+      await join(channel);
+    };
+    
+    joinChannel();
     
     // Leave the channel when component unmounts
     return () => {

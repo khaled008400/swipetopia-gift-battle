@@ -54,7 +54,7 @@ const WatchPage: React.FC = () => {
   // Use default values for potentially missing properties
   const likesCount = 0; // We'll default to 0 since 'likes' property doesn't exist yet
   const commentsCount = 0; // We'll default to 0 since 'comments_count' property doesn't exist yet
-  const username = video.profiles?.username || '';
+  const username = video.profiles?.username || 'Anonymous';
   const avatarUrl = video.profiles?.avatar_url || '';
   const viewCount = video.view_count || 0;
   
@@ -76,7 +76,7 @@ const WatchPage: React.FC = () => {
           </div>
           
           <div className="mt-4">
-            <h1 className="text-2xl font-bold">{video.title}</h1>
+            <h1 className="text-2xl font-bold">{video.title || 'Untitled Video'}</h1>
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">
                 <Avatar className="h-10 w-10">

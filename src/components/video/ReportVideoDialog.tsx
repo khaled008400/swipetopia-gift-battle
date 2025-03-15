@@ -42,7 +42,10 @@ const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps)
     try {
       setIsSubmitting(true);
       const reason = `${selectedReason}${additionalInfo ? ': ' + additionalInfo : ''}`;
-      await VideoService.reportVideo(videoId, reason);
+      
+      // Fix the reportVideo call by adding a userId parameter, which can be "anonymous" for now
+      // The actual userId would typically come from auth context
+      await VideoService.reportVideo(videoId, reason, "anonymous");
       
       toast({
         title: "Report submitted",

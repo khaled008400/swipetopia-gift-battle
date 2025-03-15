@@ -1,10 +1,7 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { LiveStream } from "@/models/streaming";
-import axios from "axios";
+import { supabase } from '@/integrations/supabase/client';
 
-// Define types for streaming config and admin actions
-interface StreamingConfig {
+export interface StreamingConfig {
   id: string;
   agora_app_id: string;
   agora_app_certificate: string;
@@ -15,154 +12,112 @@ interface StreamingConfig {
   updated_at: string;
 }
 
-/**
- * Service for administering streaming features
- */
-const StreamingAdminService = {
-  // Get streaming configuration
-  getStreamingConfig: async (): Promise<StreamingConfig | null> => {
+class StreamingAdminService {
+  /**
+   * Get streaming configuration
+   */
+  async getStreamingConfig(): Promise<StreamingConfig> {
     try {
-      // Use raw RPC call with an empty object parameter
-      const { data, error } = await supabase
-        .rpc('get_streaming_config', {});
+      const { data, error } = await supabase.rpc('get_streaming_config');
       
-      if (error) throw error;
-      return data as StreamingConfig;
-    } catch (err) {
-      console.error('Error fetching streaming config:', err);
-      return null;
-    }
-  },
-
-  // Update Agora API settings
-  updateAgoraSettings: async (appId: string, appCertificate: string, enabled: boolean) => {
-    try {
-      // Use parameter object with correct names
-      const { error } = await supabase.rpc('update_streaming_config', { 
-        p_app_id: appId,
-        p_app_certificate: appCertificate,
-        p_enabled: enabled
-      });
-      
-      if (error) throw error;
-      return { success: true };
-    } catch (err) {
-      console.error('Error updating Agora settings:', err);
-      throw err;
-    }
-  },
-
-  // Get all active streams for admin panel
-  getAllStreams: async (status?: 'live' | 'ended' | 'all') => {
-    try {
-      let query = supabase
-        .from('streams')
-        .select(`
-          id,
-          user_id,
-          title,
-          description,
-          status,
-          viewer_count,
-          started_at,
-          ended_at,
-          profiles (username, avatar_url)
-        `);
-      
-      if (status && status !== 'all') {
-        query = query.eq('status', status);
+      if (error) {
+        throw error;
       }
       
-      const { data, error } = await query.order('started_at', { ascending: false });
-
-      if (error) throw error;
+      // Fix the conversion by using the first item in the array
+      if (data && data.length > 0) {
+        return data[0] as StreamingConfig;
+      }
       
-      // Transform the data to match the LiveStream interface
-      const streams = data.map(stream => ({
-        id: stream.id,
-        streamer_id: stream.user_id,
-        title: stream.title,
-        description: stream.description,
-        status: stream.status as 'live' | 'offline' | 'ended',
-        viewer_count: stream.viewer_count,
-        started_at: stream.started_at,
-        ended_at: stream.ended_at,
-        profiles: stream.profiles,
-        is_live: stream.status === 'live'
-      }));
-      
-      return streams;
-    } catch (err) {
-      console.error('Error fetching streams for admin:', err);
-      return [];
+      throw new Error('No streaming configuration found');
+    } catch (error) {
+      console.error('Error getting streaming config:', error);
+      throw error;
     }
-  },
+  }
 
-  // Shutdown a stream by admin
-  shutdownStream: async (streamId: string, reason: string) => {
+  /**
+   * Update streaming configuration
+   */
+  async updateStreamingConfig(config: {
+    appId: string;
+    appCertificate: string;
+    enabled: boolean;
+  }): Promise<void> {
     try {
-      // First, update stream status
-      const { error } = await supabase
+      const { error } = await supabase.rpc('update_streaming_config', {
+        p_app_id: config.appId,
+        p_app_certificate: config.appCertificate,
+        p_enabled: config.enabled
+      });
+      
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error updating streaming config:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stop an active stream
+   */
+  async stopStream(streamId: string, reason: string): Promise<void> {
+    try {
+      // Update the stream status to 'ended'
+      const { error: updateError } = await supabase
         .from('streams')
         .update({
           status: 'ended',
           ended_at: new Date().toISOString()
         })
         .eq('id', streamId);
-
-      if (error) throw error;
-
-      // Log the action using an RPC function with an object parameter
-      await supabase
-        .rpc('log_admin_action', {
-          p_action_type: 'shutdown_stream',
-          p_target_id: streamId,
-          p_reason: reason
-        });
-
-      return { success: true };
-    } catch (err) {
-      console.error('Error shutting down stream:', err);
-      throw err;
-    }
-  },
-
-  // Get stream analytics data
-  getStreamAnalytics: async (period = 'week') => {
-    try {
-      const response = await axios.get('/api/analytics/streams', {
-        params: { period }
+      
+      if (updateError) throw updateError;
+      
+      // Log the admin action
+      const { error: logError } = await supabase.rpc('log_admin_action', {
+        p_action_type: 'stop_stream', 
+        p_target_id: streamId,
+        p_reason: reason
       });
       
-      return response.data;
-    } catch (err: any) {
-      console.error('Error fetching stream analytics:', err);
-      return {
-        dailyStreamCounts: [],
-        popularStreamers: [],
-        averageViewerCount: 0,
-        totalStreams: 0
-      };
-    }
-  },
-
-  // Get gift usage analytics
-  getGiftAnalytics: async (period = 'week') => {
-    try {
-      const response = await axios.get('/api/analytics/gifts', {
-        params: { period }
-      });
-      
-      return response.data;
-    } catch (err: any) {
-      console.error('Error fetching gift analytics:', err);
-      return {
-        popularGifts: [],
-        totalGiftValue: 0,
-        dailyGiftCounts: []
-      };
+      if (logError) throw logError;
+    } catch (error) {
+      console.error('Error stopping stream:', error);
+      throw error;
     }
   }
-};
 
-export default StreamingAdminService;
+  /**
+   * Ban a user from streaming
+   */
+  async banStreamer(userId: string, reason: string): Promise<void> {
+    try {
+      // Update user profile to remove streaming privileges
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          roles: supabase.sql`array_remove(roles, 'streamer')`
+        })
+        .eq('id', userId);
+      
+      if (updateError) throw updateError;
+      
+      // Log the admin action
+      const { error: logError } = await supabase.rpc('log_admin_action', {
+        p_action_type: 'ban_streamer',
+        p_target_id: userId,
+        p_reason: reason
+      });
+      
+      if (logError) throw logError;
+    } catch (error) {
+      console.error('Error banning streamer:', error);
+      throw error;
+    }
+  }
+}
+
+export default new StreamingAdminService();

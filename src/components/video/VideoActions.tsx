@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Heart, MessageCircle, Share2, Coins, Download, Flag, Bookmark } from "lucide-react";
 import VideoComments from "./VideoComments";
@@ -48,10 +49,7 @@ const VideoActions = ({
 
   const handleShare = async () => {
     try {
-      if (videoId) {
-        await VideoService.shareVideo(videoId);
-      }
-      
+      // Removing the reference to non-existent shareVideo method
       if (navigator.share) {
         navigator.share({
           title: 'Check out this video!',
@@ -105,15 +103,23 @@ const VideoActions = ({
     }
 
     try {
-      if (videoId) {
-        await VideoService.downloadVideo(videoId);
-      }
-      
+      // Instead of calling non-existent downloadVideo method, we'll just show a toast
       toast({
         title: "Downloading video",
         description: "Your download has started",
         duration: 2000
       });
+      
+      // Download functionality can be implemented in the VideoService
+      if (videoId) {
+        const videoUrl = `${window.location.origin}/api/videos/${videoId}/download`;
+        const link = document.createElement('a');
+        link.href = videoUrl;
+        link.setAttribute('download', `video-${videoId}.mp4`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (error) {
       console.error("Error downloading video:", error);
       toast({
