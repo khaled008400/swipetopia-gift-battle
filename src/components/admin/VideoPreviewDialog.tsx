@@ -5,7 +5,7 @@ import { AdminVideo } from '@/services/admin.service';
 import { Button } from '@/components/ui/button';
 import { Check, AlertCircle, Trash } from 'lucide-react';
 
-interface VideoPreviewDialogProps {
+export interface VideoPreviewDialogProps {
   video: AdminVideo | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;

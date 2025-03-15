@@ -13,12 +13,15 @@ export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: false,
   login: async () => null,
-  signup: async () => {},
+  register: async () => ({}), // Changed to return empty object
   logout: async () => {},
-  isAdmin: () => false,
-  hasRole: () => false,
+  updateProfile: async () => false,
+  addPaymentMethod: async () => false,
+  removePaymentMethod: async () => false,
   requiresAuth: () => {},
-  session: null
+  session: null,
+  isAdmin: () => false,
+  hasRole: () => false
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -34,13 +37,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   supabaseClient,
   session,
 }) => {
-  const [user, setUser] = React.useState<UserProfile | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(!!session);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!session);
+  const [isLoading, setIsLoading] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUser = async () => {
       if (session?.user) {
         try {
@@ -52,13 +55,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
           if (profileError) {
             console.error("Error fetching user profile:", profileError);
-            setError(profileError.message);
+            setError(new Error(profileError.message));
           }
 
           setUser(profile || null);
         } catch (err: any) {
           console.error("Unexpected error fetching profile:", err);
-          setError(err.message || "Failed to load user profile");
+          setError(new Error(err.message || "Failed to load user profile"));
         } finally {
           setLoading(false);
         }
@@ -79,13 +82,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         password,
       });
       if (error) {
-        setError(error.message);
+        setError(new Error(error.message));
         return { error };
       }
       setUser(data.user as any);
       return { error: null };
     } catch (err: any) {
-      setError(err.message);
+      setError(new Error(err.message));
       return { error: err.message };
     } finally {
       setLoading(false);
@@ -103,13 +106,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         },
       });
       if (error) {
-        setError(error.message);
+        setError(new Error(error.message));
         return { error };
       }
       setUser(data.user as any);
       return { error: null };
     } catch (err: any) {
-      setError(err.message);
+      setError(new Error(err.message));
       return { error: err.message };
     } finally {
       setLoading(false);
@@ -122,7 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       await supabaseClient.auth.signOut();
       setUser(null);
     } catch (err: any) {
-      setError(err.message);
+      setError(new Error(err.message));
     } finally {
       setLoading(false);
     }
@@ -135,12 +138,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         email,
         password,
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       setUser(data.user as any);
       setIsAuthenticated(true);
       return data;
     } catch (err: any) {
-      setError(err.message);
+      setError(new Error(err.message));
       console.error("Login error:", err);
       throw err;
     } finally {
@@ -148,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   };
 
-  const signup = async (email: string, username: string, password: string, roles: UserRole[] = ['user']) => {
+  const register = async (email: string, username: string, password: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabaseClient.auth.signUp({
@@ -157,83 +160,110 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         options: {
           data: {
             username,
-            roles
+            roles: ['user'] as UserRole[]
           }
         }
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
 
       // Create user profile in 'profiles' table
       await supabaseClient
         .from('profiles')
         .insert([
-          { id: data.user?.id, username, email: data.user?.email, roles: roles }
+          { id: data.user?.id, username, email: data.user?.email, roles: ['user'] as UserRole[] }
         ]);
 
       setUser(data.user as any);
       setIsAuthenticated(true);
+      return data;
     } catch (err: any) {
-      setError(err.message);
-      console.error("Signup error:", err);
+      setError(new Error(err.message));
+      console.error("Registration error:", err);
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return false;
+    
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+      
+      if (error) throw new Error(error.message);
+      
+      setUser(prev => prev ? { ...prev, ...updates } : null);
+      return true;
+    } catch (err: any) {
+      setError(new Error(err.message));
+      return false;
+    }
+  };
+
+  const addPaymentMethod = async (method: any) => {
+    // Implementation would go here
+    return true;
+  };
+
+  const removePaymentMethod = async (id: string) => {
+    // Implementation would go here
+    return true;
+  };
+
+  const isAdmin = () => {
+    if (!user) return false;
+    return user.roles?.includes('admin') || user.role === 'admin';
+  };
+
+  const hasRole = (role: UserRole) => {
+    if (!user) return false;
+    return user.roles?.includes(role) || user.role === role;
+  };
+
+  const requiresAuth = (action: () => void, redirectUrl?: string) => {
+    if (user) {
+      action();
+    } else {
+      // Here you would typically redirect to login page
+      console.log('Authentication required, redirecting to', redirectUrl || '/login');
+    }
+  };
+
   const logout = async () => {
-    setIsLoading(true);
     try {
       await supabaseClient.auth.signOut();
       setUser(null);
       setIsAuthenticated(false);
     } catch (err: any) {
-      setError(err.message);
-      console.error("Logout error:", err);
-    } finally {
-      setIsLoading(false);
+      setError(new Error(err.message));
     }
   };
 
-  const isAdmin = () => {
-    return user?.roles?.includes('admin');
-  };
-
-  const hasRole = (role: UserRole | string) => {
-    return user?.roles?.includes(role);
-  };
-
-  const requiresAuth = (action: () => void, redirectUrl = '/login') => {
-    if (isAuthenticated) {
-      action();
-    } else {
-      window.location.href = redirectUrl;
-    }
-  };
-
-  // When setting the context value, ensure it includes all the properties
   const value: AuthContextType = {
     user,
+    session,
+    isAuthenticated,
+    isLoading,
     signIn,
     signUp,
     signOut,
     loading,
     error,
-    isAuthenticated,
-    isLoading,
     login,
-    signup,
+    register,
     logout,
-    isAdmin,
-    hasRole,
+    updateProfile,
+    addPaymentMethod,
+    removePaymentMethod,
     requiresAuth,
-    session
+    isAdmin,
+    hasRole
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

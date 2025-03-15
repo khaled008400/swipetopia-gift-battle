@@ -1,7 +1,12 @@
-
 import { UserProfile, UserRole } from '@/types/auth.types';
 import { Video } from '@/types/video.types';
-import { supabase } from '@/lib/supabase';
+import { Product, AdminProduct } from '@/types/product.types';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ifeuccpukdosoxtufxzi.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZXVjY3B1a2Rvc294dHVmeHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3NDM2MjAsImV4cCI6MjA1NzMxOTYyMH0.I4wy6OFJY_zYNrhYWjw7xphFTBc5vT9sgNM3i2iPUqI';
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface AdminStats {
   users: number;
@@ -71,21 +76,23 @@ export interface AdminOrder {
     quantity: number;
     price: number;
     product_name: string;
-    id?: string; // Add for compatibility
-    name?: string; // Add for compatibility
+    id?: string; // For compatibility
+    name?: string; // For compatibility
   }[];
   user: {
     username: string;
     email: string;
   };
-  total?: number; // Add for compatibility
-  createdAt?: string; // Add for compatibility
-  products?: any[]; // Add for compatibility with AdminOrders
+  total?: number; // For compatibility
+  createdAt?: string; // For compatibility
+  products?: any[]; // For compatibility with AdminOrders
 }
 
 export interface AdminCoupon {
   id: string;
   code: string;
+  type: 'fixed' | 'percentage';
+  value: number;
   discount_type: 'fixed' | 'percentage';
   discount_value: number;
   minimum_purchase?: number;
@@ -97,9 +104,6 @@ export interface AdminCoupon {
   applicable_categories?: string[];
   created_at: string;
   updated_at: string;
-  // For compatibility
-  type?: 'fixed' | 'percentage';
-  value?: number;
 }
 
 export interface AdminOffer {
@@ -174,7 +178,7 @@ export interface ProductAttribute {
 export interface VirtualGift {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   price: number;
   image_url: string;
   image_type: 'svg' | 'gif';
@@ -198,185 +202,7 @@ export interface VirtualGift {
 }
 
 class AdminService {
-  // Dashboard
-  async getStats(): Promise<AdminStats> {
-    try {
-      // Mock data for now
-      return {
-        users: 1250,
-        videos: 3750,
-        orders: 875,
-        streamers: 156,
-        totalUsers: 1250,
-        newUsersToday: 25,
-        totalVideos: 3750,
-        videoUploadsToday: 87,
-        totalOrders: 875,
-        ordersToday: 32,
-        revenueTotal: 12485.50,
-        revenueToday: 457.25
-      };
-    } catch (error) {
-      console.error('Error fetching admin stats:', error);
-      throw error;
-    }
-  }
-
-  // For dashboard stats
-  async getDashboardStats(): Promise<AdminStats> {
-    return this.getStats();
-  }
-
-  // Videos
-  async getVideosList(page = 1, perPage = 10, status = '', search = '', userId = '', date = '') {
-    try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: page
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching videos list:', error);
-      throw error;
-    }
-  }
-
-  async updateVideoStatus(videoId: string, status: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating video status:', error);
-      throw error;
-    }
-  }
-
-  async deleteVideo(videoId: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting video:', error);
-      throw error;
-    }
-  }
-
-  async sendUserWarning(userId: string, reason: string, videoId?: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error sending user warning:', error);
-      throw error;
-    }
-  }
-
-  async restrictUser(userId: string, restrictions: string[] | string) {
-    try {
-      // Handle both string and string[] formats
-      const restrictionsArr = typeof restrictions === 'string' ? [restrictions] : restrictions;
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error restricting user:', error);
-      throw error;
-    }
-  }
-
-  // Users
-  async getUsersList(page = 1, perPage = 10, role = '', search = '') {
-    try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: page
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching users list:', error);
-      throw error;
-    }
-  }
-
-  async updateUserStatus(userId: string, status: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating user status:', error);
-      throw error;
-    }
-  }
-
-  async updateUserRoles(userId: string, roles: UserRole[]) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating user roles:', error);
-      throw error;
-    }
-  }
-
-  async getUser(userId: string) {
-    try {
-      // Mock implementation
-      return {
-        id: userId,
-        username: 'user',
-        email: 'user@example.com',
-        avatar_url: '/avatars/default.png',
-        roles: ['user'],
-        role: 'user',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        last_login: new Date().toISOString(),
-        total_videos: 0,
-        total_followers: 0,
-        verified: false
-      };
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      throw error;
-    }
-  }
-
-  // Orders
-  async getOrders(page: number = 1, perPage: number = 10, status = '', search = '') {
-    try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: page
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      throw error;
-    }
-  }
-
-  async updateOrderStatus(orderId: string, status: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      throw error;
-    }
-  }
-
-  // Report data methods
+  // For AdminReports.tsx
   async getUserGrowthData(period: string = 'month') {
     return {
       userGrowth: [],
@@ -410,40 +236,42 @@ class AdminService {
     };
   }
 
-  // Product Analytics
-  async getProductSalesData(period: string = 'month', category: string = '') {
-    return {
-      salesByCategory: [],
-      topProducts: [],
-      salesTrend: [],
-      salesData: [],
-      conversionData: [],
-      revenueData: [],
-      channelData: [],
-      customerData: []
-    };
-  }
-
-  // Coupons
+  // For AdminCoupons.tsx
   async getCoupons() {
     try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: 1
+      // Mock implementation for now, returning the proper structure
+      return [
+        {
+          id: '1',
+          code: 'SUMMER25',
+          type: 'percentage' as const,
+          value: 25,
+          discount_type: 'percentage' as const, 
+          discount_value: 25,
+          minimum_purchase: 100,
+          usage_count: 5,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
-      };
+      ];
     } catch (error) {
       console.error('Error fetching coupons:', error);
       throw error;
     }
   }
 
-  async createCoupon(couponData: Omit<AdminCoupon, 'id'>) {
+  // For AdminCoupons.tsx
+  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'created_at' | 'updated_at' | 'usage_count'>) {
     try {
+      // Convert between type and discount_type if needed
+      const completeData = {
+        ...couponData,
+        discount_type: couponData.type || 'percentage',
+        discount_value: couponData.value || 0,
+        usage_count: 0
+      };
+      
       // Mock implementation
       return { success: true, id: 'new-coupon-id' };
     } catch (error) {
@@ -452,61 +280,31 @@ class AdminService {
     }
   }
 
-  async updateCoupon(id: string, data: Partial<Omit<AdminCoupon, 'id'>>) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating coupon:', error);
-      throw error;
-    }
-  }
-
-  async deleteCoupon(id: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting coupon:', error);
-      throw error;
-    }
-  }
-
-  async getCouponAnalytics() {
-    try {
-      // Mock implementation
-      return {
-        usageByDay: [],
-        topCoupons: [],
-        conversionRate: 15.8,
-        usage_over_time: [],
-        most_used_coupons: []
-      };
-    } catch (error) {
-      console.error('Error fetching coupon analytics:', error);
-      throw error;
-    }
-  }
-
-  // Offers
+  // For AdminOffers
   async getOffers() {
     try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: 1
+      // Mock implementation that returns the array directly instead of wrapping it in a data property
+      return [
+        {
+          id: '1',
+          name: 'Summer Sale',
+          description: 'Get discounts on summer items',
+          discount_type: 'percentage' as const,
+          discount_value: 20,
+          status: 'active',
+          products: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
-      };
+      ];
     } catch (error) {
       console.error('Error fetching offers:', error);
       throw error;
     }
   }
 
-  async createOffer(offerData: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>) {
+  // For AdminOffers
+  async createOffer(offerData: Partial<AdminOffer>) {
     try {
       // Add missing required properties
       const completeOfferData = {
@@ -514,7 +312,9 @@ class AdminService {
         status: 'active',
         products: [],
         discount_type: offerData.discount_type || 'percentage',
+        discount_value: offerData.discount_value || 0,
       };
+      
       // Mock implementation
       return { success: true, id: 'new-offer-id' };
     } catch (error) {
@@ -523,7 +323,8 @@ class AdminService {
     }
   }
 
-  async updateOffer(id: string, data: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>) {
+  // For AdminOffers
+  async updateOffer(id: string, data: Partial<AdminOffer>) {
     try {
       // Mock implementation
       return { success: true };
@@ -533,159 +334,201 @@ class AdminService {
     }
   }
 
-  async deleteOffer(id: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting offer:', error);
-      throw error;
-    }
-  }
-
-  async getOfferAnalytics() {
-    try {
-      // Mock implementation
-      return {
-        salesByOffer: [],
-        conversionRate: 12.3,
-        totalRevenue: 1543.75,
-        averageOrderValue: 85.50,
-        topOffers: []
-      };
-    } catch (error) {
-      console.error('Error fetching offer analytics:', error);
-      throw error;
-    }
-  }
-
-  // Live streams
-  async getLiveStreams(status = 'current', search = '') {
-    try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: 1
-        },
-        stats: {
-          activeCount: 0,
-          totalViewers: 0,
-          totalGiftRevenue: 0
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching live streams:', error);
-      throw error;
-    }
-  }
-
-  async shutdownStream(streamId: string, reason: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error shutting down stream:', error);
-      throw error;
-    }
-  }
-
-  async sendStreamMessage(streamId: string, message: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error sending stream message:', error);
-      throw error;
-    }
-  }
-
-  // Shipping methods
+  // For AdminShipping
   async getShippingMethods() {
     try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: 1
+      // Mock implementation returning array directly
+      return [
+        {
+          id: '1',
+          name: 'Standard Shipping',
+          description: '3-5 business days',
+          price: 5.99,
+          estimated_days: 4,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
-      };
+      ];
     } catch (error) {
       console.error('Error fetching shipping methods:', error);
       throw error;
     }
   }
 
-  async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id'>) {
+  // For AdminOrders
+  async getOrders(page: number = 1, perPage: number = 10, status = '', search = '') {
     try {
-      // Convert string to number if needed
-      const convertedData = {
-        ...methodData,
-        estimated_days: typeof methodData.estimated_days === 'string' 
-          ? parseInt(methodData.estimated_days, 10) 
-          : methodData.estimated_days
+      // Mock implementation returning array directly
+      return [
+        {
+          id: '1',
+          user_id: 'user-1',
+          status: 'pending' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          items: [],
+          user: { username: 'user1', email: 'user1@example.com' },
+          total: 100,
+          createdAt: new Date().toISOString(),
+          products: []
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVirtualGifts
+  async getVirtualGifts() {
+    try {
+      // Mock implementation returning array directly
+      return [
+        {
+          id: '1',
+          name: 'Diamond',
+          description: 'A shiny diamond gift',
+          price: 100,
+          image_url: '/images/diamond.svg',
+          image_type: 'svg' as const,
+          has_sound: false,
+          category: 'premium',
+          available: true,
+          value: 100,
+          color: '#3498db',
+          icon: '💎',
+          created_at: new Date().toISOString(),
+          // Compatibility properties
+          imageUrl: '/images/diamond.svg',
+          imageType: 'svg' as const,
+          hasSound: false
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching virtual gifts:', error);
+      throw error;
+    }
+  }
+
+  // For AdminVirtualGifts
+  async createVirtualGift(giftData: Partial<VirtualGift>) {
+    try {
+      // Map compatibility properties
+      const fixedGiftData = {
+        name: giftData.name || '',
+        description: giftData.description || '',
+        price: giftData.price || 0,
+        image_url: giftData.imageUrl || giftData.image_url || '',
+        image_type: (giftData.imageType || giftData.image_type || 'svg') as 'svg' | 'gif',
+        has_sound: giftData.hasSound || giftData.has_sound || false,
+        sound_url: giftData.soundUrl || giftData.sound_url || '',
+        category: giftData.category || 'basic',
+        available: giftData.available !== undefined ? giftData.available : true,
+        value: giftData.value || 0,
+        color: giftData.color || '#000000',
+        icon: giftData.icon || '🎁',
+        created_at: new Date().toISOString()
       };
       
       // Mock implementation
-      return { success: true, id: 'new-shipping-method-id' };
+      return { success: true, id: 'new-gift-id' };
     } catch (error) {
-      console.error('Error creating shipping method:', error);
+      console.error('Error creating virtual gift:', error);
       throw error;
     }
   }
 
-  async updateShippingMethod(id: string, data: Partial<Omit<AdminShippingMethod, 'id'>>) {
-    try {
-      // Convert string to number if needed
-      const convertedData = {
-        ...data,
-        estimated_days: typeof data.estimated_days === 'string' 
-          ? parseInt(data.estimated_days, 10) 
-          : data.estimated_days
-      };
-      
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating shipping method:', error);
-      throw error;
-    }
+  // For AdminVirtualGifts
+  async getGiftUsageStats() {
+    return {
+      topGifts: [],
+      giftsByDay: [],
+      totalRevenue: 1200,
+      totalGifts: 150
+    };
   }
 
-  async deleteShippingMethod(id: string) {
+  // For AdminVideos
+  async deleteVideo(videoId: string) {
     try {
       // Mock implementation
       return { success: true };
     } catch (error) {
-      console.error('Error deleting shipping method:', error);
+      console.error('Error deleting video:', error);
       throw error;
     }
   }
 
-  // Product Attributes
-  async getProductAttributes(page = '1') {
+  // For AdminVideos
+  async getUser(userId: string) {
     try {
       // Mock implementation
       return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: 1,
-          per_page: 10
-        }
+        id: userId,
+        username: 'user',
+        email: 'user@example.com',
+        avatar_url: '/avatars/default.png',
+        roles: ['user'] as UserRole[],
+        role: 'user',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString(),
+        total_videos: 0,
+        total_followers: 0,
+        verified: false,
+        // For compatibility
+        createdAt: new Date().toISOString(),
+        videosCount: 0,
+        ordersCount: 0
       };
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      throw error;
+    }
+  }
+
+  // For AdminDashboardPage
+  async getDashboardStats() {
+    return {
+      users: 1250,
+      videos: 3750,
+      orders: 875,
+      streamers: 156,
+      totalUsers: 1250,
+      newUsersToday: 25,
+      totalVideos: 3750,
+      videoUploadsToday: 87,
+      totalOrders: 875,
+      ordersToday: 32,
+      revenueTotal: 12485.50,
+      revenueToday: 457.25
+    };
+  }
+
+  // For ProductAttributes
+  async getProductAttributes(page = '1') {
+    try {
+      // Mock implementation returning array directly
+      return [
+        {
+          id: '1',
+          name: 'Color',
+          value_options: ['Red', 'Blue', 'Green'],
+          values: ['Red', 'Blue', 'Green'],
+          color: '#ff0000',
+          status: 'active' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      ];
     } catch (error) {
       console.error('Error fetching product attributes:', error);
       throw error;
     }
   }
 
-  async createProductAttribute(attributeData: Partial<Omit<ProductAttribute, 'id'>>) {
+  async createProductAttribute(attributeData: Partial<ProductAttribute>) {
     try {
       // Add missing required properties
       const completeData = {
@@ -703,97 +546,46 @@ class AdminService {
     }
   }
 
-  async updateProductAttribute(id: string, data: Partial<ProductAttribute>) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating product attribute:', error);
-      throw error;
-    }
+  // For AdminProductAnalytics
+  async getProductSalesData(period: string = 'month', category: string = '') {
+    return {
+      salesByCategory: [],
+      topProducts: [],
+      salesTrend: [],
+      salesData: [],
+      conversionData: [],
+      revenueData: [],
+      channelData: [],
+      customerData: []
+    };
   }
 
-  async deleteProductAttribute(id: string) {
+  // For AdminUser
+  async getUsersList(page = 1, perPage = 10, role = '', search = '') {
     try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting product attribute:', error);
-      throw error;
-    }
-  }
-
-  // Virtual Gifts
-  async getVirtualGifts() {
-    try {
-      // Mock implementation
-      return {
-        data: [],
-        pagination: {
-          total: 0,
-          last_page: 1,
-          current_page: 1
+      // Mock implementation returning array directly
+      return [
+        {
+          id: '1',
+          username: 'user1',
+          email: 'user1@example.com',
+          status: 'active',
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          videosCount: 0,
+          ordersCount: 0,
+          // Full AdminUser properties
+          avatar_url: '/avatars/default.png',
+          roles: ['user'] as UserRole[],
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString(),
+          total_videos: 0,
+          total_followers: 0,
+          verified: false
         }
-      };
+      ];
     } catch (error) {
-      console.error('Error fetching virtual gifts:', error);
-      throw error;
-    }
-  }
-
-  async createVirtualGift(giftData: Partial<VirtualGift>) {
-    try {
-      // Map compatibility properties
-      const fixedGiftData = {
-        name: giftData.name || '',
-        description: giftData.description || '',
-        price: giftData.price || 0,
-        image_url: giftData.imageUrl || giftData.image_url || '',
-        image_type: (giftData.imageType || giftData.image_type || 'svg') as 'svg' | 'gif',
-        has_sound: giftData.hasSound || giftData.has_sound || false,
-        sound_url: giftData.soundUrl || giftData.sound_url || '',
-        category: giftData.category || 'basic',
-        available: giftData.available !== undefined ? giftData.available : true,
-        value: giftData.value || 0,
-        color: giftData.color || '#000000',
-        icon: giftData.icon || 'gift',
-        created_at: new Date().toISOString()
-      };
-      
-      // Mock implementation
-      return { success: true, id: 'new-gift-id' };
-    } catch (error) {
-      console.error('Error creating virtual gift:', error);
-      throw error;
-    }
-  }
-
-  async updateVirtualGift(id: string, data: Partial<VirtualGift>) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating virtual gift:', error);
-      throw error;
-    }
-  }
-
-  async deleteVirtualGift(id: string) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting virtual gift:', error);
-      throw error;
-    }
-  }
-
-  async toggleGiftAvailability(id: string, available: boolean) {
-    try {
-      // Mock implementation
-      return { success: true };
-    } catch (error) {
-      console.error('Error toggling gift availability:', error);
+      console.error('Error fetching users list:', error);
       throw error;
     }
   }

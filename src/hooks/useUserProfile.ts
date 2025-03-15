@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { UserProfile, UserRole } from "@/types/auth.types";
+import { UserProfile, UserRole, NotificationPreferences } from "@/types/auth.types";
 import { useToast } from "@/components/ui/use-toast";
 
 export const fetchUserProfile = async (authUser: User | string): Promise<UserProfile | null> => {
@@ -151,7 +151,7 @@ export const useUserProfile = (authUser: User | string | null) => {
       const userId = typeof authUser === 'string' ? authUser : authUser.id;
       
       // Prepare the data for update, excluding fields that aren't in the database schema
-      const { payment_methods, notification_preferences, email, ...dbUpdates } = updates;
+      const { payment_methods, notification_preferences, ...dbUpdates } = updates;
       
       const { error } = await supabase
         .from('profiles')

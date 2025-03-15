@@ -1,176 +1,129 @@
 
 import React, { useState } from 'react';
+import { UserProfile } from '@/types/auth.types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpRight, CreditCard, DollarSign, Plus, Wallet } from 'lucide-react';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Coins, DollarSign, CreditCard } from 'lucide-react';
 
-interface WalletSectionProps {
-  coins?: number;
+export interface WalletSectionProps {
+  profile: UserProfile;
 }
 
-const WalletSection: React.FC<WalletSectionProps> = ({ coins = 0 }) => {
-  const [openDialog, setOpenDialog] = useState(false);
-  const [amount, setAmount] = useState('');
-  const { toast } = useToast();
+const WalletSection: React.FC<WalletSectionProps> = ({ profile }) => {
+  const [coins, setCoins] = useState(profile.coins || 0);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [purchaseAmount, setPurchaseAmount] = useState(10);
 
-  const handleAddFunds = () => {
-    toast({
-      title: "Funds added",
-      description: `${amount} coins have been added to your wallet.`,
-    });
-    setOpenDialog(false);
-    setAmount('');
+  const handlePurchase = () => {
+    setCoins(prev => prev + purchaseAmount);
+    setIsAddDialogOpen(false);
   };
 
+  const predefinedAmounts = [10, 50, 100, 200, 500];
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl">Wallet Balance</CardTitle>
-        <Button variant="ghost" size="icon" className="text-gray-500">
-          <ArrowUpRight className="h-4 w-4" />
-        </Button>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Coins className="mr-2 h-5 w-5 text-amber-500" />
+          Your Wallet
+        </CardTitle>
+        <CardDescription>Manage your coins and payment methods</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center space-x-2 mb-4">
-          <div className="bg-yellow-100 p-3 rounded-full">
-            <Wallet className="h-6 w-6 text-yellow-700" />
+        <div className="mb-6">
+          <div className="text-xl font-bold flex items-center">
+            <Coins className="mr-2 h-5 w-5 text-amber-500" />
+            <span>{coins} Coins</span>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Total Balance</p>
-            <p className="text-2xl font-semibold">{coins} coins</p>
-          </div>
-        </div>
-        
-        <Button 
-          className="w-full" 
-          onClick={() => setOpenDialog(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Funds
-        </Button>
-
-        <div className="mt-4 pt-4 border-t">
-          <h3 className="text-sm font-medium mb-2">Recent Transactions</h3>
-          {coins > 0 ? (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
-                    <DollarSign className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Deposit</p>
-                    <p className="text-xs text-gray-500">1 day ago</p>
-                  </div>
-                </div>
-                <p className="text-green-600">+100 coins</p>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-2">
-                    <CreditCard className="h-4 w-4 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Gift purchase</p>
-                    <p className="text-xs text-gray-500">3 days ago</p>
-                  </div>
-                </div>
-                <p className="text-red-600">-50 coins</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">No transactions yet</p>
-          )}
-        </div>
-      </CardContent>
-
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add Funds to Wallet</DialogTitle>
-            <DialogDescription>
-              Purchase coins to send gifts, tip creators, and more.
-            </DialogDescription>
-          </DialogHeader>
+          <p className="text-sm text-gray-500 mt-1">Use coins to send gifts during live streams and videos</p>
           
-          <Tabs defaultValue="coins" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="coins">Buy Coins</TabsTrigger>
-              <TabsTrigger value="subscription">Subscription</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="coins" className="space-y-4 py-4">
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" onClick={() => setAmount('100')}>100 coins</Button>
-                <Button variant="outline" onClick={() => setAmount('500')}>500 coins</Button>
-                <Button variant="outline" onClick={() => setAmount('1000')}>1000 coins</Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="mt-4">
+                <DollarSign className="mr-2 h-4 w-4" />
+                Add Coins
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Buy Coins</DialogTitle>
+                <DialogDescription>
+                  Purchase coins to use across the platform
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid grid-cols-3 gap-2 my-4">
+                {predefinedAmounts.map(amount => (
+                  <Button 
+                    key={amount}
+                    variant={purchaseAmount === amount ? "default" : "outline"} 
+                    onClick={() => setPurchaseAmount(amount)}
+                  >
+                    {amount} Coins
+                  </Button>
+                ))}
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="amount">Custom Amount</Label>
-                <Input
-                  id="amount"
-                  placeholder="Enter coin amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+              <div className="my-4">
+                <label className="block text-sm mb-1">Custom Amount</label>
+                <Input 
+                  type="number" 
+                  value={purchaseAmount}
+                  onChange={(e) => setPurchaseAmount(Number(e.target.value))}
+                  min="5"
                 />
               </div>
               
-              <div className="py-2">
-                <p className="text-sm text-gray-500">
-                  You will be charged $0.01 per coin plus processing fees.
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="subscription" className="space-y-4 py-4">
-              <div className="space-y-2">
-                <div className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">Basic</p>
-                      <p className="text-sm text-gray-500">1000 coins monthly</p>
-                    </div>
-                    <p className="font-medium">$9.99/mo</p>
-                  </div>
-                </div>
-                
-                <div className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 border-blue-200 bg-blue-50">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">Premium</p>
-                      <p className="text-sm text-gray-500">3000 coins monthly</p>
-                    </div>
-                    <p className="font-medium">$24.99/mo</p>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-1">Best value! Save 16%</p>
-                </div>
-                
-                <div className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">Ultimate</p>
-                      <p className="text-sm text-gray-500">10000 coins monthly</p>
-                    </div>
-                    <p className="font-medium">$74.99/mo</p>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              <DialogFooter>
+                <Button onClick={handlePurchase}>
+                  Buy for ${(purchaseAmount * 0.1).toFixed(2)}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-2 flex items-center">
+            <CreditCard className="mr-2 h-5 w-5" />
+            Payment Methods
+          </h3>
           
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button onClick={handleAddFunds}>Continue to Payment</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {profile.payment_methods && profile.payment_methods.length > 0 ? (
+            <div className="space-y-2">
+              {profile.payment_methods.map(method => (
+                <div key={method.id} className="p-3 border rounded-md flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">{method.type}</div>
+                    {method.last4 && (
+                      <div className="text-sm text-gray-500">
+                        •••• {method.last4}
+                        {method.expMonth && method.expYear && (
+                          <span> - Expires {method.expMonth}/{method.expYear}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {method.isDefault && (
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Default</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-500">
+              <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p>No payment methods added yet</p>
+              <Button variant="outline" className="mt-2">
+                Add Payment Method
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 };
