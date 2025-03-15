@@ -2,14 +2,24 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AdminVideo } from '@/services/admin.service';
+import { Button } from '@/components/ui/button';
+import { Check, AlertCircle, Trash } from 'lucide-react';
 
 interface VideoPreviewDialogProps {
   video: AdminVideo | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStatusChange?: (videoId: string, status: "active" | "flagged" | "removed") => void;
+  onDeleteVideo?: (videoId: string) => void;
 }
 
-const VideoPreviewDialog: React.FC<VideoPreviewDialogProps> = ({ video, open, onOpenChange }) => {
+const VideoPreviewDialog: React.FC<VideoPreviewDialogProps> = ({ 
+  video, 
+  open, 
+  onOpenChange,
+  onStatusChange,
+  onDeleteVideo
+}) => {
   if (!video) return null;
 
   return (
@@ -39,6 +49,47 @@ const VideoPreviewDialog: React.FC<VideoPreviewDialogProps> = ({ video, open, on
               <span className="font-medium">{video.user.username}</span>
             </div>
             <p className="text-sm text-gray-600 mt-2">{video.description}</p>
+            
+            {onStatusChange && (
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-green-600" 
+                  onClick={() => onStatusChange(video.id, "active")}
+                >
+                  <Check className="h-4 w-4 mr-1" /> Approve
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-amber-600" 
+                  onClick={() => onStatusChange(video.id, "flagged")}
+                >
+                  <AlertCircle className="h-4 w-4 mr-1" /> Flag
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-red-600" 
+                  onClick={() => onStatusChange(video.id, "removed")}
+                >
+                  <Trash className="h-4 w-4 mr-1" /> Remove
+                </Button>
+              </div>
+            )}
+            
+            {onDeleteVideo && (
+              <div className="mt-4">
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => onDeleteVideo(video.id)}
+                >
+                  <Trash className="h-4 w-4 mr-1" /> Delete Permanently
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

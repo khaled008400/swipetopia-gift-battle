@@ -22,8 +22,9 @@ export interface Video {
   shares?: number;
   is_liked?: boolean;
   is_saved?: boolean;
-  url?: string; // Add URL property
+  url?: string; // Add URL property for compatibility
   isPublic?: boolean; // Add isPublic property
+  isLive?: boolean; // Add isLive property for compatibility
   user: {
     username: string;
     avatar: string;

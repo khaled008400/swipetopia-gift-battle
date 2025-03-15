@@ -225,6 +225,46 @@ class ShopService {
       return [];
     }
   }
+  
+  // Additional methods needed for compatibility
+  async getCategoryProducts(categoryId: string): Promise<Product[]> {
+    return this.getProducts(categoryId);
+  }
+  
+  async searchProducts(query: string): Promise<Product[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      
+      return data.map(product => ({
+        ...product,
+        status: product.status as "active" | "draft" | "unavailable"
+      }));
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
+    }
+  }
+  
+  async getLimitedOffers(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('limited_offers')
+        .select('*, product:product_id(*)');
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching limited offers:', error);
+      return [];
+    }
+  }
 }
 
 const shopService = new ShopService();

@@ -1,7 +1,7 @@
 
-import { supabase } from '@/lib/supabase';
 import { UserProfile, UserRole } from '@/types/auth.types';
 import { Video } from '@/types/video.types';
+import { supabase } from '@/lib/supabase';
 
 export interface AdminStats {
   users: number;
@@ -36,6 +36,7 @@ export interface AdminVideo {
   user: {
     username: string;
     avatar_url: string;
+    id: string;
   };
   createdAt?: string; // For compatibility
 }
@@ -53,6 +54,10 @@ export interface AdminUser {
   total_videos: number;
   total_followers: number;
   verified: boolean;
+  // For compatibility
+  createdAt?: string;
+  videosCount?: number;
+  ordersCount?: number;
 }
 
 export interface AdminOrder {
@@ -75,6 +80,7 @@ export interface AdminOrder {
   };
   total?: number; // Add for compatibility
   createdAt?: string; // Add for compatibility
+  products?: any[]; // Add for compatibility with AdminOrders
 }
 
 export interface AdminCoupon {
@@ -91,8 +97,9 @@ export interface AdminCoupon {
   applicable_categories?: string[];
   created_at: string;
   updated_at: string;
-  type?: 'fixed' | 'percentage'; // For compatibility
-  value?: number; // For compatibility
+  // For compatibility
+  type?: 'fixed' | 'percentage';
+  value?: number;
 }
 
 export interface AdminOffer {
@@ -149,6 +156,7 @@ export interface LiveStream {
   user: {
     username: string;
     avatar_url: string;
+    id: string;
   };
 }
 
@@ -180,12 +188,13 @@ export interface VirtualGift {
   created_at: string;
   updated_at?: string;
   is_premium?: boolean;
-  createdAt?: string; // For compatibility
-  updatedAt?: string; // For compatibility
-  imageUrl?: string; // For compatibility
-  imageType?: string; // For compatibility
-  hasSound?: boolean; // For compatibility
-  soundUrl?: string; // For compatibility
+  // For compatibility
+  createdAt?: string;
+  updatedAt?: string;
+  imageUrl?: string;
+  imageType?: 'svg' | 'gif';
+  hasSound?: boolean;
+  soundUrl?: string;
 }
 
 class AdminService {
@@ -211,6 +220,11 @@ class AdminService {
       console.error('Error fetching admin stats:', error);
       throw error;
     }
+  }
+
+  // For dashboard stats
+  async getDashboardStats(): Promise<AdminStats> {
+    return this.getStats();
   }
 
   // Videos
@@ -261,8 +275,10 @@ class AdminService {
     }
   }
 
-  async restrictUser(userId: string, restrictions: string[]) {
+  async restrictUser(userId: string, restrictions: string[] | string) {
     try {
+      // Handle both string and string[] formats
+      const restrictionsArr = typeof restrictions === 'string' ? [restrictions] : restrictions;
       // Mock implementation
       return { success: true };
     } catch (error) {
@@ -315,9 +331,16 @@ class AdminService {
       return {
         id: userId,
         username: 'user',
+        email: 'user@example.com',
         avatar_url: '/avatars/default.png',
         roles: ['user'],
-        status: 'active'
+        role: 'user',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString(),
+        total_videos: 0,
+        total_followers: 0,
+        verified: false
       };
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -326,7 +349,7 @@ class AdminService {
   }
 
   // Orders
-  async getOrders(page = 1, perPage = 10, status = '', search = '') {
+  async getOrders(page: number = 1, perPage: number = 10, status = '', search = '') {
     try {
       // Mock implementation
       return {
@@ -351,6 +374,54 @@ class AdminService {
       console.error('Error updating order status:', error);
       throw error;
     }
+  }
+
+  // Report data methods
+  async getUserGrowthData(period: string = 'month') {
+    return {
+      userGrowth: [],
+      demographics: [],
+      retention: 65.8,
+      newUsers: [],
+      activeUsers: []
+    };
+  }
+
+  async getVideoEngagementData(period: string = 'month') {
+    return {
+      viewsByDay: [],
+      commentsByDay: [],
+      likesByDay: [],
+      views: [],
+      interactions: [],
+      uploads: []
+    };
+  }
+
+  async getRevenueData(period: string = 'month') {
+    return {
+      revenueByMonth: [],
+      revenueByCategory: [],
+      projections: [],
+      total: [],
+      byCategory: [],
+      orders: [],
+      aov: []
+    };
+  }
+
+  // Product Analytics
+  async getProductSalesData(period: string = 'month', category: string = '') {
+    return {
+      salesByCategory: [],
+      topProducts: [],
+      salesTrend: [],
+      salesData: [],
+      conversionData: [],
+      revenueData: [],
+      channelData: [],
+      customerData: []
+    };
   }
 
   // Coupons
@@ -435,13 +506,14 @@ class AdminService {
     }
   }
 
-  async createOffer(offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>) {
+  async createOffer(offerData: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>) {
     try {
       // Add missing required properties
       const completeOfferData = {
         ...offerData,
         status: 'active',
-        products: []
+        products: [],
+        discount_type: offerData.discount_type || 'percentage',
       };
       // Mock implementation
       return { success: true, id: 'new-offer-id' };
@@ -550,6 +622,14 @@ class AdminService {
 
   async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id'>) {
     try {
+      // Convert string to number if needed
+      const convertedData = {
+        ...methodData,
+        estimated_days: typeof methodData.estimated_days === 'string' 
+          ? parseInt(methodData.estimated_days, 10) 
+          : methodData.estimated_days
+      };
+      
       // Mock implementation
       return { success: true, id: 'new-shipping-method-id' };
     } catch (error) {
@@ -560,6 +640,14 @@ class AdminService {
 
   async updateShippingMethod(id: string, data: Partial<Omit<AdminShippingMethod, 'id'>>) {
     try {
+      // Convert string to number if needed
+      const convertedData = {
+        ...data,
+        estimated_days: typeof data.estimated_days === 'string' 
+          ? parseInt(data.estimated_days, 10) 
+          : data.estimated_days
+      };
+      
       // Mock implementation
       return { success: true };
     } catch (error) {
@@ -597,8 +685,16 @@ class AdminService {
     }
   }
 
-  async createProductAttribute(attributeData: Omit<ProductAttribute, 'id'>) {
+  async createProductAttribute(attributeData: Partial<Omit<ProductAttribute, 'id'>>) {
     try {
+      // Add missing required properties
+      const completeData = {
+        ...attributeData,
+        value_options: attributeData.values || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
       // Mock implementation
       return { success: true, id: 'new-attribute-id' };
     } catch (error) {
@@ -645,22 +741,22 @@ class AdminService {
     }
   }
 
-  async createVirtualGift(giftData: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) {
+  async createVirtualGift(giftData: Partial<VirtualGift>) {
     try {
-      // Fix field names
+      // Map compatibility properties
       const fixedGiftData = {
-        name: giftData.name,
-        description: giftData.description,
-        price: giftData.price,
-        image_url: giftData.imageUrl || '',
-        image_type: giftData.imageType as 'svg' | 'gif' || 'svg',
-        has_sound: giftData.hasSound || false,
-        sound_url: giftData.soundUrl || '',
+        name: giftData.name || '',
+        description: giftData.description || '',
+        price: giftData.price || 0,
+        image_url: giftData.imageUrl || giftData.image_url || '',
+        image_type: (giftData.imageType || giftData.image_type || 'svg') as 'svg' | 'gif',
+        has_sound: giftData.hasSound || giftData.has_sound || false,
+        sound_url: giftData.soundUrl || giftData.sound_url || '',
         category: giftData.category || 'basic',
         available: giftData.available !== undefined ? giftData.available : true,
-        value: 0,
-        color: '#000000',
-        icon: 'gift',
+        value: giftData.value || 0,
+        color: giftData.color || '#000000',
+        icon: giftData.icon || 'gift',
         created_at: new Date().toISOString()
       };
       
@@ -698,95 +794,6 @@ class AdminService {
       return { success: true };
     } catch (error) {
       console.error('Error toggling gift availability:', error);
-      throw error;
-    }
-  }
-
-  async getGiftUsageStats(period: 'day' | 'week' | 'month' | 'year') {
-    try {
-      // Mock implementation
-      return {
-        totalSent: 1325,
-        totalRevenue: 8765,
-        mostPopular: { name: 'Heart', id: 'gift-1' },
-        topStreamers: [
-          { username: 'streamer1', giftsReceived: 340, totalValue: 2550, topGift: 'Diamond' }
-        ]
-      };
-    } catch (error) {
-      console.error('Error fetching gift usage stats:', error);
-      throw error;
-    }
-  }
-
-  // Reports
-  async getUserReport(period: string) {
-    try {
-      // Mock implementation
-      return {
-        userGrowth: [],
-        demographics: [],
-        retention: 65.8,
-        newUsers: [],
-        activeUsers: []
-      };
-    } catch (error) {
-      console.error('Error fetching user report:', error);
-      throw error;
-    }
-  }
-
-  async getContentReport(period: string) {
-    try {
-      // Mock implementation
-      return {
-        viewsByDay: [],
-        commentsByDay: [],
-        likesByDay: [],
-        views: [],
-        interactions: [],
-        uploads: []
-      };
-    } catch (error) {
-      console.error('Error fetching content report:', error);
-      throw error;
-    }
-  }
-
-  async getRevenueReport(period: string) {
-    try {
-      // Mock implementation
-      return {
-        revenueByMonth: [],
-        revenueByCategory: [],
-        projections: [],
-        total: [],
-        byCategory: [],
-        orders: [],
-        aov: []
-      };
-    } catch (error) {
-      console.error('Error fetching revenue report:', error);
-      throw error;
-    }
-  }
-
-  // Product Analytics
-  async getProductAnalytics(period = 'month', category = '') {
-    try {
-      // Mock implementation
-      return {
-        salesByCategory: [],
-        topProducts: [],
-        salesTrend: [],
-        salesData: [],
-        conversionData: [],
-        revenueData: [],
-        channelData: [],
-        customerData: []
-      };
-    } catch (error) {
-      console.error('Error fetching product analytics:', error);
       throw error;
     }
   }

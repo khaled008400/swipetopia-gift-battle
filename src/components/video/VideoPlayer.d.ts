@@ -5,7 +5,7 @@ export interface VideoPlayerProps {
   src: string;
   poster?: string;
   autoPlay?: boolean;
-  videoId?: string; // Add videoId property to fix the errors
+  videoId?: string; // Add videoId property
 }
 
 declare const VideoPlayer: FC<VideoPlayerProps>;
