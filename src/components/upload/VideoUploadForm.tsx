@@ -35,6 +35,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
+  const [uploadedVideoData, setUploadedVideoData] = useState(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,6 +73,15 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
 
   const handleUpload = async () => {
     if (!videoFile && !recordedVideoUrl) return;
+    
+    if (!title.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please add a title for your video",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setStep("processing");
@@ -106,6 +116,8 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
                 videoFile: finalVideoFile
               });
               
+              console.log("Upload response:", response);
+              setUploadedVideoData(response);
               setStep("complete");
               setIsUploading(false);
               
@@ -299,6 +311,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
               setPrivacy("public");
               setAllowDownloads(false);
             }}
+            videoData={uploadedVideoData}
           />
         );
     }

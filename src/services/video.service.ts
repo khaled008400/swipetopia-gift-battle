@@ -1,4 +1,3 @@
-
 import api from './api';
 
 export interface Video {
@@ -23,6 +22,7 @@ export interface Video {
   isLive?: boolean;
   privacy?: "public" | "private" | "followers";
   createdAt?: string;
+  title?: string;
 }
 
 export interface UploadVideoParams {
@@ -51,13 +51,29 @@ export interface ReportVideoParams {
   details?: string;
 }
 
+// Store uploaded videos in memory for demo purposes
+const uploadedVideos: Video[] = [];
+
 export const VideoService = {
   async getFeedVideos() {
     try {
+      // Try to get videos from API
       const response = await api.get('/videos/feed');
+      
+      // If we have uploaded videos, add them to the feed
+      if (uploadedVideos.length > 0) {
+        return [...uploadedVideos, ...response.data]; 
+      }
+      
       return response.data;
     } catch (error) {
       console.error("Error fetching feed videos:", error);
+      
+      // If API call fails, return uploaded videos if we have any
+      if (uploadedVideos.length > 0) {
+        return uploadedVideos;
+      }
+      
       return [];
     }
   },
@@ -195,11 +211,10 @@ export const VideoService = {
         formData.append('hashtags[]', tag);
       });
 
-      // For demo purposes, we'll return a mock response
       console.log('Uploading video with params:', params);
       
-      // Mock API response
-      return {
+      // Create a new video object with the uploaded data
+      const newVideo: Video = {
         id: 'new-video-' + Date.now(),
         url: URL.createObjectURL(params.videoFile),
         thumbnail: '',
@@ -216,8 +231,18 @@ export const VideoService = {
           id: 'current-user',
           username: 'currentuser',
           avatar: '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
-        }
+        },
+        createdAt: new Date().toISOString()
       };
+      
+      // Add the video to our local store
+      uploadedVideos.unshift(newVideo);
+      
+      console.log('Added new video to uploadedVideos array:', newVideo);
+      console.log('Current uploaded videos:', uploadedVideos);
+      
+      // For demo purposes, return the new video data
+      return newVideo;
     } catch (error) {
       console.error("Error uploading video:", error);
       throw error;

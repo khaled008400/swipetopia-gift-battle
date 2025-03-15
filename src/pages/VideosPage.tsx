@@ -21,42 +21,69 @@ const VideosPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        setIsLoading(true);
-        const feedVideos = await VideoService.getFeedVideos();
-        
-        // Ensure we have valid videos with proper URLs
-        if (feedVideos?.length > 0) {
-          setVideos(feedVideos);
-        } else {
-          // Fallback to example videos with reliable sources
-          console.log("Using fallback videos due to empty response");
-          setVideos(exampleVideos);
-          toast({
-            title: "Using example videos",
-            description: "Using reliable example videos for demonstration.",
-            variant: "default",
-            duration: 3000,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching videos:", error);
+  // Fetch videos when component mounts or when navigating to this page
+  const fetchVideos = async () => {
+    try {
+      setIsLoading(true);
+      const feedVideos = await VideoService.getFeedVideos();
+      
+      // Ensure we have valid videos with proper URLs
+      if (feedVideos?.length > 0) {
+        console.log("Fetched videos:", feedVideos);
+        setVideos(feedVideos);
+      } else {
         // Fallback to example videos with reliable sources
+        console.log("Using fallback videos due to empty response");
         setVideos(exampleVideos);
         toast({
-          title: "Using fallback videos",
-          description: "Could not load videos from server. Using example videos instead.",
+          title: "Using example videos",
+          description: "Using reliable example videos for demonstration.",
           variant: "default",
           duration: 3000,
         });
-      } finally {
-        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      // Fallback to example videos with reliable sources
+      setVideos(exampleVideos);
+      toast({
+        title: "Using fallback videos",
+        description: "Could not load videos from server. Using example videos instead.",
+        variant: "default",
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Set up an event listener to refresh videos when navigating to this page
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && window.location.pathname === '/videos') {
+        fetchVideos();
       }
     };
 
+    // Initial fetch
     fetchVideos();
+
+    // Add listener for visibility changes (when returning to this tab)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Listen for route changes
+    const handleRouteChange = () => {
+      if (window.location.pathname === '/videos') {
+        fetchVideos();
+      }
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, [toast]);
 
   // Handle scroll to change videos - only when on the video page itself
@@ -200,12 +227,32 @@ const VideosPage = () => {
             likes={videos[activeVideoIndex].likes} 
             comments={videos[activeVideoIndex].comments} 
             shares={videos[activeVideoIndex].shares}
-            isLiked={false}
+            isLiked={videos[activeVideoIndex].isLiked || false}
             onLike={() => {
               console.log('Video liked:', videos[activeVideoIndex]);
+              // Create a new array with updated liked status
+              const updatedVideos = [...videos];
+              updatedVideos[activeVideoIndex] = {
+                ...updatedVideos[activeVideoIndex],
+                isLiked: !updatedVideos[activeVideoIndex].isLiked,
+                likes: updatedVideos[activeVideoIndex].isLiked 
+                  ? updatedVideos[activeVideoIndex].likes - 1 
+                  : updatedVideos[activeVideoIndex].likes + 1
+              };
+              setVideos(updatedVideos);
             }}
             videoId={videos[activeVideoIndex].id}
             allowDownloads={videos[activeVideoIndex].allowDownloads}
+            isSaved={videos[activeVideoIndex].isSaved || false}
+            onSave={() => {
+              // Create a new array with updated saved status
+              const updatedVideos = [...videos];
+              updatedVideos[activeVideoIndex] = {
+                ...updatedVideos[activeVideoIndex],
+                isSaved: !updatedVideos[activeVideoIndex].isSaved
+              };
+              setVideos(updatedVideos);
+            }}
           />
         )}
       </div>
