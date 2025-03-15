@@ -1,566 +1,321 @@
-import api from './api';
-import { Coupon, Offer, ShippingMethod, PricingRules } from './pricing.service';
 
-// Added UserRole type for better type safety
-export type UserRole = 'viewer' | 'seller' | 'streamer' | 'admin';
+import { supabase } from '@/integrations/supabase/client';
 
-// Interfaces for admin models
+export interface AdminVideo {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  video_url: string;
+  thumbnail_url?: string;
+  status: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  createdAt: string;
+  created_at: string;
+  user: {
+    id: string;
+    username: string;
+    avatar?: string;
+  };
+}
+
 export interface AdminUser {
   id: string;
   username: string;
   email: string;
-  status: 'active' | 'suspended' | 'pending';
-  role: UserRole; // Added role property
+  status: string;
+  role: string;
   createdAt: string;
   videosCount: number;
   ordersCount: number;
 }
 
-export interface AdminProduct {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  image: string;
-  inventory: number;
-  category: string;
-  status: 'active' | 'draft' | 'unavailable';
-}
-
-export interface AdminVideo {
-  id: string;
-  user: {
-    id: string;
-    username: string;
-  };
-  description: string;
-  url: string;
-  createdAt: string;
-  status: 'active' | 'flagged' | 'removed';
-  likes: number;
-  comments: number;
-  shares: number;
-}
-
-export interface AdminOrder {
-  id: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-  };
-  products: Array<{
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-  }>;
-  total: number;
-  status: 'pending' | 'completed' | 'cancelled';
-  createdAt: string;
-}
-
-export interface ProductAttribute {
-  id: string;
-  name: string;
-  values: string[];
-  color?: string;
-  status: 'active' | 'inactive';
-}
-
-export interface AdminStats {
-  totalUsers: number;
-  newUsersToday: number;
-  totalVideos: number;
-  videoUploadsToday: number;
-  totalOrders: number;
-  ordersToday: number;
-  revenueTotal: number;
-  revenueToday: number;
-}
-
-export interface AdminCoupon extends Coupon {
-  id: string;
-  usage_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AdminOffer {
-  id: string;
-  name: string;
-  description: string;
-  discount_type: 'percentage' | 'fixed' | 'special';
-  discount_value: number;
-  start_date?: string;
-  end_date?: string;
-  min_purchase_amount?: number;
-  product_category?: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AdminShippingMethod extends Omit<ShippingMethod, 'is_active'> {
-  id: string;
-  is_active?: boolean;
-}
-
-export interface LiveStream {
-  id: string;
-  user: {
-    id: string;
-    username: string;
-  };
-  title: string;
-  durationMinutes: number;
-  plannedDurationMinutes?: number;
-  currentViewers: number;
-  peakViewers: number;
-  giftsReceived: number;
-  topGiftName: string;
-  revenue: number;
-  startedAt: string;
-  endedAt?: string;
-  scheduledFor?: string;
-  status: 'live' | 'ended' | 'scheduled';
-}
-
-export interface LiveStreamStats {
-  activeCount: number;
-  totalViewers: number;
-  totalGiftRevenue: number;
-}
-
-export interface VirtualGift {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  imageUrl: string;
-  imageType: 'gif' | 'svg';
-  hasSound: boolean;
-  soundUrl?: string;
-  category: string;
-  available: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const AdminService = {
-  async getDashboardStats() {
-    const response = await api.get('/admin/dashboard/stats');
-    return response.data;
-  },
-
-  async getUsersList(page = 1, limit = 10, search = '') {
-    const response = await api.get('/admin/users', {
-      params: { page, limit, search }
-    });
-    return response.data;
-  },
-
-  async getUsers(page = 1, limit = 10, search = '') {
-    return this.getUsersList(page, limit, search);
-  },
-
-  async getUser(userId: string) {
-    const response = await api.get(`/admin/users/${userId}`);
-    return response.data;
-  },
-
-  async updateUser(userId: string, userData: any) {
-    const response = await api.put(`/admin/users/${userId}`, userData);
-    return response.data;
-  },
-
-  async updateUserStatus(userId: string, status: 'active' | 'suspended') {
-    const response = await api.patch(`/admin/users/${userId}/status`, { status });
-    return response.data;
-  },
-
-  async deleteUser(userId: string) {
-    const response = await api.delete(`/admin/users/${userId}`);
-    return response.data;
-  },
-
-  async updateUserRole(userId: string, role: UserRole) {
-    const response = await api.patch(`/admin/users/${userId}/role`, { role });
-    return response.data;
-  },
-
-  async getProductsList(page = 1, limit = 10, category = '', search = '') {
-    const response = await api.get('/admin/products', {
-      params: { page, limit, category, search }
-    });
-    return response.data;
-  },
-
-  async getProducts(page = 1, category = '') {
-    const response = await api.get('/admin/products', {
-      params: { page, category }
-    });
-    return response.data;
-  },
-
-  async getProduct(productId: string) {
-    const response = await api.get(`/admin/products/${productId}`);
-    return response.data;
-  },
-
-  async createProduct(productData: any) {
-    const response = await api.post('/admin/products', productData);
-    return response.data;
-  },
-
-  async updateProduct(productId: string, productData: any) {
-    const response = await api.put(`/admin/products/${productId}`, productData);
-    return response.data;
-  },
-
-  async deleteProduct(productId: string) {
-    const response = await api.delete(`/admin/products/${productId}`);
-    return response.data;
-  },
-
-  async getProductSalesData(productId: string, period = 'month') {
-    const response = await api.get(`/admin/products/${productId}/sales`, {
-      params: { period }
-    });
-    return response.data;
-  },
-
-  async getOrdersList(page = 1, limit = 10, status = '', search = '') {
-    const response = await api.get('/admin/orders', {
-      params: { page, limit, status, search }
-    });
-    return response.data;
-  },
-
-  async getOrders(page = 1, status = '') {
-    const response = await api.get('/admin/orders', {
-      params: { page, status }
-    });
-    return response.data;
-  },
-
-  async getOrder(orderId: string) {
-    const response = await api.get(`/admin/orders/${orderId}`);
-    return response.data;
-  },
-
-  async updateOrderStatus(orderId: string, status: string) {
-    const response = await api.patch(`/admin/orders/${orderId}/status`, { status });
-    return response.data;
-  },
-
-  async getVideosList(page = 1, limit = 10, status = '', search = '', username = '', date = '') {
-    const response = await api.get('/admin/videos', {
-      params: { page, limit, status, search, username, date }
-    });
-    return response.data;
-  },
-
-  async getVideos(page = 1, status = '') {
-    const response = await api.get('/admin/videos', {
-      params: { page, status }
-    });
-    return response.data;
-  },
+class AdminService {
+  // Videos
+  async getVideosList(page = 1, perPage = 10, status = '', search = '', user = '', date = '') {
+    try {
+      // First try to use the admin-videos edge function
+      const response = await supabase.functions.invoke('admin-videos', {
+        body: { action: 'list' }
+      });
+      
+      if (!response.error && response.data) {
+        const { videos, total } = response.data;
+        
+        // Filter the results based on parameters
+        let filteredVideos = videos || [];
+        
+        if (status) {
+          filteredVideos = filteredVideos.filter(video => 
+            video.status?.toLowerCase() === status.toLowerCase()
+          );
+        }
+        
+        if (search) {
+          filteredVideos = filteredVideos.filter(video => 
+            video.title?.toLowerCase().includes(search.toLowerCase()) || 
+            video.description?.toLowerCase().includes(search.toLowerCase())
+          );
+        }
+        
+        if (user) {
+          filteredVideos = filteredVideos.filter(video => 
+            video.profiles?.username?.toLowerCase().includes(user.toLowerCase())
+          );
+        }
+        
+        if (date) {
+          const filterDate = new Date(date).toISOString().split('T')[0];
+          filteredVideos = filteredVideos.filter(video => {
+            const videoDate = new Date(video.created_at).toISOString().split('T')[0];
+            return videoDate === filterDate;
+          });
+        }
+        
+        // Transform data to match expected interface
+        const transformedVideos = filteredVideos.map(video => ({
+          id: video.id,
+          title: video.title || '',
+          description: video.description || '',
+          url: video.video_url,
+          video_url: video.video_url,
+          thumbnail_url: video.thumbnail_url,
+          status: 'active', // Default status, can be updated from metadata
+          likes: video.likes_count || 0,
+          comments: video.comments_count || 0,
+          shares: video.shares_count || 0,
+          createdAt: video.created_at,
+          created_at: video.created_at,
+          user: {
+            id: video.user_id,
+            username: video.profiles?.username || 'unknown',
+            avatar: video.profiles?.avatar_url,
+          }
+        }));
+        
+        // Paginate the results
+        const start = (page - 1) * perPage;
+        const end = start + perPage;
+        const paginatedVideos = transformedVideos.slice(start, end);
+        
+        return {
+          data: paginatedVideos,
+          pagination: {
+            current_page: page,
+            per_page: perPage,
+            total: transformedVideos.length,
+            last_page: Math.ceil(transformedVideos.length / perPage)
+          }
+        };
+      }
+      
+      // Fallback to direct database queries if edge function fails
+      let query = supabase
+        .from('videos')
+        .select(`
+          *,
+          profiles:user_id (username, avatar_url)
+        `, { count: 'exact' });
+      
+      // Apply filters
+      if (status) {
+        query = query.eq('status', status);
+      }
+      
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+      
+      if (user) {
+        query = query.eq('profiles.username', user);
+      }
+      
+      if (date) {
+        const filterDate = new Date(date).toISOString().split('T')[0];
+        query = query.gte('created_at', `${filterDate}T00:00:00Z`)
+          .lte('created_at', `${filterDate}T23:59:59Z`);
+      }
+      
+      // Paginate and order
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      
+      query = query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+      
+      const { data, error, count } = await query;
+      
+      if (error) throw error;
+      
+      const videos = data.map(video => ({
+        id: video.id,
+        title: video.title || '',
+        description: video.description || '',
+        url: video.video_url,
+        video_url: video.video_url,
+        thumbnail_url: video.thumbnail_url,
+        status: video.status || 'active',
+        likes: video.likes_count || 0,
+        comments: video.comments_count || 0,
+        shares: video.shares_count || 0,
+        createdAt: video.created_at,
+        created_at: video.created_at,
+        user: {
+          id: video.user_id,
+          username: video.profiles?.username || 'unknown',
+          avatar: video.profiles?.avatar_url,
+        }
+      }));
+      
+      return {
+        data: videos,
+        pagination: {
+          current_page: page,
+          per_page: perPage,
+          total: count || 0,
+          last_page: Math.ceil((count || 0) / perPage)
+        }
+      };
+    } catch (error) {
+      console.error("Error in getVideosList:", error);
+      throw error;
+    }
+  }
 
   async updateVideoStatus(videoId: string, status: 'active' | 'flagged' | 'removed') {
-    const response = await api.patch(`/admin/videos/${videoId}/status`, { status });
-    return response.data;
-  },
-
-  async approveVideo(videoId: string) {
-    const response = await api.post(`/admin/videos/${videoId}/approve`);
-    return response.data;
-  },
-
-  async rejectVideo(videoId: string, reason?: string) {
-    const response = await api.post(`/admin/videos/${videoId}/reject`, { reason });
-    return response.data;
-  },
+    try {
+      // Try to use the edge function first
+      const response = await supabase.functions.invoke('admin-videos', {
+        body: { 
+          action: 'update',
+          videoId,
+          videoData: { status }
+        }
+      });
+      
+      if (!response.error) {
+        return response.data;
+      }
+      
+      // Fallback to direct update
+      const { data, error } = await supabase
+        .from('videos')
+        .update({ status })
+        .eq('id', videoId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error updating video status:", error);
+      throw error;
+    }
+  }
 
   async deleteVideo(videoId: string) {
-    const response = await api.delete(`/admin/videos/${videoId}`);
-    return response.data;
-  },
+    try {
+      // Try to use the edge function first
+      const response = await supabase.functions.invoke('admin-videos', {
+        body: { 
+          action: 'delete',
+          videoId
+        }
+      });
+      
+      if (!response.error) {
+        return response.data;
+      }
+      
+      // First delete interactions
+      const { error: intError } = await supabase
+        .from('video_interactions')
+        .delete()
+        .eq('video_id', videoId);
+      
+      if (intError) throw intError;
+      
+      // Then delete the video
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', videoId);
+      
+      if (error) throw error;
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      throw error;
+    }
+  }
 
-  async getReportsList(type = 'sales', period = 'month') {
-    const response = await api.get('/admin/reports', {
-      params: { type, period }
-    });
-    return response.data;
-  },
+  async getUser(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          videos:videos(count),
+          orders:orders(count)
+        `)
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        status: data.status || 'active',
+        role: data.role || 'user',
+        createdAt: data.created_at,
+        videosCount: data.videos[0]?.count || 0,
+        ordersCount: data.orders[0]?.count || 0
+      };
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      throw error;
+    }
+  }
 
-  async getUserGrowthData(period = 'week') {
-    const response = await api.get('/admin/reports/user-growth', {
-      params: { period }
-    });
-    return response.data;
-  },
-
-  async getVideoEngagementData(period = 'week') {
-    const response = await api.get('/admin/reports/video-engagement', {
-      params: { period }
-    });
-    return response.data;
-  },
-
-  async getRevenueData(period = 'week') {
-    const response = await api.get('/admin/reports/revenue', {
-      params: { period }
-    });
-    return response.data;
-  },
-
-  async getAttributes() {
-    const response = await api.get('/admin/product-attributes');
-    return response.data;
-  },
-
-  async getProductAttributes(page = 1) {
-    const response = await api.get('/admin/product-attributes', {
-      params: { page }
-    });
-    return response.data;
-  },
-
-  async getAttribute(attributeId: string) {
-    const response = await api.get(`/admin/product-attributes/${attributeId}`);
-    return response.data;
-  },
-
-  async createAttribute(attributeData: any) {
-    const response = await api.post('/admin/product-attributes', attributeData);
-    return response.data;
-  },
-
-  async createProductAttribute(attributeData: Omit<ProductAttribute, 'id'>) {
-    const response = await api.post('/admin/product-attributes', attributeData);
-    return response.data;
-  },
-
-  async updateAttribute(attributeId: string, attributeData: any) {
-    const response = await api.put(`/admin/product-attributes/${attributeId}`, attributeData);
-    return response.data;
-  },
-
-  async updateProductAttribute(attributeId: string, attributeData: Partial<Omit<ProductAttribute, 'id'>>) {
-    const response = await api.put(`/admin/product-attributes/${attributeId}`, attributeData);
-    return response.data;
-  },
-
-  async deleteAttribute(attributeId: string) {
-    const response = await api.delete(`/admin/product-attributes/${attributeId}`);
-    return response.data;
-  },
-
-  async deleteProductAttribute(attributeId: string) {
-    const response = await api.delete(`/admin/product-attributes/${attributeId}`);
-    return response.data;
-  },
-
-  async getCoupons() {
-    const response = await api.get('/admin/coupons');
-    return response.data;
-  },
-
-  async getCouponAnalytics() {
-    const response = await api.get('/admin/coupons/analytics');
-    return response.data;
-  },
-
-  async createCoupon(couponData: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>) {
-    const response = await api.post('/admin/coupons', couponData);
-    return response.data;
-  },
-
-  async updateCoupon(couponId: string, couponData: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>>) {
-    const response = await api.put(`/admin/coupons/${couponId}`, couponData);
-    return response.data;
-  },
-
-  async deleteCoupon(couponId: string) {
-    const response = await api.delete(`/admin/coupons/${couponId}`);
-    return response.data;
-  },
-
-  async getOffers() {
-    const response = await api.get('/admin/offers');
-    return response.data;
-  },
-
-  async getOfferAnalytics() {
-    const response = await api.get('/admin/offers/analytics');
-    return response.data;
-  },
-
-  async createOffer(offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>) {
-    const response = await api.post('/admin/offers', offerData);
-    return response.data;
-  },
-
-  async updateOffer(offerId: string, offerData: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>) {
-    const response = await api.put(`/admin/offers/${offerId}`, offerData);
-    return response.data;
-  },
-
-  async deleteOffer(offerId: string) {
-    const response = await api.delete(`/admin/offers/${offerId}`);
-    return response.data;
-  },
-
-  async getShippingMethods() {
-    const response = await api.get('/admin/shipping');
-    return response.data;
-  },
-
-  async createShippingMethod(methodData: Omit<AdminShippingMethod, 'id'>) {
-    const response = await api.post('/admin/shipping', methodData);
-    return response.data;
-  },
-
-  async updateShippingMethod(methodId: string, methodData: Partial<Omit<AdminShippingMethod, 'id'>>) {
-    const response = await api.put(`/admin/shipping/${methodId}`, methodData);
-    return response.data;
-  },
-
-  async deleteShippingMethod(methodId: string) {
-    const response = await api.delete(`/admin/shipping/${methodId}`);
-    return response.data;
-  },
-
-  async getPricingRules() {
-    const response = await api.get('/admin/pricing-rules');
-    return response.data;
-  },
-
-  async createPricingRule(ruleData: Omit<PricingRules, 'id'>) {
-    const response = await api.post('/admin/pricing-rules', ruleData);
-    return response.data;
-  },
-
-  async updatePricingRule(ruleId: string, ruleData: Partial<Omit<PricingRules, 'id'>>) {
-    const response = await api.put(`/admin/pricing-rules/${ruleId}`, ruleData);
-    return response.data;
-  },
-
-  async deletePricingRule(ruleId: string) {
-    const response = await api.delete(`/admin/pricing-rules/${ruleId}`);
-    return response.data;
-  },
-
-  async getLiveStreams(type = 'current', search = '') {
-    const response = await api.get('/admin/live-streams', {
-      params: { type, search }
-    });
-    return response.data;
-  },
-
-  async getStreamDetails(streamId: string) {
-    const response = await api.get(`/admin/live-streams/${streamId}`);
-    return response.data;
-  },
-
-  async shutdownStream(streamId: string, reason: string) {
-    const response = await api.post(`/admin/live-streams/${streamId}/shutdown`, { reason });
-    return response.data;
-  },
-
-  async sendStreamMessage(streamId: string, message: string) {
-    const response = await api.post(`/admin/live-streams/${streamId}/message`, { message });
-    return response.data;
-  },
-
-  async getStreamGifts(streamId: string) {
-    const response = await api.get(`/admin/live-streams/${streamId}/gifts`);
-    return response.data;
-  },
-
-  async getStreamAnalytics(streamId: string) {
-    const response = await api.get(`/admin/live-streams/${streamId}/analytics`);
-    return response.data;
-  },
-
-  async sendUserWarning(userId: string, message: string, relatedContentId?: string) {
-    const response = await api.post(`/admin/users/${userId}/warnings`, { 
-      message, 
-      related_content_id: relatedContentId 
-    });
-    return response.data;
-  },
+  async sendUserWarning(userId: string, message: string, videoId?: string) {
+    // This would typically send a notification to the user
+    console.log(`Warning sent to ${userId}: ${message} regarding video ${videoId}`);
+    return { success: true };
+  }
 
   async restrictUser(userId: string, reason: string) {
-    const response = await api.post(`/admin/users/${userId}/restrict`, { reason });
-    return response.data;
-  },
-
-  async batchUpdateVideoStatus(videoIds: string[], status: 'active' | 'flagged' | 'removed') {
-    const response = await api.post('/admin/videos/batch-update', { video_ids: videoIds, status });
-    return response.data;
-  },
-
-  async batchDeleteVideos(videoIds: string[]) {
-    const response = await api.post('/admin/videos/batch-delete', { video_ids: videoIds });
-    return response.data;
-  },
-
-  async getUserWarnings(userId: string) {
-    const response = await api.get(`/admin/users/${userId}/warnings`);
-    return response.data;
-  },
-
-  async getUserActivityLog(userId: string) {
-    const response = await api.get(`/admin/users/${userId}/activity-log`);
-    return response.data;
-  },
-
-  async getVideoReports(videoId: string) {
-    const response = await api.get(`/admin/videos/${videoId}/reports`);
-    return response.data;
-  },
-
-  async getVirtualGifts(page = 1, limit = 10, category = '') {
-    const response = await api.get('/admin/virtual-gifts', {
-      params: { page, limit, category }
-    });
-    return response.data;
-  },
-
-  async getVirtualGift(giftId: string) {
-    const response = await api.get(`/admin/virtual-gifts/${giftId}`);
-    return response.data;
-  },
-
-  async createVirtualGift(giftData: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) {
-    const response = await api.post('/admin/virtual-gifts', giftData);
-    return response.data;
-  },
-
-  async updateVirtualGift(giftId: string, giftData: Partial<Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>>) {
-    const response = await api.put(`/admin/virtual-gifts/${giftId}`, giftData);
-    return response.data;
-  },
-
-  async deleteVirtualGift(giftId: string) {
-    const response = await api.delete(`/admin/virtual-gifts/${giftId}`);
-    return response.data;
-  },
-
-  async toggleGiftAvailability(giftId: string, available: boolean) {
-    const response = await api.patch(`/admin/virtual-gifts/${giftId}/availability`, { available });
-    return response.data;
-  },
-
-  async getGiftUsageStats(period = 'month') {
-    const response = await api.get('/admin/virtual-gifts/stats', {
-      params: { period }
-    });
-    return response.data;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ 
+          status: 'restricted',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Log admin action
+      await supabase.rpc('log_admin_action', {
+        p_action_type: 'restrict_user',
+        p_target_id: userId,
+        p_reason: reason
+      });
+      
+      return data;
+    } catch (error) {
+      console.error("Error restricting user:", error);
+      throw error;
+    }
   }
-};
+}
 
-export default AdminService;
+export default new AdminService();

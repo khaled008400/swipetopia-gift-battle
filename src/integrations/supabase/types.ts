@@ -888,6 +888,41 @@ export type Database = {
           },
         ]
       }
+      video_interactions: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          interaction_type: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          interaction_type: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          interaction_type?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_interactions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_likes: {
         Row: {
           created_at: string | null
@@ -923,6 +958,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      videos: {
+        Row: {
+          comments_count: number | null
+          created_at: string | null
+          description: string | null
+          hashtags: string[] | null
+          id: string
+          is_live: boolean | null
+          likes_count: number | null
+          shares_count: number | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          comments_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          hashtags?: string[] | null
+          id?: string
+          is_live?: boolean | null
+          likes_count?: number | null
+          shares_count?: number | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          comments_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          hashtags?: string[] | null
+          id?: string
+          is_live?: boolean | null
+          likes_count?: number | null
+          shares_count?: number | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: []
       }
       virtual_gifts: {
         Row: {
@@ -1009,6 +1095,13 @@ export type Database = {
       increment_followers: {
         Args: {
           user_id: string
+        }
+        Returns: undefined
+      }
+      increment_video_counter: {
+        Args: {
+          video_id: string
+          counter_name: string
         }
         Returns: undefined
       }
