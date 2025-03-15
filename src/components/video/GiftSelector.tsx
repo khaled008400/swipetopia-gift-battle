@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { VirtualGift, GiftTransaction } from "@/types/gift.types";
+import { VirtualGift } from "@/types/gift.types";
+import GiftService from "@/services/gift.service";
 
 interface GiftSelectorProps {
   onClose: () => void;
@@ -13,18 +13,8 @@ interface GiftSelectorProps {
   creatorId: string;
 }
 
-// Define mock gifts for initial testing
-const mockGifts: VirtualGift[] = [
-  { id: "1", name: "Heart", price: 10, value: 5, icon: "❤️", color: "#ff0000" },
-  { id: "2", name: "Star", price: 20, value: 10, icon: "⭐", color: "#ffff00" },
-  { id: "3", name: "Diamond", price: 50, value: 25, icon: "💎", color: "#00ffff" },
-  { id: "4", name: "Crown", price: 100, value: 50, icon: "👑", color: "#ffd700" },
-  { id: "5", name: "Rocket", price: 200, value: 100, icon: "🚀", color: "#ff00ff" },
-  { id: "6", name: "Fire", price: 30, value: 15, icon: "🔥", color: "#ff4500" },
-];
-
 const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
-  const [gifts, setGifts] = useState<VirtualGift[]>(mockGifts);
+  const [gifts, setGifts] = useState<VirtualGift[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -37,18 +27,8 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
   const fetchGifts = async () => {
     setLoading(true);
     try {
-      // Temporarily using mock data until the virtual_gifts table is created
-      setGifts(mockGifts);
-      
-      // Once the table exists, we can use this code:
-      // const { data, error } = await supabase
-      //   .from('virtual_gifts')
-      //   .select('*')
-      //   .eq('available', true);
-      
-      // if (error) throw error;
-      // setGifts(data || []);
-      
+      const availableGifts = await GiftService.getVirtualGifts();
+      setGifts(availableGifts);
     } catch (error) {
       console.error("Error fetching gifts:", error);
       toast({
@@ -73,13 +53,7 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
 
     try {
       setSending(true);
-      
-      // In a production app, we would:
-      // 1. Check user's coin balance from profiles table
-      // 2. Create a gift transaction record
-      // 3. Update user balances via RPC functions
-      
-      // For now, we'll just show the toast since we don't have the db tables yet
+      await GiftService.sendGift(creatorId, gift.id, videoId);
       
       toast({
         title: "Gift Sent!",
@@ -91,7 +65,7 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
       console.error("Error sending gift:", error);
       toast({
         title: "Error",
-        description: "Failed to send gift. Please try again.",
+        description: error.message || "Failed to send gift. Please try again.",
         variant: "destructive",
       });
     } finally {
