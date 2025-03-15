@@ -6,7 +6,6 @@ import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
-import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 
 const AdminDashboardPage: React.FC = () => {
@@ -47,9 +46,9 @@ const AdminDashboardPage: React.FC = () => {
     initialData: mockStats // Use mock stats as initial data
   });
 
+  // Check if user is authorized as admin
   useEffect(() => {
     const checkAdminAccess = async () => {
-      // Check if user is an admin using context method
       if (user && isAdmin()) {
         console.log("User authorized as admin");
         setIsAuthorized(true);
@@ -83,6 +82,8 @@ const AdminDashboardPage: React.FC = () => {
   if (isAuthorized === false) {
     return <Navigate to="/" replace />;
   }
+
+  console.log("Rendering AdminTabbedInterface with stats:", stats);
 
   // Admin dashboard with tabs
   return (

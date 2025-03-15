@@ -10,6 +10,8 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
+  console.log("AdminDashboard received stats:", stats);
+  
   const revenueData = [
     { name: 'Mon', revenue: 2400 },
     { name: 'Tue', revenue: 1398 },
