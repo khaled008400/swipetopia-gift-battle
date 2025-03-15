@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import VideoActions from "@/components/video/VideoActions";
 import { VideoService } from "@/services/video.service";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Use more reliable video sources
 const RELIABLE_VIDEOS = [
@@ -58,13 +59,16 @@ const VideosPage = () => {
     fetchVideos();
   }, [toast]);
 
-  // Handle scroll to change videos
+  // Handle scroll to change videos - only when on the video page itself
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
-      if (e.deltaY > 0 && activeVideoIndex < videos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
+      // Only control scroll for video navigation in the videos page view
+      if (window.location.pathname === '/videos') {
+        if (e.deltaY > 0 && activeVideoIndex < videos.length - 1) {
+          setActiveVideoIndex(prev => prev + 1);
+        } else if (e.deltaY < 0 && activeVideoIndex > 0) {
+          setActiveVideoIndex(prev => prev - 1);
+        }
       }
     };
 
@@ -75,7 +79,7 @@ const VideosPage = () => {
     };
   }, [activeVideoIndex, videos.length]);
 
-  // Handle touch swipe for mobile
+  // Handle touch swipe for mobile - only when on the video page itself
   useEffect(() => {
     let touchStartY = 0;
     const handleTouchStart = (e: TouchEvent) => {
@@ -86,13 +90,16 @@ const VideosPage = () => {
       const touchEndY = e.changedTouches[0].clientY;
       const diff = touchStartY - touchEndY;
 
-      // Swipe up - go to next video
-      if (diff > 50 && activeVideoIndex < videos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      }
-      // Swipe down - go to previous video
-      else if (diff < -50 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
+      // Only control touch for video navigation in the videos page view
+      if (window.location.pathname === '/videos') {
+        // Swipe up - go to next video
+        if (diff > 50 && activeVideoIndex < videos.length - 1) {
+          setActiveVideoIndex(prev => prev + 1);
+        }
+        // Swipe down - go to previous video
+        else if (diff < -50 && activeVideoIndex > 0) {
+          setActiveVideoIndex(prev => prev - 1);
+        }
       }
     };
 
