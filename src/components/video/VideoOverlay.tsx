@@ -101,6 +101,9 @@ const VideoOverlay = ({
           )}
           
           <VideoActions 
+            likes={video.likes}
+            comments={video.comments}
+            shares={video.shares}
             isLiked={isLiked}
             isSaved={isSaved}
             onLike={onLike}

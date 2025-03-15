@@ -2,14 +2,14 @@
 import { useState } from "react";
 import { Heart, MessageCircle, Share2, Coins, Download, Flag, Bookmark } from "lucide-react";
 import VideoComments from "./VideoComments";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import VideoService from '@/services/video.service';
 import ReportVideoDialog from "./ReportVideoDialog";
 
 interface VideoActionsProps {
-  likes: number;
-  comments: number;
-  shares: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
   isLiked: boolean;
   onLike: () => void;
   videoId?: string;
@@ -19,9 +19,9 @@ interface VideoActionsProps {
 }
 
 const VideoActions = ({
-  likes,
-  comments,
-  shares,
+  likes = 0,
+  comments = 0,
+  shares = 0,
   isLiked,
   onLike,
   videoId = "1",

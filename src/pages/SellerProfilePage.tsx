@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/services/shop.service";
+
+// Mock data for followers until database table is created
+const mockFollowers = [
+  { id: "1", follower_id: "user1", following_id: "seller1" },
+  { id: "2", follower_id: "user2", following_id: "seller1" },
+];
 
 // Extended product with additional fields needed for seller profile
 interface ExtendedProduct extends Product {
@@ -67,15 +74,23 @@ const SellerProfilePage = () => {
         setProducts(productsWithExtras as ExtendedProduct[]);
         
         // Check if the current user is following this seller
+        // Using mock data for now until the followers table is created
         if (user && user.id) {
-          const { data: followData, error: followError } = await supabase
-            .from("followers")
-            .select("*")
-            .eq("follower_id", user.id)
-            .eq("following_id", sellerId)
-            .single();
-            
-          setIsFollowing(!!followData);
+          // In a real implementation with a followers table:
+          // const { data: followData, error: followError } = await supabase
+          //   .from("followers")
+          //   .select("*")
+          //   .eq("follower_id", user.id)
+          //   .eq("following_id", sellerId)
+          //   .single();
+          //   
+          // setIsFollowing(!!followData);
+          
+          // Using mock data for now:
+          const isUserFollowing = mockFollowers.some(
+            f => f.follower_id === user.id && f.following_id === sellerId
+          );
+          setIsFollowing(isUserFollowing);
         }
       } catch (error) {
         console.error("Error fetching seller info:", error);
@@ -99,24 +114,27 @@ const SellerProfilePage = () => {
     }
     
     try {
-      if (isFollowing) {
-        // Unfollow
-        await supabase
-          .from("followers")
-          .delete()
-          .eq("follower_id", user.id)
-          .eq("following_id", sellerId);
-      } else {
-        // Follow
-        await supabase
-          .from("followers")
-          .insert({
-            follower_id: user.id,
-            following_id: sellerId
-          });
-      }
+      // In a real implementation with a followers table:
+      // if (isFollowing) {
+      //   // Unfollow
+      //   await supabase
+      //     .from("followers")
+      //     .delete()
+      //     .eq("follower_id", user.id)
+      //     .eq("following_id", sellerId);
+      // } else {
+      //   // Follow
+      //   await supabase
+      //     .from("followers")
+      //     .insert({
+      //       follower_id: user.id,
+      //       following_id: sellerId
+      //     });
+      // }
       
+      // For now, we'll just toggle the state without database interaction
       setIsFollowing(!isFollowing);
+      
       toast({
         title: isFollowing ? "Unfollowed" : "Following",
         description: isFollowing ? "You've unfollowed this seller" : "You're now following this seller",

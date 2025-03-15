@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { VirtualGift } from "@/types/gift.types";
+import { VirtualGift, GiftTransaction } from "@/types/gift.types";
 
 interface GiftSelectorProps {
   onClose: () => void;
@@ -13,8 +13,18 @@ interface GiftSelectorProps {
   creatorId: string;
 }
 
+// Define mock gifts for initial testing
+const mockGifts: VirtualGift[] = [
+  { id: "1", name: "Heart", price: 10, value: 5, icon: "❤️", color: "#ff0000" },
+  { id: "2", name: "Star", price: 20, value: 10, icon: "⭐", color: "#ffff00" },
+  { id: "3", name: "Diamond", price: 50, value: 25, icon: "💎", color: "#00ffff" },
+  { id: "4", name: "Crown", price: 100, value: 50, icon: "👑", color: "#ffd700" },
+  { id: "5", name: "Rocket", price: 200, value: 100, icon: "🚀", color: "#ff00ff" },
+  { id: "6", name: "Fire", price: 30, value: 15, icon: "🔥", color: "#ff4500" },
+];
+
 const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
-  const [gifts, setGifts] = useState<VirtualGift[]>([]);
+  const [gifts, setGifts] = useState<VirtualGift[]>(mockGifts);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -27,14 +37,18 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
   const fetchGifts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('virtual_gifts')
-        .select('*')
-        .eq('available', true);
+      // Temporarily using mock data until the virtual_gifts table is created
+      setGifts(mockGifts);
       
-      if (error) throw error;
+      // Once the table exists, we can use this code:
+      // const { data, error } = await supabase
+      //   .from('virtual_gifts')
+      //   .select('*')
+      //   .eq('available', true);
       
-      setGifts(data || []);
+      // if (error) throw error;
+      // setGifts(data || []);
+      
     } catch (error) {
       console.error("Error fetching gifts:", error);
       toast({
@@ -60,48 +74,12 @@ const GiftSelector = ({ onClose, videoId, creatorId }: GiftSelectorProps) => {
     try {
       setSending(true);
       
-      // Check user's coin balance
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('coins')
-        .eq('id', user.id)
-        .single();
+      // In a production app, we would:
+      // 1. Check user's coin balance from profiles table
+      // 2. Create a gift transaction record
+      // 3. Update user balances via RPC functions
       
-      if (userError) throw userError;
-      
-      if (userData && userData.coins < gift.price) {
-        toast({
-          title: "Insufficient Coins",
-          description: "You don't have enough coins to send this gift",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Record the gift transaction
-      const { error: giftError } = await supabase
-        .from('gift_transactions')
-        .insert([{
-          sender_id: user.id,
-          receiver_id: creatorId,
-          video_id: videoId,
-          gift_id: gift.id,
-          amount: gift.value
-        }]);
-      
-      if (giftError) throw giftError;
-      
-      // Deduct coins from sender
-      const { error: updateError } = await supabase
-        .rpc('deduct_coins', { user_id: user.id, coin_amount: gift.price });
-      
-      if (updateError) throw updateError;
-      
-      // Add coins to creator
-      const { error: creatorError } = await supabase
-        .rpc('add_coins', { user_id: creatorId, coin_amount: gift.value });
-      
-      if (creatorError) throw creatorError;
+      // For now, we'll just show the toast since we don't have the db tables yet
       
       toast({
         title: "Gift Sent!",
