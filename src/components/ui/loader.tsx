@@ -19,4 +19,5 @@ export const Loader = ({ size = "medium", className = "" }: { size?: "small" | "
   );
 };
 
+// Export as default as well to maintain compatibility with both import styles
 export default Loader;
