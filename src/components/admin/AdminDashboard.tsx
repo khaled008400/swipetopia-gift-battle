@@ -12,6 +12,18 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
   console.log("AdminDashboard received stats:", stats);
   
+  // Ensure stats is properly defined, otherwise show default values
+  const safeStats: AdminStats = stats || {
+    totalUsers: 0,
+    newUsersToday: 0,
+    totalVideos: 0,
+    videoUploadsToday: 0,
+    totalOrders: 0,
+    ordersToday: 0,
+    revenueTotal: 0,
+    revenueToday: 0
+  };
+  
   const revenueData = [
     { name: 'Mon', revenue: 2400 },
     { name: 'Tue', revenue: 1398 },
@@ -31,10 +43,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{safeStats.totalUsers.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <ArrowUpCircle className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500">{stats.newUsersToday}</span> new today
+              <span className="text-green-500">{safeStats.newUsersToday}</span> new today
             </p>
           </CardContent>
         </Card>
@@ -45,10 +57,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
             <Video className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalVideos.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{safeStats.totalVideos.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <ArrowUpCircle className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500">{stats.videoUploadsToday}</span> new today
+              <span className="text-green-500">{safeStats.videoUploadsToday}</span> new today
             </p>
           </CardContent>
         </Card>
@@ -59,10 +71,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalOrders.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{safeStats.totalOrders.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <ArrowUpCircle className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500">{stats.ordersToday}</span> new today
+              <span className="text-green-500">{safeStats.ordersToday}</span> new today
             </p>
           </CardContent>
         </Card>
@@ -84,10 +96,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.revenueTotal.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${safeStats.revenueTotal.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <ArrowUpCircle className="h-3 w-3 mr-1 text-green-500" />
-              <span className="text-green-500">${stats.revenueToday}</span> today
+              <span className="text-green-500">${safeStats.revenueToday}</span> today
             </p>
           </CardContent>
         </Card>

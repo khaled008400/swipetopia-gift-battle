@@ -1,3 +1,4 @@
+
 import axios from './api';
 import { supabase } from '@/lib/supabase';
 
@@ -13,6 +14,24 @@ export interface AdminStats {
   revenueToday: number;
 }
 
+// Define interfaces for other admin data types as needed
+export interface AdminOrder {
+  id: string;
+  user: {
+    username: string;
+    email: string;
+  };
+  createdAt: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  total: number;
+  products: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }[];
+}
+
 // Fallback mock data for development or when API is not available
 const mockStats: AdminStats = {
   totalUsers: 12543,
@@ -24,6 +43,52 @@ const mockStats: AdminStats = {
   revenueTotal: 392150,
   revenueToday: 2750
 };
+
+// Mock orders data
+const mockOrders: AdminOrder[] = [
+  {
+    id: 'order-1',
+    user: {
+      username: 'user123',
+      email: 'user123@example.com'
+    },
+    createdAt: new Date().toISOString(),
+    status: 'pending',
+    total: 129.99,
+    products: [
+      {
+        id: 'product-1',
+        name: 'Premium Hoodie',
+        price: 49.99,
+        quantity: 2
+      },
+      {
+        id: 'product-2',
+        name: 'Designer Cap',
+        price: 29.99,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: 'order-2',
+    user: {
+      username: 'johndoe',
+      email: 'john@example.com'
+    },
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    status: 'completed',
+    total: 199.99,
+    products: [
+      {
+        id: 'product-3',
+        name: 'Limited Edition Sneakers',
+        price: 199.99,
+        quantity: 1
+      }
+    ]
+  }
+];
 
 // Admin service for managing dashboard data
 const AdminService = {
@@ -70,6 +135,39 @@ const AdminService = {
           last_page: 10,
         },
       };
+    }
+  },
+
+  // Get orders with pagination
+  async getOrders(page = 1, statusFilter = '') {
+    try {
+      const response = await axios.get('/admin/orders', {
+        params: { page, status: statusFilter }
+      });
+      return response.data;
+    } catch (error) {
+      console.log('Using mock orders due to API error:', error);
+      return {
+        data: mockOrders,
+        pagination: {
+          total: 20,
+          per_page: 10,
+          current_page: page,
+          last_page: 2
+        }
+      };
+    }
+  },
+
+  // Update order status
+  async updateOrderStatus(orderId: string, status: 'pending' | 'completed' | 'cancelled') {
+    try {
+      const response = await axios.patch(`/admin/orders/${orderId}`, { status });
+      return response.data;
+    } catch (error) {
+      console.log('Order status update would be sent to API:', { orderId, status });
+      // For development, just return the updated status
+      return { success: true, orderId, status };
     }
   },
 

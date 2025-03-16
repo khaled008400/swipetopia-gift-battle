@@ -34,7 +34,9 @@ const AdminDashboardPage: React.FC = () => {
     queryKey: ['adminStats'],
     queryFn: async () => {
       try {
+        console.log("Fetching admin stats...");
         const data = await AdminService.getDashboardStats();
+        console.log("Admin stats received:", data);
         return data;
       } catch (error) {
         console.error("Error fetching admin stats:", error);
@@ -42,7 +44,7 @@ const AdminDashboardPage: React.FC = () => {
         return mockStats;
       }
     },
-    enabled: !!user, // Always enable if user exists, we'll check admin status elsewhere
+    enabled: !!user, // Only fetch if user is logged in
     initialData: mockStats // Use mock stats as initial data
   });
 
@@ -87,10 +89,12 @@ const AdminDashboardPage: React.FC = () => {
 
   // Admin dashboard with tabs
   return (
-    <AdminTabbedInterface 
-      stats={stats || mockStats} 
-      statsLoading={isLoading}
-    />
+    <div className="bg-app-black min-h-screen">
+      <AdminTabbedInterface 
+        stats={stats || mockStats} 
+        statsLoading={isLoading}
+      />
+    </div>
   );
 };
 
