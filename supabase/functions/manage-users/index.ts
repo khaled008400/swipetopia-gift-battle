@@ -7,6 +7,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface UserData {
+  email: string;
+  username: string;
+  password: string;
+  role: string;
+}
+
+interface RequestBody {
+  action: string;
+  userData?: UserData;
+  userId?: string;
+  role?: string;
+  status?: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,7 +40,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse the request body
-    const body = await req.json();
+    const body: RequestBody = await req.json();
     const { action, userData, userId, role, status } = body;
 
     let result;
@@ -152,7 +167,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in manage-users function:', error.message);
     
     return new Response(JSON.stringify({
