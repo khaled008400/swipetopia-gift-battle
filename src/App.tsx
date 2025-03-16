@@ -16,6 +16,7 @@ import ExplorePage from './pages/ExplorePage';
 import SignupPage from './pages/SignupPage';
 import AdminPage from './pages/AdminPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import SellerDashboardPage from './pages/SellerDashboardPage';
 import AuthCheck from './components/auth/AuthCheck';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -88,6 +89,13 @@ function App() {
                 <Route path="/admin-dashboard" element={
                   <AuthCheck requireAdmin={true}>
                     <Layout><AdminDashboardPage /></Layout>
+                  </AuthCheck>
+                } />
+                
+                {/* Seller routes with auth check */}
+                <Route path="/seller-dashboard" element={
+                  <AuthCheck requireSeller={true}>
+                    <Layout><SellerDashboardPage /></Layout>
                   </AuthCheck>
                 } />
               </Routes>
