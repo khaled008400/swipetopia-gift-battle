@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { 
-  Table, TableBody, TableCaption, TableCell, 
+  Table, TableBody, TableCell, 
   TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +34,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import AddUserForm from './AddUserForm';
 
 // Define interface for AdminUser with correct types
 interface AdminUser {
@@ -50,6 +48,9 @@ interface AdminUser {
   coins?: number;
   created_at?: string;
 }
+
+// Separate AddUserForm component import to avoid circular dependency
+const AddUserForm = React.lazy(() => import('./AddUserForm'));
 
 const AdminUsers = () => {
   const [page, setPage] = useState(1);
@@ -252,7 +253,9 @@ const AdminUsers = () => {
                   Create a new user and assign them a role
                 </DialogDescription>
               </DialogHeader>
-              <AddUserForm onUserAdded={handleUserAdded} />
+              <React.Suspense fallback={<div>Loading...</div>}>
+                {isAddUserOpen && <AddUserForm onUserAdded={handleUserAdded} />}
+              </React.Suspense>
             </DialogContent>
           </Dialog>
           
