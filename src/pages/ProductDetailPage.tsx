@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ShoppingCart, Heart, ArrowLeft, Star } from 'lucide-react';
 import ShopService from '@/services/shop.service';
-import { Product } from '@/services/shop.service';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -129,11 +127,10 @@ const ProductDetailPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold">{product.name}</h1>
             
-            {/* Add seller info if available */}
             {product.seller && (
               <div className="flex items-center mt-2 text-sm text-gray-500">
                 <span>Sold by </span>
-                <span className="font-medium ml-1">{(product.seller as any).username}</span>
+                <span className="font-medium ml-1">{product.seller.username}</span>
               </div>
             )}
             
@@ -148,7 +145,6 @@ const ProductDetailPage: React.FC = () => {
               )}
             </div>
             
-            {/* Fake review stars */}
             <div className="flex items-center mt-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star 
@@ -170,7 +166,6 @@ const ProductDetailPage: React.FC = () => {
             )}
           </div>
           
-          {/* Stock info */}
           <div className="py-2">
             {product.stock_quantity !== undefined && product.stock_quantity > 0 ? (
               <span className="text-green-600">

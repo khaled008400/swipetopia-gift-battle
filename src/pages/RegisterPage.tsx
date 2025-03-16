@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useToast } from '@/components/ui/use-toast';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters" }),
@@ -24,7 +25,8 @@ type FormData = z.infer<typeof formSchema>;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { signup, isLoading } = useAuth();
+  const { register: signup, isLoading } = useAuth();
+  const { toast } = useToast();
   
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -39,9 +41,20 @@ const RegisterPage = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await signup(data.email, data.username, data.password);
+      toast({
+        title: "Account created",
+        description: "Your account has been created successfully. You can now log in.",
+        duration: 3000,
+      });
       navigate('/login');
     } catch (error) {
       console.error("Registration error:", error);
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Please try again later",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
   };
   

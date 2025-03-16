@@ -69,6 +69,9 @@ const isDevelopment = import.meta.env.DEV;
 const AuthService = {
   async login(credentials: LoginCredentials) {
     try {
+      // In production, log all login attempts for security monitoring
+      console.log("Login attempt for:", credentials.username);
+      
       // Try Supabase login first
       const { data: supabaseData, error: supabaseError } = await supabase.auth.signInWithPassword({
         email: credentials.username, // Using username field for email
