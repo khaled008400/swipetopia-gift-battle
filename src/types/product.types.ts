@@ -68,3 +68,84 @@ export interface ShippingAddress {
   country: string;
   is_default: boolean;
 }
+
+export interface ShopProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  logo_url?: string;
+  banner_url?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  social_links?: {
+    website?: string;
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
+  created_at: string;
+  updated_at: string;
+  rating?: number;
+  total_sales?: number;
+  policies?: {
+    returns?: string;
+    shipping?: string;
+    terms?: string;
+  };
+}
+
+export interface CustomerMessage {
+  id: string;
+  seller_id: string;
+  customer_id: string;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+  conversation_id: string;
+  sender_type: "seller" | "customer";
+  customer_name?: string;
+  customer_avatar?: string;
+}
+
+export interface RefundRequest {
+  id: string;
+  order_id: string;
+  user_id: string;
+  seller_id: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+  amount: number;
+  product_id: string;
+  product_name?: string;
+  username?: string;
+}
+
+export interface SellerWallet {
+  id: string;
+  seller_id: string;
+  balance: number;
+  currency: string;
+  last_payout_date?: string;
+  pending_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SellerReport {
+  id: string;
+  seller_id: string;
+  period: "daily" | "weekly" | "monthly";
+  sales_total: number;
+  orders_count: number;
+  date: string;
+  views_count: number;
+  refunds_count: number;
+  top_products: {
+    id: string;
+    name: string;
+    sales: number;
+  }[];
+}
