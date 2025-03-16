@@ -27,16 +27,11 @@ const LoginPage = () => {
       
     console.log("Auth check results:", { from, isAdmin: userIsAdmin, isSeller: userIsSeller, email, user });
       
-    // If user was trying to access admin pages and is admin, redirect back there
-    if (from && from.startsWith('/admin') && userIsAdmin) {
-      console.log("Redirecting to requested admin page:", from);
+    // If user was trying to access a specific page, redirect back there
+    if (from) {
+      console.log("Redirecting to requested page:", from);
       navigate(from);
     } 
-    // If user is trying to access seller pages and is a seller, redirect back there
-    else if (from && from.startsWith('/seller-dashboard') && userIsSeller) {
-      console.log("Redirecting to requested seller page:", from);
-      navigate(from);
-    }
     // If user is a seller, redirect to seller dashboard as default
     else if (userIsSeller) {
       console.log("Seller user detected, redirecting to seller dashboard");
@@ -72,31 +67,18 @@ const LoginPage = () => {
       const result = await login(email, password);
       console.log("Login result:", result);
       
-      // Force refresh roles status
-      const userIsAdmin = isAdmin();
-      const userIsSeller = hasRole('seller');
-      console.log("Is admin?", userIsAdmin);
-      console.log("Is seller?", userIsSeller);
-      
       // Show success message
       toast({
         title: "Login successful",
-        description: userIsAdmin 
+        description: isAdmin() 
           ? "Welcome to the admin panel" 
-          : userIsSeller 
+          : hasRole('seller') 
             ? "Welcome to your seller dashboard" 
             : "Welcome back!",
       });
       
-      // Handle redirection manually for admin and seller accounts
-      if (userIsAdmin) {
-        console.log("Admin login detected, redirecting to admin dashboard");
-        navigate('/admin-dashboard');
-      } else if (userIsSeller) {
-        console.log("Seller login detected, redirecting to seller dashboard");
-        navigate('/seller-dashboard');
-      }
-      // For regular users, the redirect will be handled by the useEffect above
+      // Don't manually navigate here - let the useEffect handle redirection
+      // based on user roles for consistency
       
     } catch (error: any) {
       console.error("Login error:", error);

@@ -37,7 +37,8 @@ const AuthCheck = ({
         requireSeller,
         isAdmin: userIsAdmin,
         isSeller: userIsSeller,
-        user
+        user,
+        path: window.location.pathname
       });
       
       // First check if user is authenticated
@@ -47,36 +48,43 @@ const AuthCheck = ({
         const returnPath = window.location.pathname;
         navigate(`/login?from=${returnPath}`);
         setIsAuthorized(false);
+        return;
       } 
+      
       // If admin access is required, check if user is admin
-      else if (requireAdmin) {
+      if (requireAdmin) {
         console.log("Checking admin status:", userIsAdmin);
         
         if (!userIsAdmin) {
           console.log("User is not an admin, redirecting to home");
           navigate('/');
           setIsAuthorized(false);
+          return;
         } else {
           console.log("User is an admin, access granted");
           setIsAuthorized(true);
+          return;
         }
       }
+      
       // If seller access is required, check if user is a seller
-      else if (requireSeller) {
+      if (requireSeller) {
         console.log("Checking seller status:", userIsSeller);
         
         if (!userIsSeller) {
           console.log("User is not a seller, redirecting to home");
           navigate('/');
           setIsAuthorized(false);
+          return;
         } else {
           console.log("User is a seller, access granted");
           setIsAuthorized(true);
+          return;
         }
-      } else {
-        // Regular authenticated access
-        setIsAuthorized(true);
       }
+      
+      // Regular authenticated access
+      setIsAuthorized(true);
     }
   }, [isAuthenticated, isLoading, navigate, requireAdmin, requireSeller, isAdmin, hasRole, user]);
 
