@@ -13,9 +13,11 @@ const AdminDashboardPage: React.FC = () => {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const { toast } = useToast();
 
-  // For debugging
-  console.log("Admin Dashboard - User:", user);
-  console.log("Admin Dashboard - Is Admin:", isAdmin());
+  // More detailed logging for debugging
+  console.log("AdminDashboardPage - Rendering");
+  console.log("AdminDashboardPage - User:", user);
+  console.log("AdminDashboardPage - Is Admin Function:", isAdmin);
+  console.log("AdminDashboardPage - Is Admin Result:", isAdmin ? isAdmin() : null);
 
   // Define mock stats for development
   const mockStats: AdminStats = {
@@ -29,8 +31,8 @@ const AdminDashboardPage: React.FC = () => {
     revenueToday: 2750
   };
 
-  // Fetch dashboard stats with fallback to mock data
-  const { data: stats, isLoading } = useQuery({
+  // Fetch dashboard stats with fallback to mock data and better error handling
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['adminStats'],
     queryFn: async () => {
       try {
@@ -41,32 +43,64 @@ const AdminDashboardPage: React.FC = () => {
       } catch (error) {
         console.error("Error fetching admin stats:", error);
         // Return mock data if the real API fails
+        console.log("Returning mock stats due to API error");
         return mockStats;
       }
     },
     enabled: !!user, // Only fetch if user is logged in
+    retry: false, // Don't retry on failure for now (for debugging)
     initialData: mockStats // Use mock stats as initial data
   });
 
   // Check if user is authorized as admin
   useEffect(() => {
     const checkAdminAccess = async () => {
-      if (user && isAdmin()) {
-        console.log("User authorized as admin");
-        setIsAuthorized(true);
-      } else {
-        console.log("User not authorized as admin");
+      if (!user) {
+        console.log("No user detected - not authorized");
         setIsAuthorized(false);
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access the admin panel",
-          variant: "destructive"
-        });
+        return;
+      }
+      
+      try {
+        const adminCheck = isAdmin();
+        console.log("Admin check result:", adminCheck);
+        
+        if (adminCheck) {
+          console.log("User authorized as admin");
+          setIsAuthorized(true);
+        } else {
+          console.log("User not authorized as admin");
+          setIsAuthorized(false);
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access the admin panel",
+            variant: "destructive"
+          });
+        }
+      } catch (e) {
+        console.error("Error checking admin status:", e);
+        setIsAuthorized(false);
       }
     };
 
     checkAdminAccess();
   }, [user, isAdmin, toast]);
+
+  // Add explicit error handling in the UI
+  if (error) {
+    console.error("React Query error:", error);
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-app-black text-white">
+        <div className="text-center max-w-md mx-auto p-6 bg-gray-800 rounded-lg">
+          <h1 className="text-xl font-bold mb-4 text-red-500">Error Loading Admin Dashboard</h1>
+          <p className="mb-4">There was a problem loading the admin dashboard data.</p>
+          <div className="bg-black p-3 rounded text-xs text-left overflow-auto max-h-40">
+            {error instanceof Error ? error.message : "Unknown error occurred"}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state while checking authorization
   if (isAuthorized === null) {
@@ -82,6 +116,7 @@ const AdminDashboardPage: React.FC = () => {
 
   // Redirect if not authorized
   if (isAuthorized === false) {
+    console.log("Not authorized, redirecting to home page");
     return <Navigate to="/" replace />;
   }
 

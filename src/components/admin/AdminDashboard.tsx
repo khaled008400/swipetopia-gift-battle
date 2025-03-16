@@ -10,7 +10,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats }) => {
-  console.log("AdminDashboard received stats:", stats);
+  console.log("AdminDashboard component rendering with stats:", stats);
   
   // Ensure stats is properly defined, otherwise show default values
   const safeStats: AdminStats = stats || {
