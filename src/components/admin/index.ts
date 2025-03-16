@@ -1,18 +1,22 @@
 
-import AdminLoginForm from './AdminLoginForm';
-import ContentModeration from './ContentModeration';
-import ReportedVideos from './ReportedVideos';
-import RevenueStats from './RevenueStats';
-import UsersTable from './UsersTable';
-import UserVerification from './UserVerification';
-import VirtualGifts from './VirtualGifts';
-
-export {
-  AdminLoginForm,
-  ContentModeration,
-  ReportedVideos,
-  RevenueStats,
-  UsersTable,
-  UserVerification,
-  VirtualGifts
-};
+export { default as AdminDashboard } from './AdminDashboard';
+export { default as AdminUsers } from './AdminUsers';
+export { default as AdminVideos } from './AdminVideos';
+export { default as AdminLiveStreams } from './AdminLiveStreams';
+export { default as AdminProducts } from './AdminProducts';
+export { default as AdminOrders } from './AdminOrders';
+export { default as AdminCoupons } from './AdminCoupons';
+export { default as AdminOffers } from './AdminOffers';
+export { default as AdminShipping } from './AdminShipping';
+export { default as AdminReports } from './AdminReports';
+export { default as VirtualGifts } from './VirtualGifts';
+export { default as ContentModeration } from './ContentModeration';
+export { default as ReportedVideos } from './ReportedVideos';
+export { default as UserVerification } from './UserVerification';
+export { default as RevenueStats } from './RevenueStats';
+export { default as AdminLoginForm } from './AdminLoginForm';
+export { default as UsersTable } from './UsersTable';
+export { default as AdminVirtualGifts } from './AdminVirtualGifts';
+export { default as AdminWallets } from './AdminWallets';
+export { default as TestUsersGenerator } from './TestUsersGenerator';
+export { default as AdminStreamingSettings } from './AdminStreamingSettings';

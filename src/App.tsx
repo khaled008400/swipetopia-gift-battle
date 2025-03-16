@@ -43,6 +43,7 @@ function App() {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data?.session || null);
+      console.log("Initial session check:", data?.session ? "Session found" : "No session");
     };
     
     checkSession();

@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isLoading: authLoading, isAuthenticated, isAdmin } = useAuth();
+  const { login, isLoading: authLoading, isAuthenticated, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -24,7 +24,7 @@ const LoginPage = () => {
     const from = new URLSearchParams(location.search).get('from');
     const userIsAdmin = isAdmin();
       
-    console.log("Auth check results:", { from, isAdmin: userIsAdmin, email });
+    console.log("Auth check results:", { from, isAdmin: userIsAdmin, email, user });
       
     // If user was trying to access admin pages and is admin, redirect back there
     if (from && from.startsWith('/admin') && userIsAdmin) {
@@ -41,7 +41,7 @@ const LoginPage = () => {
       console.log("Regular user detected, redirecting to home");
       navigate('/');
     }
-  }, [isAuthenticated, authLoading, navigate, location, isAdmin, email]);
+  }, [isAuthenticated, authLoading, navigate, location, isAdmin, email, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

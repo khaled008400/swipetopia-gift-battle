@@ -15,17 +15,20 @@ interface AuthCheckProps {
  * Redirects to login page if not authenticated
  */
 const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps) => {
-  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Only perform the check when loading is complete
     if (!isLoading) {
+      const userIsAdmin = isAdmin ? isAdmin() : false;
+      
       console.log("AuthCheck - Auth status:", { 
         isAuthenticated, 
         requireAdmin,
-        isAdmin: isAdmin ? isAdmin() : false
+        isAdmin: userIsAdmin,
+        user
       });
       
       // First check if user is authenticated
@@ -38,7 +41,6 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
       } 
       // If admin access is required, check if user is admin
       else if (requireAdmin) {
-        const userIsAdmin = isAdmin();
         console.log("Checking admin status:", userIsAdmin);
         
         if (!userIsAdmin) {
@@ -54,7 +56,7 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
         setIsAuthorized(true);
       }
     }
-  }, [isAuthenticated, isLoading, navigate, requireAdmin, isAdmin]);
+  }, [isAuthenticated, isLoading, navigate, requireAdmin, isAdmin, user]);
 
   // Show loading state
   if (isLoading || isAuthorized === null) {

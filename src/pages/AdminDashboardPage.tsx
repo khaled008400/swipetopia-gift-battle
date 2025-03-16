@@ -16,8 +16,6 @@ const AdminDashboardPage: React.FC = () => {
   // More detailed logging for debugging
   console.log("AdminDashboardPage - Rendering");
   console.log("AdminDashboardPage - User:", user);
-  console.log("AdminDashboardPage - Is Admin Function:", isAdmin);
-  console.log("AdminDashboardPage - Is Admin Result:", isAdmin ? isAdmin() : null);
 
   // Define mock stats for development
   const mockStats: AdminStats = {
@@ -62,7 +60,7 @@ const AdminDashboardPage: React.FC = () => {
       }
       
       try {
-        const adminCheck = isAdmin();
+        const adminCheck = isAdmin ? isAdmin() : false;
         console.log("Admin check result:", adminCheck);
         
         if (adminCheck) {
