@@ -1,9 +1,18 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AdminVideo } from '@/services/admin.service';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Check, AlertCircle, Trash } from 'lucide-react';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import VideoActions from './VideoActions';
 
 export interface VideoPreviewDialogProps {
   video: AdminVideo | null;
@@ -13,84 +22,79 @@ export interface VideoPreviewDialogProps {
   onDeleteVideo?: (videoId: string) => void;
 }
 
-const VideoPreviewDialog: React.FC<VideoPreviewDialogProps> = ({ 
-  video, 
-  open, 
+const VideoPreviewDialog: React.FC<VideoPreviewDialogProps> = ({
+  video,
+  open,
   onOpenChange,
   onStatusChange,
   onDeleteVideo
 }) => {
   if (!video) return null;
 
+  const videoUrl = video.url || video.video_url;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{video.title}</DialogTitle>
-        </DialogHeader>
-        <div className="mt-4">
-          <div className="aspect-video overflow-hidden rounded-md bg-black">
-            <video 
-              src={video.video_url || video.url} // Use video_url or url if available
-              controls
-              className="w-full h-full"
-              poster={video.thumbnail_url}
-            />
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-full overflow-hidden">
-                <img 
-                  src={video.user.avatar_url || "/placeholder-avatar.jpg"} 
-                  alt={video.user.username} 
-                  className="h-full w-full object-cover"
-                />
-              </div>
+          <DialogTitle className="text-xl">{video.title}</DialogTitle>
+          <DialogDescription>
+            <div className="flex items-center mt-1 space-x-2">
+              <span>Uploaded by</span> 
               <span className="font-medium">{video.user.username}</span>
+              <span>on</span> 
+              <span>{format(new Date(video.created_at), 'MMM d, yyyy')}</span>
             </div>
-            <p className="text-sm text-gray-600 mt-2">{video.description}</p>
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <AspectRatio ratio={16 / 9} className="bg-muted rounded-md overflow-hidden">
+            <video
+              src={videoUrl}
+              poster={video.thumbnail_url}
+              controls
+              className="h-full w-full object-cover"
+            />
+          </AspectRatio>
+          
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{video.view_count} views</Badge>
+              <Badge variant="outline">{video.likes_count} likes</Badge>
+              <Badge variant="outline">{video.comments_count} comments</Badge>
+              {video.status && (
+                <Badge 
+                  className={`
+                    ${video.status === 'active' ? 'bg-green-500' : ''}
+                    ${video.status === 'flagged' ? 'bg-yellow-500' : ''}
+                    ${video.status === 'removed' ? 'bg-red-500' : ''}
+                  `}
+                >
+                  {video.status}
+                </Badge>
+              )}
+            </div>
             
-            {onStatusChange && (
-              <div className="flex gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-green-600" 
-                  onClick={() => onStatusChange(video.id, "active")}
-                >
-                  <Check className="h-4 w-4 mr-1" /> Approve
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-amber-600" 
-                  onClick={() => onStatusChange(video.id, "flagged")}
-                >
-                  <AlertCircle className="h-4 w-4 mr-1" /> Flag
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-red-600" 
-                  onClick={() => onStatusChange(video.id, "removed")}
-                >
-                  <Trash className="h-4 w-4 mr-1" /> Remove
-                </Button>
-              </div>
-            )}
-            
-            {onDeleteVideo && (
-              <div className="mt-4">
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={() => onDeleteVideo(video.id)}
-                >
-                  <Trash className="h-4 w-4 mr-1" /> Delete Permanently
-                </Button>
-              </div>
-            )}
+            <p className="text-sm text-gray-500">
+              {video.description || 'No description provided.'}
+            </p>
           </div>
+          
+          {(onStatusChange || onDeleteVideo) && (
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-medium mb-2">Moderation Actions</h3>
+              <VideoActions 
+                video={video}
+                onStatusChange={(videoId, status) => {
+                  if (onStatusChange) onStatusChange(videoId, status);
+                }}
+                onDeleteVideo={(videoId) => {
+                  if (onDeleteVideo) onDeleteVideo(videoId);
+                }}
+              />
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

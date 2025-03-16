@@ -13,6 +13,8 @@ export interface AdminStats {
   revenueToday: number;
 }
 
+export type UserRole = 'admin' | 'user' | 'seller' | 'streamer' | 'viewer';
+
 export interface AdminUser {
   id: string;
   username: string;
@@ -23,6 +25,11 @@ export interface AdminUser {
   created_at: string;
   coins: number;
   roles?: string[];
+  // Fields used in components but not in the actual API response
+  videosCount?: number;
+  ordersCount?: number;
+  // For backward compatibility
+  createdAt?: string;
 }
 
 export interface AdminOrder {
@@ -32,6 +39,16 @@ export interface AdminOrder {
   total_amount: number;
   created_at: string;
   updated_at: string;
+  // For compatibility with components
+  total?: number;
+  createdAt?: string;
+  products?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image_url?: string;
+  }>;
   user?: {
     username: string;
     email: string;
@@ -59,6 +76,9 @@ export interface AdminProduct {
   updated_at: string;
   is_featured: boolean;
   suction_score?: number;
+  // For compatibility with components
+  image?: string;
+  inventory?: number;
 }
 
 export interface AdminVideo {
@@ -73,10 +93,12 @@ export interface AdminVideo {
   comments_count: number;
   created_at: string;
   status?: 'active' | 'under_review' | 'flagged' | 'removed';
-  user?: {
+  url?: string; // For compatibility
+  user: {
     username: string;
     email: string;
     avatar_url?: string;
+    id?: string; // Added for compatibility
   };
 }
 
@@ -88,7 +110,17 @@ export interface AdminCoupon {
   max_uses: number;
   current_uses: number;
   created_at: string;
+  updated_at?: string;
   status: 'active' | 'expired' | 'disabled';
+  // For compatibility with components
+  type?: 'percentage' | 'fixed' | 'special';
+  value?: number;
+  minimum_purchase?: number;
+  usage_limit?: number;
+  is_active?: boolean;
+  applicable_products?: string[];
+  applicable_categories?: string[];
+  usage_count?: number;
 }
 
 export interface AdminOffer {
@@ -99,7 +131,16 @@ export interface AdminOffer {
   end_date: string;
   product_id: string;
   created_at: string;
+  updated_at?: string;
   product?: AdminProduct;
+  // For compatibility with components
+  name?: string;
+  description?: string;
+  discount_type?: 'percentage' | 'fixed' | 'special';
+  discount_value?: number;
+  min_purchase_amount?: number;
+  product_category?: string;
+  active?: boolean;
 }
 
 export interface AdminShippingMethod {
@@ -109,6 +150,10 @@ export interface AdminShippingMethod {
   delivery_time: string;
   is_default: boolean;
   created_at: string;
+  // For compatibility with components
+  description?: string;
+  estimated_days?: string;
+  is_active?: boolean;
 }
 
 export interface LiveStream {
@@ -119,6 +164,21 @@ export interface LiveStream {
   viewer_count: number;
   username: string;
   avatar_url?: string;
+  // For compatibility with components
+  user?: {
+    username: string;
+    id: string;
+    avatar_url?: string;
+  };
+  durationMinutes?: number;
+  currentViewers?: number;
+  giftsReceived?: number;
+  topGiftName?: string;
+  revenue?: number;
+  endedAt?: string;
+  peakViewers?: number;
+  scheduledFor?: string;
+  plannedDurationMinutes?: number;
 }
 
 export interface VirtualGift {
@@ -134,6 +194,13 @@ export interface VirtualGift {
   created_at: string;
   category?: string;
   has_sound?: boolean;
+  // For compatibility with components
+  description?: string;
+  imageUrl?: string; // Alias for image_url
+  imageType?: string;
+  hasSound?: boolean; // Alias for has_sound
+  soundUrl?: string;
+  createdAt?: string; // Alias for created_at
 }
 
 export interface ProductAttribute {
@@ -141,6 +208,9 @@ export interface ProductAttribute {
   name: string;
   values: string[];
   created_at: string;
+  // For compatibility with components
+  color?: string;
+  status?: string;
 }
 
 // Mock data for development mode
@@ -182,17 +252,21 @@ const AdminService = {
       console.error('Error fetching users:', error);
       // Return mock users in development
       if (import.meta.env.DEV) {
+        const mockUsers = Array(10).fill(null).map((_, i) => ({
+          id: `user-${i + 1}`,
+          username: `user${i + 1}`,
+          email: `user${i + 1}@example.com`,
+          avatar_url: `https://i.pravatar.cc/150?u=user${i + 1}`,
+          role: i % 5 === 0 ? 'admin' : 'user',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          coins: Math.floor(Math.random() * 1000),
+          videosCount: Math.floor(Math.random() * 50),
+          ordersCount: Math.floor(Math.random() * 20)
+        }));
+        
         return {
-          data: Array(10).fill(null).map((_, i) => ({
-            id: `user-${i + 1}`,
-            username: `user${i + 1}`,
-            email: `user${i + 1}@example.com`,
-            avatar_url: `https://i.pravatar.cc/150?u=user${i + 1}`,
-            role: i % 5 === 0 ? 'admin' : 'user',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            coins: Math.floor(Math.random() * 1000)
-          })),
+          data: mockUsers,
           meta: { total: 120, page, per_page }
         };
       }
@@ -215,7 +289,9 @@ const AdminService = {
           role: 'user',
           status: 'active',
           created_at: new Date().toISOString(),
-          coins: 500
+          coins: 500,
+          videosCount: 25,
+          ordersCount: 10
         };
       }
       throw error;
@@ -230,17 +306,29 @@ const AdminService = {
     } catch (error) {
       console.error('Error fetching orders:', error);
       if (import.meta.env.DEV) {
+        const mockOrders = Array(10).fill(null).map((_, i) => ({
+          id: `order-${i + 1}`,
+          user_id: `user-${i + 1}`,
+          status: ['pending', 'completed', 'cancelled'][i % 3],
+          total_amount: Math.floor(Math.random() * 300) + 20,
+          created_at: new Date(Date.now() - i * 86400000).toISOString(),
+          updated_at: new Date(Date.now() - i * 86400000).toISOString(),
+          // Alias for components
+          total: Math.floor(Math.random() * 300) + 20,
+          createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+          user: { username: `user${i + 1}`, email: `user${i + 1}@example.com` },
+          products: Array(Math.floor(Math.random() * 3) + 1).fill(null).map((_, j) => ({
+            id: `product-${j + 1}`,
+            name: `Test Product ${j + 1}`,
+            price: Math.floor(Math.random() * 100) + 10,
+            quantity: Math.floor(Math.random() * 3) + 1,
+            image_url: 'https://example.com/product.jpg'
+          }))
+        }));
+        
         return {
-          data: Array(10).fill(null).map((_, i) => ({
-            id: `order-${i + 1}`,
-            user_id: `user-${i + 1}`,
-            status: ['pending', 'completed', 'cancelled'][i % 3],
-            total_amount: Math.floor(Math.random() * 300) + 20,
-            created_at: new Date(Date.now() - i * 86400000).toISOString(),
-            updated_at: new Date(Date.now() - i * 86400000).toISOString(),
-            user: { username: `user${i + 1}`, email: `user${i + 1}@example.com` }
-          })),
-          meta: { total: 200, page }
+          data: mockOrders,
+          pagination: { total: 200, page, last_page: 20, current_page: page }
         };
       }
       throw error;
@@ -273,6 +361,19 @@ const AdminService = {
     }
   },
   
+  async updateUserRole(userId: string, role: UserRole) {
+    try {
+      const response = await adminApi.patch(`/users/${userId}/role`, { role });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating user ${userId} role:`, error);
+      if (import.meta.env.DEV) {
+        return { success: true };
+      }
+      throw error;
+    }
+  },
+  
   async getVideosList(page = 1, filters = {}) {
     try {
       const response = await adminApi.get('/videos', { 
@@ -282,25 +383,29 @@ const AdminService = {
     } catch (error) {
       console.error('Error fetching videos:', error);
       if (import.meta.env.DEV) {
+        const mockVideos = Array(10).fill(null).map((_, i) => ({
+          id: `video-${i + 1}`,
+          title: `Test Video ${i + 1}`,
+          description: `Description for test video ${i + 1}`,
+          user_id: `user-${i % 5 + 1}`,
+          video_url: 'https://example.com/video.mp4',
+          thumbnail_url: 'https://example.com/thumbnail.jpg',
+          view_count: Math.floor(Math.random() * 10000),
+          likes_count: Math.floor(Math.random() * 1000),
+          comments_count: Math.floor(Math.random() * 100),
+          created_at: new Date(Date.now() - i * 86400000).toISOString(),
+          status: 'active',
+          url: 'https://example.com/video.mp4', // Alias for components
+          user: {
+            id: `user-${i % 5 + 1}`,
+            username: `user${i % 5 + 1}`,
+            email: `user${i % 5 + 1}@example.com`,
+            avatar_url: `https://i.pravatar.cc/150?u=user${i % 5 + 1}`
+          }
+        }));
+        
         return {
-          data: Array(10).fill(null).map((_, i) => ({
-            id: `video-${i + 1}`,
-            title: `Test Video ${i + 1}`,
-            description: `Description for test video ${i + 1}`,
-            user_id: `user-${i % 5 + 1}`,
-            video_url: 'https://example.com/video.mp4',
-            thumbnail_url: 'https://example.com/thumbnail.jpg',
-            view_count: Math.floor(Math.random() * 10000),
-            likes_count: Math.floor(Math.random() * 1000),
-            comments_count: Math.floor(Math.random() * 100),
-            created_at: new Date(Date.now() - i * 86400000).toISOString(),
-            status: 'active',
-            user: {
-              username: `user${i % 5 + 1}`,
-              email: `user${i % 5 + 1}@example.com`,
-              avatar_url: `https://i.pravatar.cc/150?u=user${i % 5 + 1}`
-            }
-          })),
+          data: mockVideos,
           meta: { total: 150, page }
         };
       }
@@ -380,7 +485,14 @@ const AdminService = {
           available: true,
           created_at: new Date().toISOString(),
           category: ['love', 'luxury', 'fun', 'support', 'special'][i % 5],
-          has_sound: i % 2 === 0
+          has_sound: i % 2 === 0,
+          // For compatibility with components
+          description: `Description for Gift ${i + 1}`,
+          imageUrl: i % 2 === 0 ? 'https://example.com/gift.png' : null,
+          imageType: i % 3 === 0 ? 'animated' : 'static',
+          hasSound: i % 2 === 0,
+          soundUrl: i % 2 === 0 ? 'https://example.com/sound.mp3' : null,
+          createdAt: new Date().toISOString()
         }));
       }
       throw error;
@@ -485,7 +597,17 @@ const AdminService = {
           max_uses: (i + 1) * 50,
           current_uses: Math.floor(Math.random() * (i + 1) * 25),
           created_at: new Date(Date.now() - i * 86400000 * 10).toISOString(),
-          status: ['active', 'active', 'expired', 'disabled'][i % 4]
+          updated_at: new Date(Date.now() - i * 86400000 * 5).toISOString(),
+          status: ['active', 'active', 'expired', 'disabled'][i % 4],
+          // For compatibility with components
+          type: ['percentage', 'fixed', 'special'][i % 3],
+          value: Math.floor(Math.random() * 50) + 5,
+          minimum_purchase: i % 2 === 0 ? 20 : 0,
+          usage_limit: (i + 1) * 50,
+          usage_count: Math.floor(Math.random() * (i + 1) * 25),
+          is_active: i % 4 !== 3, // active if not disabled
+          applicable_products: i % 3 === 0 ? ['product-1', 'product-2'] : [],
+          applicable_categories: i % 4 === 0 ? ['category-1', 'category-2'] : []
         }));
       }
       throw error;
@@ -515,7 +637,7 @@ const AdminService = {
     }
   },
   
-  async createCoupon(coupon: Omit<AdminCoupon, 'id' | 'created_at' | 'current_uses'>) {
+  async createCoupon(coupon: Omit<AdminCoupon, 'id' | 'created_at' | 'updated_at' | 'usage_count'>) {
     try {
       const response = await adminApi.post('/coupons', coupon);
       return response.data;
@@ -526,7 +648,9 @@ const AdminService = {
           ...coupon,
           id: `coupon-${Math.floor(Math.random() * 1000)}`,
           created_at: new Date().toISOString(),
-          current_uses: 0
+          updated_at: new Date().toISOString(),
+          current_uses: 0,
+          usage_count: 0
         };
       }
       throw error;
@@ -540,7 +664,11 @@ const AdminService = {
     } catch (error) {
       console.error(`Error updating coupon ${id}:`, error);
       if (import.meta.env.DEV) {
-        return { ...coupon, id };
+        return { 
+          ...coupon, 
+          id,
+          updated_at: new Date().toISOString()
+        };
       }
       throw error;
     }
@@ -573,7 +701,11 @@ const AdminService = {
           price: [5.99, 9.99, 14.99, 3.99, 19.99][i],
           delivery_time: ['3-5 days', '2-3 days', '1 day', '5-7 days', '7-14 days'][i],
           is_default: i === 0,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          // For compatibility with components
+          description: [`Regular shipping with tracking`, `Faster delivery within 2-3 days`, `Next business day delivery`, `Budget-friendly option`, `International shipping with tracking`][i],
+          estimated_days: ['3-5', '2-3', '1', '5-7', '7-14'][i],
+          is_active: true
         }));
       }
       throw error;
@@ -641,7 +773,10 @@ const AdminService = {
             ['Casual', 'Formal', 'Sport', 'Vintage', 'Modern'],
             ['Light', 'Medium', 'Heavy']
           ][i],
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          // For compatibility with components
+          color: ['#f87171', '#60a5fa', '#4ade80', '#000000', '#f3f4f6'][i],
+          status: 'active'
         }));
       }
       throw error;
@@ -712,7 +847,15 @@ const AdminService = {
             name: `Product ${i + 1}`,
             price: Math.floor(Math.random() * 100) + 20,
             image_url: 'https://example.com/product.jpg'
-          }
+          },
+          // For compatibility with components
+          name: `Special Offer ${i + 1}`,
+          description: `Limited time offer for Product ${i + 1}`,
+          discount_type: ['percentage', 'fixed', 'special'][i % 3],
+          discount_value: Math.floor(Math.random() * 40) + 10,
+          min_purchase_amount: i % 2 === 0 ? 50 : 0,
+          product_category: ['clothing', 'electronics', 'home', 'beauty', 'toys', 'sports'][i % 6],
+          active: i < 4 // First 4 are active
         }));
       }
       throw error;
@@ -742,7 +885,7 @@ const AdminService = {
     }
   },
   
-  async createOffer(offer: Omit<AdminOffer, 'id' | 'created_at'>) {
+  async createOffer(offer: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>) {
     try {
       const response = await adminApi.post('/offers', offer);
       return response.data;
@@ -752,7 +895,8 @@ const AdminService = {
         return {
           ...offer,
           id: `offer-${Math.floor(Math.random() * 1000)}`,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
       }
       throw error;
@@ -766,7 +910,11 @@ const AdminService = {
     } catch (error) {
       console.error(`Error updating offer ${id}:`, error);
       if (import.meta.env.DEV) {
-        return { ...offer, id };
+        return { 
+          ...offer, 
+          id,
+          updated_at: new Date().toISOString()
+        };
       }
       throw error;
     }
@@ -800,16 +948,31 @@ const AdminService = {
           started_at: new Date(Date.now() - i * 1800000).toISOString(),
           viewer_count: Math.floor(Math.random() * 500),
           username: `streamer${i + 1}`,
-          avatar_url: `https://i.pravatar.cc/150?u=streamer${i + 1}`
+          avatar_url: `https://i.pravatar.cc/150?u=streamer${i + 1}`,
+          // For compatibility with components
+          user: {
+            id: `user-${i + 1}`,
+            username: `streamer${i + 1}`,
+            avatar_url: `https://i.pravatar.cc/150?u=streamer${i + 1}`
+          },
+          durationMinutes: Math.floor(Math.random() * 60) + 15,
+          currentViewers: Math.floor(Math.random() * 500),
+          giftsReceived: Math.floor(Math.random() * 100),
+          topGiftName: ['Diamond', 'Heart', 'Star'][i % 3],
+          revenue: Math.floor(Math.random() * 1000),
+          endedAt: i % 2 === 0 ? new Date(Date.now() - i * 900000).toISOString() : null,
+          peakViewers: Math.floor(Math.random() * 800),
+          scheduledFor: i >= 3 ? new Date(Date.now() + i * 3600000).toISOString() : null,
+          plannedDurationMinutes: Math.floor(Math.random() * 90) + 30
         }));
       }
       throw error;
     }
   },
   
-  async shutdownStream(streamId: string) {
+  async shutdownStream(streamId: string, reason: string) {
     try {
-      const response = await adminApi.post(`/live-streams/${streamId}/shutdown`);
+      const response = await adminApi.post(`/live-streams/${streamId}/shutdown`, { reason });
       return response.data;
     } catch (error) {
       console.error(`Error shutting down stream ${streamId}:`, error);
@@ -915,7 +1078,36 @@ const AdminService = {
       }
       throw error;
     }
+  },
+  
+  async getProductSalesData(productId: string) {
+    try {
+      const response = await adminApi.get(`/reports/product-sales/${productId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching product sales data for ${productId}:`, error);
+      if (import.meta.env.DEV) {
+        return {
+          product: {
+            id: productId,
+            name: 'Sample Product',
+            price: 49.99,
+            category: 'Electronics'
+          },
+          totalSales: 345,
+          totalRevenue: 17246.55,
+          avgRating: 4.3,
+          monthlySales: Array(12).fill(null).map((_, i) => ({
+            month: new Date(Date.now() - (11 - i) * 30 * 86400000).toLocaleString('default', { month: 'short' }),
+            sales: Math.floor(Math.random() * 50) + 10,
+            revenue: (Math.floor(Math.random() * 50) + 10) * 49.99
+          }))
+        };
+      }
+      throw error;
+    }
   }
 };
 
+export type { Product, LimitedOffer, LiveSeller } from './shop.service';
 export default AdminService;

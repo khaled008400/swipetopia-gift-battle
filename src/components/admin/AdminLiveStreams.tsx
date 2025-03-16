@@ -1,188 +1,169 @@
 
 import React, { useState } from 'react';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Card, CardContent, CardDescription, 
-  CardHeader, CardTitle 
-} from "@/components/ui/card";
-import { 
-  Dialog, DialogContent, DialogDescription, 
-  DialogHeader, DialogTitle, DialogFooter 
-} from "@/components/ui/dialog";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger, DropdownMenuSeparator 
-} from '@/components/ui/dropdown-menu';
-import { 
-  Tabs, TabsContent, TabsList, TabsTrigger 
-} from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService, { LiveStream } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { 
-  Loader2, MoreHorizontal, Search, Video, VideoOff, 
-  User, Gift, Timer, TrendingUp, MessageSquare, ShieldX 
+  Card, CardContent, CardDescription, 
+  CardHeader, CardTitle 
+} from '@/components/ui/card';
+import { 
+  Tabs, TabsContent, TabsList, TabsTrigger 
+} from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { 
+  MessageSquare, XCircle, Loader2, VideoOff, Eye, 
+  Calendar, AlarmCheck, User, Clock, Users, GiftIcon, DollarSign
 } from 'lucide-react';
 
-const AdminLiveStreams = () => {
-  const [selectedStream, setSelectedStream] = useState<LiveStream | null>(null);
+const AdminLiveStreams: React.FC = () => {
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
+  const [selectedStream, setSelectedStream] = useState<LiveStream | null>(null);
+  const [message, setMessage] = useState('');
   const [shutdownReason, setShutdownReason] = useState('');
-  const [activeTab, setActiveTab] = useState('current');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('live');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Fetch current live streams
-  const { data: liveStreams, isLoading } = useQuery({
-    queryKey: ['adminLiveStreams', activeTab, searchQuery],
-    queryFn: () => AdminService.getLiveStreams(activeTab, searchQuery),
-    refetchInterval: 10000, // Poll every 10 seconds for live data
+  
+  // Fetch live streams
+  const { data: streams, isLoading } = useQuery({
+    queryKey: ['adminLiveStreams'],
+    queryFn: () => AdminService.getLiveStreams(),
   });
-
+  
   // Shutdown stream mutation
-  const shutdownStreamMutation = useMutation({
-    mutationFn: ({ streamId, reason }: { streamId: string, reason: string }) => 
-      AdminService.shutdownStream(streamId, reason),
+  const shutdownMutation = useMutation({
+    mutationFn: (data: { streamId: string, reason: string }) => 
+      AdminService.shutdownStream(data.streamId, data.reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminLiveStreams'] });
       toast({
-        title: "Stream shutdown",
-        description: "Live stream has been shut down successfully.",
+        title: "Stream stopped",
+        description: "The live stream has been shut down successfully.",
       });
       setShutdownDialogOpen(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to shut down the stream.",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
     },
   });
 
-  // Send message to streamer mutation
+  // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: ({ streamId, message }: { streamId: string, message: string }) => 
-      AdminService.sendStreamMessage(streamId, message),
+    mutationFn: (data: { streamId: string, message: string }) => 
+      AdminService.sendStreamMessage(data.streamId, data.message),
     onSuccess: () => {
       toast({
         title: "Message sent",
-        description: "Message has been sent to the streamer.",
+        description: "Your message has been sent to the stream.",
       });
+      setMessageDialogOpen(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to send message.",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
     },
   });
 
-  const handleShutdownStream = () => {
-    if (selectedStream && shutdownReason.trim() !== '') {
-      shutdownStreamMutation.mutate({ 
-        streamId: selectedStream.id, 
-        reason: shutdownReason 
+  const handleOpenMessageDialog = (stream: LiveStream) => {
+    setSelectedStream(stream);
+    setMessage('');
+    setMessageDialogOpen(true);
+  };
+
+  const handleOpenShutdownDialog = (stream: LiveStream) => {
+    setSelectedStream(stream);
+    setShutdownReason('');
+    setShutdownDialogOpen(true);
+  };
+
+  const handleSendMessage = () => {
+    if (selectedStream && message.trim()) {
+      sendMessageMutation.mutate({
+        streamId: selectedStream.id,
+        message: message.trim()
       });
     }
   };
 
-  const handleSendMessage = (streamId: string, message: string) => {
-    if (message.trim() !== '') {
-      sendMessageMutation.mutate({ streamId, message });
+  const handleShutdownStream = () => {
+    if (selectedStream && shutdownReason.trim()) {
+      shutdownMutation.mutate({
+        streamId: selectedStream.id,
+        reason: shutdownReason.trim()
+      });
     }
   };
 
-  const formatDuration = (durationMinutes: number) => {
-    const hours = Math.floor(durationMinutes / 60);
-    const minutes = durationMinutes % 60;
-    return `${hours}h ${minutes}m`;
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is already handled by the state change and query refetch
-  };
+  const liveStreams = streams?.filter(stream => !stream.endedAt && !stream.scheduledFor) || [];
+  const endedStreams = streams?.filter(stream => stream.endedAt) || [];
+  const scheduledStreams = streams?.filter(stream => stream.scheduledFor) || [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Live Streaming Management</h2>
-        <div className="flex space-x-2">
-          <form onSubmit={handleSearch} className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search streamers..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
+        <h2 className="text-2xl font-bold">Live Streams</h2>
+        <div>
+          <Input 
+            placeholder="Search streams..." 
+            className="max-w-xs" 
+          />
         </div>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="current">Current Streams</TabsTrigger>
-          <TabsTrigger value="ended">Ended Streams</TabsTrigger>
-          <TabsTrigger value="scheduled">Scheduled Streams</TabsTrigger>
+          <TabsTrigger value="live">
+            Live Now 
+            {liveStreams.length > 0 && <Badge className="ml-2 bg-red-500">{liveStreams.length}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="ended">Recent Streams</TabsTrigger>
+          <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="current" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Active Streams</CardTitle>
-                <CardDescription>Total live streams right now</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : liveStreams?.stats.activeCount || 0}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Total Viewers</CardTitle>
-                <CardDescription>Viewers across all streams</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : liveStreams?.stats.totalViewers || 0}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Gift Revenue</CardTitle>
-                <CardDescription>Today's earnings from gifts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `$${liveStreams?.stats.totalGiftRevenue.toFixed(2) || '0.00'}`}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
+        
+        <TabsContent value="live" className="space-y-4">
+          {liveStreams.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Stream</TableHead>
                   <TableHead>Streamer</TableHead>
-                  <TableHead>Title</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Viewers</TableHead>
                   <TableHead>Gifts</TableHead>
@@ -191,215 +172,270 @@ const AdminLiveStreams = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {liveStreams?.data.map((stream: LiveStream) => (
+                {liveStreams.map((stream) => (
                   <TableRow key={stream.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-red-500">LIVE</Badge>
-                        {stream.user.username}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{stream.title}</TableCell>
-                    <TableCell>{formatDuration(stream.durationMinutes)}</TableCell>
-                    <TableCell>{stream.currentViewers}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col">
-                        <span>{stream.giftsReceived} gifts</span>
-                        <span className="text-xs text-muted-foreground">Top: {stream.topGiftName}</span>
+                      <div className="font-medium">{stream.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Started {format(new Date(stream.started_at), 'MMM d, h:mm a')}
                       </div>
                     </TableCell>
-                    <TableCell>${stream.revenue.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <div className="h-8 w-8 rounded-full overflow-hidden">
+                          <img 
+                            src={stream.user?.avatar_url || stream.avatar_url || "/placeholder-avatar.jpg"} 
+                            alt={stream.user?.username || stream.username} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <span>{stream.user?.username || stream.username}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{stream.durationMinutes || Math.floor((Date.now() - new Date(stream.started_at).getTime()) / 60000)} mins</TableCell>
+                    <TableCell>{stream.currentViewers || stream.viewer_count}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <GiftIcon className="h-4 w-4 mr-1 text-pink-500" />
+                        {stream.giftsReceived || 0}
+                        {stream.topGiftName && <span className="text-xs ml-1">Top: {stream.topGiftName}</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell>${stream.revenue || 0}</TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
                         <Button 
                           variant="outline" 
-                          size="sm" 
-                          onClick={() => {
-                            setSelectedStream(stream);
-                            setShutdownDialogOpen(true);
-                          }}
-                          className="text-red-600"
+                          size="sm"
+                          onClick={() => handleOpenMessageDialog(stream)}
                         >
-                          <VideoOff className="mr-1 h-4 w-4" />
-                          Shutdown
+                          <MessageSquare className="h-4 w-4" />
                         </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleSendMessage(stream.id, "Please follow community guidelines")}
-                            >
-                              <MessageSquare className="mr-2 h-4 w-4" />
-                              Send Warning
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedStream(stream);
-                                setShutdownDialogOpen(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <ShieldX className="mr-2 h-4 w-4" />
-                              Ban User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-red-600"
+                          onClick={() => handleOpenShutdownDialog(stream)}
+                        >
+                          <VideoOff className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
-                {liveStreams?.data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      No active streams at the moment
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center h-64">
+                <p className="text-lg font-medium">No Live Streams Right Now</p>
+                <p className="text-muted-foreground">There are currently no active streams.</p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
-
+        
         <TabsContent value="ended" className="space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
+          {endedStreams.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Stream</TableHead>
                   <TableHead>Streamer</TableHead>
-                  <TableHead>Title</TableHead>
                   <TableHead>Duration</TableHead>
-                  <TableHead>Ended At</TableHead>
+                  <TableHead>End Time</TableHead>
                   <TableHead>Peak Viewers</TableHead>
                   <TableHead>Gifts</TableHead>
                   <TableHead>Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {liveStreams?.data.map((stream: LiveStream) => (
+                {endedStreams.map((stream) => (
                   <TableRow key={stream.id}>
-                    <TableCell className="font-medium">{stream.user.username}</TableCell>
-                    <TableCell className="max-w-xs truncate">{stream.title}</TableCell>
-                    <TableCell>{formatDuration(stream.durationMinutes)}</TableCell>
-                    <TableCell>{new Date(stream.endedAt).toLocaleString()}</TableCell>
-                    <TableCell>{stream.peakViewers}</TableCell>
-                    <TableCell>{stream.giftsReceived}</TableCell>
-                    <TableCell>${stream.revenue.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{stream.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Started {format(new Date(stream.started_at), 'MMM d, h:mm a')}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <div className="h-8 w-8 rounded-full overflow-hidden">
+                          <img 
+                            src={stream.user?.avatar_url || stream.avatar_url || "/placeholder-avatar.jpg"} 
+                            alt={stream.user?.username || stream.username} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <span>{stream.user?.username || stream.username}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{stream.durationMinutes || "N/A"} mins</TableCell>
+                    <TableCell>{stream.endedAt ? format(new Date(stream.endedAt), 'MMM d, h:mm a') : "N/A"}</TableCell>
+                    <TableCell>{stream.peakViewers || stream.viewer_count}</TableCell>
+                    <TableCell>{stream.giftsReceived || 0}</TableCell>
+                    <TableCell>${stream.revenue || 0}</TableCell>
                   </TableRow>
                 ))}
-                {liveStreams?.data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      No ended streams found
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center h-64">
+                <p className="text-lg font-medium">No Recent Streams</p>
+                <p className="text-muted-foreground">There are no ended streams in the record.</p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
-
+        
         <TabsContent value="scheduled" className="space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
+          {scheduledStreams.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Stream</TableHead>
                   <TableHead>Streamer</TableHead>
-                  <TableHead>Title</TableHead>
                   <TableHead>Scheduled For</TableHead>
-                  <TableHead>Expected Duration</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Planned Duration</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {liveStreams?.data.map((stream: LiveStream) => (
+                {scheduledStreams.map((stream) => (
                   <TableRow key={stream.id}>
-                    <TableCell className="font-medium">{stream.user.username}</TableCell>
-                    <TableCell className="max-w-xs truncate">{stream.title}</TableCell>
-                    <TableCell>{new Date(stream.scheduledFor).toLocaleString()}</TableCell>
-                    <TableCell>{formatDuration(stream.plannedDurationMinutes)}</TableCell>
                     <TableCell>
-                      <Badge className="bg-yellow-500">Scheduled</Badge>
+                      <div className="font-medium">{stream.title}</div>
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleSendMessage(stream.id, "Your scheduled stream has been reviewed and approved.")}
-                      >
-                        <MessageSquare className="mr-1 h-4 w-4" />
-                        Message
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <div className="h-8 w-8 rounded-full overflow-hidden">
+                          <img 
+                            src={stream.user?.avatar_url || stream.avatar_url || "/placeholder-avatar.jpg"} 
+                            alt={stream.user?.username || stream.username} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <span>{stream.user?.username || stream.username}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{stream.scheduledFor ? format(new Date(stream.scheduledFor), 'MMM d, h:mm a') : "N/A"}</TableCell>
+                    <TableCell>{stream.plannedDurationMinutes || "N/A"} mins</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button variant="outline" size="sm">
+                          <Calendar className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <User className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
-                {liveStreams?.data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      No scheduled streams found
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center h-64">
+                <p className="text-lg font-medium">No Scheduled Streams</p>
+                <p className="text-muted-foreground">There are no upcoming scheduled streams.</p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Shutdown Stream Dialog */}
-      <Dialog open={shutdownDialogOpen} onOpenChange={setShutdownDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      
+      {/* Send Message Dialog */}
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-red-600">Shutdown Live Stream</DialogTitle>
+            <DialogTitle>Send Message to Stream</DialogTitle>
             <DialogDescription>
-              {selectedStream && (
-                <span>
-                  You are about to shutdown the live stream by <strong>{selectedStream.user.username}</strong>.
-                  This will immediately end their broadcast.
-                </span>
-              )}
+              This message will be displayed to the streamer and all viewers.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="shutdown-reason" className="text-sm font-medium">
-                Reason for shutdown <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="shutdown-reason"
-                placeholder="Violation of community guidelines..."
-                value={shutdownReason}
-                onChange={(e) => setShutdownReason(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                This reason will be sent to the streamer and logged in the system.
-              </p>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">Stream:</span>
+              <span>{selectedStream?.title}</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">Streamer:</span>
+              <span>{selectedStream?.user?.username || selectedStream?.username}</span>
+            </div>
+            <Textarea
+              placeholder="Enter your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShutdownDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setMessageDialogOpen(false)}>Cancel</Button>
             <Button 
-              variant="destructive" 
-              onClick={handleShutdownStream}
-              disabled={!shutdownReason.trim() || shutdownStreamMutation.isPending}
+              onClick={handleSendMessage} 
+              disabled={!message.trim() || sendMessageMutation.isPending}
             >
-              {shutdownStreamMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Shutdown Stream
+              {sendMessageMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send Message'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Shutdown Stream Dialog */}
+      <Dialog open={shutdownDialogOpen} onOpenChange={setShutdownDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Shut Down Stream</DialogTitle>
+            <DialogDescription>
+              This will immediately end the live stream. Please provide a reason.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">Stream:</span>
+              <span>{selectedStream?.title}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">Streamer:</span>
+              <span>{selectedStream?.user?.username || selectedStream?.username}</span>
+            </div>
+            <Textarea
+              placeholder="Reason for shutting down the stream..."
+              value={shutdownReason}
+              onChange={(e) => setShutdownReason(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShutdownDialogOpen(false)}>Cancel</Button>
+            <Button 
+              variant="destructive"
+              onClick={handleShutdownStream}
+              disabled={!shutdownReason.trim() || shutdownMutation.isPending}
+            >
+              {shutdownMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Stopping Stream...
+                </>
+              ) : (
+                <>
+                  <VideoOff className="mr-2 h-4 w-4" />
+                  Shut Down Stream
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

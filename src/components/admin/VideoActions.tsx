@@ -51,7 +51,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({
 
   const handleSendWarning = () => {
     if (onSendWarning && warningMessage.trim()) {
-      onSendWarning(video.id, video.user.id, warningMessage);
+      onSendWarning(video.id, video.user.id || video.user_id, warningMessage);
       setWarningMessage("");
       setDialogOpen(false);
     }
@@ -59,7 +59,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({
 
   const handleRestrictUser = () => {
     if (onRestrictUser && restrictionReason.trim()) {
-      onRestrictUser(video.user.id, restrictionReason);
+      onRestrictUser(video.user.id || video.user_id, restrictionReason);
       setRestrictionReason("");
       setRestrictDialogOpen(false);
     }
@@ -151,7 +151,7 @@ const VideoActions: React.FC<VideoActionsProps> = ({
       {onViewUserProfile && (
         <Button
           variant="outline"
-          onClick={() => onViewUserProfile(video.user.id)}
+          onClick={() => onViewUserProfile(video.user.id || video.user_id)}
           className="text-blue-600"
         >
           <User className="mr-2 h-4 w-4" />

@@ -25,7 +25,7 @@ const VideoTable: React.FC<VideoTableProps> = ({
   onWarnUser,
   onRestrictUser
 }) => {
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'active':
         return <Badge className="bg-green-500">Active</Badge>;
@@ -34,7 +34,7 @@ const VideoTable: React.FC<VideoTableProps> = ({
       case 'removed':
         return <Badge variant="destructive">Removed</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge>{status || 'Unknown'}</Badge>;
     }
   };
 
@@ -113,11 +113,11 @@ const VideoTable: React.FC<VideoTableProps> = ({
                         <Flag className="mr-2 h-4 w-4" />
                         Flag Video
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onWarnUser(video.user_id, video.id)}>
+                      <DropdownMenuItem onClick={() => onWarnUser(video.user_id || video.user.id || "", video.id)}>
                         <UserX className="mr-2 h-4 w-4" />
                         Warn Creator
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onRestrictUser(video.user_id)}>
+                      <DropdownMenuItem onClick={() => onRestrictUser(video.user_id || video.user.id || "")}>
                         <Ban className="mr-2 h-4 w-4" />
                         Restrict Creator
                       </DropdownMenuItem>
