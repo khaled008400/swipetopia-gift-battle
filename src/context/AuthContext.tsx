@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -187,6 +186,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           localStorage.setItem('user', JSON.stringify(mockUser));
           return { user: mockUser };
         } 
+        // Mock login for seller@example.com / seller123 (seller role)
+        else if (email === 'seller@example.com' && password === 'seller123') {
+          console.log("Using seller mock login");
+          // Create mock user with seller role
+          const mockUser: UserProfile = {
+            id: 'seller-user-789',
+            email: email,
+            username: 'seller',
+            roles: ['seller'] as UserRole[],
+            role: 'seller',
+            shop_name: 'Amazing Products'
+          };
+          
+          setUser(mockUser);
+          setIsAuthenticated(true);
+          localStorage.setItem('user', JSON.stringify(mockUser));
+          return { user: mockUser };
+        }
         // Mock login for admin@example.com (admin role)
         else if (email === 'admin@example.com') {
           console.log("Using admin mock login");
@@ -351,12 +368,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   };
 
   const hasRole = (role: UserRole | string) => {
+    console.log("Checking if user has role:", role, "User:", user);
+    
     if (!user) return false;
     
-    if (typeof role === 'string') {
-      return user.roles?.includes(role as any) || user.role === role;
+    // Check user object first
+    if (user.roles?.includes(role as any) || user.role === role) {
+      return true;
     }
-    return user.roles?.includes(role) || user.role === role;
+    
+    // Fallback to localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && 
+            ((parsedUser.roles && parsedUser.roles.includes(role)) || 
+             parsedUser.role === role)) {
+          return true;
+        }
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+      }
+    }
+    
+    // Check session metadata
+    if (session?.user?.user_metadata) {
+      const metadata = session.user.user_metadata;
+      if (metadata.role === role ||
+          (metadata.roles && metadata.roles.includes(role))) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   const requiresAuth = (action: () => void, redirectUrl?: string) => {

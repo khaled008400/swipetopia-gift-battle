@@ -1,16 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ShoppingBag, ChevronRight, BarChart3, 
-  Calendar, MessageSquare, RefreshCcw, 
-  Star, Wallet, Settings, Store, ShieldAlert
-} from "lucide-react";
+import { ShoppingBag, BarChart3, MessageSquare, RefreshCcw, Star, Wallet, Store } from "lucide-react";
 import ProductListings from "@/components/seller/ProductListings";
 import SalesAnalytics from "@/components/seller/SalesAnalytics";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import SellerMessages from "@/components/seller/SellerMessages";
 import RefundManager from "@/components/seller/RefundManager";
@@ -20,12 +14,12 @@ import ShopProfileEditor from "@/components/seller/ShopProfileEditor";
 import AuthCheck from "@/components/auth/AuthCheck";
 
 const SellerDashboardPage = () => {
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("products");
   
   return (
-    <AuthCheck>
+    <AuthCheck requireSeller>
       <div className="flex flex-col min-h-[calc(100vh-64px)] bg-app-black p-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Seller Dashboard</h1>

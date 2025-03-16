@@ -48,6 +48,19 @@ const OWNER_USER: User = {
   roles: ["admin", "owner"] // Owner has additional privileges
 };
 
+// Dedicated seller account
+const SELLER_USER: User = {
+  id: "seller-user-789",
+  username: "seller",
+  email: "seller@example.com",
+  avatar: "/placeholder.svg",
+  coins: 750,
+  followers: 180,
+  following: 65,
+  roles: ["seller"],
+  shop_name: "Amazing Products"
+};
+
 // Check if we're in development mode
 const isDevelopment = import.meta.env.DEV;
 
@@ -75,6 +88,19 @@ const AuthService = {
           const mockResponse = {
             token: "mock-token-for-owner",
             user: OWNER_USER
+          };
+          
+          localStorage.setItem('auth_token', mockResponse.token);
+          localStorage.setItem('user', JSON.stringify(mockResponse.user));
+          return mockResponse;
+        }
+        
+        // Special case for seller login
+        if (credentials.username === 'seller@example.com' && credentials.password === 'seller123') {
+          console.log("Seller login detected!");
+          const mockResponse = {
+            token: "mock-token-for-seller",
+            user: SELLER_USER
           };
           
           localStorage.setItem('auth_token', mockResponse.token);

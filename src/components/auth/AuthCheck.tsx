@@ -8,14 +8,20 @@ interface AuthCheckProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   requireAdmin?: boolean;
+  requireSeller?: boolean;
 }
 
 /**
  * Wrapper component to check if user is authenticated
  * Redirects to login page if not authenticated
  */
-const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps) => {
-  const { isAuthenticated, isLoading, isAdmin, user } = useAuth();
+const AuthCheck = ({ 
+  children, 
+  fallback, 
+  requireAdmin = false, 
+  requireSeller = false 
+}: AuthCheckProps) => {
+  const { isAuthenticated, isLoading, isAdmin, hasRole, user } = useAuth();
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
@@ -23,11 +29,14 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
     // Only perform the check when loading is complete
     if (!isLoading) {
       const userIsAdmin = isAdmin ? isAdmin() : false;
+      const userIsSeller = hasRole ? hasRole('seller') : false;
       
       console.log("AuthCheck - Auth status:", { 
         isAuthenticated, 
         requireAdmin,
+        requireSeller,
         isAdmin: userIsAdmin,
+        isSeller: userIsSeller,
         user
       });
       
@@ -51,12 +60,25 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
           console.log("User is an admin, access granted");
           setIsAuthorized(true);
         }
+      }
+      // If seller access is required, check if user is a seller
+      else if (requireSeller) {
+        console.log("Checking seller status:", userIsSeller);
+        
+        if (!userIsSeller) {
+          console.log("User is not a seller, redirecting to home");
+          navigate('/');
+          setIsAuthorized(false);
+        } else {
+          console.log("User is a seller, access granted");
+          setIsAuthorized(true);
+        }
       } else {
         // Regular authenticated access
         setIsAuthorized(true);
       }
     }
-  }, [isAuthenticated, isLoading, navigate, requireAdmin, isAdmin, user]);
+  }, [isAuthenticated, isLoading, navigate, requireAdmin, requireSeller, isAdmin, hasRole, user]);
 
   // Show loading state
   if (isLoading || isAuthorized === null) {
