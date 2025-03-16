@@ -51,34 +51,25 @@ const AddUserForm = ({ onUserAdded }: { onUserAdded: () => void }) => {
     setIsSubmitting(true);
     
     try {
-      // Create user in Supabase Auth
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: values.email,
-        password: values.password,
-        email_confirm: true,
-        user_metadata: {
-          username: values.username,
-          role: values.role
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        method: 'POST',
+        body: {
+          action: 'create-user',
+          userData: {
+            email: values.email,
+            username: values.username,
+            password: values.password,
+            role: values.role
+          }
         }
       });
       
       if (error) {
-        throw error;
+        throw new Error(error.message);
       }
       
-      // Create profile in the profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          username: values.username,
-          email: values.email,
-          role: values.role,
-          roles: [values.role as UserRole]
-        });
-      
-      if (profileError) {
-        throw profileError;
+      if (!data.success) {
+        throw new Error('Failed to create user');
       }
       
       toast({

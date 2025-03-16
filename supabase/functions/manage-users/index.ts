@@ -81,6 +81,16 @@ serve(async (req) => {
 
         if (updateRoleError) throw updateRoleError;
 
+        // Also update user_metadata in auth.users
+        const { error: updateAuthError } = await supabase.auth.admin.updateUserById(
+          userId,
+          { 
+            user_metadata: { role: role }
+          }
+        );
+
+        if (updateAuthError) throw updateAuthError;
+
         result = { success: true };
         break;
 
@@ -92,7 +102,46 @@ serve(async (req) => {
         // For now, we'll log this action since we don't have a status field
         console.log(`Updating user ${userId} status to ${status}`);
 
+        // Update user status in auth.users if needed
+        if (status === 'disabled') {
+          const { error: disableError } = await supabase.auth.admin.updateUserById(
+            userId,
+            { banned: true }
+          );
+          if (disableError) throw disableError;
+        } else if (status === 'enabled') {
+          const { error: enableError } = await supabase.auth.admin.updateUserById(
+            userId,
+            { banned: false }
+          );
+          if (enableError) throw enableError;
+        }
+
         result = { success: true };
+        break;
+
+      case 'delete-user':
+        if (!userId) {
+          throw new Error('User ID is required');
+        }
+
+        // Delete user from auth.users
+        const { error: deleteUserError } = await supabase.auth.admin.deleteUser(
+          userId
+        );
+
+        if (deleteUserError) throw deleteUserError;
+
+        result = { success: true };
+        break;
+
+      case 'list-users':
+        // Get users from Supabase Auth
+        const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+
+        if (listError) throw listError;
+
+        result = { users: users, success: true };
         break;
 
       default:
