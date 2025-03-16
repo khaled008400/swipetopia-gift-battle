@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -19,6 +19,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AuthCheck from './components/auth/AuthCheck';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { Toaster } from '@/components/ui/toaster';
 
 // Create a React Query client
 const queryClient = new QueryClient({
@@ -32,9 +33,9 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = React.useState(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Log configuration for debugging
     console.log("App initialized with Supabase client");
 
@@ -90,6 +91,7 @@ function App() {
                 } />
               </Routes>
             </Router>
+            <Toaster />
           </CartProvider>
         </AuthProvider>
       </div>

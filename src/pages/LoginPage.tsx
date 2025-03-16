@@ -61,7 +61,7 @@ const LoginPage = () => {
       const result = await login(email, password);
       console.log("Login result:", result);
       
-      // Check if user is admin
+      // Force refresh admin status
       const userIsAdmin = isAdmin();
       console.log("Is admin?", userIsAdmin);
       
@@ -71,7 +71,13 @@ const LoginPage = () => {
         description: userIsAdmin ? "Welcome to the admin panel" : "Welcome back!",
       });
       
-      // The redirect will be handled by the useEffect above
+      // Handle redirection manually for admin accounts
+      if (userIsAdmin) {
+        console.log("Admin login detected, redirecting to admin dashboard");
+        navigate('/admin-dashboard');
+      }
+      // For regular users, the redirect will be handled by the useEffect above
+      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

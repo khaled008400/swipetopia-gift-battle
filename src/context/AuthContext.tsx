@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -256,42 +255,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   };
 
   const isAdmin = () => {
-    if (!user) {
-      // If no user is authenticated, check localStorage as fallback
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          if (parsedUser && 
-              ((parsedUser.roles && 
-                (parsedUser.roles.includes('admin') || parsedUser.roles.includes('owner'))) || 
-               parsedUser.role === 'admin' || 
-               parsedUser.role === 'owner')) {
-            console.log("Admin detected from localStorage", parsedUser);
-            return true;
-          }
-        } catch (e) {
-          console.error("Error parsing stored user:", e);
-        }
-      }
-      return false;
+    if (user) {
+      const hasAdminRole = 
+        (user.roles && (user.roles.includes('admin') || user.roles.includes('owner'))) || 
+        user.role === 'admin' || 
+        user.role === 'owner';
+      
+      console.log("Checking admin status from user state:", hasAdminRole, user);
+      
+      if (hasAdminRole) return true;
     }
     
-    // Check if user has admin role directly in the user object
-    const hasAdminRole = 
-      (user.roles && (user.roles.includes('admin') || user.roles.includes('owner'))) || 
-      user.role === 'admin' || 
-      user.role === 'owner';
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && 
+            ((parsedUser.roles && 
+              (parsedUser.roles.includes('admin') || parsedUser.roles.includes('owner'))) || 
+             parsedUser.role === 'admin' || 
+             parsedUser.role === 'owner')) {
+          console.log("Admin detected from localStorage", parsedUser);
+          return true;
+        }
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+      }
+    }
     
-    console.log("Checking admin status from user object:", hasAdminRole, user);
-    
-    return hasAdminRole;
+    return false;
   };
 
   const hasRole = (role: UserRole | string) => {
     if (!user) return false;
     
-    // Also check for strings since role might be a string
     if (typeof role === 'string') {
       return user.roles?.includes(role as any) || user.role === role;
     }
@@ -308,14 +305,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const logout = async () => {
     try {
-      // Clear local storage first
       localStorage.removeItem('user');
       localStorage.removeItem('auth_token');
       
-      // Then sign out from Supabase
       await supabaseClient.auth.signOut();
       
-      // Finally update state
       setUser(null);
       setIsAuthenticated(false);
     } catch (err: any) {
