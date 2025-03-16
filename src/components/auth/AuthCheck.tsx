@@ -24,7 +24,7 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
       isAuthenticated, 
       isLoading, 
       requireAdmin,
-      isAdmin: isAdmin()
+      isAdmin: isAdmin ? isAdmin() : null
     });
     
     if (!isLoading) {

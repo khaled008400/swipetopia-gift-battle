@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -17,11 +17,7 @@ import SignupPage from './pages/SignupPage';
 import AdminPage from './pages/AdminPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AuthCheck from './components/auth/AuthCheck';
-import { createClient } from '@supabase/supabase-js';
-import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Import Supabase client instead of creating a new one here
 import { supabase } from '@/lib/supabase';
 
 // Create a React Query client
