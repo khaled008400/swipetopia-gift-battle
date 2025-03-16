@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 class VideoService {
@@ -74,7 +73,13 @@ class VideoService {
       
       const { data, error } = await supabase
         .from('short_videos')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .range(from, to);
@@ -83,9 +88,178 @@ class VideoService {
         throw error;
       }
       
-      return data || [];
+      // Format videos to match Video type
+      const formattedVideos = (data || []).map(video => ({
+        ...video,
+        user: {
+          username: video.profiles?.username || 'Unknown',
+          avatar: video.profiles?.avatar_url || '',
+          avatar_url: video.profiles?.avatar_url || '',
+        }
+      }));
+      
+      return formattedVideos;
     } catch (error) {
       console.error("Error fetching user videos:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Get videos liked by a user
+   */
+  async getLikedVideos(userId: string, page = 1, limit = 10) {
+    try {
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      
+      // Get liked video IDs
+      const { data: likedData, error: likedError } = await supabase
+        .from('video_likes')
+        .select('video_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (likedError) throw likedError;
+      
+      if (!likedData || likedData.length === 0) {
+        return [];
+      }
+      
+      const videoIds = likedData.map(like => like.video_id);
+      
+      // Get video details
+      const { data, error } = await supabase
+        .from('short_videos')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .in('id', videoIds)
+        .range(from, to);
+      
+      if (error) throw error;
+      
+      // Format videos to match Video type
+      const formattedVideos = (data || []).map(video => ({
+        ...video,
+        user: {
+          username: video.profiles?.username || 'Unknown',
+          avatar: video.profiles?.avatar_url || '',
+          avatar_url: video.profiles?.avatar_url || '',
+        },
+        isLiked: true
+      }));
+      
+      return formattedVideos;
+    } catch (error) {
+      console.error("Error fetching liked videos:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Save a video (bookmark)
+   */
+  async saveVideo(videoId: string, userId: string) {
+    try {
+      const { error } = await supabase
+        .from('video_bookmarks')
+        .insert({
+          video_id: videoId,
+          user_id: userId
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Error saving video:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unsave a video (remove bookmark)
+   */
+  async unsaveVideo(videoId: string, userId: string) {
+    try {
+      const { error } = await supabase
+        .from('video_bookmarks')
+        .delete()
+        .match({
+          video_id: videoId,
+          user_id: userId
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Error unsaving video:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get videos saved by a user
+   */
+  async getSavedVideos(userId: string, page = 1, limit = 10) {
+    try {
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      
+      // Get saved video IDs
+      const { data: savedData, error: savedError } = await supabase
+        .from('video_bookmarks')
+        .select('video_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (savedError) throw savedError;
+      
+      if (!savedData || savedData.length === 0) {
+        return [];
+      }
+      
+      const videoIds = savedData.map(bookmark => bookmark.video_id);
+      
+      // Get video details
+      const { data, error } = await supabase
+        .from('short_videos')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .in('id', videoIds)
+        .range(from, to);
+      
+      if (error) throw error;
+      
+      // Format videos to match Video type
+      const formattedVideos = (data || []).map(video => ({
+        ...video,
+        user: {
+          username: video.profiles?.username || 'Unknown',
+          avatar: video.profiles?.avatar_url || '',
+          avatar_url: video.profiles?.avatar_url || '',
+        },
+        is_saved: true
+      }));
+      
+      return formattedVideos;
+    } catch (error) {
+      console.error("Error fetching saved videos:", error);
       return [];
     }
   }

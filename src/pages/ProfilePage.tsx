@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ProfileHeader from '@/components/profile/ProfileHeader';
@@ -7,23 +7,45 @@ import ProfileContent from '@/components/profile/ProfileContent';
 import ProfileEdit from '@/components/profile/ProfileEdit';
 import { Button } from '@/components/ui/button';
 import { Edit, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { profile, isLoading } = useUserProfile(user?.id || null);
+  const { userId } = useParams<{ userId: string }>();
   
-  const isCurrentUserProfile = !!user && !!profile;
+  // If userId is provided in URL, show that profile, else show current user's profile
+  const profileId = userId || user?.id || null;
+  const { profile, isLoading, refreshProfile } = useUserProfile(profileId);
+  
+  const isCurrentUserProfile = !!user && user.id === profileId;
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
 
+  useEffect(() => {
+    // Refresh profile when switching between editing mode
+    if (!isEditing) {
+      refreshProfile();
+    }
+  }, [isEditing, refreshProfile]);
+
   if (isLoading) {
-    return <div>Loading profile...</div>;
+    return <div className="container max-w-4xl mx-auto py-8 px-4 animate-pulse">
+      <div className="h-32 bg-gray-200 rounded-lg mb-6"></div>
+      <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+      <div className="h-64 bg-gray-200 rounded"></div>
+    </div>;
+  }
+
+  if (!profile && !isLoading) {
+    return <div className="container max-w-4xl mx-auto py-8 px-4 text-center">
+      <h2 className="text-xl font-medium mb-2">Profile Not Found</h2>
+      <p className="text-gray-500">The user profile you're looking for doesn't exist or is not available.</p>
+    </div>;
   }
 
   return (
