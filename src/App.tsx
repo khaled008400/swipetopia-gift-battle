@@ -76,6 +76,8 @@ function App() {
                 <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
                 <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
                 <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
+                
+                {/* Admin routes with auth check */}
                 <Route path="/admin" element={
                   <AuthCheck requireAdmin={true}>
                     <Layout><AdminPage /></Layout>

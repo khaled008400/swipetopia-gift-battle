@@ -20,14 +20,14 @@ const AuthCheck = ({ children, fallback, requireAdmin = false }: AuthCheckProps)
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    console.log("AuthCheck rendering with:", { 
-      isAuthenticated, 
-      isLoading, 
-      requireAdmin,
-      isAdmin: isAdmin ? isAdmin() : null
-    });
-    
+    // Only perform the check when loading is complete
     if (!isLoading) {
+      console.log("AuthCheck - Auth status:", { 
+        isAuthenticated, 
+        requireAdmin,
+        isAdmin: isAdmin ? isAdmin() : false
+      });
+      
       // First check if user is authenticated
       if (!isAuthenticated) {
         // If not authenticated, redirect to login with a return path

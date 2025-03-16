@@ -18,30 +18,30 @@ const LoginPage = () => {
 
   // Check if user is already authenticated and redirect accordingly
   useEffect(() => {
-    if (isAuthenticated) {
-      console.log("User is authenticated, checking redirect paths");
-      const from = new URLSearchParams(location.search).get('from');
-      const userIsAdmin = isAdmin();
+    if (!isAuthenticated || authLoading) return;
+    
+    console.log("User is authenticated, determining redirect location");
+    const from = new URLSearchParams(location.search).get('from');
+    const userIsAdmin = isAdmin();
       
-      console.log("Auth check results:", { from, isAdmin: userIsAdmin, email });
+    console.log("Auth check results:", { from, isAdmin: userIsAdmin, email });
       
-      // If coming from admin pages and user is admin, go back there
-      if (from && from.startsWith('/admin') && userIsAdmin) {
-        console.log("Redirecting to requested admin page:", from);
-        navigate(from);
-      } 
-      // If admin user, go to admin dashboard explicitly
-      else if (userIsAdmin) {
-        console.log("Admin user detected, redirecting to admin dashboard");
-        navigate('/admin-dashboard');
-      } 
-      // Default for regular users
-      else {
-        console.log("Regular user detected, redirecting to home");
-        navigate('/');
-      }
+    // If user was trying to access admin pages and is admin, redirect back there
+    if (from && from.startsWith('/admin') && userIsAdmin) {
+      console.log("Redirecting to requested admin page:", from);
+      navigate(from);
+    } 
+    // If user is an admin, always redirect to admin dashboard as default
+    else if (userIsAdmin) {
+      console.log("Admin user detected, redirecting to admin dashboard");
+      navigate('/admin-dashboard');
+    } 
+    // Default redirect for regular users
+    else {
+      console.log("Regular user detected, redirecting to home");
+      navigate('/');
     }
-  }, [isAuthenticated, navigate, location, isAdmin, email]);
+  }, [isAuthenticated, authLoading, navigate, location, isAdmin, email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
