@@ -19,12 +19,21 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AuthCheck from './components/auth/AuthCheck';
 import { createClient } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Create a supabase client with environment variables or fallback to placeholders
-const supabaseClient = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
-);
+// Import Supabase client instead of creating a new one here
+import { supabase } from '@/lib/supabase';
+
+// Create a React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   const [session, setSession] = useState(null);
@@ -35,14 +44,14 @@ function App() {
 
     // Check for existing session on mount
     const checkSession = async () => {
-      const { data } = await supabaseClient.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       setSession(data?.session || null);
     };
     
     checkSession();
 
     // Set up auth state change listener
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         console.log("Auth state changed:", _event);
         setSession(newSession);
@@ -55,36 +64,38 @@ function App() {
   }, []);
 
   return (
-    <div className="App flex flex-col min-h-screen bg-app-black text-white">
-      <AuthProvider supabaseClient={supabaseClient} session={session}>
-        <CartProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/" element={<Layout><HomePage /></Layout>} />
-              <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-              <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
-              <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-              <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
-              <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
-              <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
-              <Route path="/admin" element={
-                <AuthCheck requireAdmin={true}>
-                  <Layout><AdminPage /></Layout>
-                </AuthCheck>
-              } />
-              <Route path="/admin-dashboard" element={
-                <AuthCheck requireAdmin={true}>
-                  <Layout><AdminDashboardPage /></Layout>
-                </AuthCheck>
-              } />
-            </Routes>
-          </Router>
-        </CartProvider>
-      </AuthProvider>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <div className="App flex flex-col min-h-screen bg-app-black text-white">
+        <AuthProvider supabaseClient={supabase} session={session}>
+          <CartProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/" element={<Layout><HomePage /></Layout>} />
+                <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+                <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
+                <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+                <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
+                <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
+                <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
+                <Route path="/admin" element={
+                  <AuthCheck requireAdmin={true}>
+                    <Layout><AdminPage /></Layout>
+                  </AuthCheck>
+                } />
+                <Route path="/admin-dashboard" element={
+                  <AuthCheck requireAdmin={true}>
+                    <Layout><AdminDashboardPage /></Layout>
+                  </AuthCheck>
+                } />
+              </Routes>
+            </Router>
+          </CartProvider>
+        </AuthProvider>
+      </div>
+    </QueryClientProvider>
   );
 }
 

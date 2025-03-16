@@ -3,10 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, QueryClient } from '@tanstack/react-query';
 import AdminService, { AdminStats } from '@/services/admin.service';
 import AdminTabbedInterface from '@/components/admin/AdminTabbedInterface';
 import { useToast } from '@/components/ui/use-toast';
+
+// Fallback query client for safer query management
+const localQueryClient = new QueryClient();
 
 const AdminDashboardPage: React.FC = () => {
   const { user, isAdmin } = useAuth();
@@ -49,7 +52,8 @@ const AdminDashboardPage: React.FC = () => {
     },
     enabled: !!user, // Only fetch if user is logged in
     retry: false, // Don't retry on failure for now (for debugging)
-    initialData: mockStats // Use mock stats as initial data
+    initialData: mockStats, // Use mock stats as initial data,
+    queryClient: localQueryClient, // Use local client as fallback
   });
 
   // Check if user is authorized as admin
