@@ -22,6 +22,7 @@ export interface User {
   followers: number;
   following: number;
   roles?: string[];
+  shop_name?: string; // Added for seller users
 }
 
 // For development mode - simulates successful authentication with admin role
