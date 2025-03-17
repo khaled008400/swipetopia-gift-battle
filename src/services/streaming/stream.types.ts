@@ -13,6 +13,21 @@ export interface LiveStream {
     username: string;
     avatar_url?: string;
   };
+  user?: {
+    username: string;
+    avatar_url: string;
+  };
+  username?: string;
+  avatar_url?: string;
+  durationMinutes?: number;
+  currentViewers?: number;
+  giftsReceived?: number;
+  topGiftName?: string;
+  revenue?: number;
+  peakViewers?: number;
+  endedAt?: string;
+  scheduledFor?: string;
+  plannedDurationMinutes?: number;
 }
 
 export interface Battle {

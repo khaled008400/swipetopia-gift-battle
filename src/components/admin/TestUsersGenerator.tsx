@@ -1,114 +1,73 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { createTestUsers } from '@/integrations/supabase/client';
-import { Loader2, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { createTestUsers } from '@/integrations/supabase/client';
+import { AlertCircle, Check, UserPlus } from 'lucide-react';
 
-const TestUsersGenerator = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [results, setResults] = useState<any[] | null>(null);
-  const [serviceKey, setServiceKey] = useState('');
-  const { toast } = useToast();
+const TestUsersGenerator: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerateUsers = async () => {
-    if (!serviceKey) {
-      toast({
-        title: "Service Key Required",
-        description: "Please provide a Supabase service key to create test users.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    setResults(null);
+    setLoading(true);
+    setSuccess(false);
+    setError(null);
     
     try {
-      const generationResults = await createTestUsers(serviceKey);
-      setResults(generationResults || []);
-      
-      const successCount = generationResults?.filter(r => r.success).length || 0;
-      
-      toast({
-        title: "Test Users Creation",
-        description: `Created ${successCount} out of ${generationResults?.length || 0} test users.`,
-        variant: successCount > 0 ? "default" : "destructive",
-      });
-    } catch (error) {
-      console.error("Error generating test users:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate test users. See console for details.",
-        variant: "destructive",
-      });
+      await createTestUsers();
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create test users');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4 p-4 border rounded-md">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Test Users Generator</h3>
+    <div className="p-4 bg-slate-800 rounded-md">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-lg font-medium">Test Users Generator</h3>
+          <p className="text-sm text-muted-foreground">
+            Create sample users with different roles for testing
+          </p>
+        </div>
         <Button 
           onClick={handleGenerateUsers} 
-          disabled={isGenerating || !serviceKey}
+          disabled={loading}
         >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
+          {loading ? (
+            <span className="animate-spin mr-2">⌛</span>
           ) : (
-            <>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Create Test Users
-            </>
+            <UserPlus className="mr-2 h-4 w-4" />
           )}
+          Generate Test Users
         </Button>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="serviceKey">
-          Supabase Service Key <span className="text-red-500">*</span>
-        </Label>
-        <div className="grid grid-cols-1 gap-2">
-          <Input
-            id="serviceKey"
-            type="password"
-            placeholder="eyJhbGci0iJIUzI1NiI..."
-            value={serviceKey}
-            onChange={(e) => setServiceKey(e.target.value)}
-            className="font-mono"
-            required
-          />
-          <p className="text-xs text-muted-foreground">
-            <strong>Required</strong>: The Service Role Key is needed to bypass RLS policies.
-            Get it from Supabase Dashboard &gt; Project Settings &gt; API &gt; Service Role Key.
-          </p>
-        </div>
-      </div>
-
-      {results && (
-        <div className="space-y-2 text-sm">
-          <p className="font-medium">All users have password: <code className="bg-gray-100 p-1 rounded">Password123!</code></p>
-          <div className="max-h-48 overflow-y-auto space-y-2">
-            {results.map((result, idx) => (
-              <Alert key={idx} variant={result.success ? "default" : "destructive"}>
-                <AlertTitle>{result.email}</AlertTitle>
-                <AlertDescription>
-                  {result.success 
-                    ? "Successfully created" 
-                    : `Failed: ${result.error || "Unknown error"}`}
-                </AlertDescription>
-              </Alert>
-            ))}
-          </div>
-        </div>
+      {success && (
+        <Alert className="bg-green-800 border-green-700">
+          <Check className="h-4 w-4 text-green-400" />
+          <AlertTitle>Success!</AlertTitle>
+          <AlertDescription>
+            Test users have been created with the following credentials:
+            <ul className="mt-2 list-disc list-inside">
+              <li>Admin: admin@example.com / adminpassword</li>
+              <li>Seller: seller@example.com / sellerpassword</li>
+              <li>Streamer: streamer@example.com / streamerpassword</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {error && (
+        <Alert className="bg-red-800 border-red-700">
+          <AlertCircle className="h-4 w-4 text-red-400" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
     </div>
   );

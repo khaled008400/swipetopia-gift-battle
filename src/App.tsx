@@ -19,7 +19,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import AuthCheck from './components/auth/AuthCheck';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from '@/components/ui/toaster';
 
 // Create a React Query client
