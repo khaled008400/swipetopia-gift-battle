@@ -5,40 +5,27 @@ import { BattleVideo } from '@/types/video.types';
 
 interface BattleVoteButtonsProps {
   videos: BattleVideo[];
-  votesRemaining: number;
   onVote: (videoId: string) => Promise<boolean>;
 }
 
-const BattleVoteButtons: React.FC<BattleVoteButtonsProps> = ({ 
-  videos, 
-  votesRemaining,
-  onVote 
-}) => {
+const BattleVoteButtons: React.FC<BattleVoteButtonsProps> = ({ videos, onVote }) => {
   if (!videos || videos.length < 2) return null;
-  
+
   return (
-    <div className="space-y-4 my-6">
-      <div className="text-center">
-        <h3 className="text-white font-bold">Cast Your Vote</h3>
-        <p className="text-gray-400 text-sm">You have {votesRemaining} votes remaining</p>
-      </div>
+    <div className="grid grid-cols-2 gap-4 px-4">
+      <Button 
+        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3"
+        onClick={() => onVote(videos[0].id)}
+      >
+        Vote {videos[0].creator.username}
+      </Button>
       
-      <div className="grid grid-cols-2 gap-4">
-        {videos.map((video) => (
-          <Button
-            key={video.id}
-            variant="outline"
-            className="py-6 border-2 border-app-yellow hover:bg-app-yellow/20 disabled:opacity-50"
-            disabled={votesRemaining <= 0}
-            onClick={() => onVote(video.id)}
-          >
-            <div className="flex flex-col items-center">
-              <span className="font-bold mb-1">{video.creator.username}</span>
-              <span className="text-xs">Click to Vote</span>
-            </div>
-          </Button>
-        ))}
-      </div>
+      <Button
+        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3"
+        onClick={() => onVote(videos[1].id)}
+      >
+        Vote {videos[1].creator.username}
+      </Button>
     </div>
   );
 };

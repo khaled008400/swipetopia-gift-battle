@@ -6,13 +6,16 @@ export interface Product {
   price: number;
   image_url: string;
   category: string;
-  rating?: number; // Make rating optional to fix the error
+  rating?: number;
   reviews_count?: number;
   in_stock?: boolean;
   seller_id: string;
   created_at: string;
   updated_at: string;
   original_price?: number;
+  stock_quantity?: number;
+  status?: "active" | "draft" | "unavailable";
+  is_featured?: boolean;
 }
 
 export interface AdminProduct extends Product {

@@ -1,79 +1,66 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useBattleVideos } from '@/hooks/useBattleVideos';
 import BattleHeader from '@/components/battle/BattleHeader';
 import BattleDetails from '@/components/battle/BattleDetails';
 import BattleVideoPlayer from '@/components/battle/BattleVideoPlayer';
 import BattleProgressIndicators from '@/components/battle/BattleProgressIndicators';
 import BattleVoteButtons from '@/components/battle/BattleVoteButtons';
 import ActionButtons from '@/components/battle/ActionButtons';
-import { useBattleVideos } from '@/hooks/useBattleVideos';
-import { Loader2 } from 'lucide-react';
-import { BattleVideo } from '@/types/video.types';
 
-const BattlePage: React.FC = () => {
+const BattlePage = () => {
   const { battleId } = useParams<{ battleId: string }>();
   const { 
-    videos, 
-    isLoading, 
-    error, 
-    votingEndsAt, 
-    votesRemaining, 
-    castVote,
-    activeVideoIndex
+    videos, isLoading, error, votingEndsAt, votesRemaining, castVote,
+    activeVideoIndex, setActiveVideoIndex, filteredVideos 
   } = useBattleVideos(battleId);
 
-  // Handle loading state
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-10 h-10 animate-spin text-app-yellow" />
-      </div>
-    );
+    return <div className="flex justify-center items-center h-screen">Loading battle...</div>;
   }
 
-  // Handle error state
-  if (error || !videos || videos.length !== 2) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen p-4">
-        <div className="text-red-500 text-xl font-semibold mb-2">Error loading battle</div>
-        <p className="text-gray-300">{error?.message || "Battle could not be loaded or doesn't have exactly 2 videos"}</p>
-      </div>
-    );
+  if (error) {
+    return <div className="flex justify-center items-center h-screen">Error: {error.message}</div>;
   }
 
-  // Cast videos as BattleVideo type
-  const battleVideos = videos as BattleVideo[];
+  if (!videos || videos.length < 2) {
+    return <div className="flex justify-center items-center h-screen">Battle not available</div>;
+  }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Battle Header */}
-      <BattleHeader title="Dance Battle Finals" />
-      
-      {/* Battle Content */}
-      <div className="flex-grow p-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Battle Details */}
-          <BattleDetails videos={battleVideos} />
-          
-          {/* Video Players */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <BattleVideoPlayer video={battleVideos[0]} position="left" />
-            <BattleVideoPlayer video={battleVideos[1]} position="right" />
+    <div className="h-full min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#000000]">
+      <div className="container mx-auto max-w-lg pt-14 pb-20 h-full">
+        <BattleHeader />
+        
+        <div className="relative flex flex-col items-center">
+          <div className="w-full">
+            <BattleDetails videos={videos} />
           </div>
           
-          {/* Progress Indicators */}
-          <BattleProgressIndicators videos={battleVideos} activeIndex={activeVideoIndex} />
+          <div className="relative w-full grid grid-cols-2 gap-2">
+            <BattleVideoPlayer video={videos[0]} position="left" />
+            <BattleVideoPlayer video={videos[1]} position="right" />
+          </div>
           
-          {/* Voting Interface */}
-          <BattleVoteButtons 
-            videos={battleVideos}
-            votesRemaining={votesRemaining}
-            onVote={castVote}
+          <BattleProgressIndicators 
+            videos={videos} 
+            activeIndex={activeVideoIndex} 
           />
           
-          {/* Action Buttons */}
-          <ActionButtons battleId={battleId} videos={battleVideos} />
+          <div className="w-full mt-6">
+            <div className="text-center mb-4">
+              <div className="text-sm text-gray-400">Voting ends in</div>
+              <div className="text-xl font-bold text-white">23h 45m</div>
+              <div className="text-sm text-gray-400 mt-1">
+                You have {votesRemaining} votes remaining
+              </div>
+            </div>
+            
+            <BattleVoteButtons videos={videos} onVote={castVote} />
+          </div>
+          
+          <ActionButtons battleId={battleId} videos={videos} />
         </div>
       </div>
     </div>

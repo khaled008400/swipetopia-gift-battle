@@ -2,7 +2,21 @@
 import { useState, useEffect } from 'react';
 import { BattleVideo } from '@/types/video.types';
 
-export function useBattleVideos(battleId?: string) {
+export interface UseBattleVideosReturn {
+  videos: BattleVideo[];
+  isLoading: boolean;
+  error: Error | null;
+  votingEndsAt: string;
+  votesRemaining: number;
+  castVote: (videoId: string) => Promise<boolean>;
+  activeVideoIndex: number;
+  setActiveVideoIndex: React.Dispatch<React.SetStateAction<number>>;
+  liveVideosOnly: boolean;
+  filteredVideos: BattleVideo[];
+  setStreamerFilter: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
+export function useBattleVideos(battleId?: string): UseBattleVideosReturn {
   const [videos, setVideos] = useState<BattleVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -29,6 +43,7 @@ export function useBattleVideos(battleId?: string) {
             title: 'Dance Challenge',
             videoUrl: 'https://example.com/video1.mp4',
             thumbnailUrl: 'https://example.com/thumbnail1.jpg',
+            url: 'https://example.com/video1.mp4',
             creator: {
               id: '101',
               username: 'DanceQueen',
@@ -43,6 +58,7 @@ export function useBattleVideos(battleId?: string) {
             title: 'Singing Performance',
             videoUrl: 'https://example.com/video2.mp4',
             thumbnailUrl: 'https://example.com/thumbnail2.jpg',
+            url: 'https://example.com/video2.mp4',
             creator: {
               id: '102',
               username: 'VocalMaster',
