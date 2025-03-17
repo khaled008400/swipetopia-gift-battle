@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -16,6 +15,7 @@ export interface Product {
   stock_quantity?: number;
   status?: "active" | "draft" | "unavailable";
   is_featured?: boolean;
+  suction_score?: number;
 }
 
 export interface AdminProduct extends Product {

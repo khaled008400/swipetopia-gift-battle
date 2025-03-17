@@ -1,345 +1,125 @@
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import StreamingService from '@/services/streaming/stream.service';
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { useRealtimeData } from "./useRealtimeData";
-
-export interface StreamHistory {
-  id: string;
-  title: string;
-  date: string;
-  duration: number;
-  view_count: number;
-  gifts_earned: number;
-  coins_earned: number;
-}
-
-export interface BattleHistory {
-  id: string;
-  opponent_username: string;
-  opponent_avatar: string;
-  date: string;
-  result: string;
-  view_count: number;
-  votes_received: number;
-  votes_opponent: number;
-}
-
-export interface TopSupporter {
-  id: string;
-  supporter_username: string;
-  supporter_avatar: string;
-  gift_amount: number;
-}
-
-export interface StreamHighlight {
-  id: string;
-  title: string;
-  thumbnail: string;
-  video_url: string;
-  duration: string;
-  views: number;
-  likes: number;
-  comments: number;
-}
-
-export interface ScheduledStream {
-  id: string;
-  title: string;
-  description: string;
-  scheduled_time: string;
-  is_battle: boolean;
-  opponent_id: string | null;
-  status: "scheduled" | "live" | "completed" | "cancelled";
-}
-
-export const useStreamHistory = (streamerId: string) => {
-  const [streamHistory, setStreamHistory] = useState<StreamHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchStreamHistory = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from("stream_history")
-          .select("*")
-          .eq("streamer_id", streamerId)
-          .order("date", { ascending: false });
-
-        if (error) throw error;
-        
-        setStreamHistory(data);
-      } catch (err) {
-        console.error("Error fetching stream history:", err);
-        setError("Failed to load stream history");
-        toast({
-          title: "Error",
-          description: "Failed to load stream history",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (streamerId) {
-      fetchStreamHistory();
-    }
-  }, [streamerId, toast]);
-
-  // Subscribe to real-time updates
-  const realtimeData = useRealtimeData<StreamHistory>(
-    "stream_history", 
-    streamHistory, 
-    "streamer_id", 
-    streamerId
-  );
-
-  // Merge initial data with realtime updates
-  const finalStreamHistory = realtimeData.data.length > 0 ? realtimeData.data : streamHistory;
-  const finalIsLoading = isLoading || realtimeData.isLoading;
-  const finalError = error || realtimeData.error;
-
-  return { 
-    streamHistory: finalStreamHistory, 
-    isLoading: finalIsLoading, 
-    error: finalError 
-  };
+// Example queryKey configurations, replace for your actual logic
+const queryOptions = {
+  refetchOnWindowFocus: false,
+  staleTime: 60 * 1000, // 1 minute
+  retry: 2
 };
 
-export const useBattleHistory = (streamerId: string) => {
-  const [battleHistory, setBattleHistory] = useState<BattleHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+export const useStreamerData = (streamerId: string) => {
+  const [isStreamerLive, setIsStreamerLive] = useState(false);
 
+  // Replace with proper queryKey and queryFn
+  const { data: streamerProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['streamer', streamerId, 'profile'],
+    queryFn: async () => {
+      // Replace with real API call
+      return {
+        id: streamerId,
+        username: 'PopularStreamer',
+        avatar: 'https://i.pravatar.cc/150?u=streamer',
+        followers: 1500,
+        following: 120,
+        bio: 'Professional streamer sharing gaming content and lifestyle vlogs',
+        isLive: false,
+        streamKey: 'abc123xyz'
+      };
+    },
+    ...queryOptions
+  });
+
+  // Update live status when data is fetched
   useEffect(() => {
-    const fetchBattleHistory = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from("battle_history")
-          .select("*")
-          .eq("streamer_id", streamerId)
-          .order("date", { ascending: false });
-
-        if (error) throw error;
-        
-        setBattleHistory(data);
-      } catch (err) {
-        console.error("Error fetching battle history:", err);
-        setError("Failed to load battle stats");
-        toast({
-          title: "Error",
-          description: "Failed to load battle statistics",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (streamerId) {
-      fetchBattleHistory();
+    if (streamerProfile?.isLive !== undefined) {
+      setIsStreamerLive(streamerProfile.isLive);
     }
-  }, [streamerId, toast]);
+  }, [streamerProfile]);
 
-  // Subscribe to real-time updates
-  const realtimeData = useRealtimeData<BattleHistory>(
-    "battle_history", 
-    battleHistory, 
-    "streamer_id", 
-    streamerId
-  );
+  // Fetch stats separately (for examples)
+  const { data: streamerStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['streamer', streamerId, 'stats'],
+    queryFn: async () => {
+      // Replace with real API call
+      return {
+        totalViews: 25000,
+        totalStreams: 150,
+        averageViewers: 167,
+        uptime: 120, // hours
+        followers: 1500,
+        subscribers: 120,
+        lastStreamDate: '2023-09-15T14:00:00Z'
+      };
+    },
+    ...queryOptions
+  });
 
-  // Merge initial data with realtime updates
-  const finalBattleHistory = realtimeData.data.length > 0 ? realtimeData.data : battleHistory;
-  const finalIsLoading = isLoading || realtimeData.isLoading;
-  const finalError = error || realtimeData.error;
+  // Mock data for other endpoints - replace with real api calls using similar pattern
+  const { data: recentStreams } = useQuery({
+    queryKey: ['streamer', streamerId, 'recent-streams'],
+    queryFn: async () => {
+      return [
+        {
+          id: 'stream1',
+          title: 'Friday Night Gaming',
+          startTime: '2023-09-15T20:00:00Z',
+          endTime: '2023-09-16T00:30:00Z',
+          viewerCount: 245,
+          thumbnailUrl: 'https://example.com/thumbnail1.jpg'
+        },
+        {
+          id: 'stream2',
+          title: 'Morning Coffee Chat',
+          startTime: '2023-09-14T09:00:00Z',
+          endTime: '2023-09-14T10:45:00Z',
+          viewerCount: 187,
+          thumbnailUrl: 'https://example.com/thumbnail2.jpg'
+        }
+      ];
+    },
+    ...queryOptions
+  });
 
-  return { 
-    battleHistory: finalBattleHistory, 
-    isLoading: finalIsLoading, 
-    error: finalError 
+  const startStream = async () => {
+    try {
+      // Replace with real API call
+      const streamData = await StreamingService.startStream({
+        title: 'New Live Stream',
+        description: 'Join my live stream!',
+        categoryId: 'gaming',
+        isPrivate: false
+      });
+      
+      setIsStreamerLive(true);
+      return streamData;
+    } catch (error) {
+      console.error('Failed to start stream:', error);
+      throw error;
+    }
   };
-};
 
-export const useTopSupporters = (streamerId: string) => {
-  const [topSupporters, setTopSupporters] = useState<TopSupporter[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchTopSupporters = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from("top_supporters")
-          .select("*")
-          .eq("streamer_id", streamerId)
-          .order("gift_amount", { ascending: false })
-          .limit(5);
-
-        if (error) throw error;
-        
-        setTopSupporters(data);
-      } catch (err) {
-        console.error("Error fetching top supporters:", err);
-        setError("Failed to load top supporters");
-        toast({
-          title: "Error",
-          description: "Failed to load supporter data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (streamerId) {
-      fetchTopSupporters();
+  const endStream = async () => {
+    try {
+      // Replace with real API call
+      await StreamingService.endStream();
+      setIsStreamerLive(false);
+    } catch (error) {
+      console.error('Failed to end stream:', error);
+      throw error;
     }
-  }, [streamerId, toast]);
-
-  // Subscribe to real-time updates
-  const realtimeData = useRealtimeData<TopSupporter>(
-    "top_supporters", 
-    topSupporters, 
-    "streamer_id", 
-    streamerId
-  );
-
-  // Merge initial data with realtime updates
-  const finalTopSupporters = realtimeData.data.length > 0 ? realtimeData.data : topSupporters;
-  const finalIsLoading = isLoading || realtimeData.isLoading;
-  const finalError = error || realtimeData.error;
-
-  return { 
-    topSupporters: finalTopSupporters, 
-    isLoading: finalIsLoading, 
-    error: finalError 
   };
-};
 
-export const useStreamHighlights = (streamerId: string) => {
-  const [streamHighlights, setStreamHighlights] = useState<StreamHighlight[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  // ... more utility functions as needed
 
-  useEffect(() => {
-    const fetchStreamHighlights = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from("stream_highlights")
-          .select("*")
-          .eq("streamer_id", streamerId)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        
-        setStreamHighlights(data);
-      } catch (err) {
-        console.error("Error fetching stream highlights:", err);
-        setError("Failed to load stream highlights");
-        toast({
-          title: "Error",
-          description: "Failed to load highlight videos",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (streamerId) {
-      fetchStreamHighlights();
-    }
-  }, [streamerId, toast]);
-
-  // Subscribe to real-time updates
-  const realtimeData = useRealtimeData<StreamHighlight>(
-    "stream_highlights", 
-    streamHighlights, 
-    "streamer_id", 
-    streamerId
-  );
-
-  // Merge initial data with realtime updates
-  const finalStreamHighlights = realtimeData.data.length > 0 ? realtimeData.data : streamHighlights;
-  const finalIsLoading = isLoading || realtimeData.isLoading;
-  const finalError = error || realtimeData.error;
-
-  return { 
-    streamHighlights: finalStreamHighlights, 
-    isLoading: finalIsLoading, 
-    error: finalError 
-  };
-};
-
-export const useScheduledStreams = (streamerId: string) => {
-  const [scheduledStreams, setScheduledStreams] = useState<ScheduledStream[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchScheduledStreams = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from("scheduled_streams")
-          .select("*")
-          .eq("streamer_id", streamerId)
-          .gte("scheduled_time", new Date().toISOString())
-          .order("scheduled_time", { ascending: true });
-
-        if (error) throw error;
-        
-        // Type assertion to ensure status has the correct type
-        setScheduledStreams(data?.map(stream => ({
-          ...stream,
-          status: (stream.status as "scheduled" | "live" | "completed" | "cancelled") || "scheduled"
-        })) || []);
-      } catch (err) {
-        console.error("Error fetching scheduled streams:", err);
-        setError("Failed to load scheduled streams");
-        toast({
-          title: "Error",
-          description: "Failed to load stream schedule",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (streamerId) {
-      fetchScheduledStreams();
-    }
-  }, [streamerId, toast]);
-
-  // Subscribe to real-time updates
-  const realtimeData = useRealtimeData<ScheduledStream>(
-    "scheduled_streams", 
-    scheduledStreams, 
-    "streamer_id", 
-    streamerId
-  );
-
-  // Merge initial data with realtime updates
-  const finalScheduledStreams = realtimeData.data.length > 0 ? realtimeData.data : scheduledStreams;
-  const finalIsLoading = isLoading || realtimeData.isLoading;
-  const finalError = error || realtimeData.error;
-
-  return { 
-    scheduledStreams: finalScheduledStreams, 
-    isLoading: finalIsLoading, 
-    error: finalError 
+  return {
+    profile: streamerProfile,
+    stats: streamerStats,
+    recentStreams,
+    isLoading: profileLoading || statsLoading,
+    isLive: isStreamerLive,
+    startStream,
+    endStream
   };
 };

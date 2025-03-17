@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useBattleVideos } from '@/hooks/useBattleVideos';
 import BattleHeader from '@/components/battle/BattleHeader';

@@ -44,6 +44,7 @@ export interface Video {
   };
 }
 
+// Make sure to export BattleVideo interface
 export interface BattleVideo {
   id: string;
   title: string;
@@ -57,9 +58,12 @@ export interface BattleVideo {
   votes: number;
   isLive: boolean;
   viewerCount: number;
-  url?: string; // Adding this for compatibility with BattleVideo component
-  description?: string; // Adding for completeness
+  url?: string;
+  description?: string;
 }
+
+// Adding Product type reference from product.types.ts
+import { Product } from './product.types';
 
 // New interfaces to support shop components
 export interface LimitedOffer {
@@ -75,10 +79,12 @@ export interface LiveSeller {
   userId: string;
   username: string;
   avatar: string;
+  avatar_url?: string;
   title: string;
   thumbnailUrl: string;
   isLive: boolean;
   viewerCount: number;
+  viewers?: number;
 }
 
 // Interfaces for payment methods and shop profile

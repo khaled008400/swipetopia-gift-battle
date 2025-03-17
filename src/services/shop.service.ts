@@ -1,181 +1,108 @@
 import { Product } from '@/types/product.types';
-import { LiveSeller, LimitedOffer } from '@/types/video.types';
+import { LimitedOffer, LiveSeller } from '@/types/video.types';
 
 class ShopService {
-  getProducts = async (): Promise<Product[]> => {
-    // Mock data for testing purposes
-    const mockProducts: Product[] = [
+  async getProducts(): Promise<Product[]> {
+    // Mocked products data
+    return [
       {
-        id: '1',
-        name: 'Designer T-Shirt',
-        description: 'High-quality designer t-shirt with unique patterns',
-        price: 29.99,
-        image_url: 'https://example.com/tshirt.jpg',
-        category: 'Clothing',
+        id: "1",
+        name: "Wireless Earbuds",
+        description: "High-quality sound with noise cancellation",
+        price: 79.99,
+        image_url: "https://example.com/earbuds.jpg",
+        category: "Electronics",
+        rating: 4.7,
+        reviews_count: 152,
+        in_stock: true,
+        seller_id: "seller123",
+        created_at: "2023-04-15T10:30:00Z",
+        updated_at: "2023-04-15T10:30:00Z"
+      },
+      // Additional products would be here
+    ];
+  }
+
+  async getFeaturedProducts(): Promise<Product[]> {
+    // Mocked featured products
+    return [
+      {
+        id: "3",
+        name: "Smart Watch",
+        description: "Track your fitness and receive notifications",
+        price: 129.99,
+        image_url: "https://example.com/smartwatch.jpg",
+        category: "Electronics",
         rating: 4.5,
-        reviews_count: 120,
+        reviews_count: 89,
         in_stock: true,
-        seller_id: 'seller1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        stock_quantity: 50,
-        status: 'active',
+        seller_id: "seller456",
+        created_at: "2023-03-20T14:15:00Z",
+        updated_at: "2023-03-20T14:15:00Z",
         is_featured: true
       },
-      {
-        id: '2',
-        name: 'Wireless Headphones',
-        description: 'Over-ear wireless headphones with noise cancellation',
-        price: 149.99,
-        image_url: 'https://example.com/headphones.jpg',
-        category: 'Electronics',
-        rating: 4.8,
-        reviews_count: 250,
-        in_stock: true,
-        seller_id: 'seller2',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        stock_quantity: 30,
-        status: 'active',
-        is_featured: true
-      },
-      {
-        id: '3',
-        name: 'Organic Face Cream',
-        description: 'All-natural face cream with organic ingredients',
-        price: 39.50,
-        image_url: 'https://example.com/facecream.jpg',
-        category: 'Beauty',
-        rating: 4.2,
-        reviews_count: 80,
-        in_stock: true,
-        seller_id: 'seller3',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        stock_quantity: 40,
-        status: 'active',
-        is_featured: false
-      },
-      {
-        id: '4',
-        name: 'Ergonomic Office Chair',
-        description: 'Adjustable ergonomic office chair for maximum comfort',
-        price: 229.00,
-        image_url: 'https://example.com/officechair.jpg',
-        category: 'Home',
-        rating: 4.6,
-        reviews_count: 150,
-        in_stock: true,
-        seller_id: 'seller4',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        stock_quantity: 20,
-        status: 'active',
-        is_featured: true
-      },
-      {
-        id: '5',
-        name: 'Basketball',
-        description: 'Official size and weight basketball for indoor/outdoor use',
-        price: 19.99,
-        image_url: 'https://example.com/basketball.jpg',
-        category: 'Sports',
-        rating: 4.0,
-        reviews_count: 60,
-        in_stock: true,
-        seller_id: 'seller5',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        stock_quantity: 60,
-        status: 'active',
-        is_featured: false
-      },
-      {
-        id: '6',
-        name: 'Building Blocks Set',
-        description: 'Set of colorful building blocks for creative play',
-        price: 24.75,
-        image_url: 'https://example.com/buildingblocks.jpg',
-        category: 'Toys',
-        rating: 4.3,
-        reviews_count: 90,
-        in_stock: true,
-        seller_id: 'seller6',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        stock_quantity: 55,
-        status: 'active',
-        is_featured: false
-      }
+      // Additional featured products would be here
     ];
-    
-    return mockProducts;
-  };
+  }
 
-  // Add missing methods for the shop service
-  getProductById = async (id: string): Promise<Product> => {
-    const products = await this.getProducts();
-    const product = products.find(p => p.id === id);
-    if (!product) {
-      throw new Error(`Product with ID ${id} not found`);
-    }
-    return product;
-  };
+  async getCategories(): Promise<string[]> {
+    // Mocked categories
+    return [
+      "Electronics",
+      "Fashion",
+      "Home & Kitchen",
+      "Beauty & Personal Care",
+      "Sports & Outdoors"
+    ];
+  }
 
-  getCategories = async (): Promise<string[]> => {
-    return ['Clothing', 'Electronics', 'Beauty', 'Home', 'Sports', 'Toys'];
-  };
-
-  getFeaturedProducts = async (): Promise<Product[]> => {
-    const products = await this.getProducts();
-    return products.filter(p => p.is_featured);
-  };
-
-  getLimitedOffers = async (): Promise<LimitedOffer[]> => {
+  async getLimitedOffers(): Promise<LimitedOffer[]> {
+    // Mocked limited offers
     const products = await this.getProducts();
     
     return [
       {
-        id: 'offer1',
+        id: "offer1",
         product: products[0],
-        discountPercentage: 25,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        discountPercentage: 20,
+        startDate: "2023-09-01T00:00:00Z",
+        endDate: "2023-09-15T23:59:59Z"
       },
-      {
-        id: 'offer2',
-        product: products[1],
-        discountPercentage: 30,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-      }
+      // Additional offers would be here
     ];
-  };
-
-  getLiveSellers = async (): Promise<LiveSeller[]> => {
+  }
+  
+  async getLiveSellers(): Promise<LiveSeller[]> {
+    // Mocked live sellers
     return [
       {
-        id: 'ls1',
-        userId: 'seller1',
-        username: 'FashionExpert',
-        avatar: 'https://example.com/avatar1.jpg',
-        title: 'New Summer Collection Reveal!',
-        thumbnailUrl: 'https://example.com/thumbnail1.jpg',
+        id: "seller1",
+        userId: "user123",
+        username: "FashionTrends",
+        avatar: "https://example.com/avatar1.jpg",
+        title: "New Summer Collection",
+        thumbnailUrl: "https://example.com/thumbnail1.jpg",
         isLive: true,
-        viewerCount: 245
+        viewerCount: 245,
+        viewers: 245
       },
-      {
-        id: 'ls2',
-        userId: 'seller2',
-        username: 'TechGadgets',
-        avatar: 'https://example.com/avatar2.jpg',
-        title: 'Latest Smartphone Unboxing',
-        thumbnailUrl: 'https://example.com/thumbnail2.jpg',
-        isLive: true,
-        viewerCount: 189
-      }
+      // Additional live sellers would be here
     ];
-  };
+  }
+  
+  async searchProducts(query: string): Promise<Product[]> {
+    // Mocked search functionality
+    const allProducts = await this.getProducts();
+    return allProducts.filter(product => 
+      product.name.toLowerCase().includes(query.toLowerCase()) ||
+      product.description.toLowerCase().includes(query.toLowerCase())
+    );
+  }
+  
+  async getProductById(id: string): Promise<Product | null> {
+    const allProducts = await this.getProducts();
+    return allProducts.find(product => product.id === id) || null;
+  }
 }
 
 export default new ShopService();

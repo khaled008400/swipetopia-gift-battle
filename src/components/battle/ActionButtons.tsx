@@ -1,28 +1,35 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Share, MessageSquare, Heart } from 'lucide-react';
+import { Heart, MessageCircle, Share2, BookmarkIcon } from 'lucide-react';
 import { BattleVideo } from '@/types/video.types';
 
-interface ActionButtonsProps {
+export interface ActionButtonsProps {
   battleId?: string;
   videos: BattleVideo[];
 }
 
-const ActionButtons = ({ battleId, videos }: ActionButtonsProps) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({ battleId, videos }) => {
   return (
-    <div className="flex justify-around mt-6 px-4">
-      <Button variant="ghost" className="flex flex-col items-center">
-        <Heart className="h-6 w-6 mb-1" />
-        <span className="text-xs">Like</span>
+    <div className="fixed bottom-20 right-4 flex flex-col gap-5 items-center">
+      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
+        <Heart className="h-6 w-6 text-white" />
+        <span className="sr-only">Like</span>
       </Button>
-      <Button variant="ghost" className="flex flex-col items-center">
-        <MessageSquare className="h-6 w-6 mb-1" />
-        <span className="text-xs">Comment</span>
+      
+      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
+        <MessageCircle className="h-6 w-6 text-white" />
+        <span className="sr-only">Comment</span>
       </Button>
-      <Button variant="ghost" className="flex flex-col items-center">
-        <Share className="h-6 w-6 mb-1" />
-        <span className="text-xs">Share</span>
+      
+      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
+        <BookmarkIcon className="h-6 w-6 text-white" />
+        <span className="sr-only">Save</span>
+      </Button>
+      
+      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
+        <Share2 className="h-6 w-6 text-white" />
+        <span className="sr-only">Share</span>
       </Button>
     </div>
   );
