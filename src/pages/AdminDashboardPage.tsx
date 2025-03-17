@@ -10,6 +10,7 @@ import AuthCheck from '@/components/auth/AuthCheck';
 
 const AdminDashboardPage: React.FC = () => {
   const { toast } = useToast();
+  console.log("AdminDashboardPage rendering");
 
   // Define mock stats for development
   const mockStats: AdminStats = {
@@ -60,6 +61,8 @@ const AdminDashboardPage: React.FC = () => {
       </AuthCheck>
     );
   }
+
+  console.log("AdminDashboardPage about to render AdminTabbedInterface with stats:", stats);
 
   // Admin dashboard with tabs
   return (

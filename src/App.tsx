@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
@@ -20,6 +21,7 @@ import AuthCheck from './components/auth/AuthCheck';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from '@/components/ui/toaster';
+import BattlePage from './pages/BattlePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {

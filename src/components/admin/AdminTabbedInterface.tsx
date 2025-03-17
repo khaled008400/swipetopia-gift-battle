@@ -42,6 +42,9 @@ interface AdminTabbedInterfaceProps {
 const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, statsLoading }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  // Add some debug logging to help troubleshoot
+  console.log("AdminTabbedInterface rendering with props:", { stats, statsLoading, activeTab });
+
   if (statsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -83,8 +86,8 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="flex flex-wrap">
+      <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="flex flex-wrap mb-4">
           {tabs.map(tab => (
             <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
               <tab.icon className="w-4 h-4 mr-2" />
