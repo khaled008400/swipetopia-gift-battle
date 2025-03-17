@@ -1,243 +1,119 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
+import { Product } from '@/types/product.types';
+import { ShopService } from '@/services/shop.service';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Star } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { ShoppingCart, Heart, ArrowLeft, Star } from 'lucide-react';
-import ShopService from '@/services/shop.service';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
 
-const ProductDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const { addItem } = useCart();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [isLiked, setIsLiked] = useState(false);
-  
-  const { data: product, isLoading } = useQuery({
-    queryKey: ['product', id],
-    queryFn: () => ShopService.getProductById(id as string),
-    enabled: !!id,
+const ProductDetailPage = () => {
+  const { productId } = useParams<{ productId: string }>();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const { toast } = useToast();
+
+  const { data: product, isLoading, error } = useQuery<Product>({
+    queryKey: ['product', productId],
+    queryFn: () => ShopService.getProductById(productId || ''),
+    enabled: !!productId,
   });
 
-  // Check if product is liked by user
   useEffect(() => {
-    const checkIfLiked = async () => {
-      if (!user || !id) return;
-      
-      try {
-        const likedProductIds = await ShopService.getUserLikedProductIds();
-        setIsLiked(likedProductIds.includes(id));
-      } catch (error) {
-        console.error("Error checking if product is liked:", error);
-      }
-    };
-    
-    checkIfLiked();
-  }, [user, id]);
-  
-  const handleAddToCart = () => {
-    if (!product) return;
-    
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image_url,
-      original_price: product.original_price
-    });
-    
-    toast.success(`${product.name} added to cart`);
+    // Simulate fetching favorite status from local storage or API
+    // Replace with actual logic
+    setIsFavorite(false); // Default to false
+  }, [productId]);
+
+  const toggleFavorite = () => {
+    setIsFavorite(prevState => !prevState);
   };
 
-  const handleToggleLike = async () => {
-    if (!user) {
-      toast.error("Please log in to save products");
-      return;
-    }
-
-    if (!id) return;
-    
-    try {
-      const result = await ShopService.toggleProductLike(id);
-      setIsLiked(result.liked);
-      
-      if (result.liked) {
-        toast.success("Added to favorites");
-      } else {
-        toast.success("Removed from favorites");
-      }
-    } catch (error) {
-      console.error("Error toggling product like:", error);
-      toast.error("Failed to update favorites");
-    }
-  };
-  
   if (isLoading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="animate-pulse">
-          <div className="h-8 w-1/3 bg-gray-200 rounded mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="h-96 bg-gray-200 rounded-lg"></div>
-            <div className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <div>Loading product details...</div>;
   }
-  
-  if (!product) {
-    return (
-      <div className="container mx-auto py-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-        <p>The product you're looking for doesn't exist or has been removed.</p>
-        <Button className="mt-4" onClick={() => navigate('/shop')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop
-        </Button>
-      </div>
-    );
+
+  if (error || !product) {
+    return <div>Error loading product details.</div>;
   }
-  
+
   return (
-    <div className="container mx-auto py-8">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop
-      </Button>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="rounded-lg overflow-hidden">
-          <img 
-            src={product.image_url} 
-            alt={product.name} 
-            className="w-full h-auto object-cover"
-          />
-        </div>
-        
-        <div className="space-y-6">
+    <div className="container mx-auto p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">{product.name}</CardTitle>
+          <CardDescription>{product.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <img src={product.image_url} alt={product.name} className="rounded-md" />
           <div>
-            <h1 className="text-3xl font-bold">{product.name}</h1>
-            
-            {product.seller && (
-              <div className="flex items-center mt-2 text-sm text-gray-500">
-                <span>Sold by </span>
-                <span className="font-medium ml-1">{product.seller.username}</span>
+            <div className="flex items-center justify-between">
+              <div className="text-xl font-semibold">${product.price}</div>
+              <Button onClick={toggleFavorite} variant="outline">
+                {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+              </Button>
+            </div>
+            <Separator className="my-4" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Product Details</h3>
+              <p>Category: {product.category}</p>
+              <p>Stock Quantity: {product.stock_quantity}</p>
+              <p>Status: {product.status}</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button>Add to Cart</Button>
+        </CardFooter>
+      </Card>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">Customer Reviews</h2>
+        <div className="space-y-4">
+          {/* Example Review */}
+          <Card>
+            <CardHeader className="flex flex-row items-center">
+              <Avatar className="w-8 h-8 mr-2">
+                <AvatarImage src="https://github.com/shadcn.png" alt="Avatar" />
+                <AvatarFallback>SC</AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-sm font-medium">John Doe</CardTitle>
+              <div className="ml-auto flex items-center">
+                <Star className="w-4 h-4 mr-1 text-yellow-500" />
+                <span>4.5</span>
               </div>
-            )}
-            
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-2xl font-bold">
-                ${product.price.toFixed(2)}
-              </span>
-              {product.original_price && product.original_price > product.price && (
-                <span className="text-lg text-gray-500 line-through">
-                  ${product.original_price.toFixed(2)}
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center mt-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                  key={star} 
-                  className={`h-4 w-4 ${star <= 4 ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                />
-              ))}
-              <span className="text-sm text-gray-500 ml-2">(24 reviews)</span>
-            </div>
-          </div>
-          
-          <p className="text-gray-700">{product.description}</p>
-          
-          <div className="flex flex-wrap gap-2">
-            {product.category && (
-              <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">
-                {product.category}
-              </span>
-            )}
-          </div>
-          
-          <div className="py-2">
-            {product.stock_quantity !== undefined && product.stock_quantity > 0 ? (
-              <span className="text-green-600">
-                In Stock ({product.stock_quantity} available)
-              </span>
-            ) : (
-              <span className="text-red-600">Out of Stock</span>
-            )}
-          </div>
-          
-          <div className="flex gap-4">
-            <Button 
-              className="flex-1" 
-              onClick={handleAddToCart}
-              disabled={product.stock_quantity === 0}
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Add to Cart
-            </Button>
-            <Button 
-              variant="outline" 
-              className={`w-12 flex-none ${isLiked ? 'text-red-500 border-red-500' : ''}`}
-              onClick={handleToggleLike}
-            >
-              <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500' : ''}`} />
-            </Button>
-          </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Great product! Highly recommend.
+              </p>
+            </CardContent>
+          </Card>
+          {/* Add more reviews here */}
         </div>
       </div>
-      
-      <Separator className="my-12" />
-      
-      <Tabs defaultValue="description" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="description">Description</TabsTrigger>
-          <TabsTrigger value="specifications">Specifications</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="description" className="space-y-4">
-          <h3 className="text-xl font-semibold">Product Description</h3>
-          <p className="text-gray-700">{product.description}</p>
-        </TabsContent>
-        
-        <TabsContent value="specifications" className="space-y-4">
-          <h3 className="text-xl font-semibold">Specifications</h3>
-          <Card>
-            <CardContent className="p-4">
-              <ul className="space-y-2">
-                {product.specifications && Object.entries(product.specifications).map(([key, value]) => (
-                  <li key={key} className="flex justify-between">
-                    <span className="font-medium">{key}</span>
-                    <span>{String(value)}</span>
-                  </li>
-                ))}
-                {!product.specifications && (
-                  <li>No specifications available</li>
-                )}
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="reviews" className="space-y-4">
-          <h3 className="text-xl font-semibold">Customer Reviews</h3>
-          <Card>
-            <CardContent className="p-4 text-center">
-              No reviews yet. Be the first to review this product!
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">Add a Review</h2>
+        <Card>
+          <CardContent className="space-y-4">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="rating">Rating</Label>
+              <Input type="number" id="rating" placeholder="Enter rating (1-5)" />
+            </div>
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="comment">Comment</Label>
+              <Textarea id="comment" placeholder="Write your review here" />
+            </div>
+            <Button>Submit Review</Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Clock, Zap } from 'lucide-react';
 import { LiveStream } from '@/services/streaming/stream.types';
 import { StreamService } from '@/services/streaming';
+
+const formatViewers = (count: number): string => {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  } else if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  }
+  return count.toString();
+};
 
 const LivePage = () => {
   const [activeTab, setActiveTab] = useState('live');
@@ -32,15 +40,6 @@ const LivePage = () => {
     }
     return true;
   });
-  
-  const formatViewers = (count: number) => {
-    if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`;
-    } else if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}K`;
-    }
-    return count.toString();
-  };
   
   return (
     <div className="container mx-auto p-4">

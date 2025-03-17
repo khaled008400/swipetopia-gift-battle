@@ -91,7 +91,7 @@ const TrendingHashtags = () => {
         setTrendingVideos(trendingVids?.map(video => ({
           id: video.id,
           thumbnail: video.thumbnail_url || `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/500`,
-          username: video.profiles?.username || 'Anonymous',
+          username: video.profiles ? video.profiles.username : 'Anonymous',
           viewCount: video.view_count || 0,
           title: video.title
         })) || []);

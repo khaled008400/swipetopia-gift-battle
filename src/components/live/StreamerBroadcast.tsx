@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Shield, Users, Zap } from 'lucide-react';
 import AgoraVideoStream from './AgoraVideoStream';
@@ -24,9 +23,8 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
 
   const startBroadcast = async () => {
     try {
-      // Start a stream in the database - fix the function call to use proper param count
-      const streamData = await StreamService.startStream({
-        userId: streamerId,
+      // Start a stream in the database with the correct parameter structure
+      const streamData = await StreamService.startStream(streamerId, {
         title: `${streamerName}'s Live Stream`,
         description: `Live stream by ${streamerName}`
       });

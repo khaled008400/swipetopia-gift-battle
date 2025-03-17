@@ -1,203 +1,130 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ShopService } from '@/services/shop.service';
+import { Product } from '@/types/product.types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Star } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { ProductCard } from '@/components/shop/ProductCard';
+import { Badge } from '@/components/ui/badge';
 
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import ShopHeader from "../components/shop/ShopHeader";
-import ShopSearch from "../components/shop/ShopSearch";
-import LiveSelling from "../components/shop/LiveSelling";
-import LimitedOffers from "../components/shop/LimitedOffers";
-import ShopCategories from "../components/shop/ShopCategories";
-import ProductsTabs from "../components/shop/ProductsTabs";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { StoreIcon } from "lucide-react";
-import ShopService from "@/services/shop.service";
+interface ShopParams {
+  shopId: string;
+}
 
-const ShopPage = () => {
-  const [activeCategory, setActiveCategory] = useState("ALL");
-  const [activeTab, setActiveTab] = useState("featured");
-  const [likedProducts, setLikedProducts] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const { user, hasRole } = useAuth();
-
-  // Fetch user's liked products when component mounts
+const ShopPage: React.FC = () => {
+  const { shopId } = useParams<ShopParams>();
+  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
+  const [isFollowing, setIsFollowing] = useState(false);
+  
+  const { data: shop, isLoading: isShopLoading, error: shopError } = useQuery(
+    ['shop', shopId],
+    () => ShopService.getShopProfile(shopId || ''),
+    {
+      enabled: !!shopId,
+    }
+  );
+  
+  const { data: products, isLoading: isProductsLoading, error: productsError } = useQuery(
+    ['shopProducts', shopId],
+    () => ShopService.getShopProducts(shopId || ''),
+    {
+      enabled: !!shopId,
+    }
+  );
+  
   useEffect(() => {
-    if (user) {
-      fetchLikedProducts();
-    }
-  }, [user]);
-
-  // When search query changes, fetch results if query has min length
-  useEffect(() => {
-    if (searchQuery.trim().length >= 2) {
-      handleSearch();
-    } else if (searchQuery.trim() === "") {
-      setSearchResults([]);
-      setIsSearching(false);
-    }
-  }, [searchQuery]);
-
-  const handleSearch = async () => {
-    if (searchQuery.trim().length < 2) {
-      return;
-    }
-    
-    setIsSearching(true);
-    setIsLoading(true);
-    
-    try {
-      const results = await ShopService.searchProducts(searchQuery);
-      setSearchResults(results);
-    } catch (error) {
-      console.error("Error searching products:", error);
-      toast({
-        title: "Search Error",
-        description: "Failed to search products. Please try again.",
-        variant: "destructive",
-        duration: 3000,
+    // Load initial favorite states from local storage or server
+    // For now, let's initialize them randomly
+    if (products) {
+      const initialFavorites: { [key: string]: boolean } = {};
+      products.forEach(product => {
+        initialFavorites[product.id] = Math.random() > 0.5;
       });
-    } finally {
-      setIsLoading(false);
+      setFavorites(initialFavorites);
     }
+  }, [products]);
+  
+  if (isShopLoading || isProductsLoading) {
+    return <div className="container mx-auto p-4">Loading...</div>;
+  }
+  
+  if (shopError || productsError) {
+    return <div className="container mx-auto p-4">Error loading shop or products.</div>;
+  }
+  
+  if (!shop) {
+    return <div className="container mx-auto p-4">Shop not found.</div>;
+  }
+
+  const toggleFavorite = (id: string) => {
+    // Toggle favorite status
+    setFavorites(prev => {
+      const newFavorites = { ...prev };
+      newFavorites[id] = !prev[id];
+      return newFavorites;
+    });
   };
-
-  const clearSearch = () => {
-    setSearchQuery("");
-    setSearchResults([]);
-    setIsSearching(false);
+  
+  const handleFollow = () => {
+    setIsFollowing(prev => !prev);
   };
-
-  const fetchLikedProducts = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      const likedProductIds = await ShopService.getUserLikedProductIds();
-      setLikedProducts(likedProductIds);
-    } catch (error) {
-      console.error("Error fetching liked products:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleLike = async (productId: string) => {
-    if (!user) {
-      toast({
-        description: "Please log in to save products",
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      const result = await ShopService.toggleProductLike(productId);
-      
-      if (result.liked) {
-        setLikedProducts([...likedProducts, productId]);
-        toast({
-          description: "Added to favorites",
-          duration: 2000,
-        });
-      } else {
-        setLikedProducts(likedProducts.filter(id => id !== productId));
-        toast({
-          description: "Removed from favorites",
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      console.error("Error toggling product like:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  };
-
+  
   return (
-    <div className="h-full w-full bg-app-black overflow-y-auto pb-16">
-      <ShopHeader />
-      <ShopSearch 
-        searchQuery={searchQuery} 
-        setSearchQuery={setSearchQuery} 
-        onSearch={handleSearch}
-        onClear={clearSearch}
-        isLoading={isLoading}
-      />
-      
-      {hasRole("seller") && (
-        <div className="px-4 my-4">
-          <Link to="/seller/dashboard">
-            <Button className="w-full bg-app-yellow text-app-black flex items-center justify-center">
-              <StoreIcon className="mr-2 h-4 w-4" />
-              Go to Seller Dashboard
-            </Button>
-          </Link>
-        </div>
-      )}
-      
-      {isSearching ? (
-        <div className="px-4 mb-20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white font-medium">Search Results</h2>
-            <Button 
-              variant="link" 
-              onClick={clearSearch} 
-              className="text-app-yellow p-0 h-auto"
-            >
-              Clear
+    <div className="container mx-auto p-4">
+      {/* Shop Header */}
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+          <Avatar className="w-20 h-20">
+            <AvatarImage src={shop.logo_url || "https://placehold.co/100x100"} alt={shop.name} />
+            <AvatarFallback>{shop.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className="ml-4">
+            <CardTitle className="text-2xl font-semibold">{shop.name}</CardTitle>
+            <CardDescription>{shop.description}</CardDescription>
+            <div className="flex items-center mt-2">
+              <Star className="h-4 w-4 text-yellow-500 mr-1" />
+              {shop.rating ? shop.rating.toFixed(1) : 'No ratings'}
+              <span className="text-gray-500 ml-2">({shop.total_sales || 0} sales)</span>
+            </div>
+          </div>
+          <div className="ml-auto">
+            <Button onClick={handleFollow} variant={isFollowing ? "secondary" : "outline"}>
+              {isFollowing ? "Unfollow" : "Follow"}
             </Button>
           </div>
-          
-          {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="aspect-square bg-gray-700 rounded-md mb-2"></div>
-                  <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          ) : searchResults.length > 0 ? (
-            <ProductsTabs
-              products={searchResults}
-              likedProducts={likedProducts}
-              toggleLike={toggleLike}
-              searchMode={true}
+        </CardHeader>
+        <CardContent>
+          <div className="relative w-full h-48 rounded-md overflow-hidden">
+            <img
+              src={shop.banner_url || "https://placehold.co/800x200"}
+              alt="Shop Banner"
+              className="object-cover w-full h-full"
             />
-          ) : (
-            <div className="text-center py-12 bg-app-gray-dark rounded-lg">
-              <p className="text-gray-400">No products found matching "{searchQuery}"</p>
-              <Button 
-                variant="link" 
-                onClick={clearSearch} 
-                className="text-app-yellow mt-2"
-              >
-                Clear search
-              </Button>
-            </div>
-          )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Separator className="my-4" />
+      
+      {/* Product Listings */}
+      <h2 className="text-xl font-semibold mb-4">Products</h2>
+      {products && products.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              isFavorite={favorites[product.id] || false}
+              toggleFavorite={toggleFavorite}
+            />
+          ))}
         </div>
       ) : (
-        <>
-          <LiveSelling />
-          <LimitedOffers />
-          <ShopCategories activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
-          <ProductsTabs 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            likedProducts={likedProducts} 
-            toggleLike={toggleLike} 
-          />
-        </>
+        <div className="text-gray-500">No products available.</div>
       )}
     </div>
   );

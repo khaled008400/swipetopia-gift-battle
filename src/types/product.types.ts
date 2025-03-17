@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -13,6 +12,7 @@ export interface Product {
   updated_at: string;
   is_featured: boolean;
   suction_score?: number;
+  original_price?: number;
 }
 
 export interface LimitedOffer {
@@ -49,6 +49,7 @@ export interface ProductReview {
 
 export interface PaymentMethod {
   id: string;
+  name?: string;
   type: string;
   last4: string;
   brand?: string;

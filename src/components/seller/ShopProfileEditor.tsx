@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,7 +84,7 @@ const ShopProfileEditor = () => {
       setProfile(prev => ({
         ...prev,
         [section]: {
-          ...prev[section as keyof ShopProfile],
+          ...(prev[section as keyof ShopProfile] as Record<string, any> || {}),
           [field]: value
         }
       }));

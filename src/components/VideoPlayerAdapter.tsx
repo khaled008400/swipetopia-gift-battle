@@ -19,7 +19,7 @@ const VideoPlayerAdapter: React.FC<VideoPlayerAdapterProps> = ({
 }) => {
   return (
     <VideoPlayer
-      src={src}
+      videoUrl={src} // Change from src to videoUrl to match VideoPlayer.d.ts
       poster={poster}
       autoPlay={autoPlay}
     />
