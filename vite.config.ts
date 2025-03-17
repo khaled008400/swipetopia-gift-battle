@@ -23,5 +23,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    // Add the following options for better Capacitor compatibility
+    minify: true,
+    sourcemap: false,
+    // Ensure that the output doesn't use hashed file names for Capacitor
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
   }
 }));
