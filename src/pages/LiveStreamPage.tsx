@@ -11,16 +11,6 @@ import { LiveStreamComment, LiveStreamGift, LiveStreamInfo } from '@/types/lives
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
-import { LiveStreamService } from '@/services/livestream.service';
-import { GiftSelector } from '@/components/livestream/GiftSelector';
-import { ShareModal } from '@/components/livestream/ShareModal';
-import { LiveStreamHeader } from '@/components/livestream/LiveStreamHeader';
-import { LiveStreamFooter } from '@/components/livestream/LiveStreamFooter';
-import { LiveStreamSidebar } from '@/components/livestream/LiveStreamSidebar';
-import { LiveStreamChat } from '@/components/livestream/LiveStreamChat';
-import { LiveStreamGiftDisplay } from '@/components/livestream/LiveStreamGiftDisplay';
-import { LiveStreamViewers } from '@/components/livestream/LiveStreamViewers';
-import { LiveStreamProducts } from '@/components/livestream/LiveStreamProducts';
 
 const LiveStreamPage: React.FC = () => {
   const { streamId } = useParams<{ streamId: string }>();
@@ -41,7 +31,6 @@ const LiveStreamPage: React.FC = () => {
   const [recentGifts, setRecentGifts] = useState<LiveStreamGift[]>([]);
   const [activeTab, setActiveTab] = useState('chat');
   
-  // Mock data for demonstration
   const mockStreamInfo: LiveStreamInfo = {
     id: streamId || '1',
     title: 'Live Dance Session',
@@ -610,3 +599,4 @@ const LiveStreamPage: React.FC = () => {
 };
 
 export default LiveStreamPage;
+
