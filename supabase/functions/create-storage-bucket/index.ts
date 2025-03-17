@@ -25,7 +25,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Create or ensure buckets exist
-    const buckets = ['videos', 'thumbnails', 'avatars', 'products'];
+    const buckets = ['videos', 'thumbnails', 'avatars', 'products', 'shops'];
     const results = [];
 
     for (const bucket of buckets) {
