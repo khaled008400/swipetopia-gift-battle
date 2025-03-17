@@ -1,90 +1,116 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Battle } from "@/models/streaming";
+import { supabase } from '@/integrations/supabase/client';
+import { Battle } from './stream.types';
 
 /**
- * Service for managing battle operations between streamers
+ * Service for handling battle operations
  */
-const BattleService = {
-  // Request a PK battle
-  requestBattle: async (toStreamerId: string, message?: string): Promise<void> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error('User must be authenticated to request a battle');
-    }
-    
-    // First, get the current stream of the requesting user
-    const { data: currentStream, error: streamError } = await supabase
-      .from('streams')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('status', 'live')
-      .single();
+class BattleService {
+  /**
+   * Create a new battle
+   */
+  async createBattle(streamAId: string, streamBId: string): Promise<string> {
+    try {
+      // Create a new battle record
+      const { data, error } = await supabase
+        .from('battles')
+        .insert({
+          stream_a_id: streamAId,
+          stream_b_id: streamBId,
+          status: 'pending',
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
       
-    if (streamError) {
-      console.error('Error finding current stream:', streamError);
-      throw new Error('You must be streaming to request a battle');
-    }
-    
-    // Then, get the current stream of the target streamer
-    const { data: targetStream, error: targetStreamError } = await supabase
-      .from('streams')
-      .select('id')
-      .eq('user_id', toStreamerId)
-      .eq('status', 'live')
-      .single();
+      if (error) throw error;
       
-    if (targetStreamError) {
-      console.error('Error finding target stream:', targetStreamError);
-      throw new Error('Target streamer must be live to request a battle');
-    }
-    
-    // Create the battle request
-    const { error } = await supabase
-      .from('battles')
-      .insert([{ 
-        stream_a_id: currentStream.id,
-        stream_b_id: targetStream.id,
-        status: 'pending',
-        started_at: new Date().toISOString()
-      }]);
-      
-    if (error) {
-      console.error('Error creating battle request:', error);
+      return data.id;
+    } catch (error) {
+      console.error('Error creating battle:', error);
       throw error;
     }
-  },
-  
-  // Accept a battle request
-  acceptBattle: async (battleId: string): Promise<void> => {
-    const { error } = await supabase
-      .from('battles')
-      .update({ status: 'active' })
-      .eq('id', battleId);
+  }
+
+  /**
+   * Accept a battle
+   */
+  async acceptBattle(battleId: string): Promise<void> {
+    try {
+      // Update the battle record
+      const { error } = await supabase
+        .from('battles')
+        .update({ status: 'active' })
+        .eq('id', battleId);
       
-    if (error) {
+      if (error) throw error;
+    } catch (error) {
       console.error('Error accepting battle:', error);
       throw error;
     }
-  },
-  
-  // End a battle
-  endBattle: async (battleId: string, winnerId?: string): Promise<void> => {
-    const { error } = await supabase
-      .from('battles')
-      .update({ 
-        status: 'completed',
-        ended_at: new Date().toISOString(),
-        winner_id: winnerId
-      })
-      .eq('id', battleId);
+  }
+
+  /**
+   * End a battle
+   */
+  async endBattle(battleId: string, winnerId?: string): Promise<void> {
+    try {
+      // Update the battle record
+      const { error } = await supabase
+        .from('battles')
+        .update({
+          status: 'completed',
+          ended_at: new Date().toISOString(),
+          winner_id: winnerId
+        })
+        .eq('id', battleId);
       
-    if (error) {
+      if (error) throw error;
+    } catch (error) {
       console.error('Error ending battle:', error);
       throw error;
     }
-  },
-};
+  }
 
-export default BattleService;
+  /**
+   * Get battle by ID
+   */
+  async getBattleById(battleId: string): Promise<Battle | null> {
+    try {
+      const { data, error } = await supabase
+        .from('battles')
+        .select('*')
+        .eq('id', battleId)
+        .single();
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching battle:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get active battles
+   */
+  async getActiveBattles(): Promise<Battle[]> {
+    try {
+      const { data, error } = await supabase
+        .from('battles')
+        .select('*')
+        .eq('status', 'active')
+        .order('started_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching active battles:', error);
+      return [];
+    }
+  }
+}
+
+export default new BattleService();

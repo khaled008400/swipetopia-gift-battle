@@ -1,51 +1,76 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { LiveStream } from './stream.types';
 
-const StreamService = {
-  // Start a new stream
-  startStream: async (streamerId: string, title: string, description?: string) => {
+/**
+ * Service for handling live stream operations
+ */
+class StreamService {
+  /**
+   * Start a new live stream
+   */
+  async startStream(userId: string, title: string, description?: string): Promise<string> {
     try {
+      console.log('Starting stream for user:', userId);
+      
+      // Create a new stream record
       const { data, error } = await supabase
         .from('streams')
         .insert({
-          user_id: streamerId,
-          title,
-          description,
-          status: 'live',
-          started_at: new Date().toISOString(),
-          viewer_count: 0
+          user_id: userId,
+          title: title,
+          description: description || '',
+          status: 'online',
+          started_at: new Date().toISOString()
         })
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error starting stream:', error);
+        throw error;
+      }
+      
+      console.log('Stream started successfully:', data.id);
       return data.id;
     } catch (error) {
-      console.error('Error starting stream:', error);
+      console.error('Error in startStream:', error);
       throw error;
     }
-  },
-  
-  // End a stream
-  endStream: async (streamId: string) => {
+  }
+
+  /**
+   * End a live stream
+   */
+  async endStream(streamId: string): Promise<void> {
     try {
+      console.log('Ending stream:', streamId);
+      
+      // Update the stream record
       const { error } = await supabase
         .from('streams')
         .update({
-          status: 'ended',
+          status: 'offline',
           ended_at: new Date().toISOString()
         })
         .eq('id', streamId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error ending stream:', error);
+        throw error;
+      }
+      
+      console.log('Stream ended successfully');
     } catch (error) {
-      console.error('Error ending stream:', error);
+      console.error('Error in endStream:', error);
       throw error;
     }
-  },
-  
-  // Get all active streams
-  getActiveStreams: async () => {
+  }
+
+  /**
+   * Get all active streams
+   */
+  async getActiveStreams(): Promise<LiveStream[]> {
     try {
       const { data, error } = await supabase
         .from('streams')
@@ -53,19 +78,25 @@ const StreamService = {
           *,
           profiles:user_id (username, avatar_url)
         `)
-        .eq('status', 'live')
-        .order('viewer_count', { ascending: false });
+        .eq('status', 'online')
+        .order('started_at', { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching active streams:', error);
+        throw error;
+      }
+      
+      return data || [];
     } catch (error) {
-      console.error('Error fetching active streams:', error);
+      console.error('Error in getActiveStreams:', error);
       return [];
     }
-  },
-  
-  // Get a specific stream by ID
-  getStream: async (streamId: string) => {
+  }
+
+  /**
+   * Get stream by ID
+   */
+  async getStreamById(streamId: string): Promise<LiveStream | null> {
     try {
       const { data, error } = await supabase
         .from('streams')
@@ -76,24 +107,36 @@ const StreamService = {
         .eq('id', streamId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stream:', error);
+        throw error;
+      }
+      
       return data;
     } catch (error) {
-      console.error('Error fetching stream:', error);
+      console.error('Error in getStreamById:', error);
       return null;
     }
-  },
-  
-  // These are placeholder methods, implement actual functionality as needed
-  joinStream: async (streamId: string) => {
-    console.log(`Joining stream: ${streamId}`);
-    // Implementation would depend on your actual real-time presence requirements
-  },
-  
-  leaveStream: async (streamId: string) => {
-    console.log(`Leaving stream: ${streamId}`);
-    // Implementation would depend on your actual real-time presence requirements
   }
-};
 
-export default StreamService;
+  /**
+   * Update viewer count
+   */
+  async updateViewerCount(streamId: string, viewerCount: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('streams')
+        .update({ viewer_count: viewerCount })
+        .eq('id', streamId);
+      
+      if (error) {
+        console.error('Error updating viewer count:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateViewerCount:', error);
+    }
+  }
+}
+
+export default new StreamService();

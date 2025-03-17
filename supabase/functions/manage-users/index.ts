@@ -72,7 +72,8 @@ serve(async (req) => {
             username: userData.username,
             email: userData.email,
             role: userData.role,
-            roles: [userData.role]
+            roles: [userData.role],
+            coins: 0
           });
 
         if (profileError) throw profileError;

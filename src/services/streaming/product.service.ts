@@ -1,105 +1,120 @@
-
-import { supabase } from "@/integrations/supabase/client";
-import { StreamProduct } from "@/models/streaming";
+import { supabase } from '@/integrations/supabase/client';
+import { StreamProduct } from './stream.types';
 
 /**
- * Service for managing products during live streams
+ * Service for handling product operations in streams
  */
-const ProductService = {
-  // Tag a product in a live stream
-  tagProduct: async (productId: string, streamId: string, featured: boolean = false, discountPercentage?: number): Promise<StreamProduct | null> => {
-    const { data, error } = await supabase
-      .from('live_stream_products')
-      .insert([{ 
-        product_id: productId, 
-        stream_id: streamId, 
-        featured,
-        discount_percentage: discountPercentage
-      }])
-      .select('*, product:products(*)')
-      .single();
+class ProductService {
+  /**
+   * Tag a product to a stream
+   */
+  async tagProduct(
+    productId: string, 
+    streamId: string, 
+    featured: boolean = false, 
+    discountPercentage?: number
+  ): Promise<string> {
+    try {
+      // Check if product is already tagged
+      const { data: existing, error: checkError } = await supabase
+        .from('live_stream_products')
+        .select('id')
+        .eq('product_id', productId)
+        .eq('stream_id', streamId)
+        .maybeSingle();
       
-    if (error) {
-      console.error('Error tagging product:', error);
-      throw error;
-    }
-    
-    return data;
-  },
-  
-  // Remove a product tag from a live stream
-  removeProductTag: async (streamProductId: string): Promise<void> => {
-    const { error } = await supabase
-      .from('live_stream_products')
-      .delete()
-      .eq('id', streamProductId);
-      
-    if (error) {
-      console.error('Error removing product tag:', error);
-      throw error;
-    }
-  },
-  
-  // Get all products tagged in a stream
-  getStreamProducts: async (streamId: string): Promise<StreamProduct[]> => {
-    const { data, error } = await supabase
-      .from('live_stream_products')
-      .select('*, product:products(*)')
-      .eq('stream_id', streamId);
-      
-    if (error) {
-      console.error('Error fetching stream products:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
-  
-  // Update a tagged product's details (featured status or discount)
-  updateStreamProduct: async (streamProductId: string, updates: { featured?: boolean, discount_percentage?: number }): Promise<void> => {
-    const { error } = await supabase
-      .from('live_stream_products')
-      .update(updates)
-      .eq('id', streamProductId);
-      
-    if (error) {
-      console.error('Error updating stream product:', error);
-      throw error;
-    }
-  },
-  
-  // Get all streams that have a specific product tagged
-  getStreamsByProduct: async (productId: string): Promise<any[]> => {
-    const { data, error } = await supabase
-      .from('live_stream_products')
-      .select('stream:streams(*)')
-      .eq('product_id', productId);
-      
-    if (error) {
-      console.error('Error fetching streams by product:', error);
-      throw error;
-    }
-    
-    // Extract and deduplicate the streams
-    const streamsMap = new Map();
-    data?.forEach(item => {
-      if (item.stream) {
-        streamsMap.set(item.stream.id, {
-          id: item.stream.id,
-          streamer_id: item.stream.user_id,
-          title: item.stream.title,
-          description: item.stream.description,
-          status: item.stream.status,
-          is_live: item.stream.status === 'live',
-          viewer_count: item.stream.viewer_count || 0,
-          started_at: item.stream.started_at,
-          ended_at: item.stream.ended_at
-        });
+      if (checkError) {
+        console.error('Error checking existing tagged product:', checkError);
+        throw checkError;
       }
-    });
-    
-    return Array.from(streamsMap.values());
-  },
-};
+      
+      // If product is already tagged, update it
+      if (existing) {
+        const { error: updateError } = await supabase
+          .from('live_stream_products')
+          .update({
+            featured,
+            discount_percentage: discountPercentage
+          })
+          .eq('id', existing.id);
+        
+        if (updateError) {
+          console.error('Error updating tagged product:', updateError);
+          throw updateError;
+        }
+        
+        return existing.id;
+      }
+      
+      // Otherwise, create a new tagged product
+      const { data, error } = await supabase
+        .from('live_stream_products')
+        .insert({
+          product_id: productId,
+          stream_id: streamId,
+          featured,
+          discount_percentage: discountPercentage
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error tagging product:', error);
+        throw error;
+      }
+      
+      return data.id;
+    } catch (error) {
+      console.error('Error in tagProduct:', error);
+      throw error;
+    }
+  }
 
-export default ProductService;
+  /**
+   * Remove a product from a stream
+   */
+  async untagProduct(productId: string, streamId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('live_stream_products')
+        .delete()
+        .eq('product_id', productId)
+        .eq('stream_id', streamId);
+      
+      if (error) {
+        console.error('Error untagging product:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in untagProduct:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get products for a stream
+   */
+  async getStreamProducts(streamId: string): Promise<StreamProduct[]> {
+    try {
+      const { data, error } = await supabase
+        .from('live_stream_products')
+        .select(`
+          *,
+          products:product_id (*)
+        `)
+        .eq('stream_id', streamId);
+      
+      if (error) {
+        console.error('Error fetching stream products:', error);
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error in getStreamProducts:', error);
+      return [];
+    }
+  }
+}
+
+export default new ProductService();

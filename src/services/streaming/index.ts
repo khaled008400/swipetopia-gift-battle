@@ -1,21 +1,9 @@
 
-import BattleService from './battle.service';
-import ProductService from './product.service';
-import StreamService from './stream.service';
-import GiftService from './gift.service';
-import StreamingAdminService from './admin.service';
-import type { LiveStream, Battle, BattleRequest, StreamProduct } from '@/models/streaming';
+// Create an index file to re-export all streaming services
+export { default as StreamService } from './stream.service';
+export { default as BattleService } from './battle.service';
+export { default as GiftService } from './gift.service';
+export { default as ProductService } from './product.service';
 
-// Export individual services
-export {
-  BattleService,
-  ProductService,
-  StreamService,
-  GiftService,
-  StreamingAdminService
-};
-
-// Export types properly with 'export type'
-export type { LiveStream, Battle, BattleRequest, StreamProduct };
-
-// No default export - we're exporting individual services
+// Export types as well
+export * from './stream.types';

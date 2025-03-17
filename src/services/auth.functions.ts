@@ -49,6 +49,7 @@ export const signupUser = async (email: string, username: string, password: stri
       .insert({
         id: data.user.id,
         username: username,
+        email: data.user.email,
         roles: roles, // Store roles array in profile
         avatar_url: `https://i.pravatar.cc/150?u=${username}` // Placeholder avatar
       });
@@ -68,13 +69,24 @@ export const logoutUser = async () => {
 
 export const getSession = async () => {
   const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  return data;
+};
+
+export const getCurrentUser = async () => {
+  // First check the session
+  const { session } = await getSession();
+  
+  if (!session) return null;
+  
+  const { data: { user }, error } = await supabase.auth.getUser();
   
   if (error) throw error;
   
-  return data.session;
-};
-
-export const setupAuthListener = (callback: (event: string, session: any) => void) => {
-  // Return the subscription properly
-  return supabase.auth.onAuthStateChange(callback);
+  if (user) {
+    const profile = await fetchUserProfile(user);
+    return { ...user, profile };
+  }
+  
+  return null;
 };

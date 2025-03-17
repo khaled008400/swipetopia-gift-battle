@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import VideoService from '@/services/video.service';
 import { X } from "lucide-react";
 import UploadStep from "./upload-steps/UploadStep";
@@ -10,6 +10,7 @@ import ProcessingStep from "./upload-steps/ProcessingStep";
 import CompleteStep from "./upload-steps/CompleteStep";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { Loader } from "@/components/ui/loader";
 
 interface VideoUploadFormProps {
   onClose: () => void;
@@ -40,6 +41,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [uploadedVideoData, setUploadedVideoData] = useState(null);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -147,7 +149,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         if (onSuccess && response?.id) {
           onSuccess(response.id);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error processing upload:", error);
         clearInterval(interval);
         
@@ -163,6 +165,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         setStep("edit");
       } finally {
         setIsUploading(false);
+        clearInterval(interval);
       }
     } catch (error) {
       console.error("Error in upload process:", error);
