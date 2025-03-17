@@ -8,7 +8,7 @@ export function useRealtimeData<T>(
   table: string,
   initialData: T[] = [],
   filter: any = null,
-  options: UseQueryOptions<any, Error, any, any> = {}
+  options: Partial<UseQueryOptions<any, Error, any, any>> = {}
 ) {
   const [data, setData] = useState<T[]>(initialData);
   const [channel, setChannel] = useState<any>(null);

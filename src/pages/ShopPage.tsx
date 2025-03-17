@@ -1,128 +1,151 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import ProductCard from "@/components/shop/ProductCard";
+import { Heart } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Slider } from "@/components/ui/slider"
+import { Label } from "@/components/ui/label"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import shopService from '@/services/shop.service';
-import { Product } from '@/types/product.types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Star } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import ProductCard from '@/components/shop/ProductCard';
-import { Badge } from '@/components/ui/badge';
 
-// Fix ShopParams to satisfy the constraint
-const ShopPage: React.FC = () => {
-  const params = useParams<{ shopId: string }>();
-  const shopId = params.shopId || '';
-  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
-  const [isFollowing, setIsFollowing] = useState(false);
-  
-  // Fix getShop method - if it doesn't exist, use a different method or create a mock
-  const { data: shop, isLoading: isShopLoading, error: shopError } = useQuery({
-    queryKey: ['shop', shopId],
-    queryFn: () => shopService.getShopProfile ? shopService.getShopProfile(shopId) : { name: 'Sample Shop', description: 'Sample Description' }
-  });
-  
-  // Fix getProducts method or use a different one
-  const { data: products, isLoading: isProductsLoading, error: productsError } = useQuery({
-    queryKey: ['shopProducts', shopId],
-    queryFn: () => shopService.getProducts ? shopService.getProducts(shopId) : []
-  });
-  
-  useEffect(() => {
-    // Load initial favorite states from local storage or server
-    // For now, let's initialize them randomly
-    if (products && Array.isArray(products)) {
-      const initialFavorites: { [key: string]: boolean } = {};
-      products.forEach((product: Product) => {
-        initialFavorites[product.id] = Math.random() > 0.5;
-      });
-      setFavorites(initialFavorites);
+const ShopPage = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [shopItems, setShopItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [favorites, setFavorites] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const [priceRange, setPriceRange] = useState([0, 100]);
+
+  const toggleFavorite = (id) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(id)) {
+      newFavorites.delete(id);
+    } else {
+      newFavorites.add(id);
     }
-  }, [products]);
-  
-  if (isShopLoading || isProductsLoading) {
-    return <div className="container mx-auto p-4">Loading...</div>;
-  }
-  
-  if (shopError || productsError) {
-    return <div className="container mx-auto p-4">Error loading shop or products.</div>;
-  }
-  
-  if (!shop) {
-    return <div className="container mx-auto p-4">Shop not found.</div>;
-  }
+    setFavorites(newFavorites);
+  };
 
-  const toggleFavorite = (id: string) => {
-    // Toggle favorite status
-    setFavorites(prev => {
-      const newFavorites = { ...prev };
-      newFavorites[id] = !prev[id];
-      return newFavorites;
-    });
+  const filterByPrice = (items) => {
+    return items.filter(item => item.price >= priceRange[0] && item.price <= priceRange[1]);
   };
-  
-  const handleFollow = () => {
-    setIsFollowing(prev => !prev);
+
+  const filterItems = (term) => {
+    if (!term) {
+      return shopItems;
+    }
+    const lowerTerm = term.toLowerCase();
+    return shopItems.filter(item =>
+      item.name.toLowerCase().includes(lowerTerm)
+    );
   };
-  
+
+  useEffect(() => {
+    const fetchShopData = async () => {
+      try {
+        setIsLoading(true);
+        // Use proper method from shop service
+        const shopData = await shopService.getProducts(); // Changed from getShopProfile
+        setShopItems(shopData);
+        setFilteredItems(shopData);
+        setFavorites(new Set());
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching shop data:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchShopData();
+  }, []);
+
+  useEffect(() => {
+    const termFiltered = filterItems(searchTerm);
+    const priceFiltered = filterByPrice(termFiltered);
+    setFilteredItems(priceFiltered);
+  }, [searchTerm, priceRange, shopItems]);
+
   return (
-    <div className="container mx-auto p-4">
-      {/* Shop Header */}
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-          <Avatar className="w-20 h-20">
-            <AvatarImage src={shop?.logo_url || "https://placehold.co/100x100"} alt={shop?.name || 'Shop'} />
-            <AvatarFallback>{shop?.name?.charAt(0) || 'S'}</AvatarFallback>
-          </Avatar>
-          <div className="ml-4">
-            <CardTitle className="text-2xl font-semibold">{shop?.name || 'Shop'}</CardTitle>
-            <CardDescription>{shop?.description || 'No description'}</CardDescription>
-            <div className="flex items-center mt-2">
-              <Star className="h-4 w-4 text-yellow-500 mr-1" />
-              {shop?.rating ? shop.rating.toFixed(1) : 'No ratings'}
-              <span className="text-gray-500 ml-2">({shop?.total_sales || 0} sales)</span>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-4">Shop</h1>
+
+      <div className="flex flex-col md:flex-row items-center justify-between mb-6">
+        <div className="w-full md:w-1/2 mb-4 md:mb-0">
+          <Input
+            type="text"
+            placeholder="Search for items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Filter by Price
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="p-4">
+              <DropdownMenuLabel>Price Range</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="min">Min</Label>
+                <Input
+                  type="number"
+                  id="min"
+                  value={priceRange[0]}
+                  onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
+                  className="w-20"
+                />
+                <Label htmlFor="max">Max</Label>
+                <Input
+                  type="number"
+                  id="max"
+                  value={priceRange[1]}
+                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                  className="w-20"
+                />
+              </div>
+              <Slider
+                defaultValue={priceRange}
+                max={1000}
+                step={10}
+                onValueChange={(value) => setPriceRange(value)}
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center">Loading...</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredItems.map((product) => (
+            <div key={product.id} className="w-full">
+              <ProductCard
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                image={product.image_url}
+                rating={4.5}
+                isLiked={favorites.has(product.id)}
+                onToggleLike={() => toggleFavorite(product.id)}
+              />
             </div>
-          </div>
-          <div className="ml-auto">
-            <Button onClick={handleFollow} variant={isFollowing ? "secondary" : "outline"}>
-              {isFollowing ? "Unfollow" : "Follow"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="relative w-full h-48 rounded-md overflow-hidden">
-            <img
-              src={shop?.banner_url || "https://placehold.co/800x200"}
-              alt="Shop Banner"
-              className="object-cover w-full h-full"
-            />
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Separator className="my-4" />
-      
-      {/* Product Listings */}
-      <h2 className="text-xl font-semibold mb-4">Products</h2>
-      {products && Array.isArray(products) && products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product: Product) => (
-            <ProductCard
-              key={product.id} 
-              id={product.id}
-              name={product.name}
-              price={product.price}
-              image={product.image_url}
-              isFavorite={favorites[product.id] || false}
-              toggleFavorite={() => toggleFavorite(product.id)}
-            />
           ))}
         </div>
-      ) : (
-        <div className="text-gray-500">No products available.</div>
       )}
     </div>
   );

@@ -44,6 +44,7 @@ export interface BattleVideo extends Video {
   battle_id: string;
   score: number;
   position: 'left' | 'right';
+  url: string; // Make url required in BattleVideo
 }
 
 export interface Comment {

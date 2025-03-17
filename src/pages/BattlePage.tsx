@@ -1,102 +1,133 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import VideoPlayer from '@/components/VideoPlayer';
+import { BattleVideo } from '@/types/video.types';
+import { Loader2 } from 'lucide-react';
 
-import { useEffect } from "react";
-import VideoFeed from "@/components/VideoFeed";
-import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
-import { useBattleVideos } from "@/hooks/useBattleVideos";
-import VideoActions from "@/components/video/VideoActions";
-import { ArrowLeft } from "lucide-react";
-import BattleHeader from "@/components/battle/BattleHeader";
-import { Video } from "@/types/video.types";
+interface Battle {
+  id: string;
+  created_at: string;
+  videos: BattleVideo[];
+}
 
 const BattlePage = () => {
-  const {
-    activeVideoIndex,
-    setActiveVideoIndex,
-    filteredVideos
-  } = useBattleVideos(false); // false = regular videos only
+  const { battleId } = useParams<{ battleId: string }>();
+  const [battleData, setBattleData] = useState<Battle | null>(null);
+  const [leftVideo, setLeftVideo] = useState<BattleVideo | null>(null);
+  const [rightVideo, setRightVideo] = useState<BattleVideo | null>(null);
+  const [videoData, setVideoData] = useState<BattleVideo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Handle swipe/scroll to change videos
   useEffect(() => {
-    const handleScroll = (e: WheelEvent) => {
-      if (e.deltaY > 0 && activeVideoIndex < filteredVideos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
+    const fetchBattle = async () => {
+      setIsLoading(true);
+      try {
+        if (!battleId) {
+          setError('Battle ID is missing');
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('battles')
+          .select(`
+            id,
+            created_at,
+            videos (
+              id,
+              title,
+              description,
+              video_url,
+              thumbnail_url,
+              user_id,
+              created_at,
+              updated_at,
+              view_count,
+              likes_count,
+              comments_count,
+              shares_count,
+              is_live,
+              is_private,
+              duration,
+              category,
+              battle_id,
+              score,
+              position,
+              url,
+              profiles (
+                username,
+                avatar_url
+              )
+            )
+          `)
+          .eq('id', battleId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching battle:', error);
+          setError(error.message);
+          return;
+        }
+
+        setBattleData(data);
+      } catch (err: any) {
+        console.error('Error fetching battle:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
       }
     };
-    window.addEventListener('wheel', handleScroll);
-    return () => {
-      window.removeEventListener('wheel', handleScroll);
-    };
-  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
 
-  // Handle touch swipe for mobile
+    fetchBattle();
+  }, [battleId]);
+
   useEffect(() => {
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndY = e.changedTouches[0].clientY;
-      const diff = touchStartY - touchEndY;
+    if (battleData && battleData.videos) {
+      setLeftVideo(battleData.videos.find(v => v.position === 'left') as BattleVideo);
+      setRightVideo(battleData.videos.find(v => v.position === 'right') as BattleVideo);
+      setVideoData(battleData.videos as BattleVideo[]);
+    }
+  }, [battleData]);
 
-      // Swipe up - go to next video
-      if (diff > 50 && activeVideoIndex < filteredVideos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      }
-      // Swipe down - go to previous video
-      else if (diff < -50 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
-      }
-    };
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
-  
-  // Cast the filteredVideos to Video[] to fix the type error
-  const videos: Video[] = filteredVideos as unknown as Video[];
-  
-  return (
-    <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
-      {/* Videos container */}
-      <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
-      
-      {/* Battle header with title */}
-      {videos[activeVideoIndex] && (
-        <BattleHeader title={videos[activeVideoIndex].description} />
-      )}
-      
-      {/* Progress indicators */}
-      <BattleProgressIndicators videos={videos} activeIndex={activeVideoIndex} />
-
-      {/* Back button and page title */}
-      <div className="absolute top-4 left-4 z-30 flex items-center">
-        <button className="mr-3 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-[#9b87f5] to-[#D946EF] bg-clip-text text-transparent">
-          Battle Videos
-        </h1>
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
-      
-      {/* Video actions */}
-      <div className="absolute bottom-20 right-3 z-30">
-        {videos[activeVideoIndex] && (
-          <VideoActions 
-            videoId={videos[activeVideoIndex].id}
-            likes={videos[activeVideoIndex].likes} 
-            comments={videos[activeVideoIndex].comments} 
-            shares={videos[activeVideoIndex].shares}
-            isLiked={videos[activeVideoIndex].isLiked || false}
-            onLike={() => {
-              console.log('Video liked:', videos[activeVideoIndex]);
-            }}
-          />
-        )}
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+
+  if (!battleData || !leftVideo || !rightVideo) {
+    return <div>No battle data found.</div>;
+  }
+
+  return (
+    <div className="container mx-auto mt-8">
+      <h1 className="text-2xl font-bold mb-4">Battle Page</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Left Video</h2>
+          {leftVideo && leftVideo.url && (
+            <VideoPlayer videoUrl={leftVideo.url} autoPlay={false} />
+          )}
+          <p>Title: {leftVideo.title}</p>
+          <p>Score: {leftVideo.score}</p>
+          {leftVideo.profiles && <p>Creator: {leftVideo.profiles.username}</p>}
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Right Video</h2>
+          {rightVideo && rightVideo.url && (
+            <VideoPlayer videoUrl={rightVideo.url} autoPlay={false} />
+          )}
+          <p>Title: {rightVideo.title}</p>
+          <p>Score: {rightVideo.score}</p>
+          {rightVideo.profiles && <p>Creator: {rightVideo.profiles.username}</p>}
+        </div>
       </div>
     </div>
   );

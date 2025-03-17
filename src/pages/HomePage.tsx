@@ -12,7 +12,8 @@ const HomePage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [localVideos, setLocalVideos] = useState<Video[]>([]);
-  
+  const [trendingProfiles, setTrendingProfiles] = useState([]);
+
   // Fetch initial videos from Supabase
   useEffect(() => {
     const fetchVideos = async () => {
@@ -120,6 +121,32 @@ const HomePage = () => {
       user: video.user
     }));
   };
+  
+  // Fetch trending profiles
+  useEffect(() => {
+    const fetchTrendingProfiles = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .order('followers', { ascending: false })
+          .limit(5);
+        
+        if (data && data.length > 0) {
+          console.log("Trending profiles fetched:", data);
+          const trendingUsers = data.map((profile) => ({
+            username: profile.username,
+            avatar: profile.avatar_url
+          }));
+          setTrendingProfiles(trendingUsers);
+        }
+      } catch (error) {
+        console.error("Error fetching profiles:", error);
+      }
+    };
+    
+    fetchTrendingProfiles();
+  }, []);
   
   // Use the real-time hook to listen for changes
   const { data: realtimeVideos } = useRealtimeData<any>(
@@ -279,3 +306,6 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+
+
