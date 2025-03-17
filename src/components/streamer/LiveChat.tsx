@@ -32,22 +32,22 @@ const LiveChat: React.FC<LiveChatProps> = ({ streamId }) => {
   };
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 rounded-md">
       <div className="flex-1 p-3 overflow-y-auto">
         {loading ? (
           <div className="flex flex-col space-y-3">
             <div className="flex items-start space-x-2 animate-pulse">
-              <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+              <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
               <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                <div className="h-10 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-1"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
               </div>
             </div>
             <div className="flex items-start space-x-2 animate-pulse">
-              <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+              <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
               <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                <div className="h-10 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-1"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
               </div>
             </div>
           </div>

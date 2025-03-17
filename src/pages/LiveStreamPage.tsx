@@ -132,7 +132,7 @@ const LiveStreamPage: React.FC = () => {
           'Love your content!',
           'Hello from Brazil! 🇧🇷',
           'Can you do a tutorial on that?',
-          'You're so talented!',
+          'You are so talented!',
           '👏👏👏',
           'First time watching, instant follow!',
           'What song is this?'

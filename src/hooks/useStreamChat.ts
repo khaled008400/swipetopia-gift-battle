@@ -22,6 +22,7 @@ export function useStreamChat(streamId: string) {
     // Fetch initial messages
     const fetchMessages = async () => {
       try {
+        setLoading(true);
         // First, get the messages
         const { data: messagesData, error: messagesError } = await supabase
           .from('chat_messages')
@@ -39,6 +40,13 @@ export function useStreamChat(streamId: string) {
         
         // Then, get the profiles for these messages
         const senderIds = messagesData.map(msg => msg.sender_id);
+        
+        if (senderIds.length === 0) {
+          setMessages([]);
+          setLoading(false);
+          return;
+        }
+        
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, avatar_url')
@@ -114,7 +122,7 @@ export function useStreamChat(streamId: string) {
   }, [streamId]);
   
   const sendMessage = async (message: string) => {
-    if (!message.trim() || !user) return;
+    if (!message.trim() || !user) return false;
     
     try {
       const { error } = await supabase
