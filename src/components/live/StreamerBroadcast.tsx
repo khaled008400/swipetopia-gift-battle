@@ -23,11 +23,8 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
 
   const startBroadcast = async () => {
     try {
-      // Start a stream in the database with the correct parameter structure
-      const streamData = await StreamService.startStream(streamerId, {
-        title: `${streamerName}'s Live Stream`,
-        description: `Live stream by ${streamerName}`
-      });
+      // Start a stream in the database
+      const streamData = await StreamService.startStream(streamerId);
       
       // Assuming startStream returns an object with id property
       setStreamId(streamData.id);

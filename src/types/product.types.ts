@@ -15,6 +15,21 @@ export interface Product {
   original_price?: number;
 }
 
+export interface AdminProduct {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image_url: string;
+  stock_quantity: number;
+  category: string;
+  status: "active" | "draft" | "unavailable";
+  seller_id: string;
+  created_at: string;
+  updated_at: string;
+  is_featured: boolean;
+}
+
 export interface LimitedOffer {
   id: string;
   product_id: string;
@@ -49,7 +64,7 @@ export interface ProductReview {
 
 export interface PaymentMethod {
   id: string;
-  name?: string;
+  name: string;
   type: string;
   last4: string;
   brand?: string;

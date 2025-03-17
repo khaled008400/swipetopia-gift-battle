@@ -64,8 +64,8 @@ const TrendingHashtags = () => {
           
         const liveCreators = streams?.map(stream => ({
           id: stream.id,
-          name: stream.profiles?.username || 'Anonymous',
-          avatar: stream.profiles?.avatar_url || '/placeholder.svg',
+          name: stream.profiles ? stream.profiles.username || 'Anonymous' : 'Anonymous',
+          avatar: stream.profiles ? stream.profiles.avatar_url || '/placeholder.svg' : '/placeholder.svg',
           viewerCount: stream.viewer_count || 0,
           title: stream.title
         })) || [];
