@@ -1,502 +1,461 @@
 
-import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/components/ui/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, MoreVertical, AlertTriangle, ShieldAlert } from "lucide-react";
-import { 
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  MessageSquare,
+  User,
+  Send,
+  MoreVertical,
+  Phone,
+  Video,
+  AlertTriangle,
+  Search,
+  ChevronRight
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { CustomerMessage } from "@/types/product.types";
-import { format } from "date-fns";
-import { supabase } from "@/lib/supabase";
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+
+// Simulate messages for demonstration
+interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+}
+
+interface Contact {
+  id: string;
+  username: string;
+  avatar_url?: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count: number;
+  status: 'online' | 'offline';
+}
 
 const SellerMessages = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [messages, setMessages] = useState<CustomerMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageText, setMessageText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
+  // Fetch contacts
   useEffect(() => {
-    if (user?.id) {
-      fetchConversations();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (activeConversation) {
-      fetchMessages(activeConversation);
-    }
-  }, [activeConversation]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const fetchConversations = async () => {
-    setLoading(true);
-    try {
-      // In a real app, this would fetch conversations from the database
-      // For now, we'll create mock data
-      const mockConversations = [
-        {
-          id: "conv-1",
-          customer_id: "user-1",
-          customer_name: "Sarah Johnson",
-          customer_avatar: "https://i.pravatar.cc/150?u=sarah",
-          last_message: "Do you have this in blue?",
-          last_message_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          unread_count: 3,
-        },
-        {
-          id: "conv-2",
-          customer_id: "user-2",
-          customer_name: "Mike Chen",
-          customer_avatar: "https://i.pravatar.cc/150?u=mike",
-          last_message: "Thanks for the quick shipping!",
-          last_message_time: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          unread_count: 0,
-        },
-        {
-          id: "conv-3",
-          customer_id: "user-3",
-          customer_name: "Emma Wilson",
-          customer_avatar: "https://i.pravatar.cc/150?u=emma",
-          last_message: "When will my order arrive?",
-          last_message_time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          unread_count: 1,
-        },
-        {
-          id: "conv-4",
-          customer_id: "user-4",
-          customer_name: "James Taylor",
-          customer_avatar: "https://i.pravatar.cc/150?u=james",
-          last_message: "Is this product still available?",
-          last_message_time: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          unread_count: 0,
-        },
-      ];
-      
-      setConversations(mockConversations);
-      // Set the first conversation as active by default
-      if (mockConversations.length > 0 && !activeConversation) {
-        setActiveConversation(mockConversations[0].id);
-      }
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-      toast({
-        title: "Error",
-        description: "Could not load conversations. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMessages = async (conversationId: string) => {
-    try {
-      // In a real app, this would fetch messages from the database
-      // For now, we'll create mock data
-      const conversation = conversations.find(c => c.id === conversationId);
-      if (!conversation) return;
-      
-      // Mark all messages as read
-      setConversations(prevConversations => 
-        prevConversations.map(conv => 
-          conv.id === conversationId 
-            ? { ...conv, unread_count: 0 } 
-            : conv
-        )
-      );
-      
-      // Generate mock messages
-      const mockMessages: CustomerMessage[] = [
-        {
-          id: `msg-${conversationId}-1`,
-          sender_type: "customer",
-          customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: "Hi, I'm interested in one of your products.",
-          created_at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
-          is_read: true,
-          conversation_id: conversationId,
-          customer_name: conversation.customer_name,
-          customer_avatar: conversation.customer_avatar,
-        },
-        {
-          id: `msg-${conversationId}-2`,
-          sender_type: "seller",
-          customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: "Hello! Which product are you interested in?",
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          is_read: true,
-          conversation_id: conversationId,
-        },
-        {
-          id: `msg-${conversationId}-3`,
-          sender_type: "customer",
-          customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: "I'm looking at the black leather jacket. Do you have it in size medium?",
-          created_at: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-          is_read: true,
-          conversation_id: conversationId,
-          customer_name: conversation.customer_name,
-          customer_avatar: conversation.customer_avatar,
-        },
-        {
-          id: `msg-${conversationId}-4`,
-          sender_type: "seller",
-          customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: "Yes, we do have the black leather jacket in medium. It's currently in stock and ready to ship!",
-          created_at: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
-          is_read: true,
-          conversation_id: conversationId,
-        },
-      ];
-      
-      // Add the most recent message from the conversation
-      if (conversation.last_message) {
-        mockMessages.push({
-          id: `msg-${conversationId}-latest`,
-          sender_type: "customer",
-          customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: conversation.last_message,
-          created_at: conversation.last_message_time,
-          is_read: conversation.unread_count === 0,
-          conversation_id: conversationId,
-          customer_name: conversation.customer_name,
-          customer_avatar: conversation.customer_avatar,
+    const fetchContacts = async () => {
+      try {
+        if (!user) return;
+        
+        // In a real implementation, fetch from your database
+        // For now, using mock data
+        setContacts([
+          {
+            id: '1',
+            username: 'Jane Cooper',
+            avatar_url: 'https://i.pravatar.cc/150?img=1',
+            last_message: 'Hi, I have a question about your product...',
+            last_message_time: '2023-05-15T09:24:00Z',
+            unread_count: 2,
+            status: 'online'
+          },
+          {
+            id: '2',
+            username: 'Robert Fox',
+            avatar_url: 'https://i.pravatar.cc/150?img=2',
+            last_message: 'Thanks for the quick response!',
+            last_message_time: '2023-05-14T18:35:00Z',
+            unread_count: 0,
+            status: 'offline'
+          },
+          {
+            id: '3',
+            username: 'Esther Howard',
+            avatar_url: 'https://i.pravatar.cc/150?img=3',
+            last_message: 'Do you offer international shipping?',
+            last_message_time: '2023-05-14T12:10:00Z',
+            unread_count: 1,
+            status: 'offline'
+          },
+          {
+            id: '4',
+            username: 'Brooklyn Simmons',
+            avatar_url: 'https://i.pravatar.cc/150?img=4',
+            last_message: 'Order #12345 - Can I change my delivery address?',
+            last_message_time: '2023-05-13T22:45:00Z',
+            unread_count: 0,
+            status: 'online'
+          },
+        ]);
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load your contacts. Please try again.',
+          variant: 'destructive',
         });
       }
-      
-      // Sort messages by date
-      mockMessages.sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      
-      setMessages(mockMessages);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      toast({
-        title: "Error",
-        description: "Could not load messages. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+    };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !activeConversation) return;
+    fetchContacts();
+  }, [user, toast]);
+
+  // Fetch messages for selected contact
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        if (!user || !selectedContact) return;
+        
+        // Mock data for demonstration
+        const mockMessages = [
+          {
+            id: '101',
+            sender_id: selectedContact.id,
+            receiver_id: user.id,
+            content: 'Hello, I have a question about your wireless headphones.',
+            created_at: '2023-05-15T09:15:00Z',
+            read: true
+          },
+          {
+            id: '102',
+            sender_id: user.id,
+            receiver_id: selectedContact.id,
+            content: "Hi there! I'd be happy to help. What would you like to know?",
+            created_at: '2023-05-15T09:18:00Z',
+            read: true
+          },
+          {
+            id: '103',
+            sender_id: selectedContact.id,
+            receiver_id: user.id,
+            content: 'Do they have noise cancellation?',
+            created_at: '2023-05-15T09:20:00Z',
+            read: true
+          },
+          {
+            id: '104',
+            sender_id: user.id,
+            receiver_id: selectedContact.id,
+            content: 'Yes, they feature active noise cancellation technology that blocks out ambient noise very effectively.',
+            created_at: '2023-05-15T09:22:00Z',
+            read: true
+          },
+          {
+            id: '105',
+            sender_id: selectedContact.id,
+            receiver_id: user.id,
+            content: "That's great! And what's the battery life like?",
+            created_at: '2023-05-15T09:24:00Z',
+            read: false
+          },
+          {
+            id: '106',
+            sender_id: selectedContact.id,
+            receiver_id: user.id,
+            content: "Also, do they come with a warranty?",
+            created_at: '2023-05-15T09:24:30Z',
+            read: false
+          }
+        ];
+        
+        setMessages(mockMessages);
+        
+        // Mark messages as read
+        const unreadMessages = contacts.find(c => c.id === selectedContact.id)?.unread_count || 0;
+        if (unreadMessages > 0) {
+          setContacts(prevContacts => 
+            prevContacts.map(contact => 
+              contact.id === selectedContact.id 
+                ? { ...contact, unread_count: 0 } 
+                : contact
+            )
+          );
+          
+          // In a real implementation, update in database
+          // await supabase
+          //   .from('messages')
+          //   .update({ read: true })
+          //   .eq('receiver_id', user.id)
+          //   .eq('sender_id', selectedContact.id)
+          //   .eq('read', false);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load messages. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    fetchMessages();
+  }, [user, selectedContact, toast, contacts]);
+
+  // Scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Send message
+  const sendMessage = async () => {
+    if (!messageText.trim() || !user || !selectedContact) return;
     
-    setSending(true);
     try {
-      // Get the current conversation
-      const conversation = conversations.find(c => c.id === activeConversation);
-      if (!conversation) return;
-      
-      // Create the new message
-      const newMessageObj: CustomerMessage = {
-        id: `msg-${Date.now()}`,
-        sender_type: "seller",
-        customer_id: conversation.customer_id,
-        seller_id: user?.id || "",
-        content: newMessage,
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        sender_id: user.id,
+        receiver_id: selectedContact.id,
+        content: messageText,
         created_at: new Date().toISOString(),
-        is_read: false,
-        conversation_id: activeConversation,
+        read: false
       };
       
-      // Add the message to the list
-      setMessages(prevMessages => [...prevMessages, newMessageObj]);
+      setMessages(prev => [...prev, newMessage]);
+      setMessageText('');
       
-      // Update the conversation with the new last message
-      setConversations(prevConversations => 
-        prevConversations.map(conv => 
-          conv.id === activeConversation 
-            ? {
-                ...conv,
-                last_message: newMessage,
-                last_message_time: new Date().toISOString(),
-                unread_count: 0
+      // Update last message in contacts
+      setContacts(prevContacts => 
+        prevContacts.map(contact => 
+          contact.id === selectedContact.id 
+            ? { 
+                ...contact, 
+                last_message: messageText, 
+                last_message_time: new Date().toISOString() 
               } 
-            : conv
+            : contact
         )
       );
       
-      // Clear the input
-      setNewMessage("");
+      // In a real implementation, save to database
+      // await supabase
+      //   .from('messages')
+      //   .insert({
+      //     sender_id: user.id,
+      //     receiver_id: selectedContact.id,
+      //     content: messageText
+      //   });
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive',
       });
-    } finally {
-      setSending(false);
     }
   };
 
-  const handleBlockUser = (userId: string) => {
-    setBlockedUsers(prev => [...prev, userId]);
-    toast({
-      title: "User blocked",
-      description: "You will no longer receive messages from this user.",
-    });
-  };
-
-  const handleUnblockUser = (userId: string) => {
-    setBlockedUsers(prev => prev.filter(id => id !== userId));
-    toast({
-      title: "User unblocked",
-      description: "You will now receive messages from this user.",
-    });
-  };
-
-  const handleReportUser = (userId: string) => {
-    toast({
-      title: "User reported",
-      description: "Thank you for your report. Our team will review it.",
-    });
-  };
-
-  const isUserBlocked = (userId: string) => {
-    return blockedUsers.includes(userId);
-  };
-
-  if (loading && conversations.length === 0) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-app-yellow" />
-      </div>
-    );
-  }
-
-  const getActiveConversation = () => {
-    return conversations.find(c => c.id === activeConversation);
-  };
+  const filteredContacts = contacts.filter(contact => 
+    contact.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="md:col-span-1">
-        <CardHeader>
-          <CardTitle>Conversations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {conversations.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No conversations yet
-            </div>
-          ) : (
-            <ScrollArea className="h-[calc(100vh-300px)]">
-              <div className="space-y-4">
-                {conversations.map((conversation) => (
-                  <div 
-                    key={conversation.id}
-                    className={`flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-app-gray-dark transition-colors ${
-                      activeConversation === conversation.id ? 'bg-app-gray-dark' : ''
-                    }`}
-                    onClick={() => setActiveConversation(conversation.id)}
-                  >
+    <div className="h-[calc(100vh-8rem)] flex">
+      {/* Contacts sidebar */}
+      <div className="w-full md:w-1/3 border-r">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-semibold">Messages</h2>
+          <div className="relative mt-2">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search conversations"
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <ScrollArea className="h-[calc(100%-5rem)]">
+          <div className="space-y-1 p-2">
+            {filteredContacts.length > 0 ? (
+              filteredContacts.map(contact => (
+                <div
+                  key={contact.id}
+                  className={`
+                    flex items-center gap-3 p-3 rounded-lg cursor-pointer
+                    ${selectedContact?.id === contact.id ? 'bg-secondary' : 'hover:bg-secondary/50'}
+                  `}
+                  onClick={() => setSelectedContact(contact)}
+                >
+                  <div className="relative">
                     <Avatar>
-                      <AvatarImage src={conversation.customer_avatar} />
-                      <AvatarFallback>
-                        {conversation.customer_name.charAt(0)}
-                      </AvatarFallback>
+                      <AvatarImage src={contact.avatar_url} />
+                      <AvatarFallback>{contact.username.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-medium truncate">
-                          {conversation.customer_name}
-                        </h4>
-                        <span className="text-xs text-gray-400">
-                          {format(new Date(conversation.last_message_time), 'hh:mm a')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-400 truncate">
-                        {conversation.last_message}
-                      </p>
-                    </div>
-                    {conversation.unread_count > 0 && (
-                      <div className="bg-app-yellow text-app-black text-xs font-bold h-5 w-5 rounded-full flex items-center justify-center">
-                        {conversation.unread_count}
-                      </div>
-                    )}
+                    <span 
+                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background
+                        ${contact.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}
+                      `} 
+                    />
                   </div>
-                ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between">
+                      <span className="font-medium">{contact.username}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {contact.last_message_time && format(new Date(contact.last_message_time), 'MMM d')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                        {contact.last_message}
+                      </p>
+                      {contact.unread_count > 0 && (
+                        <Badge className="rounded-full h-5 min-w-[20px] flex items-center justify-center">
+                          {contact.unread_count}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No conversations found
               </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
       
-      <Card className="md:col-span-2">
-        <CardHeader className="pb-3">
-          {activeConversation ? (
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <Avatar>
-                  <AvatarImage src={getActiveConversation()?.customer_avatar} />
-                  <AvatarFallback>
-                    {getActiveConversation()?.customer_name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-base">
-                    {getActiveConversation()?.customer_name}
-                  </CardTitle>
-                  {isUserBlocked(getActiveConversation()?.customer_id) && (
-                    <span className="text-xs text-red-500 flex items-center">
-                      <ShieldAlert className="w-3 h-3 mr-1" />
-                      Blocked
-                    </span>
-                  )}
+      {/* Chat area */}
+      {selectedContact ? (
+        <div className="flex-1 flex flex-col">
+          {/* Chat header */}
+          <div className="p-4 border-b flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarImage src={selectedContact.avatar_url} />
+                <AvatarFallback>{selectedContact.username.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-medium">{selectedContact.username}</div>
+                <div className="text-xs text-muted-foreground">
+                  {selectedContact.status === 'online' ? 'Online' : 'Offline'}
                 </div>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon">
+                <Phone className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Video className="h-5 w-5" />
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
+                    <MoreVertical className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {isUserBlocked(getActiveConversation()?.customer_id) ? (
-                    <DropdownMenuItem 
-                      onClick={() => handleUnblockUser(getActiveConversation()?.customer_id)}
-                    >
-                      Unblock User
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem 
-                      onClick={() => handleBlockUser(getActiveConversation()?.customer_id)}
-                      className="text-red-500"
-                    >
-                      Block User
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem 
-                    onClick={() => handleReportUser(getActiveConversation()?.customer_id)}
-                  >
+                  <DropdownMenuItem>View profile</DropdownMenuItem>
+                  <DropdownMenuItem>Mark as unread</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive">
                     <AlertTriangle className="h-4 w-4 mr-2" />
-                    Report User
+                    Block user
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          ) : (
-            <CardTitle>Select a conversation</CardTitle>
-          )}
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-4">
-          {!activeConversation ? (
-            <div className="flex flex-col items-center justify-center h-[calc(100vh-300px)] text-gray-500">
-              <MessageSquare className="h-12 w-12 mb-4 opacity-30" />
-              <p>Select a conversation to view messages</p>
-            </div>
-          ) : (
-            <>
-              <ScrollArea className="h-[calc(100vh-380px)] pr-4">
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.sender_type === "seller" ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      {message.sender_type === "customer" && (
-                        <Avatar className="mr-2 mt-1">
-                          <AvatarImage src={message.customer_avatar} />
-                          <AvatarFallback>
-                            {message.customer_name?.charAt(0) || "C"}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div>
-                        <div
-                          className={`max-w-md rounded-lg p-3 ${
-                            message.sender_type === "seller"
-                              ? "bg-app-yellow text-app-black"
-                              : "bg-app-gray-dark text-white"
-                          }`}
-                        >
-                          {message.content}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {format(new Date(message.created_at), 'MMM d, hh:mm a')}
-                        </div>
+          </div>
+          
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((message, index) => {
+                const isUser = message.sender_id === user?.id;
+                const showAvatar = index === 0 || messages[index - 1].sender_id !== message.sender_id;
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex items-start gap-2 ${isUser ? 'justify-end' : ''}`}
+                  >
+                    {!isUser && showAvatar && (
+                      <Avatar className="h-8 w-8 mt-0.5">
+                        <AvatarImage src={selectedContact.avatar_url} />
+                        <AvatarFallback>{selectedContact.username.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    {!isUser && !showAvatar && <div className="w-8" />}
+                    <div className={`
+                      px-3 py-2 rounded-lg max-w-[80%] break-words
+                      ${isUser 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-secondary text-secondary-foreground'
+                      }
+                    `}>
+                      {message.content}
+                      <div className="text-xs opacity-70 text-right mt-1">
+                        {format(new Date(message.created_at), 'h:mm a')}
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-              
-              <div className="mt-4">
-                {isUserBlocked(getActiveConversation()?.customer_id) ? (
-                  <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-center">
-                    You have blocked this user. Unblock to send messages.
                   </div>
-                ) : (
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }}
-                    className="flex space-x-2"
-                  >
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type your message..."
-                      className="flex-1"
-                    />
-                    <Button 
-                      type="submit" 
-                      disabled={sending || !newMessage.trim()}
-                      className="bg-app-yellow text-app-black hover:bg-yellow-500"
-                    >
-                      {sending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </form>
-                )}
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+          
+          {/* Message input */}
+          <div className="p-4 border-t">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+              <Button onClick={sendMessage} disabled={!messageText.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center bg-muted/50">
+          <div className="text-center">
+            <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Your Messages</h3>
+            <p className="text-muted-foreground mb-4 max-w-md px-4">
+              Select a conversation to start messaging
+            </p>
+            <Button 
+              variant="outline"
+              className="mt-2"
+              onClick={() => {
+                // Redirect to new message screen
+                // In a real implementation, navigate to page for creating a new message
+              }}
+            >
+              New Message <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

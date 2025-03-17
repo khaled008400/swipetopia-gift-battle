@@ -57,7 +57,7 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
       description: initialData.description || '',
       price: initialData.price,
       imageUrl: initialData.imageUrl,
-      imageType: initialData.imageType as "gif" | "svg",
+      imageType: initialData.imageType as "gif" | "svg", // Cast to the appropriate type
       hasSound: initialData.hasSound,
       soundUrl: initialData.soundUrl || '',
       category: initialData.category,
@@ -67,7 +67,7 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
       description: '',
       price: 50,
       imageUrl: '',
-      imageType: 'gif',
+      imageType: 'gif' as const, // Use "as const" to specify literal type
       hasSound: false,
       soundUrl: '',
       category: 'general',

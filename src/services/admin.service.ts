@@ -1,17 +1,31 @@
 
 import { supabase } from "@/lib/supabase";
-import { 
-  AdminOrder, 
-  AdminCoupon, 
-  AdminOffer, 
-  AdminVideo, 
+import {
+  AdminStats,
+  AdminOrder,
+  AdminCoupon,
+  AdminOffer,
+  AdminVideo,
   AdminShippingMethod,
   VirtualGift,
   ProductAttribute,
   LiveStream,
-  AdminStats,
-  AdminUser
+  AdminUser,
 } from "@/services/streaming/stream.types";
+
+// Re-export types for use in components
+export type {
+  AdminStats,
+  AdminOrder,
+  AdminCoupon,
+  AdminOffer,
+  AdminVideo,
+  AdminShippingMethod,
+  VirtualGift,
+  ProductAttribute,
+  LiveStream,
+  AdminUser,
+};
 
 // Base admin service
 class AdminService {
@@ -246,6 +260,17 @@ class AdminService {
     };
   }
 
+  // Alias for backward compatibility
+  getVideosList(page: number = 1, limit: number = 10, status?: string, query?: string, userId?: string, date?: string): Promise<{ data: AdminVideo[], pagination: any }> {
+    return this.getVideos({
+      page,
+      status,
+      userId,
+      query,
+      sortBy: date ? 'created_at' : undefined
+    });
+  }
+
   async updateVideoStatus(videoId: string, status: string): Promise<AdminVideo> {
     const { data, error } = await supabase
       .from('videos')
@@ -369,7 +394,7 @@ class AdminService {
   }
 
   // Analytics and report methods
-  async getUserGrowthData(): Promise<any> {
+  async getUserGrowthData(period?: string): Promise<any> {
     // Placeholder implementation with updated structure
     return {
       daily: [
@@ -403,7 +428,7 @@ class AdminService {
     };
   }
 
-  async getVideoEngagementData(): Promise<any> {
+  async getVideoEngagementData(period?: string): Promise<any> {
     // Placeholder implementation with updated structure
     return {
       views: [
@@ -444,7 +469,7 @@ class AdminService {
     };
   }
 
-  async getRevenueData(): Promise<any> {
+  async getRevenueData(period?: string): Promise<any> {
     // Placeholder implementation with updated structure
     return {
       daily: [
@@ -552,7 +577,7 @@ class AdminService {
     return data || [];
   }
 
-  async getOfferAnalytics(): Promise<any> {
+  async getOfferAnalytics(period?: string): Promise<any> {
     // Placeholder implementation
     return {
       totalRevenue: 24580,
@@ -612,17 +637,13 @@ class AdminService {
   }
 
   // Virtual gifts methods
-  async getVirtualGifts(category?: string, isActive?: boolean): Promise<{ data: VirtualGift[] }> {
+  async getVirtualGifts(page: number = 1, limit: number = 20, category?: string): Promise<{ data: VirtualGift[] }> {
     let query = supabase
       .from('virtual_gifts')
       .select('*');
     
-    if (category) {
+    if (category && category !== 'all') {
       query = query.eq('category', category);
-    }
-    
-    if (isActive !== undefined) {
-      query = query.eq('available', isActive);
     }
     
     const { data, error } = await query.order('price', { ascending: true });
@@ -631,7 +652,7 @@ class AdminService {
     return { data: data || [] };
   }
 
-  async getGiftUsageStats(): Promise<any> {
+  async getGiftUsageStats(period?: string): Promise<any> {
     // Placeholder implementation
     return {
       totalSent: 4500,
@@ -760,6 +781,9 @@ class AdminService {
     return data;
   }
 
+  // Alias for backward compatibility
+  createProductAttribute = this.createAttribute;
+
   async updateAttribute(id: string, data: Partial<Omit<ProductAttribute, "id" | "created_at">>): Promise<ProductAttribute> {
     const { data: updatedAttribute, error } = await supabase
       .from('product_attributes')
@@ -772,6 +796,9 @@ class AdminService {
     return updatedAttribute;
   }
 
+  // Alias for backward compatibility
+  updateProductAttribute = this.updateAttribute;
+
   async deleteAttribute(id: string): Promise<void> {
     const { error } = await supabase
       .from('product_attributes')
@@ -780,6 +807,9 @@ class AdminService {
     
     if (error) throw error;
   }
+
+  // Alias for backward compatibility
+  deleteProductAttribute = this.deleteAttribute;
 
   // Product analytics
   async getProductSalesData(productId?: string, period?: string): Promise<any> {

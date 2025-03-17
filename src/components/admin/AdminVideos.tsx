@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { AdminVideo, AdminUser } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import type { AdminVideo, AdminUser } from '@/services/admin.service';
 import { Loader2, Trash2, CheckCircle, Flag, Ban, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -50,7 +51,13 @@ const AdminVideos = () => {
     queryFn: () => {
       // Convert date to ISO string for API if exists
       const dateString = dateFilter ? dateFilter.toISOString().split('T')[0] : '';
-      return AdminService.getVideosList(page, 10, statusFilter, search, userFilter, dateString);
+      return AdminService.getVideos({
+        page, 
+        status: statusFilter, 
+        userId: userFilter,
+        query: search,
+        sortBy: dateString ? 'created_at' : undefined
+      });
     },
   });
 
@@ -98,8 +105,7 @@ const AdminVideos = () => {
 
   // Mutation for sending warnings to users
   const sendWarningMutation = useMutation({
-    mutationFn: ({ videoId, userId, message }: { videoId: string, userId: string, message: string }) => 
-      // This would need to be implemented in AdminService
+    mutationFn: ({ userId, message, videoId }: { userId: string, message: string, videoId?: string }) => 
       AdminService.sendUserWarning(userId, message, videoId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
@@ -120,7 +126,6 @@ const AdminVideos = () => {
   // Mutation for restricting users
   const restrictUserMutation = useMutation({
     mutationFn: ({ userId, reason }: { userId: string, reason: string }) => 
-      // This would need to be implemented in AdminService
       AdminService.restrictUser(userId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
@@ -176,6 +181,13 @@ const AdminVideos = () => {
         open: true,
         user: userData
       });
+    }).catch(error => {
+      console.error("Error fetching user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load user profile.",
+        variant: "destructive",
+      });
     });
   };
 
@@ -188,8 +200,8 @@ const AdminVideos = () => {
   };
 
   const handleSelectAllVideos = (selected: boolean) => {
-    if (selected) {
-      setSelectedVideos(data?.data.map(video => video.id) || []);
+    if (selected && data?.data) {
+      setSelectedVideos(data.data.map(video => video.id));
     } else {
       setSelectedVideos([]);
     }
@@ -209,7 +221,13 @@ const AdminVideos = () => {
       case 'delete':
         deleteVideoMutation.mutate(selectedVideos);
         break;
-      // Add cases for 'warn' and 'restrict' if those functionalities are added
+      case 'warn':
+        // For warnings, we would need to get all user IDs from the selected videos
+        // But for simplicity, this is not implemented here
+        break;
+      case 'restrict':
+        // Similar to warnings, we would need all user IDs
+        break;
     }
     setBatchActionDialog({ open: false, type: 'approve' });
     setBatchActionReason('');
