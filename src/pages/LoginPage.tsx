@@ -30,7 +30,7 @@ const LoginPage = () => {
     // If user was trying to access a specific page, redirect back there
     if (from) {
       console.log("Redirecting to requested page:", from);
-      navigate(from);
+      navigate(decodeURIComponent(from));
     } 
     // If user is a seller, redirect to seller dashboard as default
     else if (userIsSeller) {

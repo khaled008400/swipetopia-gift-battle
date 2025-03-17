@@ -10,11 +10,12 @@ import AuthCheck from '@/components/auth/AuthCheck';
 
 const AdminDashboardPage: React.FC = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   
   useEffect(() => {
-    console.log("AdminDashboardPage mounted");
+    console.log("AdminDashboardPage mounted, admin check:", isAdmin());
     return () => console.log("AdminDashboardPage unmounted");
-  }, []);
+  }, [isAdmin]);
 
   // Define mock stats for development
   const mockStats: AdminStats = {

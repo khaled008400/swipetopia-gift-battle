@@ -79,12 +79,20 @@ function App() {
                 <Route path="/battle/:battleId" element={<Layout><BattlePage /></Layout>} />
                 
                 <Route path="/admin" element={<Layout><AdminPage /></Layout>} />
-                <Route path="/admin-dashboard" element={<Layout><AdminDashboardPage /></Layout>} />
+                <Route path="/admin-dashboard" element={
+                  <Layout>
+                    <AuthCheck requireAdmin>
+                      <AdminDashboardPage />
+                    </AuthCheck>
+                  </Layout>
+                } />
                 
                 <Route path="/seller-dashboard" element={
-                  <AuthCheck requireSeller={true}>
-                    <Layout><SellerDashboardPage /></Layout>
-                  </AuthCheck>
+                  <Layout>
+                    <AuthCheck requireSeller>
+                      <SellerDashboardPage />
+                    </AuthCheck>
+                  </Layout>
                 } />
               </Routes>
             </Router>
