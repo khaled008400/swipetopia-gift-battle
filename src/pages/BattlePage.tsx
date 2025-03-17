@@ -1,19 +1,27 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { BattleHeader } from '@/components/battle/BattleHeader';
-import { BattleDetails } from '@/components/battle/BattleDetails';
-import { BattleVideoPlayer } from '@/components/battle/BattleVideoPlayer';
-import { BattleProgressIndicators } from '@/components/battle/BattleProgressIndicators';
-import { BattleVoteButtons } from '@/components/battle/BattleVoteButtons';
-import { ActionButtons } from '@/components/battle/ActionButtons';
+import BattleHeader from '@/components/battle/BattleHeader';
+import BattleDetails from '@/components/battle/BattleDetails';
+import BattleVideoPlayer from '@/components/battle/BattleVideoPlayer';
+import BattleProgressIndicators from '@/components/battle/BattleProgressIndicators';
+import BattleVoteButtons from '@/components/battle/BattleVoteButtons';
+import ActionButtons from '@/components/battle/ActionButtons';
 import { useBattleVideos } from '@/hooks/useBattleVideos';
 import { Loader2 } from 'lucide-react';
 import { BattleVideo } from '@/types/video.types';
 
 const BattlePage: React.FC = () => {
   const { battleId } = useParams<{ battleId: string }>();
-  const { videos, isLoading, error, votingEndsAt, votesRemaining, castVote } = useBattleVideos(battleId);
+  const { 
+    videos, 
+    isLoading, 
+    error, 
+    votingEndsAt, 
+    votesRemaining, 
+    castVote,
+    activeVideoIndex
+  } = useBattleVideos(battleId);
 
   // Handle loading state
   if (isLoading) {
@@ -40,7 +48,7 @@ const BattlePage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Battle Header */}
-      <BattleHeader votingEndsAt={votingEndsAt} />
+      <BattleHeader title="Dance Battle Finals" />
       
       {/* Battle Content */}
       <div className="flex-grow p-4">
@@ -55,7 +63,7 @@ const BattlePage: React.FC = () => {
           </div>
           
           {/* Progress Indicators */}
-          <BattleProgressIndicators videos={battleVideos} />
+          <BattleProgressIndicators videos={battleVideos} activeIndex={activeVideoIndex} />
           
           {/* Voting Interface */}
           <BattleVoteButtons 

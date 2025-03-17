@@ -2,33 +2,41 @@
 import React, { useEffect, useRef, useState } from "react";
 
 export interface VideoPlayerProps {
-  videoUrl: string;  // Adding this prop to match usage in VideoFeed
-  isActive: boolean;
+  videoUrl: string;
+  isActive?: boolean;
+  autoPlay?: boolean;
+  poster?: string;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, isActive }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
+  videoUrl, 
+  isActive = true, 
+  autoPlay = false,
+  poster
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     if (videoRef.current) {
-      if (isActive && !isPlaying) {
+      if ((isActive || autoPlay) && !isPlaying) {
         videoRef.current.play().catch(error => {
           console.error("Error playing video:", error);
         });
         setIsPlaying(true);
-      } else if (!isActive && isPlaying) {
+      } else if (!isActive && isPlaying && !autoPlay) {
         videoRef.current.pause();
         setIsPlaying(false);
       }
     }
-  }, [isActive, isPlaying]);
+  }, [isActive, isPlaying, autoPlay]);
 
   return (
     <div className="h-full w-full">
       <video
         ref={videoRef}
         src={videoUrl}
+        poster={poster}
         className="h-full w-full object-cover"
         loop
         muted

@@ -1,93 +1,26 @@
 
-import { useRef, useEffect, useState } from "react";
-import VideoErrorDisplay from "../video/VideoErrorDisplay";
-import { useVideoError } from "@/hooks/useVideoError";
+import React from 'react';
+import { BattleVideo } from '@/types/video.types';
+import VideoPlayerAdapter from '@/components/VideoPlayerAdapter';
 
 interface BattleVideoPlayerProps {
-  videoUrl: string;
-  isActive: boolean;
-  onVideoTap: () => void;
-  userName: string;
-  isVoted?: boolean;
+  video: BattleVideo;
+  position: 'left' | 'right';
 }
 
-const BattleVideoPlayer = ({ videoUrl, isActive, onVideoTap, userName, isVoted }: BattleVideoPlayerProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { videoError, loadAttempts, handleVideoError, handleRetry, resetError, setVideoError } = useVideoError();
-
-  const tryPlayVideo = async () => {
-    if (!videoRef.current || !isActive) return;
-    
-    try {
-      setVideoError(false);
-      await videoRef.current.play();
-      setIsLoading(false);
-    } catch (err) {
-      console.error("Error playing battle video:", err);
-      handleVideoError(videoUrl);
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isActive && !videoError) {
-      tryPlayVideo();
-    } else if (!isActive && videoRef.current) {
-      videoRef.current.pause();
-    }
-  }, [isActive, videoError, videoUrl]);
-
-  // Reset error state when video changes
-  useEffect(() => {
-    resetError();
-    setIsLoading(true);
-  }, [videoUrl, resetError]);
-
-  const onVideoLoad = () => {
-    setIsLoading(false);
-  };
-
+const BattleVideoPlayer: React.FC<BattleVideoPlayerProps> = ({ video, position }) => {
   return (
-    <div className="h-full w-full relative overflow-hidden">
-      {videoError ? (
-        <VideoErrorDisplay 
-          onRetry={loadAttempts < 3 ? () => handleRetry(videoRef) : undefined}
-          message={loadAttempts >= 3 ? "Unable to load video after multiple attempts" : undefined}
-        />
-      ) : (
-        <>
-          {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
-            </div>
-          )}
-          
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            className="h-full w-full object-cover"
-            loop
-            muted
-            playsInline
-            onClick={onVideoTap}
-            onError={() => handleVideoError(videoUrl)}
-            onLoadedData={onVideoLoad}
-          />
-        </>
-      )}
-      
-      {!videoError && (
-        <>
-          <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-gradient-to-r from-[#9b87f5]/80 to-[#D946EF]/80 backdrop-blur-sm rounded-full shadow-lg">
-            <p className="text-white text-sm font-medium">@{userName}</p>
-          </div>
-          {isVoted && (
-            <div className="absolute top-4 right-4 bg-gradient-to-r from-[#9b87f5] to-[#D946EF] text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
-              Voted
-            </div>
-          )}
-        </>
+    <div className="relative aspect-[9/16] max-h-[60vh]">
+      <VideoPlayerAdapter
+        videoId={video.id}
+        src={video.videoUrl}
+        poster={video.thumbnailUrl}
+        autoPlay={position === 'left'}
+      />
+      {video.isLive && (
+        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+          LIVE {video.viewerCount > 0 && `• ${video.viewerCount} watching`}
+        </div>
       )}
     </div>
   );

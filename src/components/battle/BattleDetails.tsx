@@ -1,33 +1,34 @@
 
-import { ChevronUp } from "lucide-react";
+import React from 'react';
+import { BattleVideo } from '@/types/video.types';
 
 interface BattleDetailsProps {
-  title: string;
-  participants: number;
-  showDetails: boolean;
-  setShowDetails: (show: boolean) => void;
+  videos: BattleVideo[];
 }
 
-const BattleDetails = ({ title, participants, showDetails, setShowDetails }: BattleDetailsProps) => {
+const BattleDetails: React.FC<BattleDetailsProps> = ({ videos }) => {
+  if (!videos || videos.length < 2) return null;
+  
   return (
-    <>
-      <button 
-        className="absolute bottom-24 left-4 text-white/90 text-xs flex items-center z-10 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full border border-white/10"
-        onClick={() => setShowDetails(!showDetails)}
-      >
-        {showDetails ? "Less" : "More"} <ChevronUp className={`ml-1 w-4 h-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
-      </button>
-      
-      {showDetails && (
-        <div className="absolute bottom-32 left-4 right-16 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl animate-fade-in z-10">
-          <h4 className="text-white text-sm font-bold">{title}</h4>
-          <p className="text-white/70 text-xs mt-2">{participants} participants • Live now</p>
-          <div className="mt-3 pt-3 border-t border-white/10">
-            <p className="text-white/80 text-xs">Join this battle by uploading your own video!</p>
-          </div>
+    <div className="flex justify-between items-center mb-6">
+      <div className="flex-1 text-center">
+        <h3 className="text-white font-bold text-lg truncate">{videos[0].creator.username}</h3>
+        <div className="flex justify-center mt-1">
+          <span className="text-sm text-gray-400">{videos[0].votes} votes</span>
         </div>
-      )}
-    </>
+      </div>
+      
+      <div className="text-center px-4">
+        <span className="text-white text-xl font-bold">VS</span>
+      </div>
+      
+      <div className="flex-1 text-center">
+        <h3 className="text-white font-bold text-lg truncate">{videos[1].creator.username}</h3>
+        <div className="flex justify-center mt-1">
+          <span className="text-sm text-gray-400">{videos[1].votes} votes</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
