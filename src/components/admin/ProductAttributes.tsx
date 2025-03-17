@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService from '@/services/admin.service';
-import type { ProductAttribute } from '@/services/admin.service';
+import AdminService, { ProductAttribute } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Plus, Edit, Trash2, Tag, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -66,12 +65,26 @@ const ProductAttributes: React.FC = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['productAttributes', page],
     queryFn: () => AdminService.getProductAttributes(page),
+    // For development, let's provide placeholder data
+    placeholderData: {
+      data: [
+        { id: '1', name: 'Color', values: ['Red', 'Green', 'Blue'], color: '#9b87f5', status: 'active' },
+        { id: '2', name: 'Size', values: ['S', 'M', 'L', 'XL'], status: 'active' },
+        { id: '3', name: 'Material', values: ['Cotton', 'Polyester', 'Wool'], status: 'inactive' },
+      ],
+      pagination: {
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 3
+      }
+    }
   });
 
   // Create attribute mutation
   const createAttributeMutation = useMutation({
-    mutationFn: (attributeData: Omit<ProductAttribute, "id" | "created_at">) => 
-      AdminService.createAttribute(attributeData),
+    mutationFn: (attributeData: Omit<ProductAttribute, 'id'>) => 
+      AdminService.createProductAttribute(attributeData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       setAttributeDialog(false);
@@ -91,8 +104,8 @@ const ProductAttributes: React.FC = () => {
 
   // Update attribute mutation
   const updateAttributeMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<ProductAttribute, "id" | "created_at">> }) => 
-      AdminService.updateAttribute(id, data),
+    mutationFn: ({ id, data }: { id: string, data: Partial<ProductAttribute> }) => 
+      AdminService.updateProductAttribute(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       setAttributeDialog(false);
@@ -112,7 +125,7 @@ const ProductAttributes: React.FC = () => {
 
   // Delete attribute mutation
   const deleteAttributeMutation = useMutation({
-    mutationFn: (attributeId: string) => AdminService.deleteAttribute(attributeId),
+    mutationFn: (attributeId: string) => AdminService.deleteProductAttribute(attributeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       toast({
@@ -222,66 +235,58 @@ const ProductAttributes: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data?.data && data.data.length > 0 ? (
-              data.data.map((attribute) => (
-                <TableRow key={attribute.id}>
-                  <TableCell className="font-medium">{attribute.name}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {attribute.values.map((value, index) => (
-                        <Badge key={index} className="bg-sidebar-accent">
-                          {value}
-                        </Badge>
-                      ))}
+            {data?.data.map((attribute) => (
+              <TableRow key={attribute.id}>
+                <TableCell className="font-medium">{attribute.name}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {attribute.values.map((value, index) => (
+                      <Badge key={index} className="bg-sidebar-accent">
+                        {value}
+                      </Badge>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {attribute.color && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: attribute.color }} />
+                      <span>{attribute.color}</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {attribute.color && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: attribute.color }} />
-                        <span>{attribute.color}</span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={attribute.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
-                      {attribute.status === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditAttribute(attribute)}>
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">More options</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteAttribute(attribute.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-32 text-muted-foreground">
-                  No attributes found
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge className={attribute.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
+                    {attribute.status === 'active' ? 'Active' : 'Inactive'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditAttribute(attribute)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">More options</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteAttribute(attribute.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       )}

@@ -1,67 +1,98 @@
 
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import { useBattleVideos } from '@/hooks/useBattleVideos';
-import BattleHeader from '@/components/battle/BattleHeader';
-import BattleDetails from '@/components/battle/BattleDetails';
-import BattleVideoPlayer from '@/components/battle/BattleVideoPlayer';
-import BattleProgressIndicators from '@/components/battle/BattleProgressIndicators';
-import BattleVoteButtons from '@/components/battle/BattleVoteButtons';
-import ActionButtons from '@/components/battle/ActionButtons';
+import { useEffect } from "react";
+import VideoFeed from "@/components/VideoFeed";
+import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
+import { useBattleVideos } from "@/hooks/useBattleVideos";
+import VideoActions from "@/components/video/VideoActions";
+import { ArrowLeft } from "lucide-react";
+import BattleHeader from "@/components/battle/BattleHeader";
 
 const BattlePage = () => {
-  const { battleId } = useParams<{ battleId: string }>();
-  const { 
-    videos, isLoading, error, votingEndsAt, votesRemaining, castVote,
-    activeVideoIndex, setActiveVideoIndex, filteredVideos 
-  } = useBattleVideos(battleId);
+  const {
+    activeVideoIndex,
+    setActiveVideoIndex,
+    filteredVideos
+  } = useBattleVideos(false); // false = regular videos only
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading battle...</div>;
-  }
+  // Handle swipe/scroll to change videos
+  useEffect(() => {
+    const handleScroll = (e: WheelEvent) => {
+      if (e.deltaY > 0 && activeVideoIndex < filteredVideos.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+    window.addEventListener('wheel', handleScroll);
+    return () => {
+      window.removeEventListener('wheel', handleScroll);
+    };
+  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
 
-  if (error) {
-    return <div className="flex justify-center items-center h-screen">Error: {error.message}</div>;
-  }
+  // Handle touch swipe for mobile
+  useEffect(() => {
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      const diff = touchStartY - touchEndY;
 
-  if (!videos || videos.length < 2) {
-    return <div className="flex justify-center items-center h-screen">Battle not available</div>;
-  }
-
+      // Swipe up - go to next video
+      if (diff > 50 && activeVideoIndex < filteredVideos.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      }
+      // Swipe down - go to previous video
+      else if (diff < -50 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
+  
   return (
-    <div className="h-full min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#000000]">
-      <div className="container mx-auto max-w-lg pt-14 pb-20 h-full">
-        <BattleHeader />
-        
-        <div className="relative flex flex-col items-center">
-          <div className="w-full">
-            <BattleDetails videos={videos} />
-          </div>
-          
-          <div className="relative w-full grid grid-cols-2 gap-2">
-            <BattleVideoPlayer video={videos[0]} position="left" />
-            <BattleVideoPlayer video={videos[1]} position="right" />
-          </div>
-          
-          <BattleProgressIndicators 
-            videos={videos} 
-            activeIndex={activeVideoIndex} 
+    <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
+      {/* Videos container */}
+      <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
+      
+      {/* Battle header with title */}
+      {filteredVideos[activeVideoIndex] && (
+        <BattleHeader title={filteredVideos[activeVideoIndex].description} />
+      )}
+      
+      {/* Progress indicators */}
+      <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
+
+      {/* Back button and page title */}
+      <div className="absolute top-4 left-4 z-30 flex items-center">
+        <button className="mr-3 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
+          <ArrowLeft className="w-5 h-5 text-white" />
+        </button>
+        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-[#9b87f5] to-[#D946EF] bg-clip-text text-transparent">
+          Battle Videos
+        </h1>
+      </div>
+      
+      {/* Video actions */}
+      <div className="absolute bottom-20 right-3 z-30">
+        {filteredVideos[activeVideoIndex] && (
+          <VideoActions 
+            videoId={filteredVideos[activeVideoIndex].id} // Add videoId here
+            likes={filteredVideos[activeVideoIndex].likes} 
+            comments={filteredVideos[activeVideoIndex].comments} 
+            shares={filteredVideos[activeVideoIndex].shares}
+            isLiked={filteredVideos[activeVideoIndex].isLiked || false}
+            onLike={() => {
+              console.log('Video liked:', filteredVideos[activeVideoIndex]);
+            }}
           />
-          
-          <div className="w-full mt-6">
-            <div className="text-center mb-4">
-              <div className="text-sm text-gray-400">Voting ends in</div>
-              <div className="text-xl font-bold text-white">23h 45m</div>
-              <div className="text-sm text-gray-400 mt-1">
-                You have {votesRemaining} votes remaining
-              </div>
-            </div>
-            
-            <BattleVoteButtons videos={videos} onVote={castVote} />
-          </div>
-          
-          <ActionButtons battleId={battleId} videos={videos} />
-        </div>
+        )}
       </div>
     </div>
   );

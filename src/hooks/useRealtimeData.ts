@@ -1,80 +1,131 @@
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
-// Generic hook for real-time data with Supabase and React Query
+// Define the RealtimePostgresChangesPayload interface to match Supabase's structure
+interface RealtimePostgresChangesPayload<T> {
+  commit_timestamp: string;
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  schema: string;
+  table: string;
+  old: T | null;
+  new: T | null;
+}
+
 export function useRealtimeData<T>(
-  table: string,
-  initialData: T[] = [],
-  filter: any = null,
-  options: Partial<UseQueryOptions<any, Error, any, any>> = {}
+  tableName: string, 
+  initialData: T[], 
+  filterColumn: string | null = null, 
+  filterValue: string | null = null
 ) {
   const [data, setData] = useState<T[]>(initialData);
-  const [channel, setChannel] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Setup the initial query
-  const query = useQuery({
-    queryKey: [table, filter],
-    queryFn: async () => {
-      let queryBuilder = supabase.from(table).select('*');
-      
-      if (filter) {
-        queryBuilder = queryBuilder.match(filter);
-      }
-      
-      const { data, error } = await queryBuilder;
-      
-      if (error) throw error;
-      return data as T[];
-    },
-    ...options
-  });
-
-  // Set up real-time subscription
   useEffect(() => {
-    // Only subscribe if we have data and the component is mounted
-    if (query.data) {
-      setData(query.data);
-      
-      // Create a new Supabase real-time channel
-      const newChannel = supabase
-        .channel(`${table}-changes`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table,
-        }, (payload) => {
-          // Handle different types of changes
-          if (payload.eventType === 'INSERT') {
-            setData((currentData) => [payload.new as T, ...currentData]);
-          } else if (payload.eventType === 'UPDATE') {
-            setData((currentData) =>
-              currentData.map((item: any) =>
-                item.id === (payload.new as any).id ? (payload.new as T) : item
-              )
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setData((currentData) =>
-              currentData.filter((item: any) => item.id !== (payload.old as any).id)
-            );
-          }
-        })
-        .subscribe();
-      
-      setChannel(newChannel);
-      
-      // Clean up subscription when unmounting
-      return () => {
-        if (newChannel) {
-          supabase.removeChannel(newChannel);
-        }
-      };
-    }
-  }, [table, query.data]);
+    // Set initial data when it changes
+    setData(initialData);
+  }, [initialData]);
 
-  return {
-    ...query,
-    data,
-  };
+  useEffect(() => {
+    // Setup real-time subscription
+    setIsLoading(true);
+    
+    // Create a channel name based on table and filter if any
+    const channelName = filterColumn && filterValue 
+      ? `${tableName}:${filterColumn}:eq:${filterValue}`
+      : `${tableName}`;
+    
+    let filter = {};
+    if (filterColumn && filterValue) {
+      filter = { [filterColumn]: filterValue };
+    }
+
+    // Create channel for realtime updates
+    const channel = supabase.channel(channelName);
+    
+    // Add listeners for INSERT events
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: tableName,
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
+      },
+      (payload: any) => {
+        // Access the new record safely
+        const newRecord = payload.new as T;
+        if (newRecord) {
+          setData((prevData) => [...prevData, newRecord]);
+          toast({
+            title: "New data received",
+            description: `New update for ${tableName}`,
+          });
+        }
+      }
+    );
+    
+    // Add listeners for UPDATE events
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: tableName,
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
+      },
+      (payload: any) => {
+        // Access the updated record safely
+        const updatedRecord = payload.new as T;
+        if (updatedRecord) {
+          setData((prevData) =>
+            prevData.map((item: any) =>
+              item.id === (updatedRecord as any).id ? updatedRecord : item
+            )
+          );
+        }
+      }
+    );
+    
+    // Add listeners for DELETE events
+    channel.on(
+      'postgres_changes' as any,
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: tableName,
+        ...(Object.keys(filter).length > 0 ? { filter } : {})
+      },
+      (payload: any) => {
+        // Access the deleted record safely
+        const deletedRecord = payload.old as T;
+        if (deletedRecord) {
+          setData((prevData) =>
+            prevData.filter((item: any) => item.id !== (deletedRecord as any).id)
+          );
+        }
+      }
+    );
+
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log(`Subscribed to real-time updates for ${tableName}`);
+        setIsLoading(false);
+      } else if (status === 'CHANNEL_ERROR') {
+        setError(`Failed to subscribe to ${tableName} updates`);
+        setIsLoading(false);
+      }
+    });
+
+    // Cleanup function
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tableName, filterColumn, filterValue, toast]);
+
+  return { data, isLoading, error };
 }

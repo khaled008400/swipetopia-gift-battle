@@ -21,8 +21,8 @@ import AuthCheck from './components/auth/AuthCheck';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from '@/components/ui/toaster';
-import BattlePage from './pages/BattlePage';
 
+// Create a React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -37,8 +37,10 @@ function App() {
   const [session, setSession] = React.useState(null);
 
   React.useEffect(() => {
+    // Log configuration for debugging
     console.log("App initialized with Supabase client");
 
+    // Check for existing session on mount
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data?.session || null);
@@ -47,6 +49,7 @@ function App() {
     
     checkSession();
 
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         console.log("Auth state changed:", _event);
@@ -76,23 +79,24 @@ function App() {
                 <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
                 <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
                 <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
-                <Route path="/battle/:battleId" element={<Layout><BattlePage /></Layout>} />
                 
-                <Route path="/admin" element={<Layout><AdminPage /></Layout>} />
+                {/* Admin routes with auth check */}
+                <Route path="/admin" element={
+                  <AuthCheck requireAdmin={true}>
+                    <Layout><AdminPage /></Layout>
+                  </AuthCheck>
+                } />
                 <Route path="/admin-dashboard" element={
-                  <Layout>
-                    <AuthCheck requireAdmin>
-                      <AdminDashboardPage />
-                    </AuthCheck>
-                  </Layout>
+                  <AuthCheck requireAdmin={true}>
+                    <Layout><AdminDashboardPage /></Layout>
+                  </AuthCheck>
                 } />
                 
+                {/* Seller routes with auth check */}
                 <Route path="/seller-dashboard" element={
-                  <Layout>
-                    <AuthCheck requireSeller>
-                      <SellerDashboardPage />
-                    </AuthCheck>
-                  </Layout>
+                  <AuthCheck requireSeller={true}>
+                    <Layout><SellerDashboardPage /></Layout>
+                  </AuthCheck>
                 } />
               </Routes>
             </Router>

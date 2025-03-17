@@ -1,6 +1,5 @@
 
-import React from 'react';
-import { BattleVideo } from "@/types/video.types";
+import { BattleVideo } from "@/hooks/useBattleVideos";
 
 interface BattleProgressIndicatorsProps {
   videos: BattleVideo[];

@@ -1,94 +1,129 @@
-
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import * as AuthService from '@/services/auth.service';
-import { Button } from '@/components/ui/button';
-import { Video } from '@/types/video.types';
+import { useEffect, useState } from "react";
+import PopularLiveSection from "../components/PopularLiveSection";
+import TrendingVideosSection from "../components/TrendingVideosSection";
+import UserVideosCarousel from "../components/UserVideosCarousel";
+import VideoFeed from "../components/VideoFeed";
+import { useAuth } from "../context/AuthContext";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const { user } = useAuth();
   
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      await AuthService.loginWithEmail('demo@example.com', 'password123');
-      navigate('/home');
-    } catch (error) {
-      console.error('Login failed:', error);
-    } finally {
-      setLoading(false);
+  // Example video data - in a real app, this would come from an API
+  const videos = [
+    {
+      id: "1",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
+      user: {
+        username: "fashionista",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      },
+      description: "Check out my new collection! #fashion #style #trending",
+      likes: 1243,
+      comments: 89,
+      shares: 56
+    },
+    {
+      id: "2",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
+      user: {
+        username: "makeup_artist",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      },
+      description: "New makeup tutorial for the weekend party! #makeup #glam",
+      likes: 2467,
+      comments: 134,
+      shares: 89,
+      isLive: true
+    },
+    {
+      id: "3",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-girl-dancing-happily-in-a-field-at-sunset-1230-large.mp4",
+      user: {
+        username: "travel_vibes",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      },
+      description: "Sunset vibes in Bali 🌴 #travel #sunset #bali",
+      likes: 5698,
+      comments: 241,
+      shares: 178
     }
-  };
-  
-  // Mock featured video
-  const featuredVideo: Video = {
-    id: 'featured-1',
-    title: 'Creator Studio Demo',
-    description: 'Learn how to use our new Creator Studio features!',
-    video_url: 'https://example.com/videos/creator-studio-demo.mp4',
-    thumbnail_url: 'https://example.com/thumbnails/creator-studio-demo.jpg',
-    user_id: 'admin',
-    view_count: 5280,
-    likes_count: 423,
-    is_live: true,
-    creator: {
-      username: 'OfficialApp',
-      avatar: 'https://example.com/avatars/official.jpg',
-      id: 'admin'
+  ];
+
+  // User-created videos for swappable section, with following info
+  const userCreatedVideos = [
+    {
+      id: "4",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
+      username: "runner_girl",
+      isFollowing: true
+    },
+    {
+      id: "5",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
+      username: "dance_king",
+      isFollowing: false
+    },
+    {
+      id: "6",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
+      username: "travel_vlogger",
+      isFollowing: true
+    },
+    {
+      id: "7",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
+      thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
+      username: "chef_master",
+      isFollowing: true
     }
-  };
-  
+  ];
+
+  // Popular live creators
+  const liveCreators = [
+    { id: "1", avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png", name: "John" },
+    { id: "2", avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png", name: "Emma" },
+    { id: "3", avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png", name: "Maria" },
+    { id: "4", avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png", name: "Sam" },
+    { id: "5", avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png", name: "Alex" },
+  ];
+
+  // Trending videos
+  const trendingVideos = [
+    { id: "1", thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a", username: "fashionista" },
+    { id: "2", thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a", username: "styleguru" },
+    { id: "3", thumbnail: "https://images.unsplash.com/photo-1618886614638-80e3c103d31a", username: "trending" },
+  ];
+
+  // Detect swipe to change videos
+  useEffect(() => {
+    const handleScroll = (e: WheelEvent) => {
+      if (e.deltaY > 0 && activeVideoIndex < videos.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
+
+    window.addEventListener('wheel', handleScroll);
+    
+    return () => {
+      window.removeEventListener('wheel', handleScroll);
+    };
+  }, [activeVideoIndex, videos.length]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
-      <div className="container mx-auto px-4 py-12 flex flex-col items-center">
-        <h1 className="text-5xl font-bold text-center mb-6">Welcome to Our App</h1>
-        <p className="text-xl text-center text-gray-300 mb-12 max-w-2xl">
-          Join our community of creators and discover amazing content.
-        </p>
-        
-        <div className="flex flex-col md:flex-row gap-4 mb-12">
-          <Button 
-            size="lg" 
-            onClick={handleLogin}
-            disabled={loading}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {loading ? 'Signing in...' : 'Try Demo'}
-          </Button>
-          
-          <Link to="/register">
-            <Button size="lg" variant="outline" className="border-purple-600 text-purple-400 hover:bg-purple-950">
-              Sign Up
-            </Button>
-          </Link>
-        </div>
-        
-        <div className="mt-12 w-full max-w-4xl">
-          <h2 className="text-2xl font-semibold mb-6">Featured Content</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Featured content cards would go here */}
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
-              <div className="relative">
-                <img 
-                  src={featuredVideo.thumbnail_url || '/placeholder.svg'} 
-                  alt={featuredVideo.title} 
-                  className="w-full aspect-video object-cover"
-                />
-                {featuredVideo.is_live && (
-                  <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
-                    LIVE
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-medium text-lg">{featuredVideo.title}</h3>
-                <p className="text-gray-400 text-sm mt-1">{featuredVideo.description}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="h-full w-full overflow-hidden">
+      {/* Component-based layout - these components are positioned absolutely */}
+      <PopularLiveSection creators={liveCreators} />
+      <TrendingVideosSection videos={trendingVideos} />
+      <UserVideosCarousel videos={userCreatedVideos} title="Following" />
+      
+      {/* The VideoFeed is the main background content with z-index below the UI components */}
+      <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} />
     </div>
   );
 };

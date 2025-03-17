@@ -1,52 +1,30 @@
 
-import React, { useEffect, useState } from 'react';
-import TrendingVideosSection from '@/components/TrendingVideosSection';
-import PopularLiveSection from '@/components/PopularLiveSection';
-import SearchBar from '@/components/SearchBar';
-import VideoFeed from '@/components/VideoFeed';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Video } from '@/types/video.types';
-
-interface PopularUser {
-  username: string;
-  avatar_url: string;
-}
+import { useEffect, useState } from "react";
+import VideoFeed from "../components/VideoFeed";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Video } from "@/types/video.types";
+import { useToast } from "@/hooks/use-toast";
+import { useRealtimeData } from "@/hooks/useRealtimeData";
 
 const HomePage = () => {
-  const [trendingVideos, setTrendingVideos] = useState<Video[]>([]);
-  const [liveStreams, setLiveStreams] = useState<any[]>([]);
-  const [popularUsers, setPopularUsers] = useState<PopularUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [videos, setVideos] = useState<Video[]>([]);
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
-
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [localVideos, setLocalVideos] = useState<Video[]>([]);
+  
+  // Fetch initial videos from Supabase
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchVideos = async () => {
       try {
         setIsLoading(true);
-
-        // Fetch popular users
-        const { data: usersData, error: usersError } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .order('followers', { ascending: false })
-          .limit(5);
-
-        if (usersError) {
-          console.error('Error fetching popular users:', usersError);
-          toast.error('Could not load popular users');
-        } else {
-          setPopularUsers(usersData || []);
-        }
-        
-        // Fetch trending videos
-        const { data: videosData, error: videosError } = await supabase
+        const { data, error } = await supabase
           .from('videos')
           .select(`
             id, 
-            title, 
-            description, 
+            title,
+            description,
             video_url,
             thumbnail_url,
             likes_count,
@@ -57,101 +35,191 @@ const HomePage = () => {
             is_live,
             created_at,
             user_id,
-            profiles:user_id(username, avatar_url)
+            profiles:user_id (username, avatar_url)
           `)
           .order('created_at', { ascending: false })
           .limit(50);
-
-        if (videosError) {
-          console.error('Error fetching videos:', videosError);
-          toast.error('Could not load videos');
-        } else {
-          const mappedVideos = (videosData || []).map(video => ({
-            ...video,
-            // Ensure required fields for components are present
+          
+        if (error) {
+          console.error("Error fetching videos:", error);
+          toast({
+            title: "Error loading videos",
+            description: "Please try again later",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const formattedVideos = data.map(video => ({
+            id: video.id,
             url: video.video_url,
+            description: video.description || '',
             likes: video.likes_count || 0,
             comments: video.comments_count || 0,
-            shares: video.shares_count || 0
+            shares: video.shares_count || 0,
+            isLive: video.is_live || false,
+            user: {
+              username: video.profiles?.username || 'unknown',
+              avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
+            }
           }));
-          setTrendingVideos(mappedVideos);
-          setVideos(mappedVideos);
-        }
-
-        // Fetch live streams
-        const { data: liveData, error: liveError } = await supabase
-          .from('streams')
-          .select(`
-            id,
-            title,
-            thumbnail_url,
-            viewer_count,
-            created_at,
-            user_id,
-            profiles:user_id(username, avatar_url)
-          `)
-          .eq('status', 'live')
-          .order('viewer_count', { ascending: false })
-          .limit(10);
-
-        if (liveError) {
-          console.error('Error fetching live streams:', liveError);
-          toast.error('Could not load live streams');
+          setLocalVideos(formattedVideos);
         } else {
-          setLiveStreams(liveData || []);
+          // Fallback to sample videos if no data is available
+          setLocalVideos(sampleVideos);
         }
-
-      } catch (error) {
-        console.error('Error in data fetching:', error);
-        toast.error('Something went wrong');
+      } catch (err) {
+        console.error("Error in video fetch:", err);
+        setLocalVideos(sampleVideos);
       } finally {
         setIsLoading(false);
       }
     };
+    
+    fetchVideos();
+  }, [toast]);
+  
+  // Use the real-time hook to listen for changes
+  const { data: realtimeVideos } = useRealtimeData<any>(
+    'videos',
+    [], // Initial data is empty, we'll handle it separately
+    null,
+    null
+  );
+  
+  // When realtime updates come in, process them
+  useEffect(() => {
+    if (realtimeVideos && realtimeVideos.length > 0) {
+      const newVideos = realtimeVideos.map(video => ({
+        id: video.id,
+        url: video.video_url,
+        description: video.description || '',
+        likes: video.likes_count || 0,
+        comments: video.comments_count || 0,
+        shares: video.shares_count || 0,
+        isLive: video.is_live || false,
+        user: {
+          username: video.profiles?.username || 'unknown',
+          avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
+        }
+      }));
+      
+      // Add new videos to the top of the feed
+      setLocalVideos(prev => [...newVideos, ...prev]);
+      // Reset to the first video
+      setActiveVideoIndex(0);
+      
+      toast({
+        title: "New videos available",
+        description: "Fresh content has been added to your feed",
+      });
+    }
+  }, [realtimeVideos, toast]);
+  
+  // Sample videos as fallback
+  const sampleVideos = [
+    {
+      id: "1",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
+      user: {
+        username: "fashionista",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      },
+      description: "Check out my new collection! #fashion #style #trending",
+      likes: 1243,
+      comments: 89,
+      shares: 56
+    },
+    {
+      id: "2",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
+      user: {
+        username: "makeup_artist",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      },
+      description: "New makeup tutorial for the weekend party! #makeup #glam",
+      likes: 2467,
+      comments: 134,
+      shares: 89,
+      isLive: true
+    },
+    {
+      id: "3",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-girl-dancing-happily-in-a-field-at-sunset-1230-large.mp4",
+      user: {
+        username: "travel_vibes",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      },
+      description: "Sunset vibes in Bali 🌴 #travel #sunset #bali",
+      likes: 5698,
+      comments: 241,
+      shares: 178
+    }
+  ];
 
-    fetchData();
-  }, []);
+  // Detect swipe to change videos
+  useEffect(() => {
+    const handleScroll = (e: WheelEvent) => {
+      if (e.deltaY > 0 && activeVideoIndex < localVideos.length - 1) {
+        setActiveVideoIndex(prev => prev + 1);
+      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
+        setActiveVideoIndex(prev => prev - 1);
+      }
+    };
 
-  // Create mock creators for PopularLiveSection from liveStreams
-  const creators = liveStreams.map(stream => ({
-    id: stream.id,
-    username: stream.profiles?.username || 'User',
-    avatar: stream.profiles?.avatar_url || '',
-    isLive: true,
-    title: stream.title,
-    thumbnailUrl: stream.thumbnail_url,
-    viewers: stream.viewer_count
-  }));
+    window.addEventListener('wheel', handleScroll);
+    
+    return () => {
+      window.removeEventListener('wheel', handleScroll);
+    };
+  }, [activeVideoIndex, localVideos.length]);
+
+  // Function to track video views
+  const handleVideoView = async (videoId: string) => {
+    if (!videoId || videoId.length < 5) return; // Skip for demo videos
+    
+    try {
+      // Update view count in database
+      const { error } = await supabase.rpc('increment_video_counter', {
+        video_id: videoId,
+        counter_name: 'view_count'
+      });
+      
+      if (error) console.error("Error incrementing view count:", error);
+      
+      // Record the view interaction
+      if (user) {
+        const { error: interactionError } = await supabase
+          .from('video_interactions')
+          .upsert({
+            video_id: videoId,
+            user_id: user.id,
+            interaction_type: 'view'
+          }, {
+            onConflict: 'video_id,user_id,interaction_type'
+          });
+          
+        if (interactionError) console.error("Error recording view:", interactionError);
+      }
+    } catch (err) {
+      console.error("Error tracking view:", err);
+    }
+  };
 
   return (
-    <div className="pb-16 bg-black min-h-screen">
-      <div className="sticky top-0 z-20 bg-black">
-        <SearchBar />
-      </div>
-
-      {popularUsers.length > 0 && (
-        <div className="flex overflow-x-auto py-4 px-4 gap-4 hide-scrollbar">
-          {popularUsers.map((user, index) => (
-            <div key={index} className="flex flex-col items-center min-w-[60px]">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 p-[2px]">
-                <img 
-                  src={user.avatar_url || '/placeholder.svg'} 
-                  alt={user.username} 
-                  className="w-full h-full object-cover rounded-full"
-                />
-              </div>
-              <span className="text-white text-xs mt-1 truncate w-16 text-center">
-                {user.username}
-              </span>
-            </div>
-          ))}
+    <div className="h-full w-full overflow-hidden">
+      {isLoading ? (
+        <div className="flex items-center justify-center h-full w-full bg-app-black">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
         </div>
+      ) : (
+        <VideoFeed 
+          videos={localVideos} 
+          activeVideoIndex={activeVideoIndex} 
+          onVideoView={handleVideoView}
+        />
       )}
-      
-      <TrendingVideosSection videos={trendingVideos} />
-      <PopularLiveSection creators={creators} />
-      
-      <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} />
     </div>
   );
 };

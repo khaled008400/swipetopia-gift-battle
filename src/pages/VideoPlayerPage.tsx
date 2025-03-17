@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import VideoPlayerAdapter from '@/components/VideoPlayerAdapter';
+import VideoPlayer from '@/components/VideoPlayer';
 import { Video } from '@/types/video.types';
 import { Sheet } from '@/components/ui/sheet';
 import VideoComments from '@/components/video/VideoComments';
@@ -103,7 +104,7 @@ const VideoPlayerPage = () => {
       <div className="flex flex-col md:flex-row max-w-7xl mx-auto w-full">
         <div className="w-full md:w-2/3 bg-app-black">
           <div className="aspect-[9/16] md:aspect-video max-h-[calc(100vh-120px)] relative mx-auto">
-            <VideoPlayerAdapter
+            <VideoPlayer
               videoId={video.id}
               autoPlay={true}
               src={video.video_url}

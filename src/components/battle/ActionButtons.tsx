@@ -1,36 +1,36 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, BookmarkIcon } from 'lucide-react';
-import { BattleVideo } from '@/types/video.types';
+import { Heart, MessageCircle, Share2, Coins } from "lucide-react";
 
-export interface ActionButtonsProps {
-  battleId?: string;
-  videos: BattleVideo[];
-}
-
-const ActionButtons: React.FC<ActionButtonsProps> = ({ battleId, videos }) => {
+const ActionButtons = () => {
   return (
-    <div className="fixed bottom-20 right-4 flex flex-col gap-5 items-center">
-      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
-        <Heart className="h-6 w-6 text-white" />
-        <span className="sr-only">Like</span>
-      </Button>
+    <div className="absolute bottom-24 right-3 flex flex-col space-y-5 z-10">
+      <div className="flex flex-col items-center">
+        <button className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-black/60 transition-all duration-300 shadow-lg">
+          <Heart className="h-5 w-5 text-white" />
+        </button>
+        <span className="text-white text-xs mt-1.5 font-medium">Like</span>
+      </div>
       
-      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
-        <MessageCircle className="h-6 w-6 text-white" />
-        <span className="sr-only">Comment</span>
-      </Button>
+      <div className="flex flex-col items-center">
+        <button className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-black/60 transition-all duration-300 shadow-lg">
+          <MessageCircle className="h-5 w-5 text-white" />
+        </button>
+        <span className="text-white text-xs mt-1.5 font-medium">Comment</span>
+      </div>
       
-      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
-        <BookmarkIcon className="h-6 w-6 text-white" />
-        <span className="sr-only">Save</span>
-      </Button>
+      <div className="flex flex-col items-center">
+        <button className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-black/60 transition-all duration-300 shadow-lg">
+          <Share2 className="h-5 w-5 text-white" />
+        </button>
+        <span className="text-white text-xs mt-1.5 font-medium">Share</span>
+      </div>
       
-      <Button variant="ghost" size="icon" className="bg-black/30 hover:bg-black/50 rounded-full p-3">
-        <Share2 className="h-6 w-6 text-white" />
-        <span className="sr-only">Share</span>
-      </Button>
+      <div className="flex flex-col items-center">
+        <button className="w-12 h-12 rounded-full bg-gradient-to-r from-[#9b87f5] to-[#D946EF] flex items-center justify-center shadow-lg hover:opacity-90 transition-all duration-300">
+          <Coins className="h-5 w-5 text-white" />
+        </button>
+        <span className="text-white text-xs mt-1.5 font-medium">Gift</span>
+      </div>
     </div>
   );
 };

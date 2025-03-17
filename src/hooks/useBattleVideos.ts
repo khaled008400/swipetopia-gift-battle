@@ -1,138 +1,172 @@
 
-import { useState, useEffect } from 'react';
-import { BattleVideo } from '@/types/video.types';
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-export interface UseBattleVideosReturn {
-  videos: BattleVideo[];
-  isLoading: boolean;
-  error: Error | null;
-  votingEndsAt: string;
-  votesRemaining: number;
-  castVote: (videoId: string) => Promise<boolean>;
-  activeVideoIndex: number;
-  setActiveVideoIndex: React.Dispatch<React.SetStateAction<number>>;
-  liveVideosOnly: boolean;
-  filteredVideos: BattleVideo[];
-  setStreamerFilter: React.Dispatch<React.SetStateAction<string | null>>;
+// Types
+export interface BattleVideo {
+  id: string;
+  url: string;
+  user: {
+    username: string;
+    avatar: string;
+  };
+  description: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  isLive?: boolean;
+  isLiked?: boolean;
 }
 
-export function useBattleVideos(battleId?: string): UseBattleVideosReturn {
-  const [videos, setVideos] = useState<BattleVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [votingEndsAt, setVotingEndsAt] = useState<string>(
-    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-  );
-  const [votesRemaining, setVotesRemaining] = useState(3);
-  
-  // For video filtering/sorting
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
-  const [liveVideosOnly, setLiveVideosOnly] = useState(false);
-  const [streamerFilter, setStreamerFilter] = useState<string | null>(null);
-  const [filteredVideos, setFilteredVideos] = useState<BattleVideo[]>([]);
+// More reliable video sources
+const FALLBACK_VIDEOS = [
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+];
 
-  useEffect(() => {
-    const fetchBattleVideos = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Mock data for battle videos
-        const mockVideos: BattleVideo[] = [
-          {
-            id: '1',
-            title: 'Dance Challenge',
-            videoUrl: 'https://example.com/video1.mp4',
-            thumbnailUrl: 'https://example.com/thumbnail1.jpg',
-            url: 'https://example.com/video1.mp4',
-            creator: {
-              id: '101',
-              username: 'DanceQueen',
-              avatar: 'https://example.com/avatar1.jpg'
-            },
-            votes: 124,
-            isLive: true,
-            viewerCount: 1250
-          },
-          {
-            id: '2',
-            title: 'Singing Performance',
-            videoUrl: 'https://example.com/video2.mp4',
-            thumbnailUrl: 'https://example.com/thumbnail2.jpg',
-            url: 'https://example.com/video2.mp4',
-            creator: {
-              id: '102',
-              username: 'VocalMaster',
-              avatar: 'https://example.com/avatar2.jpg'
-            },
-            votes: 98,
-            isLive: false,
-            viewerCount: 0
-          }
-        ];
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setVideos(mockVideos);
-        setFilteredVideos(mockVideos);
-      } catch (err) {
-        console.error('Error fetching battle videos:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch battle videos'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
+// Battle videos data with more reliable sources
+const BATTLES: BattleVideo[] = [
+  {
+    id: "1",
+    url: FALLBACK_VIDEOS[0],
+    user: {
+      username: "dancequeen",
+      avatar: "https://i.pravatar.cc/150?img=1"
+    },
+    description: "Dance Battle Finals 🏆 #dance #competition #finals",
+    likes: 1432,
+    comments: 87,
+    shares: 34,
+    isLive: true,
+    isLiked: false
+  },
+  {
+    id: "2",
+    url: FALLBACK_VIDEOS[1],
+    user: {
+      username: "groovyking",
+      avatar: "https://i.pravatar.cc/150?img=2"
+    },
+    description: "My entry for the dance battle! Vote if you like it 🔥 #dancebattle #hiphop",
+    likes: 2651,
+    comments: 132,
+    shares: 76,
+    isLive: false,
+    isLiked: false
+  },
+  {
+    id: "3",
+    url: FALLBACK_VIDEOS[2],
+    user: {
+      username: "lipqueen",
+      avatar: "https://i.pravatar.cc/150?img=3"
+    },
+    description: "Freestyle Rap Challenge - Round 1 🎤 #rap #freestyle #competition",
+    likes: 3219,
+    comments: 201,
+    shares: 97,
+    isLive: true,
+    isLiked: false
+  },
+  {
+    id: "4",
+    url: FALLBACK_VIDEOS[3],
+    user: {
+      username: "lyricalgenius",
+      avatar: "https://i.pravatar.cc/150?img=4"
+    },
+    description: "Responding to @lipqueen's challenge. Let's go! 🔥 #rapbattle #bars",
+    likes: 2876,
+    comments: 143,
+    shares: 87,
+    isLive: false,
+    isLiked: false
+  },
+  {
+    id: "5",
+    url: FALLBACK_VIDEOS[4],
+    user: {
+      username: "fashionista",
+      avatar: "https://i.pravatar.cc/150?img=5"
+    },
+    description: "Fashion Face-Off Entry 👗 #fashion #style #competition",
+    likes: 4532,
+    comments: 234,
+    shares: 123,
+    isLive: false,
+    isLiked: false
+  },
+  {
+    id: "6",
+    url: FALLBACK_VIDEOS[5],
+    user: {
+      username: "styleicon",
+      avatar: "https://i.pravatar.cc/150?img=6"
+    },
+    description: "My fashion battle submission - vintage inspired 💫 #fashionbattle #vintage",
+    likes: 3965,
+    comments: 187,
+    shares: 105,
+    isLive: true,
+    isLiked: false
+  }
+];
+
+export const useBattleVideos = (liveVideosOnly: boolean = false) => {
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+  const [streamerFilter, setStreamerFilter] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  // Function to generate a filtered feed of videos based on live status and streamer
+  const getFilteredVideos = (): BattleVideo[] => {
+    let videos = [...BATTLES];
     
-    fetchBattleVideos();
-  }, [battleId]);
-  
-  // Filter videos based on current filters
-  useEffect(() => {
-    let filtered = [...videos];
-    
+    // Filter by live status if requested
     if (liveVideosOnly) {
-      filtered = filtered.filter(video => video.isLive);
+      videos = videos.filter(video => video.isLive);
+    } else {
+      videos = videos.filter(video => !video.isLive);
     }
     
-    if (streamerFilter) {
-      filtered = filtered.filter(video => video.creator.id === streamerFilter);
+    // Apply streamer filter if present
+    if (streamerFilter.length > 0) {
+      videos = videos.filter(video => streamerFilter.includes(video.id));
     }
     
-    setFilteredVideos(filtered);
-  }, [videos, liveVideosOnly, streamerFilter]);
-  
-  // Function to cast a vote for a video
-  const castVote = async (videoId: string) => {
-    if (votesRemaining <= 0) {
-      return false;
-    }
-    
-    // Update the videos array to increment votes for the selected video
-    setVideos(prev => 
-      prev.map(video => 
-        video.id === videoId 
-          ? { ...video, votes: video.votes + 1 } 
-          : video
-      )
-    );
-    
-    // Decrement available votes
-    setVotesRemaining(prev => prev - 1);
-    
-    return true;
+    return videos;
   };
   
+  // Get filtered videos based on current settings
+  const filteredVideos = getFilteredVideos();
+
+  // Reset active index when component mounts or filters change
+  useEffect(() => {
+    setActiveVideoIndex(0);
+    
+    if (liveVideosOnly) {
+      toast({
+        title: "Live Streams",
+        description: "Showing only live streams",
+        duration: 2000,
+      });
+    } else {
+      toast({
+        title: "Battle Videos",
+        description: "Showing battle videos",
+        duration: 2000,
+      });
+    }
+  }, [liveVideosOnly, streamerFilter.length, toast]);
+
   return {
-    videos,
-    isLoading,
-    error,
-    votingEndsAt,
-    votesRemaining,
-    castVote,
     activeVideoIndex,
     setActiveVideoIndex,
     liveVideosOnly,
     filteredVideos,
     setStreamerFilter
   };
-}
+};

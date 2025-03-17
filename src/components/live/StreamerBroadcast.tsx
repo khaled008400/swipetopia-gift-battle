@@ -24,11 +24,14 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
 
   const startBroadcast = async () => {
     try {
-      // Start a stream in the database - pass streamerId as the only parameter
-      const streamData = await StreamService.startStream(streamerId);
+      // Start a stream in the database
+      const newStreamId = await StreamService.startStream(
+        streamerId,
+        `${streamerName}'s Live Stream`,
+        `Live stream by ${streamerName}`
+      );
       
-      // Assuming startStream returns an object with id property
-      setStreamId(streamData.id);
+      setStreamId(newStreamId);
       setIsStreaming(true);
       
       toast({

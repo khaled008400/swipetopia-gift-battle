@@ -2,9 +2,11 @@
 import { FC } from 'react';
 
 export interface VideoPlayerProps {
-  videoUrl: string;
+  src: string;
+  poster?: string;
   autoPlay?: boolean;
-  poster?: string; // Add poster property
+  videoId?: string;
+  videoUrl?: string;
   isActive?: boolean;
 }
 

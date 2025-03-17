@@ -1,71 +1,33 @@
 
-import React from 'react';
-import { BattleVideo } from '@/types/video.types';
+import { ChevronUp } from "lucide-react";
 
-export interface BattleDetailsProps {
-  videos?: BattleVideo[];
-  title?: string;
-  participants?: number;
-  showDetails?: boolean;
-  setShowDetails?: React.Dispatch<React.SetStateAction<boolean>>;
+interface BattleDetailsProps {
+  title: string;
+  participants: number;
+  showDetails: boolean;
+  setShowDetails: (show: boolean) => void;
 }
 
-const BattleDetails: React.FC<BattleDetailsProps> = ({ 
-  videos, 
-  title,
-  participants,
-  showDetails,
-  setShowDetails
-}) => {
+const BattleDetails = ({ title, participants, showDetails, setShowDetails }: BattleDetailsProps) => {
   return (
-    <div className="px-4 py-2">
-      {title && (
-        <h1 className="text-xl font-bold text-white mb-1">{title}</h1>
-      )}
+    <>
+      <button 
+        className="absolute bottom-24 left-4 text-white/90 text-xs flex items-center z-10 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full border border-white/10"
+        onClick={() => setShowDetails(!showDetails)}
+      >
+        {showDetails ? "Less" : "More"} <ChevronUp className={`ml-1 w-4 h-4 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+      </button>
       
-      {videos && videos.length >= 2 && (
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center">
-            <div className="flex -space-x-2">
-              <img 
-                src={videos[0].creator.avatar}
-                alt={videos[0].creator.username}
-                className="w-6 h-6 rounded-full border border-white"
-              />
-              <img 
-                src={videos[1].creator.avatar}
-                alt={videos[1].creator.username}
-                className="w-6 h-6 rounded-full border border-white"
-              />
-            </div>
-            <span className="ml-2 text-white text-sm">
-              {videos[0].creator.username} vs {videos[1].creator.username}
-            </span>
+      {showDetails && (
+        <div className="absolute bottom-32 left-4 right-16 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl animate-fade-in z-10">
+          <h4 className="text-white text-sm font-bold">{title}</h4>
+          <p className="text-white/70 text-xs mt-2">{participants} participants • Live now</p>
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <p className="text-white/80 text-xs">Join this battle by uploading your own video!</p>
           </div>
-          
-          {participants !== undefined && (
-            <span className="text-gray-300 text-xs">
-              {participants.toLocaleString()} participants
-            </span>
-          )}
         </div>
       )}
-      
-      {showDetails && setShowDetails && (
-        <div className="bg-black/30 rounded-lg p-3 mt-2">
-          <button 
-            className="text-white text-xs underline"
-            onClick={() => setShowDetails(false)}
-          >
-            Hide details
-          </button>
-          <p className="text-gray-300 text-sm mt-2">
-            This is a battle where creators compete for votes.
-            You can vote for your favorite video to help them win!
-          </p>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

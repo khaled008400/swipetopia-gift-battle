@@ -1,151 +1,203 @@
-import React, { useState, useEffect } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import ProductCard from "@/components/shop/ProductCard";
-import { Heart } from "lucide-react";
+
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import ShopHeader from "../components/shop/ShopHeader";
+import ShopSearch from "../components/shop/ShopSearch";
+import LiveSelling from "../components/shop/LiveSelling";
+import LimitedOffers from "../components/shop/LimitedOffers";
+import ShopCategories from "../components/shop/ShopCategories";
+import ProductsTabs from "../components/shop/ProductsTabs";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Slider } from "@/components/ui/slider"
-import { Label } from "@/components/ui/label"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import shopService from '@/services/shop.service';
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { StoreIcon } from "lucide-react";
+import ShopService from "@/services/shop.service";
 
 const ShopPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [shopItems, setShopItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [favorites, setFavorites] = useState(new Set());
+  const [activeCategory, setActiveCategory] = useState("ALL");
+  const [activeTab, setActiveTab] = useState("featured");
+  const [likedProducts, setLikedProducts] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [priceRange, setPriceRange] = useState([0, 100]);
+  const { user, hasRole } = useAuth();
 
-  const toggleFavorite = (id) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(id)) {
-      newFavorites.delete(id);
-    } else {
-      newFavorites.add(id);
-    }
-    setFavorites(newFavorites);
-  };
-
-  const filterByPrice = (items) => {
-    return items.filter(item => item.price >= priceRange[0] && item.price <= priceRange[1]);
-  };
-
-  const filterItems = (term) => {
-    if (!term) {
-      return shopItems;
-    }
-    const lowerTerm = term.toLowerCase();
-    return shopItems.filter(item =>
-      item.name.toLowerCase().includes(lowerTerm)
-    );
-  };
-
+  // Fetch user's liked products when component mounts
   useEffect(() => {
-    const fetchShopData = async () => {
-      try {
-        setIsLoading(true);
-        // Use proper method from shop service
-        const shopData = await shopService.getProducts(); // Changed from getShopProfile
-        setShopItems(shopData);
-        setFilteredItems(shopData);
-        setFavorites(new Set());
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching shop data:', error);
-        setIsLoading(false);
+    if (user) {
+      fetchLikedProducts();
+    }
+  }, [user]);
+
+  // When search query changes, fetch results if query has min length
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      handleSearch();
+    } else if (searchQuery.trim() === "") {
+      setSearchResults([]);
+      setIsSearching(false);
+    }
+  }, [searchQuery]);
+
+  const handleSearch = async () => {
+    if (searchQuery.trim().length < 2) {
+      return;
+    }
+    
+    setIsSearching(true);
+    setIsLoading(true);
+    
+    try {
+      const results = await ShopService.searchProducts(searchQuery);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Error searching products:", error);
+      toast({
+        title: "Search Error",
+        description: "Failed to search products. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsSearching(false);
+  };
+
+  const fetchLikedProducts = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const likedProductIds = await ShopService.getUserLikedProductIds();
+      setLikedProducts(likedProductIds);
+    } catch (error) {
+      console.error("Error fetching liked products:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleLike = async (productId: string) => {
+    if (!user) {
+      toast({
+        description: "Please log in to save products",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      const result = await ShopService.toggleProductLike(productId);
+      
+      if (result.liked) {
+        setLikedProducts([...likedProducts, productId]);
+        toast({
+          description: "Added to favorites",
+          duration: 2000,
+        });
+      } else {
+        setLikedProducts(likedProducts.filter(id => id !== productId));
+        toast({
+          description: "Removed from favorites",
+          duration: 2000,
+        });
       }
-    };
-
-    fetchShopData();
-  }, []);
-
-  useEffect(() => {
-    const termFiltered = filterItems(searchTerm);
-    const priceFiltered = filterByPrice(termFiltered);
-    setFilteredItems(priceFiltered);
-  }, [searchTerm, priceRange, shopItems]);
+    } catch (error) {
+      console.error("Error toggling product like:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-4">Shop</h1>
-
-      <div className="flex flex-col md:flex-row items-center justify-between mb-6">
-        <div className="w-full md:w-1/2 mb-4 md:mb-0">
-          <Input
-            type="text"
-            placeholder="Search for items..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="h-full w-full bg-app-black overflow-y-auto pb-16">
+      <ShopHeader />
+      <ShopSearch 
+        searchQuery={searchQuery} 
+        setSearchQuery={setSearchQuery} 
+        onSearch={handleSearch}
+        onClear={clearSearch}
+        isLoading={isLoading}
+      />
+      
+      {hasRole("seller") && (
+        <div className="px-4 my-4">
+          <Link to="/seller/dashboard">
+            <Button className="w-full bg-app-yellow text-app-black flex items-center justify-center">
+              <StoreIcon className="mr-2 h-4 w-4" />
+              Go to Seller Dashboard
+            </Button>
+          </Link>
         </div>
-
-        <div className="flex items-center space-x-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                Filter by Price
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="p-4">
-              <DropdownMenuLabel>Price Range</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="min">Min</Label>
-                <Input
-                  type="number"
-                  id="min"
-                  value={priceRange[0]}
-                  onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
-                  className="w-20"
-                />
-                <Label htmlFor="max">Max</Label>
-                <Input
-                  type="number"
-                  id="max"
-                  value={priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                  className="w-20"
-                />
-              </div>
-              <Slider
-                defaultValue={priceRange}
-                max={1000}
-                step={10}
-                onValueChange={(value) => setPriceRange(value)}
-              />
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="text-center">Loading...</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredItems.map((product) => (
-            <div key={product.id} className="w-full">
-              <ProductCard
-                id={product.id}
-                name={product.name}
-                price={product.price}
-                image={product.image_url}
-                rating={4.5}
-                isLiked={favorites.has(product.id)}
-                onToggleLike={() => toggleFavorite(product.id)}
-              />
+      )}
+      
+      {isSearching ? (
+        <div className="px-4 mb-20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-white font-medium">Search Results</h2>
+            <Button 
+              variant="link" 
+              onClick={clearSearch} 
+              className="text-app-yellow p-0 h-auto"
+            >
+              Clear
+            </Button>
+          </div>
+          
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-square bg-gray-700 rounded-md mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : searchResults.length > 0 ? (
+            <ProductsTabs
+              products={searchResults}
+              likedProducts={likedProducts}
+              toggleLike={toggleLike}
+              searchMode={true}
+            />
+          ) : (
+            <div className="text-center py-12 bg-app-gray-dark rounded-lg">
+              <p className="text-gray-400">No products found matching "{searchQuery}"</p>
+              <Button 
+                variant="link" 
+                onClick={clearSearch} 
+                className="text-app-yellow mt-2"
+              >
+                Clear search
+              </Button>
+            </div>
+          )}
         </div>
+      ) : (
+        <>
+          <LiveSelling />
+          <LimitedOffers />
+          <ShopCategories activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
+          <ProductsTabs 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            likedProducts={likedProducts} 
+            toggleLike={toggleLike} 
+          />
+        </>
       )}
     </div>
   );

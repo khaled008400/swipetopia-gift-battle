@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart, 
@@ -28,6 +28,7 @@ import AdminOffers from './AdminOffers';
 import AdminShipping from './AdminShipping';
 import AdminReports from './AdminReports';
 import AdminLiveStreams from './AdminLiveStreams';
+import VirtualGifts from './VirtualGifts';
 import TestUsersGenerator from './TestUsersGenerator';
 import AdminStreamingSettings from './AdminStreamingSettings';
 import AdminVirtualGifts from './AdminVirtualGifts';
@@ -40,14 +41,6 @@ interface AdminTabbedInterfaceProps {
 
 const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, statsLoading }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  
-  useEffect(() => {
-    console.log("AdminTabbedInterface mounted with stats:", stats);
-    return () => console.log("AdminTabbedInterface unmounted");
-  }, [stats]);
-
-  // Add some debug logging to help troubleshoot
-  console.log("AdminTabbedInterface rendering with props:", { stats, statsLoading, activeTab });
 
   if (statsLoading) {
     return (
@@ -83,23 +76,21 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         <p className="text-muted-foreground">Manage your app's content and users</p>
       </div>
 
+      {/* Test Users Generator - shown only in development */}
       {import.meta.env.DEV && (
         <div className="mb-6">
           <TestUsersGenerator />
         </div>
       )}
 
-      <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="flex flex-wrap mb-4">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
-                <Icon className="w-4 h-4 mr-2" />
-                <span>{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="flex flex-wrap">
+          {tabs.map(tab => (
+            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center">
+              <tab.icon className="w-4 h-4 mr-2" />
+              <span>{tab.label}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
         
         <TabsContent value="dashboard">

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -10,12 +10,6 @@ import AuthCheck from '@/components/auth/AuthCheck';
 
 const AdminDashboardPage: React.FC = () => {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
-  
-  useEffect(() => {
-    console.log("AdminDashboardPage mounted, admin check:", isAdmin());
-    return () => console.log("AdminDashboardPage unmounted");
-  }, [isAdmin]);
 
   // Define mock stats for development
   const mockStats: AdminStats = {
@@ -45,12 +39,9 @@ const AdminDashboardPage: React.FC = () => {
         return mockStats;
       }
     },
-    retry: 1,
-    staleTime: 60000,
+    retry: false, // Don't retry on failure for now (for debugging)
     initialData: mockStats // Use mock stats as initial data
   });
-
-  console.log("AdminDashboardPage rendering with stats:", stats, "isLoading:", isLoading, "error:", error);
 
   // Add explicit error handling in the UI
   if (error) {
@@ -74,18 +65,10 @@ const AdminDashboardPage: React.FC = () => {
   return (
     <AuthCheck requireAdmin>
       <div className="bg-app-black min-h-screen">
-        <h1 className="text-2xl font-bold p-4">Admin Dashboard</h1>
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <Loader2 className="w-8 h-8 animate-spin text-app-yellow" />
-            <span className="ml-2">Loading dashboard data...</span>
-          </div>
-        ) : (
-          <AdminTabbedInterface 
-            stats={stats || mockStats} 
-            statsLoading={isLoading}
-          />
-        )}
+        <AdminTabbedInterface 
+          stats={stats || mockStats} 
+          statsLoading={isLoading}
+        />
       </div>
     </AuthCheck>
   );

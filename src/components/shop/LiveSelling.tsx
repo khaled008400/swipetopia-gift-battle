@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Zap } from "lucide-react";
-import ShopService from "@/services/shop.service";
+import ShopService, { LiveSeller } from "@/services/shop.service";
 import { useToast } from "@/components/ui/use-toast";
-import { LiveSeller } from "@/types/video.types";
 
 const LiveSelling = () => {
   const [liveSellers, setLiveSellers] = useState<LiveSeller[]>([]);
@@ -14,32 +13,8 @@ const LiveSelling = () => {
     const fetchLiveSellers = async () => {
       try {
         setIsLoading(true);
-        // Mocking the service call for now
-        const mockData: LiveSeller[] = [
-          {
-            id: "1",
-            userId: "user1",
-            username: "FashionQueen",
-            avatar: "https://i.pravatar.cc/150?u=user1",
-            title: "Live Fashion Sale",
-            thumbnailUrl: "https://example.com/thumb1",
-            isLive: true,
-            viewerCount: 1234,
-            viewers: 1234
-          },
-          {
-            id: "2",
-            userId: "user2",
-            username: "TechGuru",
-            avatar: "https://i.pravatar.cc/150?u=user2",
-            title: "Gadget Reviews",
-            thumbnailUrl: "https://example.com/thumb2",
-            isLive: true,
-            viewerCount: 567,
-            viewers: 567
-          }
-        ];
-        setLiveSellers(mockData);
+        const data = await ShopService.getLiveSellers();
+        setLiveSellers(data);
       } catch (error) {
         console.error("Error fetching live sellers:", error);
         toast({

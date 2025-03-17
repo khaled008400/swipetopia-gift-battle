@@ -46,7 +46,7 @@ const AuthCheck = ({
         // If not authenticated, redirect to login with a return path
         console.log("User is not authenticated, redirecting to login");
         const returnPath = window.location.pathname;
-        navigate(`/login?from=${encodeURIComponent(returnPath)}`);
+        navigate(`/login?from=${returnPath}`);
         setIsAuthorized(false);
         return;
       } 

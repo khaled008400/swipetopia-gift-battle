@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PaymentMethod } from "@/types/product.types";
+import { PaymentMethod } from "@/types/auth.types";
 import { PlusCircle, CreditCard, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -90,20 +90,20 @@ const PaymentMethods = ({
               <div 
                 key={method.id} 
                 className={`flex items-center justify-between p-3 rounded-md ${
-                  method.is_default ? "bg-app-gray-light border border-app-yellow/50" : "bg-app-gray-light"
+                  method.isDefault ? "bg-app-gray-light border border-app-yellow/50" : "bg-app-gray-light"
                 }`}
               >
                 <div className="flex items-center">
                   <CreditCard className="h-5 w-5 mr-3 text-app-yellow" />
                   <div>
-                    <p className="font-medium">{method.name || `${method.type.toUpperCase()} Card`}</p>
+                    <p className="font-medium">{method.name}</p>
                     {method.last4 && (
                       <p className="text-sm text-gray-400">•••• {method.last4}</p>
                     )}
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  {!method.is_default && (
+                  {!method.isDefault && (
                     <Button 
                       variant="outline" 
                       size="sm"
