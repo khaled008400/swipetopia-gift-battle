@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,7 +86,7 @@ const TrendingHashtags: React.FC = () => {
         .limit(5);
         
       if (data && data.length > 0) {
-        setTopCreators(data);
+        setTopCreators(data as Creator[]);
       }
     } catch (error) {
       console.error('Error fetching top creators:', error);

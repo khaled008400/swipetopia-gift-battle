@@ -22,29 +22,28 @@ export interface Video {
   shares?: number;
   is_liked?: boolean;
   is_saved?: boolean;
-  url?: string; // Add URL property for compatibility
-  isPublic?: boolean; // Add isPublic property
-  isLive?: boolean; // Add isLive property for compatibility
-  isLiked?: boolean; // Add isLiked for BattlePage
+  url?: string;
+  isPublic?: boolean;
+  isLive?: boolean;
+  isLiked?: boolean;
+  battle_id?: string;
+  score?: number;
+  position?: 'left' | 'right';
   user: {
     username: string;
     avatar: string;
     avatar_url?: string;
     isFollowing?: boolean;
   };
-  profiles?: any; // Add profiles property for VideoPlayerPage
-  creator?: any; // Add creator property
-  battle_id?: string; // Add battle_id from BattleVideo
-  score?: number; // Add score from BattleVideo
-  position?: 'left' | 'right'; // Add position from BattleVideo
+  profiles?: any;
+  creator?: any;
 }
 
-// BattleVideo now extends Video, so all Video properties are included
 export interface BattleVideo extends Video {
   battle_id: string;
   score: number;
   position: 'left' | 'right';
-  url: string; // Make url required in BattleVideo
+  url: string;
 }
 
 export interface Comment {

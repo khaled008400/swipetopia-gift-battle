@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from "react";
 import VideoFeed from "../components/VideoFeed";
 import { useAuth } from "../context/AuthContext";
@@ -14,7 +15,6 @@ const HomePage = () => {
   const [localVideos, setLocalVideos] = useState<Video[]>([]);
   const [trendingProfiles, setTrendingProfiles] = useState([]);
 
-  // Fetch initial videos from Supabase
   useEffect(() => {
     const fetchVideos = async () => {
       try {
@@ -80,7 +80,6 @@ const HomePage = () => {
           }));
           setLocalVideos(formattedVideos);
         } else {
-          // Fallback to sample videos if no data is available
           setLocalVideos(formatSampleVideos(sampleVideos));
         }
       } catch (err) {
@@ -94,7 +93,6 @@ const HomePage = () => {
     fetchVideos();
   }, [toast]);
   
-  // Helper function to format sample videos to match Video type
   const formatSampleVideos = (videos: any[]): Video[] => {
     return videos.map(video => ({
       id: video.id,
@@ -122,7 +120,6 @@ const HomePage = () => {
     }));
   };
   
-  // Fetch trending profiles
   useEffect(() => {
     const fetchTrendingProfiles = async () => {
       try {
@@ -148,14 +145,33 @@ const HomePage = () => {
     fetchTrendingProfiles();
   }, []);
   
-  // Use the real-time hook to listen for changes
+  const renderTrendingProfiles = () => {
+    if (!trendingProfiles || trendingProfiles.length === 0) {
+      return null;
+    }
+
+    return trendingProfiles.map((profile, index) => {
+      const profileObj = profile as { username: string, avatar_url: string };
+      
+      return (
+        <div key={index} className="flex items-center space-x-2 mb-2">
+          <img
+            src={profileObj.avatar_url || 'https://via.placeholder.com/40'}
+            alt={profileObj.username || 'User'}
+            className="w-10 h-10 rounded-full"
+          />
+          <span>{profileObj.username || 'Anonymous'}</span>
+        </div>
+      );
+    });
+  };
+
   const { data: realtimeVideos } = useRealtimeData<any>(
     'videos',
     [], // Initial data is empty, we'll handle it separately
     null
   );
   
-  // When realtime updates come in, process them
   useEffect(() => {
     if (realtimeVideos && realtimeVideos.length > 0) {
       const newVideos = realtimeVideos.map((video: any) => ({
@@ -186,9 +202,7 @@ const HomePage = () => {
         }
       }));
       
-      // Add new videos to the top of the feed
       setLocalVideos(prev => [...newVideos, ...prev]);
-      // Reset to the first video
       setActiveVideoIndex(0);
       
       toast({
@@ -198,7 +212,6 @@ const HomePage = () => {
     }
   }, [realtimeVideos, toast]);
   
-  // Sample videos as fallback
   const sampleVideos = [
     {
       id: "1",
@@ -239,7 +252,6 @@ const HomePage = () => {
     }
   ];
 
-  // Detect swipe to change videos
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
       if (e.deltaY > 0 && activeVideoIndex < localVideos.length - 1) {
@@ -256,12 +268,10 @@ const HomePage = () => {
     };
   }, [activeVideoIndex, localVideos.length]);
 
-  // Function to track video views
   const handleVideoView = async (videoId: string) => {
     if (!videoId || videoId.length < 5) return; // Skip for demo videos
     
     try {
-      // Update view count in database
       const { error } = await supabase.rpc('increment_video_counter', {
         video_id: videoId,
         counter_name: 'view_count'
@@ -269,7 +279,6 @@ const HomePage = () => {
       
       if (error) console.error("Error incrementing view count:", error);
       
-      // Record the view interaction
       if (user) {
         const { error: interactionError } = await supabase
           .from('video_interactions')
@@ -306,6 +315,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-
 

@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ProductCard from '@/components/shop/ProductCard';
 import productService from '@/services/product.service';
 import { Product } from '@/types/product.types';
+import { Loader2 } from 'lucide-react';
 
 const CategoryPage: React.FC = () => {
   const { category } = useParams<{ category: string }>();
@@ -39,7 +41,11 @@ const CategoryPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div>Loading products...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -53,6 +59,7 @@ const CategoryPage: React.FC = () => {
               name={product.name}
               price={product.price}
               image={product.image_url}
+              rating={product.rating}
               isLiked={favorites.has(product.id)}
               onToggleLike={() => toggleFavorite(product.id)}
             />

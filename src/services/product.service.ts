@@ -1,41 +1,91 @@
 
 import { Product } from '@/types/product.types';
 
-// Simple product service to fetch products
+// Mock products data
+const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Trendy Hoodie',
+    description: 'A comfortable hoodie for everyday wear',
+    price: 49.99,
+    image_url: 'https://i.pravatar.cc/300?img=1',
+    category: 'clothing',
+    rating: 4.5,
+    reviews_count: 120,
+    in_stock: true,
+    seller_id: '1',
+    created_at: '2023-01-01T00:00:00.000Z',
+    updated_at: '2023-01-01T00:00:00.000Z'
+  },
+  {
+    id: '2',
+    name: 'Wireless Earbuds',
+    description: 'High-quality sound with noise cancellation',
+    price: 129.99,
+    image_url: 'https://i.pravatar.cc/300?img=2',
+    category: 'electronics',
+    rating: 4.8,
+    reviews_count: 350,
+    in_stock: true,
+    seller_id: '2',
+    created_at: '2023-01-02T00:00:00.000Z',
+    updated_at: '2023-01-02T00:00:00.000Z'
+  },
+  {
+    id: '3',
+    name: 'Fitness Tracker',
+    description: 'Track your workouts and health metrics',
+    price: 79.99,
+    image_url: 'https://i.pravatar.cc/300?img=3',
+    category: 'fitness',
+    rating: 4.2,
+    reviews_count: 210,
+    in_stock: true,
+    seller_id: '1',
+    created_at: '2023-01-03T00:00:00.000Z',
+    updated_at: '2023-01-03T00:00:00.000Z'
+  },
+  {
+    id: '4',
+    name: 'Skincare Set',
+    description: 'Complete skincare routine in one package',
+    price: 89.99,
+    image_url: 'https://i.pravatar.cc/300?img=4',
+    category: 'beauty',
+    rating: 4.7,
+    reviews_count: 180,
+    in_stock: true,
+    seller_id: '3',
+    created_at: '2023-01-04T00:00:00.000Z',
+    updated_at: '2023-01-04T00:00:00.000Z'
+  }
+];
+
 const productService = {
+  getAllProducts: async (): Promise<Product[]> => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockProducts;
+  },
+
   getProductsByCategory: async (category: string): Promise<Product[]> => {
-    // In a real app, this would fetch from an API
-    // Mock implementation for now
-    return [
-      {
-        id: '1',
-        name: 'Product 1',
-        price: 99.99,
-        image_url: 'https://placehold.co/300x300',
-        category: category,
-        description: 'Sample product description',
-        stock_quantity: 10,
-        status: 'active',
-        seller_id: 'seller1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_featured: true
-      },
-      {
-        id: '2',
-        name: 'Product 2',
-        price: 49.99,
-        image_url: 'https://placehold.co/300x300',
-        category: category,
-        description: 'Another sample product',
-        stock_quantity: 5,
-        status: 'active',
-        seller_id: 'seller1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_featured: false
-      }
-    ];
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockProducts.filter(
+      product => product.category.toLowerCase() === category.toLowerCase()
+    );
+  },
+
+  getProductById: async (id: string): Promise<Product | null> => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockProducts.find(product => product.id === id) || null;
+  },
+
+  getFeaturedProducts: async (): Promise<Product[]> => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockProducts.slice(0, 2);
   }
 };
 

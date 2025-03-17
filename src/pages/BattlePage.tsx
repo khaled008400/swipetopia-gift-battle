@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import VideoPlayer from '@/components/VideoPlayer';
-import { BattleVideo } from '@/types/video.types';
+import { BattleVideo, Video } from '@/types/video.types';
 import { Loader2 } from 'lucide-react';
 
 interface Battle {
@@ -70,7 +71,21 @@ const BattlePage = () => {
           return;
         }
 
-        setBattleData(data);
+        // Transform the data to ensure it matches the Battle type
+        const transformedData: Battle = {
+          id: data.id,
+          created_at: data.created_at,
+          videos: data.videos.map((video: any) => ({
+            ...video,
+            user: {
+              username: video.profiles?.username || 'Unknown',
+              avatar: video.profiles?.avatar_url || '',
+              avatar_url: video.profiles?.avatar_url || ''
+            }
+          }))
+        };
+
+        setBattleData(transformedData);
       } catch (err: any) {
         console.error('Error fetching battle:', err);
         setError(err.message);
@@ -84,9 +99,9 @@ const BattlePage = () => {
 
   useEffect(() => {
     if (battleData && battleData.videos) {
-      setLeftVideo(battleData.videos.find(v => v.position === 'left') as BattleVideo);
-      setRightVideo(battleData.videos.find(v => v.position === 'right') as BattleVideo);
-      setVideoData(battleData.videos as BattleVideo[]);
+      setLeftVideo(battleData.videos.find(v => v.position === 'left') || null);
+      setRightVideo(battleData.videos.find(v => v.position === 'right') || null);
+      setVideoData(battleData.videos);
     }
   }, [battleData]);
 
@@ -113,7 +128,7 @@ const BattlePage = () => {
         <div>
           <h2 className="text-lg font-semibold mb-2">Left Video</h2>
           {leftVideo && leftVideo.url && (
-            <VideoPlayer videoUrl={leftVideo.url} autoPlay={false} />
+            <VideoPlayer videoUrl={leftVideo.url} />
           )}
           <p>Title: {leftVideo.title}</p>
           <p>Score: {leftVideo.score}</p>
@@ -122,7 +137,7 @@ const BattlePage = () => {
         <div>
           <h2 className="text-lg font-semibold mb-2">Right Video</h2>
           {rightVideo && rightVideo.url && (
-            <VideoPlayer videoUrl={rightVideo.url} autoPlay={false} />
+            <VideoPlayer videoUrl={rightVideo.url} />
           )}
           <p>Title: {rightVideo.title}</p>
           <p>Score: {rightVideo.score}</p>
