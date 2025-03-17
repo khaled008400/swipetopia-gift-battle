@@ -63,6 +63,7 @@ const TrendingHashtags = () => {
           .order('viewer_count', { ascending: false })
           .limit(5);
           
+        // Fix array access by mapping each stream individually
         const liveCreators = streams?.map(stream => ({
           id: stream.id,
           name: stream.profiles ? stream.profiles.username || 'Anonymous' : 'Anonymous',

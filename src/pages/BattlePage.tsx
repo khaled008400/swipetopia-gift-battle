@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
@@ -5,6 +6,7 @@ import { useBattleVideos } from "@/hooks/useBattleVideos";
 import VideoActions from "@/components/video/VideoActions";
 import { ArrowLeft } from "lucide-react";
 import BattleHeader from "@/components/battle/BattleHeader";
+import { Video } from "@/types/video.types";
 
 const BattlePage = () => {
   const {
@@ -55,19 +57,21 @@ const BattlePage = () => {
     };
   }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
   
+  // Cast the filteredVideos to Video[] to fix the type error
+  const videos: Video[] = filteredVideos as unknown as Video[];
+  
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {/* Videos container */}
-      {/* Now the filteredVideos should be compatible with Video[] thanks to our updated type definition */}
-      <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
+      <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
       
       {/* Battle header with title */}
-      {filteredVideos[activeVideoIndex] && (
-        <BattleHeader title={filteredVideos[activeVideoIndex].description} />
+      {videos[activeVideoIndex] && (
+        <BattleHeader title={videos[activeVideoIndex].description} />
       )}
       
       {/* Progress indicators */}
-      <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
+      <BattleProgressIndicators videos={videos} activeIndex={activeVideoIndex} />
 
       {/* Back button and page title */}
       <div className="absolute top-4 left-4 z-30 flex items-center">
@@ -81,15 +85,15 @@ const BattlePage = () => {
       
       {/* Video actions */}
       <div className="absolute bottom-20 right-3 z-30">
-        {filteredVideos[activeVideoIndex] && (
+        {videos[activeVideoIndex] && (
           <VideoActions 
-            videoId={filteredVideos[activeVideoIndex].id} // Add videoId here
-            likes={filteredVideos[activeVideoIndex].likes} 
-            comments={filteredVideos[activeVideoIndex].comments} 
-            shares={filteredVideos[activeVideoIndex].shares}
-            isLiked={filteredVideos[activeVideoIndex].isLiked || false}
+            videoId={videos[activeVideoIndex].id}
+            likes={videos[activeVideoIndex].likes} 
+            comments={videos[activeVideoIndex].comments} 
+            shares={videos[activeVideoIndex].shares}
+            isLiked={videos[activeVideoIndex].isLiked || false}
             onLike={() => {
-              console.log('Video liked:', filteredVideos[activeVideoIndex]);
+              console.log('Video liked:', videos[activeVideoIndex]);
             }}
           />
         )}

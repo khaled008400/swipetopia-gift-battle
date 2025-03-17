@@ -39,6 +39,7 @@ export interface Video {
   position?: 'left' | 'right'; // Add position from BattleVideo
 }
 
+// BattleVideo now extends Video, so all Video properties are included
 export interface BattleVideo extends Video {
   battle_id: string;
   score: number;

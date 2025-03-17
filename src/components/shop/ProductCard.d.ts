@@ -9,6 +9,9 @@ export interface ProductProps {
   category?: string; 
   isFavorite?: boolean;
   toggleFavorite?: (productId: string) => void;
+  rating?: number;
+  onToggleLike?: (id: string) => void;
+  isLiked?: boolean;
 }
 
 declare const ProductCard: FC<ProductProps>;

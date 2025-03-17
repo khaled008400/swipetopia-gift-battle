@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import productService from '@/services/product.service';
 import { Product } from '@/types/product.types';
@@ -12,20 +13,17 @@ import ProductCard from '@/components/shop/ProductCard';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-interface CategoryParams {
-  categoryName: string;
-}
-
+// Define params as a Record to satisfy the constraint
 const CategoryPage: React.FC = () => {
-  const { categoryName } = useParams<CategoryParams>();
+  const params = useParams<{ categoryName: string }>();
+  const categoryName = params.categoryName || '';
   const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
   const [isFollowing, setIsFollowing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
 
   const { data: products, isLoading: isProductsLoading, error: productsError } = useQuery({
     queryKey: ['categoryProducts', categoryName],
-    queryFn: () => productService.getProductsByCategory(categoryName || '')
+    queryFn: () => productService.getProductsByCategory(categoryName)
   });
 
   useEffect(() => {

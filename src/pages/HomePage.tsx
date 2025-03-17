@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import VideoFeed from "../components/VideoFeed";
 import { useAuth } from "../context/AuthContext";
@@ -74,8 +73,8 @@ const HomePage = () => {
             shares: video.shares_count,
             isLive: video.is_live,
             user: {
-              username: video.profiles?.username || 'unknown',
-              avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
+              username: video.profiles ? video.profiles.username || 'unknown' : 'unknown',
+              avatar: video.profiles ? video.profiles.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png' : '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
             }
           }));
           setLocalVideos(formattedVideos);
@@ -126,14 +125,13 @@ const HomePage = () => {
   const { data: realtimeVideos } = useRealtimeData<any>(
     'videos',
     [], // Initial data is empty, we'll handle it separately
-    null,
-    { refetchInterval: 30000 } // Add refetch interval to prevent infinite updates
+    null
   );
   
   // When realtime updates come in, process them
   useEffect(() => {
     if (realtimeVideos && realtimeVideos.length > 0) {
-      const newVideos = realtimeVideos.map(video => ({
+      const newVideos = realtimeVideos.map((video: any) => ({
         id: video.id,
         title: video.title || '',
         description: video.description || '',
@@ -156,8 +154,8 @@ const HomePage = () => {
         shares: video.shares_count,
         isLive: video.is_live,
         user: {
-          username: video.profiles?.username || 'unknown',
-          avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
+          username: video.profiles ? video.profiles.username || 'unknown' : 'unknown',
+          avatar: video.profiles ? video.profiles.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png' : '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
         }
       }));
       

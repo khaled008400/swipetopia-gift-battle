@@ -10,12 +10,13 @@ import {
 } from "./ui/carousel";
 import { useAuth } from "../context/AuthContext";
 
-interface UserCreatedVideo {
+export interface UserCreatedVideo {
   id: string;
-  url: string;
+  url?: string; // Make url optional
   thumbnail: string;
   username: string;
   isFollowing?: boolean;
+  title?: string; // Add title property
 }
 
 interface UserVideosCarouselProps {
