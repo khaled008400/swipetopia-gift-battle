@@ -4,49 +4,92 @@ import TrendingVideosSection from "../components/TrendingVideosSection";
 import UserVideosCarousel from "../components/UserVideosCarousel";
 import VideoFeed from "../components/VideoFeed";
 import { useAuth } from "../context/AuthContext";
+import { Video } from "@/types/video.types";
 
 const Index = () => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const { user } = useAuth();
   
   // Example video data - in a real app, this would come from an API
-  const videos = [
+  const videos: Video[] = [
     {
       id: "1",
+      title: "Fashion collection",
+      description: "Check out my new collection! #fashion #style #trending",
+      video_url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
+      thumbnail_url: "",
+      user_id: "user1",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      view_count: 5000,
+      likes_count: 1243,
+      comments_count: 89,
+      shares_count: 56,
+      is_live: false,
+      is_private: false,
+      duration: 120,
+      category: "fashion",
       url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
+      likes: 1243,
+      comments: 89,
+      shares: 56,
       user: {
         username: "fashionista",
         avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
-      },
-      description: "Check out my new collection! #fashion #style #trending",
-      likes: 1243,
-      comments: 89,
-      shares: 56
+      }
     },
     {
       id: "2",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
-      user: {
-        username: "makeup_artist",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
-      },
+      title: "Makeup tutorial",
       description: "New makeup tutorial for the weekend party! #makeup #glam",
+      video_url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
+      thumbnail_url: "",
+      user_id: "user2",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      view_count: 8000,
+      likes_count: 2467,
+      comments_count: 134,
+      shares_count: 89,
+      is_live: true,
+      is_private: false,
+      duration: 180,
+      category: "beauty",
+      url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
       likes: 2467,
       comments: 134,
       shares: 89,
-      isLive: true
+      isLive: true,
+      user: {
+        username: "makeup_artist",
+        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
+      }
     },
     {
       id: "3",
+      title: "Bali Travel",
+      description: "Sunset vibes in Bali 🌴 #travel #sunset #bali",
+      video_url: "https://assets.mixkit.co/videos/preview/mixkit-girl-dancing-happily-in-a-field-at-sunset-1230-large.mp4",
+      thumbnail_url: "",
+      user_id: "user3",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      view_count: 12000,
+      likes_count: 5698,
+      comments_count: 241,
+      shares_count: 178,
+      is_live: false,
+      is_private: false,
+      duration: 150,
+      category: "travel",
       url: "https://assets.mixkit.co/videos/preview/mixkit-girl-dancing-happily-in-a-field-at-sunset-1230-large.mp4",
+      likes: 5698,
+      comments: 241,
+      shares: 178,
       user: {
         username: "travel_vibes",
         avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
-      },
-      description: "Sunset vibes in Bali 🌴 #travel #sunset #bali",
-      likes: 5698,
-      comments: 241,
-      shares: 178
+      }
     }
   ];
 
@@ -54,28 +97,28 @@ const Index = () => {
   const userCreatedVideos = [
     {
       id: "4",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-woman-running-through-a-beautiful-landscape-32807-large.mp4",
+      title: "Woman running",
       thumbnail: "https://images.unsplash.com/photo-1580477667995-2b94f01c9516",
       username: "runner_girl",
       isFollowing: true
     },
     {
       id: "5",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4",
+      title: "Man dancing",
       thumbnail: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
       username: "dance_king",
       isFollowing: false
     },
     {
       id: "6",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-vlogging-over-a-city-landscape-32746-large.mp4",
+      title: "Woman vlogging",
       thumbnail: "https://images.unsplash.com/photo-1488161628813-04466f872be2",
       username: "travel_vlogger",
       isFollowing: true
     },
     {
       id: "7",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-man-cooking-in-a-pan-5689-large.mp4",
+      title: "Man cooking",
       thumbnail: "https://images.unsplash.com/photo-1556910103-1c02745aae4d",
       username: "chef_master",
       isFollowing: true

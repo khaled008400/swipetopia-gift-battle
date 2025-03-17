@@ -1,4 +1,3 @@
-
 import { TrendingUp, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +10,9 @@ const TrendingHashtags = () => {
   const [loading, setLoading] = useState(true);
   const [creators, setCreators] = useState<any[]>([]);
   const [trendingVideos, setTrendingVideos] = useState<any[]>([]);
-  
+  const [topCreators, setTopCreators] = useState<any[]>([]);
+  const [trendingCreators, setTrendingCreators] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -96,6 +97,24 @@ const TrendingHashtags = () => {
           title: video.title
         })) || []);
         
+        // Fetch top creators
+        const { data: topCreatorsData } = await supabase
+          .from('users')
+          .select('id, username, avatar_url')
+          .order('view_count', { ascending: false })
+          .limit(5);
+        
+        handleTopCreatorsData(topCreatorsData);
+        
+        // Fetch trending creators
+        const { data: trendingCreatorsData } = await supabase
+          .from('users')
+          .select('id, username, avatar_url')
+          .order('view_count', { ascending: false })
+          .limit(5);
+        
+        handleTrendingCreatorsData(trendingCreatorsData);
+        
       } catch (error) {
         console.error("Error fetching explore data:", error);
       } finally {
@@ -106,6 +125,27 @@ const TrendingHashtags = () => {
     fetchData();
   }, []);
   
+  const handleTopCreatorsData = (data: any) => {
+    if (data && Array.isArray(data)) {
+      const creators = data.map(item => ({
+        id: item.id,
+        username: item.username,
+        avatar_url: item.avatar_url
+      }));
+      setTopCreators(creators);
+    }
+  };
+
+  const handleTrendingCreatorsData = (data: any) => {
+    if (data && Array.isArray(data)) {
+      const creators = data.map(item => ({
+        username: item.username,
+        avatar_url: item.avatar_url
+      }));
+      setTrendingCreators(creators);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">

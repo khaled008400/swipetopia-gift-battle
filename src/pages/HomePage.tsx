@@ -51,14 +51,28 @@ const HomePage = () => {
         }
         
         if (data && data.length > 0) {
-          const formattedVideos = data.map(video => ({
+          const formattedVideos: Video[] = data.map(video => ({
             id: video.id,
-            url: video.video_url,
+            title: video.title || '',
             description: video.description || '',
-            likes: video.likes_count || 0,
-            comments: video.comments_count || 0,
-            shares: video.shares_count || 0,
-            isLive: video.is_live || false,
+            video_url: video.video_url || '',
+            thumbnail_url: video.thumbnail_url || '',
+            user_id: video.user_id || '',
+            created_at: video.created_at || '',
+            updated_at: video.created_at || '',
+            view_count: video.view_count || 0,
+            likes_count: video.likes_count || 0,
+            comments_count: video.comments_count || 0,
+            shares_count: video.shares_count || 0,
+            is_live: video.is_live || false,
+            is_private: false,
+            duration: 0,
+            category: '',
+            url: video.video_url,
+            likes: video.likes_count,
+            comments: video.comments_count,
+            shares: video.shares_count,
+            isLive: video.is_live,
             user: {
               username: video.profiles?.username || 'unknown',
               avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
@@ -67,11 +81,11 @@ const HomePage = () => {
           setLocalVideos(formattedVideos);
         } else {
           // Fallback to sample videos if no data is available
-          setLocalVideos(sampleVideos);
+          setLocalVideos(formatSampleVideos(sampleVideos));
         }
       } catch (err) {
         console.error("Error in video fetch:", err);
-        setLocalVideos(sampleVideos);
+        setLocalVideos(formatSampleVideos(sampleVideos));
       } finally {
         setIsLoading(false);
       }
@@ -80,12 +94,40 @@ const HomePage = () => {
     fetchVideos();
   }, [toast]);
   
+  // Helper function to format sample videos to match Video type
+  const formatSampleVideos = (videos: any[]): Video[] => {
+    return videos.map(video => ({
+      id: video.id,
+      title: video.description || '',
+      description: video.description || '',
+      video_url: video.url || '',
+      thumbnail_url: '',
+      user_id: '1',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      view_count: 0,
+      likes_count: video.likes || 0,
+      comments_count: video.comments || 0,
+      shares_count: video.shares || 0,
+      is_live: video.isLive || false,
+      is_private: false,
+      duration: 0,
+      category: '',
+      url: video.url,
+      likes: video.likes,
+      comments: video.comments,
+      shares: video.shares,
+      isLive: video.isLive,
+      user: video.user
+    }));
+  };
+  
   // Use the real-time hook to listen for changes
   const { data: realtimeVideos } = useRealtimeData<any>(
     'videos',
     [], // Initial data is empty, we'll handle it separately
     null,
-    null
+    { refetchInterval: 30000 } // Add refetch interval to prevent infinite updates
   );
   
   // When realtime updates come in, process them
@@ -93,12 +135,26 @@ const HomePage = () => {
     if (realtimeVideos && realtimeVideos.length > 0) {
       const newVideos = realtimeVideos.map(video => ({
         id: video.id,
-        url: video.video_url,
+        title: video.title || '',
         description: video.description || '',
-        likes: video.likes_count || 0,
-        comments: video.comments_count || 0,
-        shares: video.shares_count || 0,
-        isLive: video.is_live || false,
+        video_url: video.video_url || '',
+        thumbnail_url: video.thumbnail_url || '',
+        user_id: video.user_id || '',
+        created_at: video.created_at || '',
+        updated_at: video.updated_at || '',
+        view_count: video.view_count || 0,
+        likes_count: video.likes_count || 0,
+        comments_count: video.comments_count || 0,
+        shares_count: video.shares_count || 0,
+        is_live: video.is_live || false,
+        is_private: false,
+        duration: 0,
+        category: '',
+        url: video.video_url,
+        likes: video.likes_count,
+        comments: video.comments_count,
+        shares: video.shares_count,
+        isLive: video.is_live,
         user: {
           username: video.profiles?.username || 'unknown',
           avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'

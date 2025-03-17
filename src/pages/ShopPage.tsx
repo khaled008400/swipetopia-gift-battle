@@ -12,18 +12,19 @@ import { Separator } from '@/components/ui/separator';
 import ProductCard from '@/components/shop/ProductCard';
 import { Badge } from '@/components/ui/badge';
 
+// Define the correct param type
 interface ShopParams {
   shopId: string;
 }
 
 const ShopPage: React.FC = () => {
-  const { shopId } = useParams<{ shopId: string }>();
+  const { shopId } = useParams<keyof ShopParams>();
   const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
   const [isFollowing, setIsFollowing] = useState(false);
   
   const { data: shop, isLoading: isShopLoading, error: shopError } = useQuery({
     queryKey: ['shop', shopId],
-    queryFn: () => shopService.getShopById(shopId || '')
+    queryFn: () => shopService.getShop(shopId || '')
   });
   
   const { data: products, isLoading: isProductsLoading, error: productsError } = useQuery({
@@ -34,7 +35,7 @@ const ShopPage: React.FC = () => {
   useEffect(() => {
     // Load initial favorite states from local storage or server
     // For now, let's initialize them randomly
-    if (products) {
+    if (products && Array.isArray(products)) {
       const initialFavorites: { [key: string]: boolean } = {};
       products.forEach((product: Product) => {
         initialFavorites[product.id] = Math.random() > 0.5;
@@ -116,7 +117,6 @@ const ShopPage: React.FC = () => {
               name={product.name}
               price={product.price}
               image={product.image_url}
-              category={product.category} 
               isFavorite={favorites[product.id] || false}
               toggleFavorite={() => toggleFavorite(product.id)}
             />

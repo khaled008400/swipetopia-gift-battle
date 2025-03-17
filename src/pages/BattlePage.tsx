@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
@@ -59,6 +58,7 @@ const BattlePage = () => {
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {/* Videos container */}
+      {/* Now the filteredVideos should be compatible with Video[] thanks to our updated type definition */}
       <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
       
       {/* Battle header with title */}

@@ -1,230 +1,139 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import ShopService from '@/services/shop.service';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import productService from '@/services/product.service';
 import { Product } from '@/types/product.types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Filter, ArrowDownAZ, Grid, List } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Star } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import ProductCard from '@/components/shop/ProductCard';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import Loader from '@/components/ui/loader';
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-const CategoryPage = () => {
-  const { category } = useParams();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface CategoryParams {
+  categoryName: string;
+}
+
+const CategoryPage: React.FC = () => {
+  const { categoryName } = useParams<CategoryParams>();
+  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
+  const [isFollowing, setIsFollowing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<string>('popular');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const navigate = useNavigate();
+
+  const { data: products, isLoading: isProductsLoading, error: productsError } = useQuery({
+    queryKey: ['categoryProducts', categoryName],
+    queryFn: () => productService.getProductsByCategory(categoryName || '')
+  });
 
   useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true);
-      try {
-        // Use getProducts with category filter instead of getCategoryProducts
-        const data = await ShopService.getProducts(category);
-        setProducts(data);
-        setTotalPages(Math.ceil(data.length / 12)); // Assuming 12 products per page
-      } catch (err: any) {
-        setError(err.message || 'Failed to load products');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, [category]);
-
-  const filteredProducts = products.filter(product => {
-    // Filter by search query
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    // Filter by price range
-    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-
-    // Filter by brands (if any selected)
-    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(product.category);
-
-    return matchesSearch && matchesPrice && matchesBrand;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'newest':
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'popular':
-      default:
-        return b.stock_quantity - a.stock_quantity; // Using stock as a proxy for popularity
+    if (products) {
+      const initialFavorites: { [key: string]: boolean } = {};
+      products.forEach((product: Product) => {
+        initialFavorites[product.id] = Math.random() > 0.5;
+      });
+      setFavorites(initialFavorites);
     }
-  });
+  }, [products]);
 
-  // Pagination
-  const productsPerPage = 12;
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <Loader size="lg" text="Loading products..." />
-      </div>
-    );
+  if (isProductsLoading) {
+    return <div className="container mx-auto p-4">Loading...</div>;
   }
 
-  if (error) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
-      </div>
-    );
+  if (productsError) {
+    return <div className="container mx-auto p-4">Error loading products.</div>;
   }
+
+  if (!products) {
+    return <div className="container mx-auto p-4">No products found.</div>;
+  }
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const newFavorites = { ...prev };
+      newFavorites[id] = !prev[id];
+      return newFavorites;
+    });
+  };
+
+  const handleFollow = () => {
+    setIsFollowing(prev => !prev);
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold capitalize">{category || 'All Products'}</h1>
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className={viewMode === 'grid' ? 'bg-secondary' : ''}
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setViewMode('list')}
-            className={viewMode === 'list' ? 'bg-secondary' : ''}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Filters sidebar */}
-        <div className="w-full md:w-64 space-y-6">
-          <div>
-            <h3 className="font-medium mb-2">Search</h3>
-            <Input
-              type="search"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+    <div className="container mx-auto p-4">
+      {/* Category Header */}
+      <Card className="mb-6">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 pb-2">
+          <Avatar className="w-16 h-16">
+            <AvatarImage src={"https://placehold.co/100x100"} alt={categoryName} />
+            <AvatarFallback>{categoryName?.charAt(0) || 'C'}</AvatarFallback>
+          </Avatar>
+          <div className="ml-4">
+            <CardTitle className="text-2xl font-semibold">{categoryName}</CardTitle>
+            <CardDescription>Explore our wide range of products in the {categoryName} category.</CardDescription>
+            <div className="flex items-center mt-2">
+              <Star className="h-4 w-4 text-yellow-500 mr-1" />
+              {/* Category rating or other relevant info can be added here */}
+              No ratings available
+            </div>
+          </div>
+          <div className="md:ml-auto w-full md:w-auto">
+            <Button onClick={handleFollow} variant={isFollowing ? "secondary" : "outline"} className="w-full md:w-auto">
+              {isFollowing ? "Unfollow" : "Follow"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="relative w-full h-48 rounded-md overflow-hidden">
+            <img
+              src={"https://placehold.co/800x200"}
+              alt="Category Banner"
+              className="object-cover w-full h-full"
             />
           </div>
+        </CardContent>
+      </Card>
 
-          <div>
-            <h3 className="font-medium mb-2">Sort By</h3>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  {sortBy === 'popular' && 'Most Popular'}
-                  {sortBy === 'price-low' && 'Price: Low to High'}
-                  {sortBy === 'price-high' && 'Price: High to Low'}
-                  {sortBy === 'newest' && 'Newest First'}
-                  {sortBy === 'name' && 'Name: A to Z'}
-                  <ArrowDownAZ className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuItem onClick={() => setSortBy('popular')}>
-                  Most Popular
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('price-low')}>
-                  Price: Low to High
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('price-high')}>
-                  Price: High to Low
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('newest')}>
-                  Newest First
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy('name')}>
-                  Name: A to Z
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+      <Separator className="my-4" />
 
-          {/* Price Range Filter */}
-          {/* ... more filter options ... */}
-        </div>
-
-        {/* Product grid */}
-        <div className="flex-1">
-          {currentProducts.length === 0 ? (
-            <div className="text-center p-8 border border-dashed rounded-lg">
-              <p className="text-muted-foreground">No products found matching your criteria.</p>
-              <Button variant="link" onClick={() => {
-                setSearchQuery('');
-                setPriceRange([0, 1000]);
-                setSelectedBrands([]);
-              }}>
-                Clear filters
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4' : 'grid-cols-1 gap-4'}`}>
-                {currentProducts.map((product) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product}
-                  />
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-8">
-                  <div className="flex space-x-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Link
-                        key={page}
-                        to="#"
-                        onClick={() => paginate(page)}
-                        className={`px-3 py-1 rounded ${
-                          currentPage === page
-                            ? 'bg-primary text-white'
-                            : 'bg-gray-200 hover:bg-gray-300'
-                        }`}
-                      >
-                        {page}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+      {/* Search Input */}
+      <div className="mb-4">
+        <Label htmlFor="search">Search Products</Label>
+        <Input
+          type="text"
+          id="search"
+          placeholder="Search for products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
+
+      {/* Product Listings */}
+      <h2 className="text-xl font-semibold mb-4">Products in {categoryName}</h2>
+      {filteredProducts.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              image={product.image_url}
+              isFavorite={favorites[product.id] || false}
+              toggleFavorite={() => toggleFavorite(product.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-gray-500">No products available in this category.</div>
+      )}
     </div>
   );
 };

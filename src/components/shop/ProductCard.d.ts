@@ -1,12 +1,14 @@
 
 import { FC } from 'react';
-import { Product } from '@/types/product.types';
 
 export interface ProductProps {
-  product: Product;
-  onLike?: (productId: string) => void;
-  onAddToCart?: (product: Product) => void;
-  isLiked?: boolean;
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category?: string; 
+  isFavorite?: boolean;
+  toggleFavorite?: (productId: string) => void;
 }
 
 declare const ProductCard: FC<ProductProps>;

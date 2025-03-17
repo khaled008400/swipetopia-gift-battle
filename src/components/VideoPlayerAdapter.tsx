@@ -21,6 +21,7 @@ const VideoPlayerAdapter: React.FC<VideoPlayerAdapterProps> = ({
   return (
     <VideoPlayer
       videoUrl={src} // Map src to videoUrl which VideoPlayer expects
+      poster={poster}
       autoPlay={autoPlay}
     />
   );
