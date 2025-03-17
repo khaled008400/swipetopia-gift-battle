@@ -6,6 +6,7 @@ import SearchBar from '@/components/SearchBar';
 import VideoFeed from '@/components/VideoFeed';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Video } from '@/types/video.types';
 
 interface PopularUser {
   username: string;
@@ -13,10 +14,12 @@ interface PopularUser {
 }
 
 const HomePage = () => {
-  const [trendingVideos, setTrendingVideos] = useState([]);
-  const [liveStreams, setLiveStreams] = useState([]);
+  const [trendingVideos, setTrendingVideos] = useState<Video[]>([]);
+  const [liveStreams, setLiveStreams] = useState<any[]>([]);
   const [popularUsers, setPopularUsers] = useState<PopularUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,8 +66,41 @@ const HomePage = () => {
           console.error('Error fetching videos:', videosError);
           toast.error('Could not load videos');
         } else {
-          setTrendingVideos(videosData || []);
+          const mappedVideos = (videosData || []).map(video => ({
+            ...video,
+            // Ensure required fields for components are present
+            url: video.video_url,
+            likes: video.likes_count || 0,
+            comments: video.comments_count || 0,
+            shares: video.shares_count || 0
+          }));
+          setTrendingVideos(mappedVideos);
+          setVideos(mappedVideos);
         }
+
+        // Fetch live streams
+        const { data: liveData, error: liveError } = await supabase
+          .from('streams')
+          .select(`
+            id,
+            title,
+            thumbnail_url,
+            viewer_count,
+            created_at,
+            user_id,
+            profiles:user_id(username, avatar_url)
+          `)
+          .eq('status', 'live')
+          .order('viewer_count', { ascending: false })
+          .limit(10);
+
+        if (liveError) {
+          console.error('Error fetching live streams:', liveError);
+          toast.error('Could not load live streams');
+        } else {
+          setLiveStreams(liveData || []);
+        }
+
       } catch (error) {
         console.error('Error in data fetching:', error);
         toast.error('Something went wrong');
@@ -75,6 +111,17 @@ const HomePage = () => {
 
     fetchData();
   }, []);
+
+  // Create mock creators for PopularLiveSection from liveStreams
+  const creators = liveStreams.map(stream => ({
+    id: stream.id,
+    username: stream.profiles?.username || 'User',
+    avatar: stream.profiles?.avatar_url || '',
+    isLive: true,
+    title: stream.title,
+    thumbnailUrl: stream.thumbnail_url,
+    viewers: stream.viewer_count
+  }));
 
   return (
     <div className="pb-16 bg-black min-h-screen">
@@ -101,10 +148,10 @@ const HomePage = () => {
         </div>
       )}
       
-      <TrendingVideosSection />
-      <PopularLiveSection />
+      <TrendingVideosSection videos={trendingVideos} />
+      <PopularLiveSection creators={creators} />
       
-      <VideoFeed />
+      <VideoFeed videos={videos} activeVideoIndex={activeVideoIndex} />
     </div>
   );
 };

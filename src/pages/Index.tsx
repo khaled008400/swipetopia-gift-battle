@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthService from '@/services/auth.service';
+import * as AuthService from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
 import { Video } from '@/types/video.types';
 
@@ -31,7 +31,7 @@ const Index = () => {
     user_id: 'admin',
     view_count: 5280,
     likes_count: 423,
-    is_live: true, // Using is_live as defined in the Video interface
+    is_live: true,
     creator: {
       username: 'OfficialApp',
       avatar: 'https://example.com/avatars/official.jpg',

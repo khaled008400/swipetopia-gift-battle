@@ -5,10 +5,10 @@ import BattleHeader from "./battle/BattleHeader";
 import ActionButtons from "./battle/ActionButtons";
 import BattleVoteButtons from "./battle/BattleVoteButtons";
 import BattleDetails from "./battle/BattleDetails";
-import { BattleVideo as BattleVideoType } from "@/types/video.types";
+import { BattleVideo as BattleVideoType, Video } from "@/types/video.types";
 
 interface BattleVideoProps {
-  video: BattleVideoType;
+  video: Video;
   isActive: boolean;
 }
 
@@ -34,28 +34,28 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
     {
       id: '1',
       title: video.title || 'Video 1',
-      videoUrl: video.url || '',
-      thumbnailUrl: video.thumbnailUrl || '',
+      videoUrl: video.video_url || video.url || '',
+      thumbnailUrl: video.thumbnail_url || '',
       creator: {
-        id: video.creator?.id || '1',
-        username: `${video.user?.username}_1` || 'User 1',
-        avatar: video.creator?.avatar || 'https://example.com/avatar1.jpg'
+        id: video.user_id || '1',
+        username: video.user?.username || video.profiles?.username || 'User 1',
+        avatar: video.user?.avatar || video.creator?.avatar || 'https://example.com/avatar1.jpg'
       },
-      votes: video.likes || 0,
+      votes: video.likes_count || video.likes || 0,
       isLive: video.is_live || false,
       viewerCount: 100
     },
     {
       id: '2',
       title: video.title || 'Video 2',
-      videoUrl: video.url || '',
-      thumbnailUrl: video.thumbnailUrl || '',
+      videoUrl: video.video_url || video.url || '',
+      thumbnailUrl: video.thumbnail_url || '',
       creator: {
-        id: video.creator?.id || '2',
-        username: `${video.user?.username}_2` || 'User 2',
-        avatar: video.creator?.avatar || 'https://example.com/avatar2.jpg'
+        id: video.user_id || '2',
+        username: (video.user?.username || video.profiles?.username || 'User 2') + '_2',
+        avatar: video.user?.avatar || video.creator?.avatar || 'https://example.com/avatar2.jpg'
       },
-      votes: video.likes || 0,
+      votes: video.likes_count || video.likes || 0,
       isLive: video.is_live || false,
       viewerCount: 100
     }
@@ -65,10 +65,10 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
     <div className="h-full w-full relative overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-[#000000]">
       {/* Main video player */}
       <BattleVideoPlayer 
-        video={{url: video.url}}
+        video={{url: video.video_url || video.url}}
         isActive={isActive}
         onVideoTap={handleVideoTap}
-        userName={video.user?.username}
+        userName={video.user?.username || video.profiles?.username}
         isVoted={votedFor !== null}
       />
 
@@ -82,14 +82,14 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
       <BattleVoteButtons 
         videos={mockVideos}
         onVote={handleVote}
-        user1Name={`${video.user?.username}_1`}
-        user2Name={`${video.user?.username}_2`}
+        user1Name={mockVideos[0].creator.username}
+        user2Name={mockVideos[1].creator.username}
         votedFor={votedFor}
       />
       <BattleDetails 
         videos={mockVideos}
         title={video.description}
-        participants={video.likes}
+        participants={video.likes_count || video.likes || 0}
         showDetails={showDetails}
         setShowDetails={setShowDetails}
       />
