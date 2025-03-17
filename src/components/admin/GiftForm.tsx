@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { VirtualGift } from '@/services/admin.service';
+import { VirtualGift } from '@/services/streaming/stream.types';
 import {
   Form,
   FormField,
@@ -57,7 +57,7 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
       description: initialData.description || '',
       price: initialData.price,
       imageUrl: initialData.imageUrl,
-      imageType: initialData.imageType,
+      imageType: initialData.imageType as "gif" | "svg",
       hasSound: initialData.hasSound,
       soundUrl: initialData.soundUrl || '',
       category: initialData.category,
@@ -67,7 +67,7 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
       description: '',
       price: 50,
       imageUrl: '',
-      imageType: 'gif',
+      imageType: 'gif' as "gif" | "svg",
       hasSound: false,
       soundUrl: '',
       category: 'general',
