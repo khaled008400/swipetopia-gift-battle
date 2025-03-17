@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { AdminShippingMethod } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import type { AdminShippingMethod } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Plus, Edit, Trash2, Ship, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -184,12 +185,24 @@ const AdminShipping: React.FC = () => {
         description: formData.description,
         price: formData.price,
         estimated_days: formData.estimated_days,
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        delivery_time: formData.estimated_days, // Use estimated_days as delivery_time
+        is_default: false, // Default to false for new methods
+        created_at: new Date().toISOString() // Add created_at date
       });
     } else if (dialogMode === 'edit' && selectedMethod) {
       updateMethodMutation.mutate({
         id: selectedMethod.id,
-        data: formData
+        data: {
+          name: formData.name,
+          description: formData.description,
+          price: formData.price,
+          estimated_days: formData.estimated_days,
+          is_active: formData.is_active,
+          delivery_time: formData.estimated_days,
+          is_default: selectedMethod.is_default,
+          created_at: selectedMethod.created_at
+        }
       });
     }
   };

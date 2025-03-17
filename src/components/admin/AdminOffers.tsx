@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { AdminOffer } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import type { AdminOffer } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Plus, Edit, Trash2, Tag, BarChart, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -96,7 +96,7 @@ const AdminOffers: React.FC = () => {
 
   // Create offer mutation
   const createOfferMutation = useMutation({
-    mutationFn: (offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>) => 
+    mutationFn: (offerData: Omit<AdminOffer, "id" | "created_at" | "updated_at">) => 
       AdminService.createOffer(offerData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOffers'] });
@@ -118,7 +118,7 @@ const AdminOffers: React.FC = () => {
 
   // Update offer mutation
   const updateOfferMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>> }) => 
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminOffer, "id" | "created_at" | "updated_at">> }) => 
       AdminService.updateOffer(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOffers'] });
@@ -174,63 +174,23 @@ const AdminOffers: React.FC = () => {
     }
   });
 
-  // Handle dialog open
-  const handleCreateOffer = () => {
-    form.reset({
-      name: '',
-      description: '',
-      discount_type: 'percentage',
-      discount_value: 0,
-      start_date: '',
-      end_date: '',
-      min_purchase_amount: 0,
-      product_category: '',
-      active: true
-    });
-    setDialogMode('create');
-    setSelectedOffer(null);
-    setOfferDialog(true);
-  };
-
-  // Handle edit offer
-  const handleEditOffer = (offer: AdminOffer) => {
-    form.reset({
-      name: offer.name,
-      description: offer.description,
-      discount_type: offer.discount_type,
-      discount_value: offer.discount_value,
-      start_date: offer.start_date || '',
-      end_date: offer.end_date || '',
-      min_purchase_amount: offer.min_purchase_amount || 0,
-      product_category: offer.product_category || '',
-      active: offer.active || true
-    });
-    setDialogMode('edit');
-    setSelectedOffer(offer);
-    setOfferDialog(true);
-  };
-
-  // Handle delete offer
-  const handleDeleteOffer = (offerId: string) => {
-    if (confirm("Are you sure you want to delete this offer? This action cannot be undone.")) {
-      deleteOfferMutation.mutate(offerId);
-    }
-  };
-
   // Handle form submission
   const onSubmit = (formData: OfferFormValues) => {
-    const offerData = {
+    const offerData: Omit<AdminOffer, "id" | "created_at" | "updated_at"> = {
+      title: formData.name,
+      product_id: "default-product-id",
       name: formData.name,
       description: formData.description,
       discount_type: formData.discount_type,
       discount_value: formData.discount_value,
-      start_date: formData.start_date || undefined,
-      end_date: formData.end_date || undefined,
-      min_purchase_amount: formData.min_purchase_amount || undefined,
-      product_category: formData.product_category || undefined,
+      discount_percentage: formData.discount_type === 'percentage' ? formData.discount_value : 0,
+      start_date: formData.start_date || new Date().toISOString(),
+      end_date: formData.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      min_purchase_amount: formData.min_purchase_amount || 0,
+      product_category: formData.product_category || 'all',
       active: formData.active
     };
-    
+
     if (dialogMode === 'create') {
       createOfferMutation.mutate(offerData);
     } else if (dialogMode === 'edit' && selectedOffer) {
@@ -302,7 +262,6 @@ const AdminOffers: React.FC = () => {
                 </CardContent>
               </Card>
               
-              {/* Top performing offers */}
               <Card className="col-span-3">
                 <CardHeader>
                   <CardTitle>Top Performing Offers</CardTitle>
@@ -401,7 +360,6 @@ const AdminOffers: React.FC = () => {
         </Table>
       )}
 
-      {/* Offer Form Dialog */}
       <Dialog open={offerDialog} onOpenChange={setOfferDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

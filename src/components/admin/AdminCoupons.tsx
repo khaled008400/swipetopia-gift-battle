@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { AdminCoupon } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import type { AdminCoupon } from '@/services/admin.service';
 import { Loader2, Plus, Pencil, Trash2, Calendar, Tag, Percent, DollarSign } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,7 +15,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 
 const AdminCoupons = () => {
@@ -34,6 +34,7 @@ const AdminCoupons = () => {
   const [applicableCategories, setApplicableCategories] = useState<string[]>([]);
 
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch coupons
   const { data: coupons, isLoading } = useQuery({
@@ -49,7 +50,7 @@ const AdminCoupons = () => {
 
   // Add coupon mutation
   const addMutation = useMutation({
-    mutationFn: (coupon: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>) => AdminService.createCoupon(coupon),
+    mutationFn: (coupon: Omit<AdminCoupon, "id" | "usage_count" | "created_at" | "updated_at">) => AdminService.createCoupon(coupon),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminCoupons'] });
       resetForm();
@@ -71,7 +72,7 @@ const AdminCoupons = () => {
 
   // Update coupon mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>> }) => 
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminCoupon, "id" | "usage_count" | "created_at" | "updated_at">> }) => 
       AdminService.updateCoupon(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminCoupons'] });
@@ -179,6 +180,10 @@ const AdminCoupons = () => {
       is_active: isActive,
       applicable_products: applicableProducts.length > 0 ? applicableProducts : undefined,
       applicable_categories: applicableCategories.length > 0 ? applicableCategories : undefined,
+      status: isActive ? 'active' : 'inactive',
+      current_uses: 0,
+      discount_percentage: type === 'percentage' ? value : 0,
+      max_uses: usageLimit || 0
     };
 
     if (isEditing && currentCoupon) {
@@ -187,17 +192,7 @@ const AdminCoupons = () => {
         data: couponData
       });
     } else {
-      addMutation.mutate({
-        code,
-        type,
-        value,
-        minimum_purchase: minimumPurchase,
-        expiry_date: expiryDate ? expiryDate.toISOString() : null,
-        usage_limit: usageLimit,
-        is_active: isActive,
-        applicable_products: applicableProducts.length > 0 ? applicableProducts : undefined,
-        applicable_categories: applicableCategories.length > 0 ? applicableCategories : undefined,
-      });
+      addMutation.mutate(couponData);
     }
   };
 
@@ -509,3 +504,4 @@ const AdminCoupons = () => {
 };
 
 export default AdminCoupons;
+

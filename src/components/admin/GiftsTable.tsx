@@ -1,117 +1,119 @@
 
 import React from 'react';
-import { VirtualGift } from '@/services/admin.service';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Edit, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { format } from 'date-fns';
+import type { VirtualGift } from '@/services/admin.service';
 
 interface GiftsTableProps {
   gifts: VirtualGift[];
-  onEdit: (gift: VirtualGift) => void;
-  onDelete: (id: string) => void;
-  onToggleAvailability: (gift: VirtualGift) => void;
+  onEditGift: (gift: VirtualGift) => void;
+  onDeleteGift: (id: string) => void;
+  onToggleAvailability: (id: string, currentStatus: boolean) => void;
 }
 
-const GiftsTable = ({ gifts, onEdit, onDelete, onToggleAvailability }: GiftsTableProps) => {
-  if (gifts.length === 0) {
-    return (
-      <div className="text-center p-8 border rounded-md">
-        <p className="text-muted-foreground">No virtual gifts found</p>
-      </div>
-    );
-  }
-
+const GiftsTable: React.FC<GiftsTableProps> = ({
+  gifts,
+  onEditGift,
+  onDeleteGift,
+  onToggleAvailability
+}) => {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Preview</TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead>Price</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Features</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Added</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {gifts.map((gift) => (
-          <TableRow key={gift.id}>
-            <TableCell>
-              <img 
-                src={gift.imageUrl} 
-                alt={gift.name} 
-                className="w-12 h-12 object-contain"
-              />
-            </TableCell>
-            <TableCell className="font-medium">{gift.name}</TableCell>
-            <TableCell>{gift.price} coins</TableCell>
-            <TableCell>
-              <Badge variant="outline" className="capitalize">
-                {gift.category}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <div className="flex gap-1 flex-wrap">
-                <Badge variant="secondary" className="capitalize">
-                  {gift.imageType}
-                </Badge>
-                {gift.hasSound && (
-                  <Badge variant="secondary" className="bg-app-yellow/20 text-app-yellow border-app-yellow">
-                    Sound
-                  </Badge>
-                )}
-              </div>
-            </TableCell>
-            <TableCell>
-              <Badge 
-                variant={gift.available ? "default" : "outline"} 
-                className={gift.available ? "bg-green-500" : "text-muted-foreground"}
-              >
-                {gift.available ? "Available" : "Hidden"}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              {formatDistanceToNow(new Date(gift.createdAt), { addSuffix: true })}
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onToggleAvailability(gift)}
-                  title={gift.available ? "Hide gift" : "Make available"}
-                >
-                  {gift.available ? (
-                    <ToggleRight className="h-4 w-4" />
-                  ) : (
-                    <ToggleLeft className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEdit(gift)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(gift.id)}
-                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="rounded-md border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Preview</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Sound</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Available</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {gifts.length > 0 ? (
+            gifts.map((gift) => (
+              <TableRow key={gift.id}>
+                <TableCell className="font-medium">{gift.name}</TableCell>
+                <TableCell>
+                  {gift.imageUrl ? (
+                    <img
+                      src={gift.imageUrl}
+                      alt={gift.name}
+                      className="h-10 w-10 object-contain"
+                    />
+                  ) : (
+                    <div
+                      className="h-10 w-10 flex items-center justify-center rounded-md"
+                      style={{ backgroundColor: gift.color || '#f3f4f6' }}
+                    >
+                      {gift.icon || '🎁'}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>{gift.price} coins</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="capitalize">
+                    {gift.category}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {gift.hasSound ? (
+                    <Badge className="bg-green-500">
+                      <Volume2 className="mr-1 h-3 w-3" />
+                      Yes
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      <VolumeX className="mr-1 h-3 w-3" />
+                      No
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {format(new Date(gift.created_at), 'MMM d, yyyy')}
+                </TableCell>
+                <TableCell>
+                  <Switch
+                    checked={gift.available}
+                    onCheckedChange={() => onToggleAvailability(gift.id, gift.available)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => onEditGift(gift)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500"
+                      onClick={() => onDeleteGift(gift.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center h-32 text-muted-foreground">
+                No gifts found
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

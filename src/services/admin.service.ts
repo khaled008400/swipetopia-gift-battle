@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import {
   AdminStats,
@@ -11,6 +10,7 @@ import {
   ProductAttribute,
   LiveStream,
   AdminUser,
+  AdminProduct
 } from "@/services/streaming/stream.types";
 
 // Re-export types for use in components
@@ -25,6 +25,7 @@ export type {
   ProductAttribute,
   LiveStream,
   AdminUser,
+  AdminProduct
 };
 
 // Base admin service
@@ -837,6 +838,141 @@ class AdminService {
         { category: 'Sports', count: 380, revenue: 38000 },
       ]
     };
+  }
+
+  // Product methods
+  async getProducts(page: number = 1, category?: string): Promise<AdminProduct[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data?.map(product => ({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      description: product.description,
+      image: product.image_url,
+      inventory: product.stock_quantity,
+      category: product.category,
+      status: product.status,
+      stock_quantity: product.stock_quantity,
+      seller_id: product.seller_id,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      is_featured: product.is_featured
+    })) || [];
+  }
+
+  async getProduct(id: string): Promise<AdminProduct> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      description: data.description,
+      image: data.image_url,
+      inventory: data.stock_quantity,
+      category: data.category,
+      status: data.status,
+      stock_quantity: data.stock_quantity,
+      seller_id: data.seller_id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_featured: data.is_featured
+    };
+  }
+
+  async createProduct(product: Omit<AdminProduct, 'id' | 'created_at' | 'updated_at'>): Promise<AdminProduct> {
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        image_url: product.image,
+        stock_quantity: product.stock_quantity,
+        category: product.category,
+        status: product.status,
+        seller_id: product.seller_id,
+        is_featured: product.is_featured
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      description: data.description,
+      image: data.image_url,
+      inventory: data.stock_quantity,
+      category: data.category,
+      status: data.status,
+      stock_quantity: data.stock_quantity,
+      seller_id: data.seller_id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_featured: data.is_featured
+    };
+  }
+
+  async updateProduct(id: string, product: Partial<Omit<AdminProduct, 'id' | 'created_at' | 'updated_at'>>): Promise<AdminProduct> {
+    const updateData: any = {};
+    if (product.name) updateData.name = product.name;
+    if (product.price !== undefined) updateData.price = product.price;
+    if (product.description) updateData.description = product.description;
+    if (product.image) updateData.image_url = product.image;
+    if (product.inventory !== undefined) updateData.stock_quantity = product.inventory;
+    if (product.stock_quantity !== undefined) updateData.stock_quantity = product.stock_quantity;
+    if (product.category) updateData.category = product.category;
+    if (product.status) updateData.status = product.status;
+    if (product.is_featured !== undefined) updateData.is_featured = product.is_featured;
+    
+    const { data, error } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+      description: data.description,
+      image: data.image_url,
+      inventory: data.stock_quantity,
+      category: data.category,
+      status: data.status,
+      stock_quantity: data.stock_quantity,
+      seller_id: data.seller_id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_featured: data.is_featured
+    };
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 }
 

@@ -1,148 +1,198 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Eye, Flag, MoreHorizontal, Trash2, UserX, Ban } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { AdminVideo } from '@/services/admin.service';
+import { Check, Eye, MoreHorizontal, User, Flag, Ban, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import type { AdminVideo } from '@/services/admin.service';
 
 interface VideoTableProps {
   videos: AdminVideo[];
-  onViewVideo: (video: AdminVideo) => void;
-  onFlagVideo: (videoId: string) => void;
+  onStatusChange: (videoId: string, status: 'active' | 'flagged' | 'removed') => void;
   onDeleteVideo: (videoId: string) => void;
-  onWarnUser: (userId: string, videoId: string) => void;
-  onRestrictUser: (userId: string) => void;
+  onOpenPreview: (video: AdminVideo) => void;
+  onViewUserProfile: (userId: string) => void;
+  onSendWarning: (videoId: string, userId: string, message: string) => void;
+  onRestrictUser: (userId: string, reason: string) => void;
+  selectedVideos: string[];
+  onSelectVideo: (videoId: string, selected: boolean) => void;
+  onSelectAllVideos: (selected: boolean) => void;
 }
 
 const VideoTable: React.FC<VideoTableProps> = ({
   videos,
-  onViewVideo,
-  onFlagVideo,
+  onStatusChange,
   onDeleteVideo,
-  onWarnUser,
-  onRestrictUser
+  onOpenPreview,
+  onViewUserProfile,
+  onSendWarning,
+  onRestrictUser,
+  selectedVideos,
+  onSelectVideo,
+  onSelectAllVideos,
 }) => {
-  const getStatusBadge = (status?: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
+        return <Badge className="bg-green-500"><Check className="mr-1 h-3 w-3" /> Active</Badge>;
       case 'flagged':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Flagged</Badge>;
+        return <Badge className="bg-yellow-500"><Flag className="mr-1 h-3 w-3" /> Flagged</Badge>;
       case 'removed':
-        return <Badge variant="destructive">Removed</Badge>;
+        return <Badge className="bg-red-500"><Ban className="mr-1 h-3 w-3" /> Removed</Badge>;
       default:
-        return <Badge>{status || 'Unknown'}</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
 
+  const areAllVideosSelected = videos.length > 0 && videos.every(video => selectedVideos.includes(video.id));
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Video</TableHead>
-          <TableHead>Creator</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Stats</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {videos.length > 0 ? (
-          videos.map((video) => (
-            <TableRow key={video.id}>
-              <TableCell>
-                <div className="flex items-center space-x-3">
-                  <div className="h-12 w-20 bg-gray-100 rounded overflow-hidden relative flex-shrink-0">
-                    {video.thumbnail_url ? (
-                      <img
-                        src={video.thumbnail_url}
-                        alt={video.title}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full w-full">
-                        <span className="text-xs text-gray-500">No thumbnail</span>
-                      </div>
-                    )}
+    <div className="rounded-md border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[50px]">
+              <Checkbox
+                checked={areAllVideosSelected}
+                onCheckedChange={onSelectAllVideos}
+                aria-label="Select all videos"
+              />
+            </TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>User</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Views</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {videos.length > 0 ? (
+            videos.map((video) => (
+              <TableRow key={video.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedVideos.includes(video.id)}
+                    onCheckedChange={(checked) => onSelectVideo(video.id, checked === true)}
+                    aria-label={`Select video ${video.title}`}
+                  />
+                </TableCell>
+                <TableCell className="font-medium max-w-[300px] truncate">
+                  {video.title}
+                </TableCell>
+                <TableCell>
+                  <div 
+                    className="flex items-center space-x-2 cursor-pointer hover:text-primary"
+                    onClick={() => onViewUserProfile(video.user.id)}
+                  >
+                    <div className="h-8 w-8 rounded-full bg-muted-foreground/10 flex items-center justify-center">
+                      {video.user.avatar_url ? (
+                        <img src={video.user.avatar_url} alt={video.user.username} className="h-8 w-8 rounded-full object-cover" />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </div>
+                    <span>{video.user.username}</span>
                   </div>
-                  <div className="max-w-[200px]">
-                    <div className="font-medium truncate">{video.title}</div>
-                    <div className="text-sm text-gray-500 truncate">{video.description}</div>
+                </TableCell>
+                <TableCell>
+                  {format(new Date(video.created_at), 'MMM d, yyyy')}
+                </TableCell>
+                <TableCell>
+                  {video.view_count.toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(video.status)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => onOpenPreview(video)}>
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">Preview</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">More options</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onViewUserProfile(video.user.id)}>
+                          <User className="mr-2 h-4 w-4" />
+                          View User Profile
+                        </DropdownMenuItem>
+                        {video.status !== 'active' && (
+                          <DropdownMenuItem onClick={() => onStatusChange(video.id, 'active')}>
+                            <Check className="mr-2 h-4 w-4" />
+                            Approve
+                          </DropdownMenuItem>
+                        )}
+                        {video.status !== 'flagged' && (
+                          <DropdownMenuItem onClick={() => onStatusChange(video.id, 'flagged')}>
+                            <Flag className="mr-2 h-4 w-4" />
+                            Flag
+                          </DropdownMenuItem>
+                        )}
+                        {video.status !== 'removed' && (
+                          <DropdownMenuItem onClick={() => onStatusChange(video.id, 'removed')}>
+                            <Ban className="mr-2 h-4 w-4" />
+                            Remove
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const warning = prompt('Enter warning message for user:');
+                            if (warning) {
+                              onSendWarning(video.id, video.user.id, warning);
+                            }
+                          }}
+                        >
+                          <Flag className="mr-2 h-4 w-4" />
+                          Send Warning to User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const reason = prompt('Enter reason for user restriction:');
+                            if (reason) {
+                              onRestrictUser(video.user.id, reason);
+                            }
+                          }}
+                        >
+                          <Ban className="mr-2 h-4 w-4" />
+                          Restrict User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onDeleteVideo(video.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  <div className="h-7 w-7 rounded-full overflow-hidden">
-                    <img
-                      src={video.user.avatar_url || "/placeholder-avatar.jpg"}
-                      alt={video.user.username}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <span>{video.user.username}</span>
-                </div>
-              </TableCell>
-              <TableCell>{getStatusBadge(video.status)}</TableCell>
-              <TableCell>
-                {video.created_at ? format(new Date(video.created_at), 'MMM d, yyyy') : 'Unknown'}
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <div>Views: {video.view_count.toLocaleString()}</div>
-                  <div>Likes: {video.likes_count.toLocaleString()}</div>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" onClick={() => onViewVideo(video)}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onFlagVideo(video.id)}>
-                        <Flag className="mr-2 h-4 w-4" />
-                        Flag Video
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onWarnUser(video.user_id || video.user.id || "", video.id)}>
-                        <UserX className="mr-2 h-4 w-4" />
-                        Warn Creator
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onRestrictUser(video.user_id || video.user.id || "")}>
-                        <Ban className="mr-2 h-4 w-4" />
-                        Restrict Creator
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onDeleteVideo(video.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Video
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">
+                No videos found
               </TableCell>
             </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-              No videos found
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

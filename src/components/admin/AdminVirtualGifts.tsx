@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { VirtualGift } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import type { VirtualGift } from '@/services/admin.service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,16 +15,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { BarChart, Edit, Gift, Plus, Search, Trash2, Upload } from 'lucide-react';
 
-const defaultGift: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'> = {
+const defaultGift: Omit<VirtualGift, 'id' | 'created_at'> = {
   name: '',
   description: '',
   price: 0,
+  value: 0,
   imageUrl: '',
   imageType: 'svg',
   hasSound: false,
   soundUrl: '',
   category: 'basic',
-  available: true
+  available: true,
+  color: '#FFFFFF',
+  icon: 'gift',
+  is_premium: false
 };
 
 const AdminVirtualGifts = () => {
@@ -39,18 +43,18 @@ const AdminVirtualGifts = () => {
   // Fetch gifts
   const { data: gifts, isLoading } = useQuery({
     queryKey: ['adminGifts', selectedCategory],
-    queryFn: () => AdminService.getVirtualGifts(1, 100, selectedCategory === 'all' ? '' : selectedCategory)
+    queryFn: () => AdminService.getVirtualGifts(1, 20, selectedCategory === 'all' ? undefined : selectedCategory)
   });
   
   // Fetch gift usage statistics
   const { data: giftStats } = useQuery({
-    queryKey: ['giftStats', 'month'],
-    queryFn: () => AdminService.getGiftUsageStats('month')
+    queryKey: ['giftStats'],
+    queryFn: () => AdminService.getGiftUsageStats()
   });
   
   // Create mutation
   const createGiftMutation = useMutation({
-    mutationFn: (giftData: Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>) => 
+    mutationFn: (giftData: Omit<VirtualGift, 'id' | 'created_at'>) => 
       AdminService.createVirtualGift(giftData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminGifts'] });
@@ -102,7 +106,22 @@ const AdminVirtualGifts = () => {
   
   const handleCreateGift = () => {
     if (currentGift.name && typeof currentGift.price === 'number' && currentGift.price > 0) {
-      createGiftMutation.mutate(currentGift as Omit<VirtualGift, 'id' | 'createdAt' | 'updatedAt'>);
+      const giftData: Omit<VirtualGift, 'id' | 'created_at'> = {
+        name: currentGift.name!,
+        description: currentGift.description || '',
+        price: currentGift.price,
+        value: currentGift.value || currentGift.price,
+        imageUrl: currentGift.imageUrl!,
+        imageType: currentGift.imageType as 'gif' | 'svg',
+        hasSound: currentGift.hasSound || false,
+        soundUrl: currentGift.soundUrl,
+        category: currentGift.category || 'basic',
+        available: currentGift.available !== undefined ? currentGift.available : true,
+        color: currentGift.color || '#FFFFFF',
+        icon: currentGift.icon || 'gift',
+        is_premium: currentGift.is_premium || false
+      };
+      createGiftMutation.mutate(giftData);
     } else {
       toast({
         title: "Validation error",
@@ -114,19 +133,20 @@ const AdminVirtualGifts = () => {
   
   const handleUpdateGift = () => {
     if (currentGift.id && currentGift.name && typeof currentGift.price === 'number' && currentGift.price > 0) {
+      const giftData: Partial<VirtualGift> = {
+        name: currentGift.name,
+        description: currentGift.description,
+        price: currentGift.price,
+        imageUrl: currentGift.imageUrl,
+        imageType: currentGift.imageType as 'gif' | 'svg',
+        hasSound: currentGift.hasSound,
+        soundUrl: currentGift.soundUrl,
+        category: currentGift.category,
+        available: currentGift.available
+      };
       updateGiftMutation.mutate({ 
         id: currentGift.id, 
-        data: {
-          name: currentGift.name,
-          description: currentGift.description,
-          price: currentGift.price,
-          imageUrl: currentGift.imageUrl,
-          imageType: currentGift.imageType as 'gif' | 'svg',
-          hasSound: currentGift.hasSound,
-          soundUrl: currentGift.soundUrl,
-          category: currentGift.category,
-          available: currentGift.available
-        }
+        data: giftData
       });
     } else {
       toast({

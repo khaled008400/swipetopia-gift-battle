@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { ProductAttribute } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import type { ProductAttribute } from '@/services/admin.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Plus, Edit, Trash2, Tag, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,26 +65,12 @@ const ProductAttributes: React.FC = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['productAttributes', page],
     queryFn: () => AdminService.getProductAttributes(page),
-    // For development, let's provide placeholder data
-    placeholderData: {
-      data: [
-        { id: '1', name: 'Color', values: ['Red', 'Green', 'Blue'], color: '#9b87f5', status: 'active' },
-        { id: '2', name: 'Size', values: ['S', 'M', 'L', 'XL'], status: 'active' },
-        { id: '3', name: 'Material', values: ['Cotton', 'Polyester', 'Wool'], status: 'inactive' },
-      ],
-      pagination: {
-        current_page: 1,
-        last_page: 1,
-        per_page: 10,
-        total: 3
-      }
-    }
   });
 
   // Create attribute mutation
   const createAttributeMutation = useMutation({
-    mutationFn: (attributeData: Omit<ProductAttribute, 'id'>) => 
-      AdminService.createProductAttribute(attributeData),
+    mutationFn: (attributeData: Omit<ProductAttribute, "id" | "created_at">) => 
+      AdminService.createAttribute(attributeData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       setAttributeDialog(false);
@@ -104,8 +90,8 @@ const ProductAttributes: React.FC = () => {
 
   // Update attribute mutation
   const updateAttributeMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: Partial<ProductAttribute> }) => 
-      AdminService.updateProductAttribute(id, data),
+    mutationFn: ({ id, data }: { id: string, data: Partial<Omit<ProductAttribute, "id" | "created_at">> }) => 
+      AdminService.updateAttribute(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       setAttributeDialog(false);
@@ -125,7 +111,7 @@ const ProductAttributes: React.FC = () => {
 
   // Delete attribute mutation
   const deleteAttributeMutation = useMutation({
-    mutationFn: (attributeId: string) => AdminService.deleteProductAttribute(attributeId),
+    mutationFn: (attributeId: string) => AdminService.deleteAttribute(attributeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productAttributes'] });
       toast({
@@ -195,7 +181,8 @@ const ProductAttributes: React.FC = () => {
         name: formData.name,
         values,
         color: formData.color,
-        status: formData.status
+        status: formData.status,
+        created_at: new Date().toISOString()
       });
     } else if (dialogMode === 'edit' && selectedAttribute) {
       updateAttributeMutation.mutate({
@@ -204,7 +191,8 @@ const ProductAttributes: React.FC = () => {
           name: formData.name,
           values,
           color: formData.color,
-          status: formData.status
+          status: formData.status,
+          created_at: selectedAttribute.created_at
         }
       });
     }

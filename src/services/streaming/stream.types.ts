@@ -59,7 +59,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  original_price?: number;
+  original_price?: number; // Added this property for LimitedOffers and ProductsGrid
   description: string;
   image_url: string;
   category: string;
@@ -219,4 +219,43 @@ export interface ProductAttribute {
   color?: string;
   status: 'active' | 'inactive';
   created_at: string;
+}
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  inventory: number;
+  category: string;
+  status: 'active' | 'draft' | 'unavailable';
+  stock_quantity: number;
+  seller_id: string;
+  created_at: string;
+  updated_at: string;
+  is_featured: boolean;
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: string;
+  lastFour?: string;
+  expiry?: string;
+  isDefault: boolean;
+}
+
+export interface Comment {
+  id: string;
+  user_id: string;
+  video_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  likes_count: number;
+  user: {
+    username: string;
+    avatar_url: string;
+  };
 }
