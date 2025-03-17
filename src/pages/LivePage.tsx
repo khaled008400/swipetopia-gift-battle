@@ -1,166 +1,173 @@
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { StreamService } from '@/services/streaming';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { User, Users, ShoppingBag, Gift, MessageCircle, Share2, Flag } from 'lucide-react';
-import LiveStreamIndicator from '@/components/live/LiveStreamIndicator';
-import AgoraVideoStream from '@/components/live/AgoraVideoStream';
-import LiveChat from '@/components/streamer/LiveChat';
-import StreamProducts from '@/components/live/StreamProducts';
-import GiftAnimation from '@/components/live/GiftAnimation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, Clock, Zap } from 'lucide-react';
+import { LiveStream } from '@/services/streaming/stream.types';
+import { StreamService } from '@/services/streaming';
 
-const LivePage: React.FC = () => {
-  const { streamId } = useParams<{ streamId: string }>();
-  const [showChat, setShowChat] = useState(true);
-  const [showProducts, setShowProducts] = useState(false);
+const LivePage = () => {
+  const [activeTab, setActiveTab] = useState('live');
+  const navigate = useNavigate();
   
-  const { data: stream, isLoading, error } = useQuery({
-    queryKey: ['stream', streamId],
-    queryFn: () => StreamService.getStream(streamId || ''),
-    enabled: !!streamId,
+  const { data: streams, isLoading } = useQuery({
+    queryKey: ['liveStreams'],
+    queryFn: () => StreamService.getLiveStreams(),
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
   
-  // Since we don't have implementations for joinStream and leaveStream,
-  // we'll comment these out for now
-  /*
-  useEffect(() => {
-    // Join stream presence
-    if (stream?.id) {
-      StreamService.joinStream(stream.id);
-      
-      // Clean up on unmount
-      return () => {
-        StreamService.leaveStream(stream.id);
-      };
+  // Filter streams based on active tab
+  const filteredStreams = streams?.filter(stream => {
+    if (activeTab === 'live') {
+      return stream.status === 'online';
+    } else if (activeTab === 'upcoming') {
+      return stream.scheduledFor !== undefined;
+    } else if (activeTab === 'ended') {
+      return stream.status === 'offline' && !stream.scheduledFor;
     }
-  }, [stream?.id]);
-  */
+    return true;
+  });
   
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-4 flex justify-center items-center min-h-[70vh]">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-lg">Loading stream...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (error || !stream) {
-    return (
-      <div className="container mx-auto p-4 text-center min-h-[70vh] flex flex-col justify-center">
-        <h2 className="text-2xl font-bold mb-4">Stream Not Found</h2>
-        <p className="mb-8">The live stream you're looking for may have ended or doesn't exist.</p>
-        <Button onClick={() => window.history.back()}>Go Back</Button>
-      </div>
-    );
-  }
-  
-  if (stream.status !== 'live') {
-    return (
-      <div className="container mx-auto p-4 text-center min-h-[70vh] flex flex-col justify-center">
-        <h2 className="text-2xl font-bold mb-4">Stream Has Ended</h2>
-        <p className="mb-8">This stream is no longer live.</p>
-        <Button onClick={() => window.history.back()}>Browse Other Streams</Button>
-      </div>
-    );
-  }
-  
-  const toggleChat = () => setShowChat(!showChat);
-  const toggleProducts = () => setShowProducts(!showProducts);
+  const formatViewers = (count: number) => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
+  };
   
   return (
-    <div className="container mx-auto p-2 md:p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-3">
-          <div className="rounded-lg overflow-hidden bg-black relative">
-            <LiveStreamIndicator viewerCount={stream.viewer_count} />
-            <AgoraVideoStream streamId={stream.id} />
-            <GiftAnimation streamId={stream.id} />
-          </div>
-          
-          <div className="mt-4 flex justify-between items-start">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold">{stream.title}</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={stream.profiles?.avatar_url || ''} />
-                  <AvatarFallback>{stream.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span className="font-medium">{stream.profiles?.username}</span>
-                <Badge variant="outline" className="ml-2 flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  {stream.viewer_count}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="hidden md:flex gap-2">
-              <Button variant="outline" size="sm">
-                <User className="h-4 w-4 mr-2" />
-                Follow
-              </Button>
-              <Button variant="outline" size="sm">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline" size="sm">
-                <Flag className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <p className="text-gray-700">{stream.description}</p>
-          
-          <div className="md:hidden mt-6 grid grid-cols-4 gap-2">
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto" onClick={toggleChat}>
-              <MessageCircle className="h-5 w-5 mb-1" />
-              <span className="text-xs">Chat</span>
-            </Button>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto" onClick={toggleProducts}>
-              <ShoppingBag className="h-5 w-5 mb-1" />
-              <span className="text-xs">Products</span>
-            </Button>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <Gift className="h-5 w-5 mb-1" />
-              <span className="text-xs">Gift</span>
-            </Button>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <Share2 className="h-5 w-5 mb-1" />
-              <span className="text-xs">Share</span>
-            </Button>
-          </div>
-          
-          <div className="md:hidden">
-            {showProducts && <StreamProducts streamId={stream.id} className="mt-4" />}
-          </div>
-        </div>
-        
-        <div className={`${showChat ? 'block' : 'hidden'} md:block lg:col-span-1`}>
-          <div className="rounded-lg border h-[60vh] md:h-[70vh] flex flex-col">
-            <div className="p-3 border-b font-medium flex justify-between items-center">
-              <span>Live Chat</span>
-              <Button variant="ghost" size="sm" className="md:hidden" onClick={toggleChat}>
-                &times;
-              </Button>
-            </div>
-            <LiveChat streamId={stream.id} />
-          </div>
-          
-          <div className="hidden md:block mt-4">
-            <StreamProducts streamId={stream.id} />
-          </div>
-        </div>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Live Streams</h1>
+        <Button onClick={() => navigate('/go-live')} className="bg-primary">
+          <Zap className="mr-2 h-4 w-4" />
+          Go Live
+        </Button>
       </div>
+      
+      <Tabs defaultValue="live" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="mb-4">
+          <TabsTrigger value="live">Live Now</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="ended">Ended</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value={activeTab} className="space-y-4">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="h-40 bg-slate-200 animate-pulse"></div>
+                  <CardContent className="p-4">
+                    <div className="h-4 w-3/4 bg-slate-200 animate-pulse mb-2"></div>
+                    <div className="h-4 w-1/2 bg-slate-200 animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredStreams && filteredStreams.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredStreams.map((stream: LiveStream) => (
+                <StreamCard 
+                  key={stream.id} 
+                  stream={stream} 
+                  mode={activeTab as 'live' | 'upcoming' | 'ended'} 
+                  onClick={() => navigate(`/stream/${stream.id}`)} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-lg font-medium mb-4">No streams available</p>
+              {activeTab === 'live' && (
+                <p className="text-muted-foreground">
+                  No one is streaming right now. Why not start your own stream?
+                </p>
+              )}
+              {activeTab === 'upcoming' && (
+                <p className="text-muted-foreground">
+                  No upcoming streams scheduled. Check back later or schedule your own.
+                </p>
+              )}
+              {activeTab === 'ended' && (
+                <p className="text-muted-foreground">
+                  No previous streams found. Start streaming to build your history.
+                </p>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+};
+
+interface StreamCardProps {
+  stream: LiveStream;
+  mode: 'live' | 'upcoming' | 'ended';
+  onClick: () => void;
+}
+
+const StreamCard: React.FC<StreamCardProps> = ({ stream, mode, onClick }) => {
+  const getCardContent = () => {
+    if (mode === 'live') {
+      return (
+        <>
+          <div className="absolute top-2 left-2">
+            <Badge className="bg-red-500 text-white">
+              <Zap className="h-3 w-3 mr-1" /> LIVE
+            </Badge>
+          </div>
+          <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white text-xs flex items-center">
+            <Users className="h-3 w-3 mr-1" />
+            {formatViewers(stream.viewer_count || 0)}
+          </div>
+        </>
+      );
+    } else if (mode === 'upcoming') {
+      return (
+        <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white text-xs flex items-center">
+          <Clock className="h-3 w-3 mr-1" />
+          {stream.scheduledFor ? new Date(stream.scheduledFor).toLocaleDateString() : 'Upcoming'}
+        </div>
+      );
+    } else {
+      return (
+        <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-white text-xs flex items-center">
+          {stream.endedAt ? `${stream.durationMinutes} min` : 'Ended'}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
+      <div className="relative">
+        <img 
+          src={stream.thumbnail_url || '/placeholder-stream.jpg'} 
+          alt={stream.title}
+          className="w-full h-40 object-cover" 
+        />
+        {getCardContent()}
+      </div>
+      <CardContent className="p-4">
+        <h3 className="font-semibold text-base line-clamp-1">{stream.title}</h3>
+        <div className="flex items-center mt-2">
+          <Avatar className="h-6 w-6 mr-2">
+            <AvatarImage src={stream.avatar_url || stream.user?.avatar_url} />
+            <AvatarFallback>{stream.username?.charAt(0) || stream.user?.username.charAt(0) || '?'}</AvatarFallback>
+          </Avatar>
+          <span className="text-sm text-muted-foreground">{stream.username || stream.user?.username}</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

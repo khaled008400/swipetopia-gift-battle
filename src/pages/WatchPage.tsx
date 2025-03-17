@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThumbsUp, MessageSquare, Share2, Bookmark, Flag, ArrowLeft } from 'lucide-react';
-import VideoPlayer from '@/components/VideoPlayer';
+import VideoPlayerAdapter from '@/components/VideoPlayerAdapter';
 import VideoComments from '@/components/video/VideoComments';
 
 const WatchPage: React.FC = () => {
@@ -67,7 +67,7 @@ const WatchPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="rounded-lg overflow-hidden">
-            <VideoPlayer 
+            <VideoPlayerAdapter 
               videoId={video.id}
               src={video.video_url || ''} 
               poster={video.thumbnail_url || ''} 

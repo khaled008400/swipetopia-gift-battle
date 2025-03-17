@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService from '@/services/admin.service';
@@ -181,8 +182,7 @@ const ProductAttributes: React.FC = () => {
         name: formData.name,
         values,
         color: formData.color,
-        status: formData.status,
-        created_at: new Date().toISOString()
+        status: formData.status
       });
     } else if (dialogMode === 'edit' && selectedAttribute) {
       updateAttributeMutation.mutate({
@@ -191,8 +191,7 @@ const ProductAttributes: React.FC = () => {
           name: formData.name,
           values,
           color: formData.color,
-          status: formData.status,
-          created_at: selectedAttribute.created_at
+          status: formData.status
         }
       });
     }
@@ -223,58 +222,66 @@ const ProductAttributes: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data?.data.map((attribute) => (
-              <TableRow key={attribute.id}>
-                <TableCell className="font-medium">{attribute.name}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {attribute.values.map((value, index) => (
-                      <Badge key={index} className="bg-sidebar-accent">
-                        {value}
-                      </Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {attribute.color && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: attribute.color }} />
-                      <span>{attribute.color}</span>
+            {data?.data && data.data.length > 0 ? (
+              data.data.map((attribute) => (
+                <TableRow key={attribute.id}>
+                  <TableCell className="font-medium">{attribute.name}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {attribute.values.map((value, index) => (
+                        <Badge key={index} className="bg-sidebar-accent">
+                          {value}
+                        </Badge>
+                      ))}
                     </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge className={attribute.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
-                    {attribute.status === 'active' ? 'Active' : 'Inactive'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditAttribute(attribute)}>
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">More options</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteAttribute(attribute.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  </TableCell>
+                  <TableCell>
+                    {attribute.color && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: attribute.color }} />
+                        <span>{attribute.color}</span>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={attribute.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
+                      {attribute.status === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditAttribute(attribute)}>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">More options</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteAttribute(attribute.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center h-32 text-muted-foreground">
+                  No attributes found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       )}

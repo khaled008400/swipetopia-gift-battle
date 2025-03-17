@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService from '@/services/admin.service';
@@ -198,6 +199,47 @@ const AdminOffers: React.FC = () => {
         id: selectedOffer.id,
         data: offerData
       });
+    }
+  };
+
+  // Add missing handler functions
+  const handleCreateOffer = () => {
+    form.reset({
+      name: '',
+      description: '',
+      discount_type: 'percentage',
+      discount_value: 0,
+      start_date: '',
+      end_date: '',
+      min_purchase_amount: 0,
+      product_category: '',
+      active: true
+    });
+    setDialogMode('create');
+    setSelectedOffer(null);
+    setOfferDialog(true);
+  };
+
+  const handleEditOffer = (offer: AdminOffer) => {
+    form.reset({
+      name: offer.name,
+      description: offer.description,
+      discount_type: offer.discount_type,
+      discount_value: offer.discount_value,
+      start_date: offer.start_date ? new Date(offer.start_date).toISOString().split('T')[0] : '',
+      end_date: offer.end_date ? new Date(offer.end_date).toISOString().split('T')[0] : '',
+      min_purchase_amount: offer.min_purchase_amount,
+      product_category: offer.product_category,
+      active: offer.active
+    });
+    setDialogMode('edit');
+    setSelectedOffer(offer);
+    setOfferDialog(true);
+  };
+  
+  const handleDeleteOffer = (offerId: string) => {
+    if (confirm("Are you sure you want to delete this offer? This action cannot be undone.")) {
+      deleteOfferMutation.mutate(offerId);
     }
   };
 
