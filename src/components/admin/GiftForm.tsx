@@ -67,7 +67,7 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
       description: '',
       price: 50,
       imageUrl: '',
-      imageType: 'gif' as "gif" | "svg",
+      imageType: 'gif',
       hasSound: false,
       soundUrl: '',
       category: 'general',

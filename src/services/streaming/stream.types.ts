@@ -1,4 +1,3 @@
-
 export interface LiveStream {
   id: string;
   user_id: string;
@@ -14,7 +13,7 @@ export interface LiveStream {
     avatar_url?: string;
   };
   user?: {
-    id: string; // Adding id field to user object
+    id: string;
     username: string;
     avatar_url: string;
   };
@@ -56,7 +55,6 @@ export interface StreamProduct {
   discount_percentage?: number;
 }
 
-// Let's add additional product-related types for reuse
 export interface Product {
   id: string;
   name: string;
@@ -73,7 +71,17 @@ export interface Product {
   is_featured: boolean;
 }
 
-// Add admin service interfaces
+export interface AdminStats {
+  totalUsers: number;
+  newUsersToday: number;
+  totalVideos: number;
+  videoUploadsToday: number;
+  totalOrders: number;
+  ordersToday: number;
+  revenueTotal: number;
+  revenueToday: number;
+}
+
 export interface AdminCoupon {
   id: string;
   code: string;
@@ -156,6 +164,7 @@ export interface AdminVideo {
     username: string;
     avatar_url: string;
   };
+  user_id?: string;
   status: string;
   created_at: string;
   description: string;
@@ -163,6 +172,7 @@ export interface AdminVideo {
   likes_count: number;
   comments_count: number;
   video_url: string;
+  thumbnail_url?: string;
   url: string;
   data?: any[];
   pagination?: {
@@ -171,6 +181,17 @@ export interface AdminVideo {
     per_page: number;
     total: number;
   };
+}
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  email: string;
+  status: string;
+  role: string;
+  createdAt: string;
+  videosCount: number;
+  ordersCount: number;
 }
 
 export interface VirtualGift {
