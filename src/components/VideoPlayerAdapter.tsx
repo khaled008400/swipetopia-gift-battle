@@ -17,9 +17,10 @@ const VideoPlayerAdapter: React.FC<VideoPlayerAdapterProps> = ({
   poster,
   autoPlay
 }) => {
+  // Pass only the props that VideoPlayer actually accepts according to its type definition
   return (
     <VideoPlayer
-      src={src} // Use src to match VideoPlayer.d.ts
+      videoUrl={src} // Map src to videoUrl which VideoPlayer expects
       autoPlay={autoPlay}
     />
   );

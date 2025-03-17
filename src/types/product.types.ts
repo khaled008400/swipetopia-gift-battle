@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -28,6 +29,9 @@ export interface AdminProduct {
   created_at: string;
   updated_at: string;
   is_featured: boolean;
+  // Add these fields to match usage in ProductListings.tsx
+  image?: string;
+  inventory?: number;
 }
 
 export interface LimitedOffer {
@@ -64,7 +68,7 @@ export interface ProductReview {
 
 export interface PaymentMethod {
   id: string;
-  name: string;
+  name?: string;
   type: string;
   last4: string;
   brand?: string;

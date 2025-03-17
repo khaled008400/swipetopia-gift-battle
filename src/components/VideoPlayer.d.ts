@@ -2,7 +2,7 @@
 import { FC } from 'react';
 
 export interface VideoPlayerProps {
-  src: string;
+  videoUrl: string;
   autoPlay?: boolean;
 }
 

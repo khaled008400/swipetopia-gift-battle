@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,10 +28,14 @@ const ProductListings = () => {
     name: '',
     price: 0,
     description: '',
-    image: '',
-    inventory: 0,
+    image_url: '',
+    stock_quantity: 0,
     category: 'other',
-    status: 'active'
+    status: 'active',
+    seller_id: '',
+    created_at: '',
+    updated_at: '',
+    is_featured: false
   });
 
   useEffect(() => {
@@ -109,7 +114,7 @@ const ProductListings = () => {
   const handleStatusChange = (value: string) => {
     setEditingProduct(prev => ({
       ...prev,
-      status: value,
+      status: value as "active" | "draft" | "unavailable",
     }));
   };
 
@@ -120,10 +125,14 @@ const ProductListings = () => {
       name: product.name,
       price: product.price,
       description: product.description,
-      image: product.image_url,
-      inventory: product.stock_quantity,
+      image_url: product.image_url,
+      stock_quantity: product.stock_quantity,
       category: product.category,
-      status: product.status
+      status: product.status,
+      seller_id: product.seller_id,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      is_featured: product.is_featured
     });
     setFormOpen(true);
   };
@@ -170,8 +179,8 @@ const ProductListings = () => {
         name: editingProduct.name,
         price: parseFloat(editingProduct.price.toString()),
         description: editingProduct.description,
-        image_url: editingProduct.image || '', // Ensure correct property name
-        stock_quantity: parseInt(editingProduct.inventory.toString()),
+        image_url: editingProduct.image_url,
+        stock_quantity: parseInt(editingProduct.stock_quantity.toString()),
         category: editingProduct.category,
         status: editingProduct.status,
         seller_id: user?.id,
@@ -211,10 +220,14 @@ const ProductListings = () => {
         name: '',
         price: 0,
         description: '',
-        image: '',
-        inventory: 0,
+        image_url: '',
+        stock_quantity: 0,
         category: 'other',
-        status: 'active'
+        status: 'active',
+        seller_id: '',
+        created_at: '',
+        updated_at: '',
+        is_featured: false
       });
       fetchProducts();
     } catch (error) {
@@ -316,24 +329,24 @@ const ProductListings = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="inventory">Inventory</Label>
+                  <Label htmlFor="stock_quantity">Inventory</Label>
                   <Input
-                    id="inventory"
-                    name="inventory"
+                    id="stock_quantity"
+                    name="stock_quantity"
                     type="number"
-                    value={editingProduct.inventory}
+                    value={editingProduct.stock_quantity}
                     onChange={handleNumberInputChange}
                     placeholder="Inventory"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="image">Image URL</Label>
+                  <Label htmlFor="image_url">Image URL</Label>
                   <Input
-                    id="image"
-                    name="image"
+                    id="image_url"
+                    name="image_url"
                     type="text"
-                    value={editingProduct.image}
+                    value={editingProduct.image_url}
                     onChange={handleInputChange}
                     placeholder="Image URL"
                   />

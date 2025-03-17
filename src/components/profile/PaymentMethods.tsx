@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,7 @@ const PaymentMethods = ({
               <div 
                 key={method.id} 
                 className={`flex items-center justify-between p-3 rounded-md ${
-                  method.isDefault ? "bg-app-gray-light border border-app-yellow/50" : "bg-app-gray-light"
+                  method.is_default ? "bg-app-gray-light border border-app-yellow/50" : "bg-app-gray-light"
                 }`}
               >
                 <div className="flex items-center">
@@ -102,7 +103,7 @@ const PaymentMethods = ({
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  {!method.isDefault && (
+                  {!method.is_default && (
                     <Button 
                       variant="outline" 
                       size="sm"

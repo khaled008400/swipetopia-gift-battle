@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import ShopService from '@/services/shop.service';
+import shopService from '@/services/shop.service';
 import { Product } from '@/types/product.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,14 +23,12 @@ const ShopPage: React.FC = () => {
   
   const { data: shop, isLoading: isShopLoading, error: shopError } = useQuery({
     queryKey: ['shop', shopId],
-    queryFn: () => ShopService.getShopProfile(shopId || ''),
-    enabled: !!shopId,
+    queryFn: () => shopService.getShopById(shopId || '')
   });
   
   const { data: products, isLoading: isProductsLoading, error: productsError } = useQuery({
     queryKey: ['shopProducts', shopId],
-    queryFn: () => ShopService.getShopProducts(shopId || ''),
-    enabled: !!shopId,
+    queryFn: () => shopService.getProducts(shopId || '')
   });
   
   useEffect(() => {
@@ -113,8 +111,12 @@ const ShopPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((product: Product) => (
             <ProductCard
-              key={product.id}
-              product={product}
+              key={product.id} 
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              image={product.image_url}
+              category={product.category} 
               isFavorite={favorites[product.id] || false}
               toggleFavorite={() => toggleFavorite(product.id)}
             />
