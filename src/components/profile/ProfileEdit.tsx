@@ -42,6 +42,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
   const { profile, updateProfile, isLoading } = useUserProfile(userId);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const formSchema = z.object({
     username: z.string().min(2, "Username must be at least 2 characters"),
@@ -55,12 +56,12 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: profile?.username || '',
-      bio: profile?.bio || '',
-      location: profile?.location || '',
-      interests: profile?.interests ? profile.interests.join(', ') : '',
-      shop_name: profile?.shop_name || '',
-      stream_key: profile?.stream_key || '',
+      username: '',
+      bio: '',
+      location: '',
+      interests: '',
+      shop_name: '',
+      stream_key: '',
     }
   });
 
@@ -80,7 +81,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
         setAvatarPreview(profile.avatar_url);
       }
     }
-  }, [profile, form.reset]);
+  }, [profile]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,28 +97,50 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!profile) return;
+    
+    try {
+      setSubmitting(true);
+      
+      // Process interests from comma-separated string to array
+      const interestsArray = data.interests ? 
+        data.interests.split(',').map(i => i.trim()).filter(Boolean) : 
+        undefined;
 
-    // Process interests from comma-separated string to array
-    const interestsArray = data.interests ? 
-      data.interests.split(',').map(i => i.trim()).filter(Boolean) : 
-      undefined;
+      const updateData: Partial<UserProfile> = {
+        ...data,
+        interests: interestsArray,
+      };
 
-    const updateData: Partial<UserProfile> = {
-      ...data,
-      interests: interestsArray,
-    };
-
-    const { success } = await updateProfile(updateData);
-    if (success) {
-      onComplete();
+      const { success } = await updateProfile(updateData);
+      if (success) {
+        onComplete();
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const isStreamer = hasRole ? hasRole('streamer') : false;
   const isSeller = hasRole ? hasRole('seller') : false;
 
-  if (!profile || isLoading) {
-    return <div>Loading profile...</div>;
+  if (!profile && isLoading) {
+    return (
+      <div className="w-full p-8 flex justify-center items-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="w-full p-8 text-center">
+        <h3 className="text-lg font-medium">Profile Not Found</h3>
+        <p className="text-gray-500 mt-2">Unable to load profile information.</p>
+        <Button onClick={onComplete} className="mt-4">Go Back</Button>
+      </div>
+    );
   }
 
   return (
@@ -263,7 +286,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
             
             <TabsContent value="wallet">
               <CardContent>
-                <WalletSection profile={profile} />
+                {profile && <WalletSection profile={profile} />}
               </CardContent>
             </TabsContent>
           </Tabs>
@@ -273,12 +296,25 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
               variant="outline" 
               onClick={onComplete}
               type="button"
+              disabled={submitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
+            <Button 
+              type="submit" 
+              disabled={isLoading || submitting}
+            >
+              {submitting ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </CardFooter>
         </form>

@@ -5,7 +5,9 @@ export interface VideoPlayerProps {
   src: string;
   poster?: string;
   autoPlay?: boolean;
-  videoId?: string; // Add videoId property
+  videoId?: string;
+  videoUrl?: string;
+  isActive?: boolean;
 }
 
 declare const VideoPlayer: FC<VideoPlayerProps>;

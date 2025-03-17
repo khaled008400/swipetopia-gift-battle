@@ -22,37 +22,51 @@ const ProfilePage = () => {
   const isCurrentUserProfile = !!user && user.id === profileId;
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const handleEditComplete = () => {
+    setIsEditing(false);
+    refreshProfile();
   };
 
   useEffect(() => {
-    // Refresh profile when switching between editing mode
-    if (!isEditing) {
-      refreshProfile();
-    }
-  }, [isEditing, refreshProfile]);
+    // Refresh profile when the component mounts or profileId changes
+    refreshProfile();
+  }, [profileId, refreshProfile]);
 
   if (isLoading) {
-    return <div className="container max-w-4xl mx-auto py-8 px-4 animate-pulse">
-      <div className="h-32 bg-gray-200 rounded-lg mb-6"></div>
-      <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-      <div className="h-64 bg-gray-200 rounded"></div>
-    </div>;
+    return (
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <div className="animate-pulse">
+          <div className="h-32 bg-gray-200 rounded-lg mb-6"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!profile && !isLoading) {
-    return <div className="container max-w-4xl mx-auto py-8 px-4 text-center">
-      <h2 className="text-xl font-medium mb-2">Profile Not Found</h2>
-      <p className="text-gray-500">The user profile you're looking for doesn't exist or is not available.</p>
-    </div>;
+    return (
+      <div className="container max-w-4xl mx-auto py-8 px-4 text-center">
+        <h2 className="text-xl font-medium mb-2">Profile Not Found</h2>
+        <p className="text-gray-500">The user profile you're looking for doesn't exist or is not available.</p>
+      </div>
+    );
   }
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
-      <ProfileHeader profile={profile} />
+      {profile && <ProfileHeader profile={profile} />}
+      
       <div className="flex justify-end mb-4">
-        {isCurrentUserProfile && !isEditing ? (
+        {isCurrentUserProfile && !isEditing && (
           <>
             <Button variant="outline" className="mr-2" onClick={() => setIsEditing(true)}>
               <Edit className="w-4 h-4 mr-2" />
@@ -63,15 +77,15 @@ const ProfilePage = () => {
               Sign Out
             </Button>
           </>
-        ) : null}
+        )}
       </div>
 
       {isEditing && profile ? (
         <ProfileEdit
-          onComplete={() => setIsEditing(false)}
+          onComplete={handleEditComplete}
         />
       ) : (
-        <ProfileContent profile={profile} />
+        profile && <ProfileContent profile={profile} />
       )}
     </div>
   );

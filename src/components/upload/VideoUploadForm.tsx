@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -87,7 +86,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       return;
     }
 
-    // Check if user is authenticated
     if (!user) {
       toast({
         title: "Authentication required",
@@ -342,6 +340,8 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
     }
   };
 
+  console.log("Current upload step:", step);
+  
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-background z-10">

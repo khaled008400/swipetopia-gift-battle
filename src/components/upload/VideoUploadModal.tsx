@@ -10,6 +10,8 @@ interface VideoUploadModalProps {
 }
 
 const VideoUploadModal = ({ isOpen, onClose, onSuccess }: VideoUploadModalProps) => {
+  if (!isOpen) return null;
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[800px] h-[90vh] max-h-[90vh] p-0">
