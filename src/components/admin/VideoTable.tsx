@@ -4,26 +4,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Eye, Flag, MoreHorizontal, Trash2, UserX, Ban } from 'lucide-react';
+import { Eye, Flag, MoreHorizontal, Trash2, UserX, Ban, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminVideo } from '@/services/admin.service';
-
-interface VideoTableProps {
-  videos: AdminVideo[];
-  onViewVideo: (video: AdminVideo) => void;
-  onFlagVideo: (videoId: string) => void;
-  onDeleteVideo: (videoId: string) => void;
-  onWarnUser: (userId: string, videoId: string) => void;
-  onRestrictUser: (userId: string, reason: string) => void; // Updated to include reason parameter
-}
+import { VideoTableProps } from '@/types/video.types';
 
 const VideoTable: React.FC<VideoTableProps> = ({
   videos,
-  onViewVideo,
-  onFlagVideo,
+  onStatusChange,
   onDeleteVideo,
-  onWarnUser,
-  onRestrictUser
+  onOpenPreview,
+  onViewUserProfile,
+  onSendWarning,
+  onRestrictUser,
+  selectedVideos,
+  onSelectVideo,
+  onSelectAllVideos
 }) => {
   const getStatusBadge = (status?: string) => {
     switch (status) {
@@ -41,8 +37,15 @@ const VideoTable: React.FC<VideoTableProps> = ({
   // Prompt for a reason when restricting a user
   const handleRestrictUser = (userId: string) => {
     const reason = prompt("Please enter a reason for restricting this user:");
-    if (reason) {
+    if (reason && onRestrictUser) {
       onRestrictUser(userId, reason);
+    }
+  };
+
+  const handleWarnUser = (userId: string, videoId: string) => {
+    const message = prompt("Please enter a warning message:");
+    if (message && onSendWarning) {
+      onSendWarning(videoId, userId, message);
     }
   };
 
@@ -50,6 +53,14 @@ const VideoTable: React.FC<VideoTableProps> = ({
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-12">
+            <input
+              type="checkbox"
+              checked={videos.length > 0 && selectedVideos.length === videos.length}
+              onChange={(e) => onSelectAllVideos(e.target.checked)}
+              className="h-4 w-4"
+            />
+          </TableHead>
           <TableHead>Video</TableHead>
           <TableHead>Creator</TableHead>
           <TableHead>Status</TableHead>
@@ -62,6 +73,14 @@ const VideoTable: React.FC<VideoTableProps> = ({
         {videos.length > 0 ? (
           videos.map((video) => (
             <TableRow key={video.id}>
+              <TableCell>
+                <input
+                  type="checkbox"
+                  checked={selectedVideos.includes(video.id)}
+                  onChange={(e) => onSelectVideo(video.id, e.target.checked)}
+                  className="h-4 w-4"
+                />
+              </TableCell>
               <TableCell>
                 <div className="flex items-center space-x-3">
                   <div className="h-12 w-20 bg-gray-100 rounded overflow-hidden relative flex-shrink-0">
@@ -92,7 +111,7 @@ const VideoTable: React.FC<VideoTableProps> = ({
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <span>{video.user.username}</span>
+                  <span className="cursor-pointer hover:underline" onClick={() => onViewUserProfile(video.user_id || video.user.id || "")}>{video.user.username}</span>
                 </div>
               </TableCell>
               <TableCell>{getStatusBadge(video.status)}</TableCell>
@@ -107,7 +126,7 @@ const VideoTable: React.FC<VideoTableProps> = ({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" onClick={() => onViewVideo(video)}>
+                  <Button variant="ghost" size="sm" onClick={() => onOpenPreview(video)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                   <DropdownMenu>
@@ -117,11 +136,19 @@ const VideoTable: React.FC<VideoTableProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onFlagVideo(video.id)}>
-                        <Flag className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem onClick={() => onStatusChange(video.id, 'active')}>
+                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                        Approve Video
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onStatusChange(video.id, 'flagged')}>
+                        <Flag className="mr-2 h-4 w-4 text-yellow-500" />
                         Flag Video
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onWarnUser(video.user_id || video.user.id || "", video.id)}>
+                      <DropdownMenuItem onClick={() => onStatusChange(video.id, 'removed')}>
+                        <Ban className="mr-2 h-4 w-4 text-red-500" />
+                        Remove Video
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleWarnUser(video.user_id || video.user.id || "", video.id)}>
                         <UserX className="mr-2 h-4 w-4" />
                         Warn Creator
                       </DropdownMenuItem>
@@ -144,7 +171,7 @@ const VideoTable: React.FC<VideoTableProps> = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+            <TableCell colSpan={7} className="text-center py-8 text-gray-500">
               No videos found
             </TableCell>
           </TableRow>

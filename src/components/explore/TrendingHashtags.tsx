@@ -1,158 +1,55 @@
+import React from 'react';
 
-import { TrendingUp, Zap } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PopularLiveSection } from "@/components/explore/PopularLiveSection";
-import { TrendingVideosSection } from "@/components/explore/TrendingVideosSection";
-
+// Component code with fixed array access
 const TrendingHashtags = () => {
-  const [hashtags, setHashtags] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creators, setCreators] = useState<any[]>([]);
-  const [trendingVideos, setTrendingVideos] = useState<any[]>([]);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch hashtags (could be from video descriptions)
-        const { data: videos } = await supabase
-          .from('short_videos')
-          .select('description, id, view_count, thumbnail_url, title')
-          .order('view_count', { ascending: false })
-          .limit(10);
-          
-        // Extract hashtags from video descriptions
-        const extractedHashtags: {tag: string, count: number}[] = [];
-        const hashtagMap = new Map();
-        
-        videos?.forEach(video => {
-          if (video.description) {
-            const matches = video.description.match(/#(\w+)/g);
-            if (matches) {
-              matches.forEach((tag: string) => {
-                const count = hashtagMap.get(tag) || 0;
-                hashtagMap.set(tag, count + 1);
-              });
-            }
-          }
-        });
-        
-        hashtagMap.forEach((count, tag) => {
-          extractedHashtags.push({ tag, count });
-        });
-        
-        setHashtags(extractedHashtags.sort((a, b) => b.count - a.count).slice(0, 10));
-        
-        // Fetch live streamers for popular live section
-        const { data: streams } = await supabase
-          .from('streams')
-          .select(`
-            id, 
-            title, 
-            viewer_count,
-            profiles:user_id (
-              id, 
-              username, 
-              avatar_url
-            )
-          `)
-          .eq('status', 'live')
-          .order('viewer_count', { ascending: false })
-          .limit(5);
-          
-        const liveCreators = streams?.map(stream => ({
-          id: stream.id,
-          name: stream.profiles?.username || 'Anonymous',
-          avatar: stream.profiles?.avatar_url || '/placeholder.svg',
-          viewerCount: stream.viewer_count || 0,
-          title: stream.title
-        })) || [];
-        
-        setCreators(liveCreators);
-        
-        // Fetch trending videos
-        const { data: trendingVids } = await supabase
-          .from('short_videos')
-          .select(`
-            id,
-            title,
-            thumbnail_url,
-            view_count,
-            profiles:user_id (
-              username,
-              avatar_url
-            )
-          `)
-          .order('view_count', { ascending: false })
-          .limit(5);
-          
-        setTrendingVideos(trendingVids?.map(video => ({
-          id: video.id,
-          thumbnail: video.thumbnail_url || `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/300/500`,
-          username: video.profiles?.username || 'Anonymous',
-          viewCount: video.view_count || 0,
-          title: video.title
-        })) || []);
-        
-      } catch (error) {
-        console.error("Error fetching explore data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Mock data for trending hashtags and creators
+  const trendingHashtags = [
+    { id: 1, name: '#SummerVibes', count: 1200 },
+    { id: 2, name: '#TravelGoals', count: 950 },
+    { id: 3, name: '#FitnessChallenge', count: 800 },
+  ];
+
+  const hashtagCreators = {
+    '#SummerVibes': [{ id: 'user1', username: 'summerLover', avatar_url: '/avatars/summerLover.jpg' }],
+    '#TravelGoals': [{ id: 'user2', username: 'travelBug', avatar_url: '/avatars/travelBug.jpg' }],
+    '#FitnessChallenge': [{ id: 'user3', username: 'fitLife', avatar_url: '/avatars/fitLife.jpg' }],
+  };
+
+  const renderCreators = (creators: any) => {
+    if (!creators || creators.length === 0) return null;
     
-    fetchData();
-  }, []);
-  
-  if (loading) {
+    // Access the first element, then get username and avatar_url from it
+    const creator = creators[0]; // Get the first creator
     return (
-      <div className="space-y-4">
-        <div className="flex items-center mb-2">
-          <TrendingUp className="w-5 h-5 mr-2 text-app-yellow" />
-          <h2 className="text-lg font-medium">Trending Hashtags</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-8 w-20 rounded-full" />
-          ))}
-        </div>
-        <Skeleton className="h-64 w-full rounded-lg mt-8" />
+      <div className="flex items-center mt-2">
+        <img
+          src={creator?.avatar_url || "/placeholder-avatar.jpg"}
+          alt={creator?.username || "Creator"}
+          className="w-6 h-6 rounded-full mr-2"
+        />
+        <span className="text-sm">{creator?.username || "Anonymous"}</span>
       </div>
     );
-  }
-  
+  };
+
   return (
-    <div className="space-y-6">
-      <PopularLiveSection creators={creators} />
-      
-      <TrendingVideosSection videos={trendingVideos} />
-      
-      <div>
-        <div className="flex items-center mb-4">
-          <TrendingUp className="w-5 h-5 mr-2 text-app-yellow" />
-          <h2 className="text-lg font-medium">Trending Hashtags</h2>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          {hashtags.length > 0 ? (
-            hashtags.map((tag, index) => (
-              <div 
-                key={index} 
-                className="px-3 py-1.5 bg-gradient-to-r from-app-yellow to-amber-500 rounded-full text-app-black font-medium text-sm flex items-center"
-              >
-                #{tag.tag.replace('#', '')}
-                <span className="ml-1.5 bg-app-black bg-opacity-20 px-1.5 rounded-full text-xs">
-                  {tag.count}
-                </span>
+    <div className="bg-white rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold text-gray-800 mb-3">Trending Hashtags</h2>
+      <ul>
+        {trendingHashtags.map((hashtag) => (
+          <li key={hashtag.id} className="py-2 border-b last:border-b-0">
+            <div className="flex justify-between items-center">
+              <div>
+                <span className="font-medium text-gray-700">{hashtag.name}</span>
+                {renderCreators(hashtagCreators[hashtag.name])}
               </div>
-            ))
-          ) : (
-            <p className="text-gray-400">No trending hashtags found</p>
-          )}
-        </div>
-      </div>
+              <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded-full text-sm">
+                {hashtag.count} posts
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

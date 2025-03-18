@@ -46,6 +46,34 @@ interface GiftButtonProps {
   onClick: () => void;
 }
 
+const VideoCard = ({ video, onClickVideo }: { video: any, onClickVideo: (video: any) => void }) => {
+  return (
+    <div 
+      className="cursor-pointer bg-black/30 rounded-lg overflow-hidden" 
+      onClick={() => onClickVideo(video)}
+    >
+      <div className="aspect-video relative">
+        <img 
+          src={video.thumbnail_url || "/placeholder.svg"} 
+          alt={video.title} 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="p-2">
+        <h3 className="text-white text-sm font-medium truncate">{video.title}</h3>
+        <div className="flex items-center mt-1">
+          <img 
+            src={video.user?.avatar_url || "/placeholder.svg"} 
+            alt={video.user?.username} 
+            className="w-5 h-5 rounded-full"
+          />
+          <span className="text-white/70 text-xs ml-1">{video.user?.username}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LiveStreamPage = () => {
   const [battleMode, setBattleMode] = useState<BattleMode>('normal');
   const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
@@ -110,7 +138,23 @@ const LiveStreamPage = () => {
 
   useEffect(() => {
     if (isBattle && battleVideos.length > 0) {
-      const convertedVideos = convertBattleVideosToVideos(battleVideos);
+      const convertedVideos = convertBattleVideosToVideos(battleVideos).map(video => ({
+        ...video,
+        title: video.title || "Battle Video",
+        video_url: video.url || "",
+        thumbnail_url: video.thumbnail_url || "",
+        user_id: video.user?.id || "",
+        created_at: video.created_at || new Date().toISOString(),
+        updated_at: video.updated_at || new Date().toISOString(),
+        view_count: video.view_count || 0,
+        likes_count: video.likes_count || 0,
+        comments_count: video.comments_count || 0,
+        shares_count: video.shares_count || 0,
+        is_live: video.is_live || false,
+        is_private: video.is_private || false,
+        duration: video.duration || 0,
+        category: video.category || "general"
+      }));
       setCurrentBattleVideos(convertedVideos);
     }
   }, [isBattle, battleVideos]);
@@ -157,6 +201,11 @@ const LiveStreamPage = () => {
     }
   };
   
+  const handleVideoClick = (video: any) => {
+    console.log('Video clicked:', video);
+    // Implement your video click logic here
+  };
+
   useEffect(() => {
     if (incomingGifts.length > 0 && !currentGiftAnimation) {
       const latestGift = incomingGifts[0];
