@@ -1,15 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BattleVideoPlayer } from "@/components/battle/BattleVideoPlayer";
-import { BattleComments } from "@/components/battle/BattleComments";
-import { BattleVoting } from "@/components/battle/BattleVoting";
-import { BattleLeaderboard } from "@/components/battle/BattleLeaderboard";
-import { BattleInfo } from "@/components/battle/BattleInfo";
-import { BattleService } from "@/services/battle.service";
+import BattleVideoPlayer from "@/components/battle/BattleVideoPlayer";
+import BattleComments from "@/components/battle/BattleComments";
+import BattleVoting from "@/components/battle/BattleVoting";
+import BattleLeaderboard from "@/components/battle/BattleLeaderboard";
+import BattleInfo from "@/components/battle/BattleInfo";
+import BattleService from "@/services/battle.service";
 import { useAuth } from "@/context/AuthContext";
 import { Video, BattleVideo } from "@/types/video.types";
 import { convertBattleVideosToVideos } from "@/utils/video-converters";
