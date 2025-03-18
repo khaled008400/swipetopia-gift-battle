@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,7 +20,6 @@ const AdminVirtualGifts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch gifts from Supabase
   const { data: gifts, isLoading } = useQuery({
     queryKey: ['virtualGifts'],
     queryFn: async () => {
@@ -39,7 +37,6 @@ const AdminVirtualGifts = () => {
     }
   });
 
-  // Create gift mutation
   const createGiftMutation = useMutation({
     mutationFn: async (giftData: any) => {
       const { data, error } = await supabase
@@ -55,6 +52,7 @@ const AdminVirtualGifts = () => {
           image_url: giftData.imageUrl,
           image_type: giftData.imageType,
           has_sound: giftData.hasSound,
+          sound_url: giftData.soundUrl, // Add soundUrl to database
           is_premium: false, // Default to false for new gifts
           available: giftData.available
         })
@@ -82,7 +80,6 @@ const AdminVirtualGifts = () => {
     }
   });
 
-  // Update gift mutation
   const updateGiftMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string, data: any }) => {
       const { error } = await supabase
@@ -95,6 +92,7 @@ const AdminVirtualGifts = () => {
           image_url: data.imageUrl,
           image_type: data.imageType,
           has_sound: data.hasSound,
+          sound_url: data.soundUrl, // Add soundUrl to update
           available: data.available
         })
         .eq('id', id);
@@ -120,7 +118,6 @@ const AdminVirtualGifts = () => {
     }
   });
 
-  // Delete gift mutation
   const deleteGiftMutation = useMutation({
     mutationFn: async (giftId: string) => {
       const { error } = await supabase
@@ -153,13 +150,12 @@ const AdminVirtualGifts = () => {
   };
 
   const handleEditGift = (gift: VirtualGift) => {
-    // Map the Supabase gift object to the form structure
     const formattedGift = {
       ...gift,
       imageUrl: gift.imageUrl || gift.image_url || '',
       imageType: gift.imageType || gift.image_type || 'gif',
       hasSound: gift.hasSound || gift.has_sound || false,
-      soundUrl: gift.soundUrl || '',
+      soundUrl: gift.soundUrl || gift.sound_url || '',
       isPremium: gift.isPremium || gift.is_premium || false
     };
     
@@ -189,12 +185,12 @@ const AdminVirtualGifts = () => {
     }
   };
 
-  // Map Supabase gift data to our component structure
   const formattedGifts = gifts?.map(gift => ({
     ...gift,
     imageUrl: gift.image_url,
     imageType: gift.image_type,
     hasSound: gift.has_sound,
+    soundUrl: gift.sound_url,
     isPremium: gift.is_premium
   }));
 

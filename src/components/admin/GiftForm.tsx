@@ -34,7 +34,8 @@ const GiftForm: React.FC<GiftFormProps> = ({
       available: initialData?.available !== undefined ? initialData.available : true,
       hasSound: initialData?.hasSound || initialData?.has_sound || false,
       imageUrl: initialData?.imageUrl || initialData?.image_url || '',
-      imageType: initialData?.imageType || initialData?.image_type || 'gif'
+      imageType: initialData?.imageType || initialData?.image_type || 'gif',
+      soundUrl: initialData?.soundUrl || ''  // Add this line to include soundUrl
     }
   });
 

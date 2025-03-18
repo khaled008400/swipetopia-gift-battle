@@ -23,6 +23,7 @@ export interface VirtualGift {
   image_url?: string;
   image_type?: "svg" | "gif";
   has_sound?: boolean;
+  sound_url?: string;
 }
 
 export interface GiftTransaction {
