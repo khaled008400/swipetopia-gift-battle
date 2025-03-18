@@ -31,7 +31,8 @@ const AdminVirtualGifts = () => {
       icon: data.icon || "gift",
       created_at: new Date().toISOString(),
       is_premium: data.is_premium || false,
-      soundUrl: data.soundUrl || ""
+      soundUrl: data.soundUrl || "",
+      description: data.description || "", // Added required description with default
     };
     
     createGiftMutation.mutate(newGift);
@@ -127,7 +128,8 @@ const AdminVirtualGifts = () => {
           ...data,
           value: parseInt(data.value || "0"),
           is_premium: data.is_premium || false,
-          soundUrl: data.soundUrl || ""
+          soundUrl: data.soundUrl || "",
+          description: data.description || "", // Added required description with default
         }
       });
     } else {

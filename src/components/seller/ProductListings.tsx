@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,8 +129,8 @@ const ProductListings = () => {
             name: data.name,
             price: data.price,
             description: data.description,
-            image_url: data.image,
-            stock_quantity: data.inventory,
+            image_url: data.image_url,
+            stock_quantity: data.inventory_count,
             category: data.category,
             status: data.status as "active" | "draft" | "unavailable"
           })
@@ -144,8 +145,8 @@ const ProductListings = () => {
                 name: data.name,
                 price: data.price,
                 description: data.description || "",
-                image_url: data.image,
-                stock_quantity: data.inventory,
+                image_url: data.image_url,
+                stock_quantity: data.inventory_count,
                 category: data.category,
                 status: data.status as "active" | "draft" | "unavailable"
               } 
@@ -163,8 +164,8 @@ const ProductListings = () => {
             name: data.name,
             price: data.price,
             description: data.description,
-            image_url: data.image,
-            stock_quantity: data.inventory,
+            image_url: data.image_url,
+            stock_quantity: data.inventory_count,
             category: data.category,
             seller_id: user?.id,
             status: data.status as "active" | "draft" | "unavailable"
@@ -340,8 +341,8 @@ const ProductListings = () => {
               name: editProduct.name,
               price: editProduct.price,
               description: editProduct.description || "",
-              image: editProduct.image_url || "",
-              inventory: editProduct.stock_quantity || 0,
+              image_url: editProduct.image_url || "",
+              inventory_count: editProduct.stock_quantity || 0,
               category: editProduct.category || "other",
               status: editProduct.status || "active",
             } : undefined}

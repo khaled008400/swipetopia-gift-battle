@@ -140,6 +140,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit, mode }
                   <SelectItem value="clothing">Clothing</SelectItem>
                   <SelectItem value="accessories">Accessories</SelectItem>
                   <SelectItem value="digital">Digital</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
