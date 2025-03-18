@@ -31,7 +31,6 @@ export default function ReportVideoDialog({ videoId, open, onOpenChange }: Repor
 
     setIsSubmitting(true);
     try {
-      // You would need to implement this method on your VideoService
       await VideoService.reportVideo(videoId, {
         category,
         description: reason

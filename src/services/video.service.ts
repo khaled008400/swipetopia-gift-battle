@@ -1,16 +1,18 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Video, Comment } from '@/types/video.types';
 
+interface ReportData {
+  category: string;
+  description?: string;
+}
+
 class VideoService {
   async uploadVideo(file: File, title: string, description: string, thumbnail?: string | null): Promise<any> {
-    // Implementation
     console.log('Video upload', file, title, description, thumbnail);
     return { id: 'new-video-id' };
   }
 
   async getVideo(id: string): Promise<Video> {
-    // Implementation to get video by id
     const { data, error } = await supabase
       .from('videos')
       .select(`
@@ -24,13 +26,11 @@ class VideoService {
     return data as unknown as Video;
   }
 
-  // Alias for getVideo to fix getVideoById references
   async getVideoById(id: string): Promise<Video> {
     return this.getVideo(id);
   }
 
   async getComments(videoId: string): Promise<Comment[]> {
-    // Implementation to get video comments
     const { data, error } = await supabase
       .from('video_comments')
       .select(`
@@ -45,7 +45,6 @@ class VideoService {
   }
 
   async addComment(videoId: string, comment: string): Promise<Comment> {
-    // Implementation to add a comment
     const { data, error } = await supabase
       .from('video_comments')
       .insert({
@@ -64,7 +63,6 @@ class VideoService {
   }
 
   async likeVideo(videoId: string, userId: string): Promise<void> {
-    // Implementation to like a video
     const { error } = await supabase
       .from('video_likes')
       .insert({
@@ -74,7 +72,6 @@ class VideoService {
       
     if (error) throw error;
     
-    // Increment the likes count
     await supabase.rpc('increment_video_counter', {
       video_id: videoId,
       counter_name: 'likes_count'
@@ -82,7 +79,6 @@ class VideoService {
   }
 
   async unlikeVideo(videoId: string, userId: string): Promise<void> {
-    // Implementation to unlike a video
     const { error } = await supabase
       .from('video_likes')
       .delete()
@@ -91,8 +87,6 @@ class VideoService {
       
     if (error) throw error;
     
-    // We would need a separate RPC to decrement the counter
-    // This is a simplified approach
     const { data } = await supabase
       .from('videos')
       .select('likes_count')
@@ -108,7 +102,6 @@ class VideoService {
   }
 
   async saveVideo(videoId: string, userId: string): Promise<void> {
-    // Implementation to save/bookmark a video
     const { error } = await supabase
       .from('video_bookmarks')
       .insert({
@@ -120,7 +113,6 @@ class VideoService {
   }
 
   async unsaveVideo(videoId: string, userId: string): Promise<void> {
-    // Implementation to unsave/unbookmark a video
     const { error } = await supabase
       .from('video_bookmarks')
       .delete()
@@ -130,21 +122,20 @@ class VideoService {
     if (error) throw error;
   }
 
-  async reportVideo(videoId: string, reason: string): Promise<void> {
-    // Implementation to report a video
+  async reportVideo(videoId: string, reportData: ReportData): Promise<void> {
     const { error } = await supabase
       .from('video_reports')
       .insert({
         video_id: videoId,
-        user_id: supabase.auth.getUser().then(res => res.data.user?.id),
-        reason: reason
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        reason: reportData.category,
+        description: reportData.description
       });
       
     if (error) throw error;
   }
 
   async getLikedVideos(userId: string): Promise<Video[]> {
-    // Implementation to get videos liked by a user
     const { data, error } = await supabase
       .from('video_likes')
       .select('video_id')
@@ -170,7 +161,6 @@ class VideoService {
   }
 
   async getUserVideos(userId: string): Promise<Video[]> {
-    // Implementation to get videos created by a user
     const { data, error } = await supabase
       .from('videos')
       .select(`
@@ -185,7 +175,6 @@ class VideoService {
   }
 
   async getSavedVideos(userId: string): Promise<Video[]> {
-    // Implementation to get videos saved by a user
     const { data, error } = await supabase
       .from('video_bookmarks')
       .select('video_id')
@@ -211,7 +200,6 @@ class VideoService {
   }
 
   async getForYouVideos(): Promise<Video[]> {
-    // Implementation to get recommended/trending videos
     const { data, error } = await supabase
       .from('videos')
       .select(`
@@ -227,7 +215,6 @@ class VideoService {
   }
 
   async getFollowingVideos(userId: string): Promise<Video[]> {
-    // Implementation to get videos from followed users
     const { data: followingData, error: followingError } = await supabase
       .from('followers')
       .select('following_id')
@@ -255,7 +242,6 @@ class VideoService {
   }
 
   async incrementViewCount(videoId: string): Promise<void> {
-    // Implementation to increment view count
     await supabase.rpc('increment_video_counter', {
       video_id: videoId,
       counter_name: 'view_count'
@@ -263,7 +249,6 @@ class VideoService {
   }
 
   async searchVideos(query: string): Promise<Video[]> {
-    // Implementation to search videos
     const { data, error } = await supabase
       .from('videos')
       .select(`
@@ -278,7 +263,6 @@ class VideoService {
     return data as unknown as Video[];
   }
   
-  // Add method to get all videos
   async getVideos(): Promise<Video[]> {
     const { data, error } = await supabase
       .from('videos')
