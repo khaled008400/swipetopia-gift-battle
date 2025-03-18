@@ -13,7 +13,7 @@ import BattleInfo from "@/components/battle/BattleInfo";
 import BattleService from "@/services/battle.service";
 import { useAuth } from "@/context/AuthContext";
 import { Video, BattleVideo } from "@/types/video.types";
-import { convertBattleVideosToVideos } from "@/utils/video-converters";
+import { convertBattleVideosToVideos, createCompleteBattleVideo } from "@/utils/video-converters";
 
 const BattlePage = () => {
   const { battleId } = useParams();
@@ -42,55 +42,13 @@ const BattlePage = () => {
         const rightVid = battleData.videos.find((v: any) => v.position === 'right');
         
         if (leftVid) {
-          // Convert to proper BattleVideo type with proper position type
-          const completeBattleVideo: BattleVideo = {
-            ...leftVid,
-            title: leftVid.title || "Battle Video",
-            description: leftVid.description || "",
-            video_url: leftVid.url || "",
-            thumbnail_url: leftVid.thumbnail_url || "",
-            user_id: leftVid.user_id || "",
-            created_at: leftVid.created_at || new Date().toISOString(),
-            updated_at: leftVid.updated_at || new Date().toISOString(),
-            view_count: leftVid.view_count || 0,
-            likes_count: leftVid.likes_count || 0,
-            comments_count: leftVid.comments_count || 0,
-            shares_count: leftVid.shares_count || 0,
-            is_live: leftVid.is_live || false,
-            is_private: leftVid.is_private || false,
-            duration: leftVid.duration || 0,
-            category: leftVid.category || "General",
-            score: leftVid.score || 0,
-            position: "left", // Cast as the proper literal type
-            user: leftVid.user || { username: "Anonymous", avatar: "/placeholder-avatar.jpg" },
-          };
-          setLeftVideo(completeBattleVideo);
+          // Use utility function to create a complete BattleVideo with proper types
+          setLeftVideo(createCompleteBattleVideo(leftVid, "left"));
         }
         
         if (rightVid) {
-          // Convert to proper BattleVideo type with proper position type
-          const completeBattleVideo: BattleVideo = {
-            ...rightVid,
-            title: rightVid.title || "Battle Video",
-            description: rightVid.description || "",
-            video_url: rightVid.url || "",
-            thumbnail_url: rightVid.thumbnail_url || "",
-            user_id: rightVid.user_id || "",
-            created_at: rightVid.created_at || new Date().toISOString(),
-            updated_at: rightVid.updated_at || new Date().toISOString(),
-            view_count: rightVid.view_count || 0,
-            likes_count: rightVid.likes_count || 0,
-            comments_count: rightVid.comments_count || 0,
-            shares_count: rightVid.shares_count || 0,
-            is_live: rightVid.is_live || false,
-            is_private: rightVid.is_private || false,
-            duration: rightVid.duration || 0,
-            category: rightVid.category || "General",
-            score: rightVid.score || 0,
-            position: "right", // Cast as the proper literal type
-            user: rightVid.user || { username: "Anonymous", avatar: "/placeholder-avatar.jpg" },
-          };
-          setRightVideo(completeBattleVideo);
+          // Use utility function to create a complete BattleVideo with proper types
+          setRightVideo(createCompleteBattleVideo(rightVid, "right"));
         }
         
         // Check if user has voted
@@ -137,53 +95,11 @@ const BattlePage = () => {
       const rightVid = updatedBattle.videos.find((v: any) => v.position === 'right');
       
       if (leftVid) {
-        const completeBattleVideo: BattleVideo = {
-          ...leftVid,
-          title: leftVid.title || "Battle Video",
-          description: leftVid.description || "",
-          video_url: leftVid.url || "",
-          thumbnail_url: leftVid.thumbnail_url || "",
-          user_id: leftVid.user_id || "",
-          created_at: leftVid.created_at || new Date().toISOString(),
-          updated_at: leftVid.updated_at || new Date().toISOString(),
-          view_count: leftVid.view_count || 0,
-          likes_count: leftVid.likes_count || 0,
-          comments_count: leftVid.comments_count || 0,
-          shares_count: leftVid.shares_count || 0,
-          is_live: leftVid.is_live || false,
-          is_private: leftVid.is_private || false,
-          duration: leftVid.duration || 0,
-          category: leftVid.category || "General",
-          score: leftVid.score || 0,
-          position: "left", // Cast as the proper literal type
-          user: leftVid.user || { username: "Anonymous", avatar: "/placeholder-avatar.jpg" },
-        };
-        setLeftVideo(completeBattleVideo);
+        setLeftVideo(createCompleteBattleVideo(leftVid, "left"));
       }
       
       if (rightVid) {
-        const completeBattleVideo: BattleVideo = {
-          ...rightVid,
-          title: rightVid.title || "Battle Video",
-          description: rightVid.description || "",
-          video_url: rightVid.url || "",
-          thumbnail_url: rightVid.thumbnail_url || "",
-          user_id: rightVid.user_id || "",
-          created_at: rightVid.created_at || new Date().toISOString(),
-          updated_at: rightVid.updated_at || new Date().toISOString(),
-          view_count: rightVid.view_count || 0,
-          likes_count: rightVid.likes_count || 0,
-          comments_count: rightVid.comments_count || 0,
-          shares_count: rightVid.shares_count || 0,
-          is_live: rightVid.is_live || false,
-          is_private: rightVid.is_private || false,
-          duration: rightVid.duration || 0,
-          category: rightVid.category || "General",
-          score: rightVid.score || 0,
-          position: "right", // Cast as the proper literal type
-          user: rightVid.user || { username: "Anonymous", avatar: "/placeholder-avatar.jpg" },
-        };
-        setRightVideo(completeBattleVideo);
+        setRightVideo(createCompleteBattleVideo(rightVid, "right"));
       }
     } catch (err) {
       console.error("Error voting:", err);

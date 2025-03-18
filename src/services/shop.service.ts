@@ -1,6 +1,8 @@
+import { supabase } from "@/lib/supabase";
+import { Product, LimitedOffer, LiveSeller, ProductReview } from "@/types/product.types";
 
-import { supabase } from '@/integrations/supabase/client';
-import { Product, LimitedOffer, LiveSeller, ProductReview } from '@/types/product.types';
+// Re-export the types for convenience
+export type { Product, LimitedOffer, LiveSeller, ProductReview };
 
 class ShopService {
   async getProducts(category?: string, page = 1, filter?: string): Promise<any> {
@@ -530,8 +532,4 @@ class ShopService {
   }
 }
 
-const shopService = new ShopService();
-export default shopService;
-
-// Export types using the 'export type' syntax
-export type { Product, LimitedOffer, LiveSeller };
+export default new ShopService();

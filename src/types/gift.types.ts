@@ -7,8 +7,8 @@ export interface VirtualGift {
   color: string;
   value: number;
   created_at?: string;
-  available?: boolean;
-  category: string; // Changed from optional to required
+  available: boolean;
+  category: string; 
   imageUrl: string; 
   imageType: "svg" | "gif"; 
   hasSound: boolean; 

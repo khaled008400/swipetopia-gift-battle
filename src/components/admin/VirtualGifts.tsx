@@ -119,7 +119,7 @@ export default function VirtualGifts() {
       setGiftIcon(gift.icon);
       setGiftColor(gift.color);
       setGiftValue(gift.value);
-      setIsAvailable(gift.available ?? true);
+      setIsAvailable(gift.available);
       setGiftDescription(gift.description);
     } else {
       setEditingGift(null);
@@ -150,7 +150,7 @@ export default function VirtualGifts() {
         imageType: "svg",
         hasSound: editingGift?.hasSound || false,
         soundUrl: editingGift?.soundUrl || "",
-        category: "Standard",
+        category: editingGift?.category || "Standard",
       };
 
       if (editingGift) {
