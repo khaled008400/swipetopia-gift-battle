@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Video, Comment } from '@/types/video.types';
 
 interface ReportData {
@@ -8,8 +8,36 @@ interface ReportData {
 
 class VideoService {
   async uploadVideo(file: File, title: string, description: string, thumbnail?: string | null): Promise<any> {
-    console.log('Video upload', file, title, description, thumbnail);
-    return { id: 'new-video-id' };
+    try {
+      console.log('Saving video metadata:', { title, description, thumbnail });
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData || !userData.user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { data, error } = await supabase
+        .from('videos')
+        .insert({
+          title,
+          description,
+          user_id: userData.user.id,
+          video_url: file.name, // This will be replaced with the actual URL
+          thumbnail_url: thumbnail || null
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error saving video metadata:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in uploadVideo:', error);
+      throw error;
+    }
   }
 
   async getVideo(id: string): Promise<Video> {
@@ -262,19 +290,24 @@ class VideoService {
     
     return data as unknown as Video[];
   }
-  
+
   async getVideos(): Promise<Video[]> {
-    const { data, error } = await supabase
-      .from('videos')
-      .select(`
-        *,
-        user:profiles(*)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          profiles:user_id (username, avatar_url)
+        `)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-    if (error) throw error;
-    
-    return data as unknown as Video[];
+      return data as unknown as Video[];
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      throw error;
+    }
   }
 }
 

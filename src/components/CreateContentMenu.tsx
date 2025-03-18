@@ -3,6 +3,9 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Upload, Video, Mic, Camera, MessageSquareText } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -14,19 +17,71 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
   onClose 
 }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   
-  const handleCreateContent = (type: string) => {
+  const handleCreateContent = async (type: string) => {
     onClose();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create content",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
     
     switch (type) {
       case 'video':
         navigate('/videos');
         break;
       case 'live':
-        navigate('/live');
+        try {
+          // Check if user already has an active stream
+          const { data: existingStream, error: checkError } = await supabase
+            .from('streams')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'online')
+            .maybeSingle();
+          
+          if (checkError) throw checkError;
+          
+          if (existingStream) {
+            // If there's an existing stream, navigate to it
+            navigate(`/live/${existingStream.id}`);
+          } else {
+            // Create a new stream and navigate to it
+            const { data: newStream, error: createError } = await supabase
+              .from('streams')
+              .insert({
+                title: `${user.username || user.email}'s Live Stream`,
+                user_id: user.id,
+                status: 'online'
+              })
+              .select()
+              .single();
+            
+            if (createError) throw createError;
+            
+            navigate(`/live/${newStream.id}`);
+          }
+        } catch (error) {
+          console.error('Error starting live stream:', error);
+          toast({
+            title: "Error",
+            description: "Failed to start live stream. Please try again.",
+            variant: "destructive",
+          });
+        }
         break;
       case 'post':
-        // Navigate to post creation page when implemented
+        toast({
+          title: "Coming soon",
+          description: "Post creation feature is coming soon!",
+        });
         break;
       default:
         break;
@@ -65,7 +120,12 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
             <Button 
               variant="ghost" 
               className="flex flex-col items-center justify-center py-4"
-              onClick={() => {}}
+              onClick={() => {
+                toast({
+                  title: "Coming soon",
+                  description: "Photo upload feature is coming soon!",
+                });
+              }}
             >
               <Camera className="h-5 w-5 mb-2" />
               <span className="text-xs">Photo</span>
@@ -74,7 +134,12 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
             <Button 
               variant="ghost" 
               className="flex flex-col items-center justify-center py-4"
-              onClick={() => {}}
+              onClick={() => {
+                toast({
+                  title: "Coming soon",
+                  description: "Audio upload feature is coming soon!",
+                });
+              }}
             >
               <Mic className="h-5 w-5 mb-2" />
               <span className="text-xs">Audio</span>

@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import VideoService from "@/services/video.service";
+import UploadService from "@/services/upload.service";
 import { Upload, X, Loader2 } from "lucide-react";
 
 interface VideoUploadFormProps {
@@ -18,6 +20,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +45,14 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
         const thumbnailDataUrl = canvas.toDataURL("image/jpeg");
         setThumbnail(thumbnailDataUrl);
+        
+        // Convert data URL to file
+        fetch(thumbnailDataUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const thumbnailFile = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
+            setThumbnailFile(thumbnailFile);
+          });
       };
       video.src = URL.createObjectURL(file);
     }
@@ -72,6 +83,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       setIsUploading(true);
       setProgress(0);
       
+      // Upload progress simulation
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 95) {
@@ -82,11 +94,15 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         });
       }, 500);
       
+      // Upload video and thumbnail to Supabase storage
+      const { videoUrl, thumbnailUrl } = await UploadService.uploadVideo(videoFile, thumbnailFile);
+      
+      // Save video metadata to database
       const videoData = await VideoService.uploadVideo(
         videoFile, 
         title,
         description,
-        thumbnail
+        thumbnailUrl
       );
       
       clearInterval(progressInterval);
