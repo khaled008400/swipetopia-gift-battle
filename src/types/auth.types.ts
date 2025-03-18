@@ -49,3 +49,24 @@ export interface UserProfile {
   payment_methods: PaymentMethod[];
   notification_preferences: NotificationPreferences;
 }
+
+export interface AuthContextType {
+  user: UserProfile | null;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  loading: boolean;
+  error: Error | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<any>;
+  register: (email: string, username: string, password: string, role?: UserRole) => Promise<any>;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
+  addPaymentMethod: (method: any) => Promise<boolean>;
+  removePaymentMethod: (id: string) => Promise<boolean>;
+  requiresAuth: (action: () => void, redirectUrl?: string) => void;
+  session: any;
+  isAdmin: () => boolean;
+  hasRole: (role: UserRole | string) => boolean;
+}

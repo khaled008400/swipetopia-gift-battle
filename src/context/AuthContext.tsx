@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -60,21 +61,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           // If profile exists, use it, otherwise check metadata for role
           if (profile) {
             console.log("Profile fetched from database:", profile);
-            setUser(profile);
+            
+            // Ensure roles is always an array
+            const userRoles = profile.roles ? 
+              (Array.isArray(profile.roles) ? profile.roles : [profile.roles]) : 
+              ['user'] as UserRole[];
+            
+            const userProfile: UserProfile = {
+              id: profile.id,
+              username: profile.username,
+              email: profile.email || session.user.email || '',
+              avatar_url: profile.avatar_url,
+              bio: profile.bio,
+              location: profile.location,
+              roles: userRoles,
+              coins: profile.coins || 0,
+              followers: profile.followers || 0,
+              following: profile.following || 0,
+              interests: profile.interests,
+              stream_key: profile.stream_key,
+              shop_name: profile.shop_name,
+              payment_methods: profile.payment_methods || [],
+              notification_preferences: profile.notification_preferences || {
+                battles: true,
+                orders: true,
+                messages: true,
+                followers: true
+              }
+            };
+            
+            setUser(userProfile);
           } else {
             // If no profile in database, use metadata from auth user
             console.log("No profile found, using auth metadata");
-            const userData = {
-              id: session.user.id,
-              email: session.user.email,
-              // Assuming role is stored in user_metadata
-              role: session.user.user_metadata?.role || 'user',
-              roles: session.user.user_metadata?.roles || [session.user.user_metadata?.role || 'user'],
-              username: session.user.user_metadata?.username || session.user.email?.split('@')[0],
-            } as UserProfile;
             
-            console.log("Created user profile from metadata:", userData);
-            setUser(userData);
+            // Extract roles from metadata
+            const metadataRoles = session.user.user_metadata?.roles || 
+                                [session.user.user_metadata?.role || 'user'];
+            
+            const userRoles = Array.isArray(metadataRoles) ? 
+                              metadataRoles as UserRole[] : 
+                              [metadataRoles as UserRole];
+            
+            const userProfile: UserProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || '',
+              roles: userRoles,
+              coins: 0,
+              followers: 0,
+              following: 0,
+              payment_methods: [],
+              notification_preferences: {
+                battles: true,
+                orders: true,
+                messages: true,
+                followers: true
+              }
+            };
+            
+            console.log("Created user profile from metadata:", userProfile);
+            setUser(userProfile);
           }
         } catch (err: any) {
           console.error("Unexpected error fetching profile:", err);
@@ -109,7 +156,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setError(new Error(error.message));
         return { error };
       }
-      setUser(data.user as any);
+      // Full user profile will be fetched in the useEffect hook
       return { error: null };
     } catch (err: any) {
       setError(new Error(err.message));
@@ -133,7 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setError(new Error(error.message));
         return { error };
       }
-      setUser(data.user as any);
+      // Full user profile will be created by database trigger or fetched in useEffect
       return { error: null };
     } catch (err: any) {
       setError(new Error(err.message));
@@ -177,8 +224,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
             id: 'owner-user-456',
             email: email,
             username: 'owner',
-            roles: ['admin', 'owner'] as UserRole[],
-            role: 'owner'
+            roles: ['admin' as UserRole],
+            coins: 1000,
+            followers: 0,
+            following: 0,
+            payment_methods: [],
+            notification_preferences: {
+              battles: true,
+              orders: true,
+              messages: true,
+              followers: true
+            }
           };
           
           setUser(mockUser);
@@ -194,9 +250,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
             id: 'seller-user-789',
             email: email,
             username: 'seller',
-            roles: ['seller'] as UserRole[],
-            role: 'seller',
-            shop_name: 'Amazing Products'
+            roles: ['seller' as UserRole],
+            shop_name: 'Amazing Products',
+            coins: 1000,
+            followers: 0,
+            following: 0,
+            payment_methods: [],
+            notification_preferences: {
+              battles: true,
+              orders: true,
+              messages: true,
+              followers: true
+            }
           };
           
           setUser(mockUser);
@@ -212,8 +277,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
             id: 'mock-user-123',
             email: email,
             username: 'admin',
-            roles: ['admin'] as UserRole[],
-            role: 'admin'
+            roles: ['admin' as UserRole],
+            coins: 1000,
+            followers: 0,
+            following: 0,
+            payment_methods: [],
+            notification_preferences: {
+              battles: true,
+              orders: true,
+              messages: true,
+              followers: true
+            }
           };
           
           setUser(mockUser);
@@ -229,24 +303,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       console.log("Supabase login successful, user:", data.user);
       setIsAuthenticated(true);
       
-      // Get the user metadata for role information
-      const userMetadata = data.user?.user_metadata;
-      console.log("User metadata:", userMetadata);
-      
-      // If we have role information in metadata, create a partial user
-      if (userMetadata && (userMetadata.role || userMetadata.roles)) {
-        const partialUser: Partial<UserProfile> = {
-          id: data.user?.id,
-          email: data.user?.email,
-          username: userMetadata.username || data.user?.email?.split('@')[0],
-          role: userMetadata.role || 'user',
-          roles: userMetadata.roles || [userMetadata.role || 'user']
-        };
-        
-        console.log("Setting partial user from metadata:", partialUser);
-        setUser(partialUser as UserProfile);
-      }
-      
+      // User profile will be fetched by the useEffect hook
       return data;
     } catch (err: any) {
       setError(new Error(err.message));
@@ -257,7 +314,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   };
 
-  const register = async (email: string, username: string, password: string) => {
+  const register = async (email: string, username: string, password: string, role: UserRole = 'user') => {
     setIsLoading(true);
     try {
       const { data, error } = await supabaseClient.auth.signUp({
@@ -266,20 +323,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         options: {
           data: {
             username,
-            roles: ['user'] as UserRole[]
+            roles: [role]
           }
         }
       });
 
       if (error) throw new Error(error.message);
 
+      // Insert into profiles table (this might be redundant if you have a database trigger)
       await supabaseClient
         .from('profiles')
         .insert([
-          { id: data.user?.id, username, email: data.user?.email, roles: ['user'] as UserRole[] }
+          { 
+            id: data.user?.id, 
+            username, 
+            email: data.user?.email, 
+            roles: [role],
+            coins: 1000, // Default starting coins
+            followers: 0,
+            following: 0,
+            payment_methods: [],
+            notification_preferences: {
+              battles: true,
+              orders: true,
+              messages: true,
+              followers: true
+            }
+          }
         ]);
 
-      setUser(data.user as any);
+      // User profile will be fetched by the useEffect hook
       setIsAuthenticated(true);
       return data;
     } catch (err: any) {
@@ -311,11 +384,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   };
 
   const addPaymentMethod = async (method: any) => {
-    return true;
+    if (!user) return false;
+    
+    try {
+      // Clone the current payment methods array
+      const updatedPaymentMethods = [...user.payment_methods, method];
+      
+      // Update the profile with the new payment methods array
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ payment_methods: updatedPaymentMethods })
+        .eq('id', user.id);
+      
+      if (error) throw new Error(error.message);
+      
+      // Update local state
+      setUser(prev => prev ? {
+        ...prev,
+        payment_methods: updatedPaymentMethods
+      } : null);
+      
+      return true;
+    } catch (err: any) {
+      setError(new Error(err.message));
+      return false;
+    }
   };
 
   const removePaymentMethod = async (id: string) => {
-    return true;
+    if (!user) return false;
+    
+    try {
+      // Filter out the payment method to be removed
+      const updatedPaymentMethods = user.payment_methods.filter(method => method.id !== id);
+      
+      // Update the profile with the filtered payment methods array
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ payment_methods: updatedPaymentMethods })
+        .eq('id', user.id);
+      
+      if (error) throw new Error(error.message);
+      
+      // Update local state
+      setUser(prev => prev ? {
+        ...prev,
+        payment_methods: updatedPaymentMethods
+      } : null);
+      
+      return true;
+    } catch (err: any) {
+      setError(new Error(err.message));
+      return false;
+    }
   };
 
   const isAdmin = () => {
@@ -325,10 +446,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     
     // Try to get admin status from the user state first
     if (user) {
-      const hasAdminRole = 
-        (user.roles && (user.roles.includes('admin') || user.roles.includes('owner'))) || 
-        user.role === 'admin' || 
-        user.role === 'owner';
+      const hasAdminRole = user.roles?.includes('admin' as UserRole);
       
       console.log("Checking admin status from user state:", hasAdminRole, user);
       
@@ -340,11 +458,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        if (parsedUser && 
-            ((parsedUser.roles && 
-              (parsedUser.roles.includes('admin') || parsedUser.roles.includes('owner'))) || 
-             parsedUser.role === 'admin' || 
-             parsedUser.role === 'owner')) {
+        if (parsedUser && parsedUser.roles?.includes('admin')) {
           console.log("Admin detected from localStorage", parsedUser);
           return true;
         }
@@ -356,8 +470,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     // Check if we have a session with admin role in user metadata
     if (session?.user?.user_metadata) {
       const metadata = session.user.user_metadata;
-      if (metadata.role === 'admin' || metadata.role === 'owner' ||
-          (metadata.roles && (metadata.roles.includes('admin') || metadata.roles.includes('owner')))) {
+      if ((metadata.roles && metadata.roles.includes('admin'))) {
         console.log("Admin detected from session metadata", metadata);
         return true;
       }
@@ -373,7 +486,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (!user) return false;
     
     // Check user object first
-    if (user.roles?.includes(role as any) || user.role === role) {
+    if (user.roles?.includes(role as UserRole)) {
       return true;
     }
     
@@ -382,9 +495,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        if (parsedUser && 
-            ((parsedUser.roles && parsedUser.roles.includes(role)) || 
-             parsedUser.role === role)) {
+        if (parsedUser && parsedUser.roles?.includes(role)) {
           return true;
         }
       } catch (e) {
@@ -395,8 +506,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     // Check session metadata
     if (session?.user?.user_metadata) {
       const metadata = session.user.user_metadata;
-      if (metadata.role === role ||
-          (metadata.roles && metadata.roles.includes(role))) {
+      if (metadata.roles && metadata.roles.includes(role)) {
         return true;
       }
     }

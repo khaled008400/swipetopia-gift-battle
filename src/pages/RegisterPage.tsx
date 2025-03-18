@@ -1,21 +1,30 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/components/ui/use-toast';
+import { UserRole } from '@/types/auth.types';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  role: z.enum(['user', 'seller', 'streamer']).default('user')
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -28,19 +37,22 @@ const RegisterPage = () => {
   const { register: signup, isLoading } = useAuth();
   const { toast } = useToast();
   
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: '',
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      role: 'user'
     }
   });
   
+  const selectedRole = watch('role');
+  
   const onSubmit = async (data: FormData) => {
     try {
-      await signup(data.email, data.username, data.password);
+      await signup(data.email, data.username, data.password, data.role as UserRole);
       toast({
         title: "Account created",
         description: "Your account has been created successfully. You can now log in.",
@@ -100,6 +112,37 @@ const RegisterPage = () => {
                 <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
               )}
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="role">I want to join as a</Label>
+              <Select defaultValue="user" {...register('role')}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Regular User</SelectItem>
+                  <SelectItem value="seller">Seller</SelectItem>
+                  <SelectItem value="streamer">Streamer</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.role && (
+                <p className="text-sm text-red-500">{errors.role.message}</p>
+              )}
+            </div>
+            
+            {selectedRole === 'seller' && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                <p className="font-medium text-amber-800">Seller accounts require verification</p>
+                <p className="text-amber-700 mt-1">After registration, you'll need to provide additional information to verify your seller account.</p>
+              </div>
+            )}
+            
+            {selectedRole === 'streamer' && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                <p className="font-medium text-blue-800">Streamer benefits</p>
+                <p className="text-blue-700 mt-1">As a streamer, you'll be able to go live, participate in battles, and earn coins from your viewers.</p>
+              </div>
+            )}
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">
