@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export class BattleService {
@@ -181,6 +180,30 @@ export class BattleService {
       return data || [];
     } catch (error) {
       console.error("Error fetching popular battles:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Get battle videos
+   */
+  static async getBattleVideos(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('battles')
+        .select(`
+          id,
+          title,
+          creator:profiles!battles_creator_id_fkey(username, avatar_url),
+          thumbnail_url
+        `);
+        
+      if (error) throw error;
+      
+      // Ensure consistent data format even when no rows found
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching battle videos:", error);
       return [];
     }
   }
