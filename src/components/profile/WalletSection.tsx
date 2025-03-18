@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserProfile } from '@/types/auth.types';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Coins, DollarSign, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 export interface WalletSectionProps {
   profile: UserProfile;
@@ -159,7 +161,9 @@ const WalletSection: React.FC<WalletSectionProps> = ({ profile, onUpdate }) => {
                           </p>
                         )}
                         {method.is_default && (
-                          <Badge variant="outline" className="mt-1">Default</Badge>
+                          <Badge variant={method.is_default ? "default" : "secondary"}>
+                            {method.is_default ? "Default" : "Secondary"}
+                          </Badge>
                         )}
                       </div>
                     </div>
