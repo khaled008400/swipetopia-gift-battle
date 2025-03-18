@@ -18,7 +18,7 @@ export const useLikedVideos = (userId: string) => {
 
       try {
         setIsLoading(true);
-        const likedVideos = await VideoService.getLikedVideos(userId);
+        const likedVideos = await VideoService.getLikedVideos();
         setVideos(likedVideos);
         setError(null);
       } catch (err) {

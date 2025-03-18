@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { convertBattleVideosToVideos } from '@/utils/video-converters';
 import { supabase } from "@/integrations/supabase/client";
 import VideoFeed from "@/components/VideoFeed";
 import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
@@ -55,6 +57,9 @@ const LiveStreamPage = () => {
   const { user } = useAuth();
   const [battleRequests, setBattleRequests] = useState<BattleRequest[]>([]);
   const [isStreamerView, setIsStreamerView] = useState<boolean>(false);
+  const [isBattle, setIsBattle] = useState<boolean>(false);
+  const [battleVideos, setBattleVideos] = useState<any[]>([]);
+  const [currentBattleVideos, setCurrentBattleVideos] = useState<any[]>([]);
   
   const {
     activeVideoIndex,
@@ -101,6 +106,13 @@ const LiveStreamPage = () => {
     
     checkIfStreamer();
   }, [user, selectedStreamerId]);
+
+  useEffect(() => {
+    if (isBattle && battleVideos.length > 0) {
+      const convertedVideos = convertBattleVideosToVideos(battleVideos);
+      setCurrentBattleVideos(convertedVideos);
+    }
+  }, [isBattle, battleVideos]);
 
   const handleStreamerSelect = (streamerId: string) => {
     setSelectedStreamerId(streamerId);

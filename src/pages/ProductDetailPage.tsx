@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -8,23 +8,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ShoppingCart, Heart, ArrowLeft, Star } from 'lucide-react';
+import { ShoppingCartIcon, HeartIcon, ArrowLeftIcon, StarIcon } from 'lucide-react';
 import ShopService from '@/services/shop.service';
 
-const ProductDetailPage: React.FC = () => {
+const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
+  const [product, setProduct] = useState(null);
   
-  const { data: product, isLoading } = useQuery({
+  const { data: productData, isLoading } = useQuery({
     queryKey: ['product', id],
     queryFn: () => ShopService.getProductById(id as string),
     enabled: !!id,
   });
 
-  // Check if product is liked by user
   useEffect(() => {
     const checkIfLiked = async () => {
       if (!user || !id) return;
@@ -76,7 +76,24 @@ const ProductDetailPage: React.FC = () => {
       toast.error("Failed to update favorites");
     }
   };
-  
+
+  const handleLikeProduct = () => {
+    if (!product) return;
+    
+    setProduct(prev => prev ? {
+      ...prev,
+      is_liked: !prev.is_liked
+    } : null);
+    
+    toast({
+      title: product.is_liked ? "Removed from favorites" : "Added to favorites",
+      description: product.is_liked ? 
+        "This product has been removed from your favorites." : 
+        "This product has been added to your favorites.",
+      duration: 3000,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -102,7 +119,7 @@ const ProductDetailPage: React.FC = () => {
         <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
         <p>The product you're looking for doesn't exist or has been removed.</p>
         <Button className="mt-4" onClick={() => navigate('/shop')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop
+          <ArrowLeftIcon className="mr-2 h-4 w-4" /> Back to Shop
         </Button>
       </div>
     );
@@ -111,7 +128,7 @@ const ProductDetailPage: React.FC = () => {
   return (
     <div className="container mx-auto py-8">
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop
+        <ArrowLeftIcon className="mr-2 h-4 w-4" /> Back to Shop
       </Button>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -147,7 +164,7 @@ const ProductDetailPage: React.FC = () => {
             
             <div className="flex items-center mt-2">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
+                <StarIcon 
                   key={star} 
                   className={`h-4 w-4 ${star <= 4 ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
                 />
@@ -182,7 +199,7 @@ const ProductDetailPage: React.FC = () => {
               onClick={handleAddToCart}
               disabled={product.stock_quantity === 0}
             >
-              <ShoppingCart className="mr-2 h-4 w-4" />
+              <ShoppingCartIcon className="mr-2 h-4 w-4" />
               Add to Cart
             </Button>
             <Button 
@@ -190,7 +207,14 @@ const ProductDetailPage: React.FC = () => {
               className={`w-12 flex-none ${isLiked ? 'text-red-500 border-red-500' : ''}`}
               onClick={handleToggleLike}
             >
-              <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500' : ''}`} />
+              <HeartIcon className={`h-5 w-5 ${isLiked ? 'fill-red-500' : ''}`} />
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-12 flex-none"
+              onClick={handleLikeProduct}
+            >
+              <ShareIcon className="h-5 w-5" />
             </Button>
           </div>
         </div>

@@ -1,99 +1,168 @@
-
-import { useEffect } from "react";
-import VideoFeed from "@/components/VideoFeed";
-import BattleProgressIndicators from "@/components/battle/BattleProgressIndicators";
-import { useBattleVideos } from "@/hooks/useBattleVideos";
-import VideoActions from "@/components/video/VideoActions";
-import { ArrowLeft } from "lucide-react";
-import BattleHeader from "@/components/battle/BattleHeader";
+// Import necessary modules and components
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { convertBattleVideosToVideos } from '@/utils/video-converters';
+import VideoPlayer from '@/components/VideoPlayer';
+import VideoOverlay from '@/components/video/VideoOverlay';
+import { Video } from '@/types/video.types';
+import { useAuth } from '@/context/AuthContext';
+import VideoService from '@/services/video.service';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from "lucide-react";
 
 const BattlePage = () => {
-  const {
-    activeVideoIndex,
-    setActiveVideoIndex,
-    filteredVideos
-  } = useBattleVideos(false); // false = regular videos only
+  const { battleId } = useParams<{ battleId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Handle swipe/scroll to change videos
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    const handleScroll = (e: WheelEvent) => {
-      if (e.deltaY > 0 && activeVideoIndex < filteredVideos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
+    const fetchBattleData = async () => {
+      setIsLoading(true);
+      try {
+        // Placeholder: Replace with actual battle data fetching logic
+        const battleVideos = [
+          {
+            id: '1',
+            title: 'Battle Video 1',
+            description: 'Description for Battle Video 1',
+            video_url: 'https://example.com/battle-video-1.mp4',
+            thumbnail_url: 'https://example.com/battle-video-1.jpg',
+            user_id: 'user1',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            view_count: 100,
+            likes_count: 10,
+            comments_count: 5,
+            shares_count: 2,
+            is_live: false,
+            is_private: false,
+            duration: 60,
+            category: 'battle',
+            likes: 10,
+            comments: 5,
+            shares: 2,
+            is_liked: false,
+            is_saved: false,
+            user: {
+              username: 'User1',
+              avatar: 'https://example.com/avatar1.jpg',
+            },
+            hashtags: ['battle', 'video1'],
+          },
+          {
+            id: '2',
+            title: 'Battle Video 2',
+            description: 'Description for Battle Video 2',
+            video_url: 'https://example.com/battle-video-2.mp4',
+            thumbnail_url: 'https://example.com/battle-video-2.jpg',
+            user_id: 'user2',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            view_count: 120,
+            likes_count: 12,
+            comments_count: 7,
+            shares_count: 3,
+            is_live: false,
+            is_private: false,
+            duration: 70,
+            category: 'battle',
+            likes: 12,
+            comments: 7,
+            shares: 3,
+            is_liked: false,
+            is_saved: false,
+            user: {
+              username: 'User2',
+              avatar: 'https://example.com/avatar2.jpg',
+            },
+            hashtags: ['battle', 'video2'],
+          },
+        ];
+      
+      // Convert battle videos to regular videos
+      const convertedVideos = convertBattleVideosToVideos(battleVideos);
+      setVideos(convertedVideos);
+      
+        setActiveIndex(0);
+      } catch (error: any) {
+        console.error("Error fetching battle data:", error);
+        setError(error.message || "Failed to load battle data");
+        toast({
+          title: "Error",
+          description: error.message || "Failed to load battle data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
-    window.addEventListener('wheel', handleScroll);
-    return () => {
-      window.removeEventListener('wheel', handleScroll);
-    };
-  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
-
-  // Handle touch swipe for mobile
-  useEffect(() => {
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndY = e.changedTouches[0].clientY;
-      const diff = touchStartY - touchEndY;
-
-      // Swipe up - go to next video
-      if (diff > 50 && activeVideoIndex < filteredVideos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      }
-      // Swipe down - go to previous video
-      else if (diff < -50 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
-      }
-    };
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [activeVideoIndex, filteredVideos.length, setActiveVideoIndex]);
+    
+    fetchBattleData();
+  }, [battleId]);
   
-  return (
-    <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
-      {/* Videos container */}
-      <VideoFeed videos={filteredVideos} activeVideoIndex={activeVideoIndex} isBattlePage={true} />
-      
-      {/* Battle header with title */}
-      {filteredVideos[activeVideoIndex] && (
-        <BattleHeader title={filteredVideos[activeVideoIndex].description} />
-      )}
-      
-      {/* Progress indicators */}
-      <BattleProgressIndicators videos={filteredVideos} activeIndex={activeVideoIndex} />
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full">
+        <Loader2 className="w-8 h-8 animate-spin mb-4" />
+        <p className="text-center text-gray-500">Loading battle videos...</p>
+      </div>
+    );
+  }
 
-      {/* Back button and page title */}
-      <div className="absolute top-4 left-4 z-30 flex items-center">
-        <button className="mr-3 p-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-        <h1 className="text-white font-bold text-lg bg-gradient-to-r from-[#9b87f5] to-[#D946EF] bg-clip-text text-transparent">
-          Battle Videos
-        </h1>
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full">
+        <p className="text-center text-red-500">Error: {error}</p>
       </div>
-      
-      {/* Video actions */}
-      <div className="absolute bottom-20 right-3 z-30">
-        {filteredVideos[activeVideoIndex] && (
-          <VideoActions 
-            videoId={filteredVideos[activeVideoIndex].id} // Add videoId here
-            likes={filteredVideos[activeVideoIndex].likes} 
-            comments={filteredVideos[activeVideoIndex].comments} 
-            shares={filteredVideos[activeVideoIndex].shares}
-            isLiked={filteredVideos[activeVideoIndex].isLiked || false}
-            onLike={() => {
-              console.log('Video liked:', filteredVideos[activeVideoIndex]);
-            }}
+    );
+  }
+
+  return (
+    <div className="relative h-screen overflow-hidden">
+      {videos.length > 0 ? (
+        <>
+          <VideoPlayer
+            src={videos[activeIndex].video_url}
+            poster={videos[activeIndex].thumbnail_url}
+            isActive={true}
+            videoId={videos[activeIndex].id}
           />
-        )}
-      </div>
+          <VideoOverlay
+            video={{
+              id: videos[activeIndex].id,
+              description: videos[activeIndex].description || "",
+              likes: videos[activeIndex].likes_count || 0,
+              comments: videos[activeIndex].comments_count || 0,
+              shares: videos[activeIndex].shares_count || 0,
+              isLive: videos[activeIndex].is_live,
+              isLiked: videos[activeIndex].is_liked,
+              isSaved: videos[activeIndex].is_saved,
+              allowDownloads: true,
+              user: {
+                username: videos[activeIndex].user?.username || "Unknown",
+                avatar: videos[activeIndex].user?.avatar || "",
+                isFollowing: false,
+              },
+            }}
+            isLiked={videos[activeIndex].is_liked || false}
+            isSaved={videos[activeIndex].is_saved || false}
+            onLike={() => {}}
+            onSave={() => {}}
+            onFollow={() => {}}
+          />
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full w-full">
+          <p className="text-center text-gray-500">No videos found for this battle.</p>
+        </div>
+      )}
     </div>
   );
 };

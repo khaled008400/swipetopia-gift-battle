@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import AdminService, { LiveStream } from '@/services/admin.service';
+import AdminService from '@/services/admin.service';
+import { LiveStream } from '@/types/livestream.types';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Card, CardContent, CardDescription, 

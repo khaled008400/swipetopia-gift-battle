@@ -30,6 +30,7 @@ export interface PaymentMethod {
   exp_month?: number;
   exp_year?: number;
   is_default: boolean;
+  name?: string; // Added to match usage in components
 }
 
 export interface UserProfile {

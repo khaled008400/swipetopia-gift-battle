@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Video, Comment } from '@/types/video.types';
 
@@ -19,7 +18,6 @@ class VideoService {
       
       if (error) throw error;
       
-      // Transform data to match Video interface
       return data.map((video: any) => ({
         ...video,
         user: {
@@ -67,7 +65,6 @@ class VideoService {
       
       if (error) throw error;
       
-      // Transform data to match Video interface
       return {
         ...data,
         user: {
@@ -115,7 +112,6 @@ class VideoService {
       
       if (error) throw error;
       
-      // Transform data to match Video interface
       const videos = data.map((video: any) => ({
         ...video,
         user: {
@@ -140,7 +136,6 @@ class VideoService {
 
   async uploadVideo(videoFile: File, thumbnailFile: File, title: string, description: string): Promise<Video | null> {
     try {
-      // First, upload the video file
       const videoFileName = `videos/${Date.now()}-${videoFile.name}`;
       const { error: videoUploadError } = await supabase.storage
         .from('media')
@@ -148,7 +143,6 @@ class VideoService {
       
       if (videoUploadError) throw videoUploadError;
       
-      // Then, upload the thumbnail
       const thumbnailFileName = `thumbnails/${Date.now()}-${thumbnailFile.name}`;
       const { error: thumbnailUploadError } = await supabase.storage
         .from('media')
@@ -156,7 +150,6 @@ class VideoService {
       
       if (thumbnailUploadError) throw thumbnailUploadError;
       
-      // Get public URLs
       const { data: videoData } = supabase.storage
         .from('media')
         .getPublicUrl(videoFileName);
@@ -165,7 +158,6 @@ class VideoService {
         .from('media')
         .getPublicUrl(thumbnailFileName);
       
-      // Insert video record
       const { data: video, error } = await supabase
         .from('videos')
         .insert({
@@ -179,7 +171,6 @@ class VideoService {
       
       if (error) throw error;
       
-      // Get user data
       const { data: { user } } = await supabase.auth.getUser();
       
       return {
@@ -218,7 +209,6 @@ class VideoService {
       
       if (error) throw error;
       
-      // Transform data to match Video interface
       return data.map((video: any) => ({
         ...video,
         user: {
@@ -262,7 +252,6 @@ class VideoService {
       
       if (error) throw error;
       
-      // Transform data to match Video interface
       return data.map((item: any) => ({
         ...item.videos,
         user: {
@@ -304,6 +293,202 @@ class VideoService {
     } catch (error) {
       console.error('Error reporting video:', error);
       return false;
+    }
+  }
+
+  async likeVideo(videoId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('video_likes')
+        .insert({ video_id: videoId, user_id: userId });
+      
+      if (error) throw error;
+      
+      await this.incrementVideoCounter(videoId, 'likes_count');
+    } catch (error) {
+      console.error('Error liking video:', error);
+      throw error;
+    }
+  }
+
+  async unlikeVideo(videoId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('video_likes')
+        .delete()
+        .eq('video_id', videoId)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      await supabase.rpc('decrement_video_counter', {
+        video_id: videoId,
+        counter_name: 'likes_count'
+      });
+    } catch (error) {
+      console.error('Error unliking video:', error);
+      throw error;
+    }
+  }
+
+  async saveVideo(videoId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('video_bookmarks')
+        .insert({ video_id: videoId, user_id: userId });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving video:', error);
+      throw error;
+    }
+  }
+
+  async unsaveVideo(videoId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('video_bookmarks')
+        .delete()
+        .eq('video_id', videoId)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error unsaving video:', error);
+      throw error;
+    }
+  }
+
+  async getUserVideos(userId: string): Promise<Video[]> {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url,
+            id
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data.map((video: any) => ({
+        ...video,
+        user: {
+          username: video.profiles?.username || 'Unknown',
+          avatar: video.profiles?.avatar_url || '/placeholder-avatar.jpg',
+          avatar_url: video.profiles?.avatar_url || '/placeholder-avatar.jpg',
+          id: video.profiles?.id
+        },
+        likes: video.likes_count,
+        comments: video.comments_count,
+        shares: video.shares_count
+      }));
+    } catch (error) {
+      console.error('Error fetching user videos:', error);
+      return [];
+    }
+  }
+
+  async getSavedVideos(userId: string): Promise<Video[]> {
+    try {
+      const { data, error } = await supabase
+        .from('video_bookmarks')
+        .select(`
+          videos:video_id (
+            *,
+            profiles:user_id (
+              username,
+              avatar_url,
+              id
+            )
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data.map((item: any) => ({
+        ...item.videos,
+        user: {
+          username: item.videos.profiles?.username || 'Unknown',
+          avatar: item.videos.profiles?.avatar_url || '/placeholder-avatar.jpg',
+          avatar_url: item.videos.profiles?.avatar_url || '/placeholder-avatar.jpg',
+          id: item.videos.profiles?.id
+        },
+        likes: item.videos.likes_count,
+        comments: item.videos.comments_count,
+        shares: item.videos.shares_count,
+        is_saved: true
+      }));
+    } catch (error) {
+      console.error('Error fetching saved videos:', error);
+      return [];
+    }
+  }
+
+  async getFollowingVideos(userId: string): Promise<Video[]> {
+    try {
+      const { data: followingData, error: followingError } = await supabase
+        .from('followers')
+        .select('following_id')
+        .eq('follower_id', userId);
+      
+      if (followingError) throw followingError;
+      
+      if (!followingData || followingData.length === 0) {
+        return [];
+      }
+      
+      const followingIds = followingData.map(f => f.following_id);
+      
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url,
+            id
+          )
+        `)
+        .in('user_id', followingIds)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      
+      return data.map((video: any) => ({
+        ...video,
+        user: {
+          username: video.profiles?.username || 'Unknown',
+          avatar: video.profiles?.avatar_url || '/placeholder-avatar.jpg',
+          avatar_url: video.profiles?.avatar_url || '/placeholder-avatar.jpg',
+          id: video.profiles?.id
+        },
+        likes: video.likes_count,
+        comments: video.comments_count,
+        shares: video.shares_count
+      }));
+    } catch (error) {
+      console.error('Error fetching following videos:', error);
+      return [];
+    }
+  }
+
+  async incrementVideoCounter(videoId: string, counterName: string): Promise<void> {
+    try {
+      await supabase.rpc('increment_video_counter', {
+        video_id: videoId,
+        counter_name: counterName
+      });
+    } catch (error) {
+      console.error('Error incrementing video counter:', error);
     }
   }
 }
