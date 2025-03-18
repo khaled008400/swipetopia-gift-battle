@@ -85,7 +85,7 @@ const ShopProfileEditor = () => {
       setProfile(prev => ({
         ...prev,
         [section]: {
-          ...prev[section as keyof ShopProfile],
+          ...(prev[section as keyof ShopProfile] as Record<string, any>),
           [field]: value
         }
       }));

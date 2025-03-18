@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import {
   Calendar as CalendarCheck, AlertTriangle, 
   Users, Loader2
 } from "lucide-react";
-import { Product } from "@/services/shop.service";
+import { Product } from "@/types/product.types";
 import { format } from "date-fns";
 
 const dummyScheduledStreams = [
@@ -59,7 +58,11 @@ const dummyProducts: Product[] = [
     image_url: "https://placehold.co/400x400/333/FFF?text=T-Shirt",
     category: "clothing",
     stock_quantity: 100,
-    status: "active"
+    status: "active",
+    seller_id: "seller-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_featured: false
   },
   {
     id: "2",
@@ -69,7 +72,11 @@ const dummyProducts: Product[] = [
     image_url: "https://placehold.co/400x400/333/FFF?text=Sunglasses",
     category: "accessories",
     stock_quantity: 30,
-    status: "active"
+    status: "active",
+    seller_id: "seller-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_featured: false
   },
   {
     id: "3",
@@ -79,7 +86,11 @@ const dummyProducts: Product[] = [
     image_url: "https://placehold.co/400x400/333/FFF?text=Shorts",
     category: "clothing",
     stock_quantity: 75,
-    status: "active"
+    status: "active",
+    seller_id: "seller-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_featured: false
   },
   {
     id: "4",
@@ -89,7 +100,11 @@ const dummyProducts: Product[] = [
     image_url: "https://placehold.co/400x400/333/FFF?text=Sandals",
     category: "footwear",
     stock_quantity: 50,
-    status: "active"
+    status: "active",
+    seller_id: "seller-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_featured: false
   },
   {
     id: "5",
@@ -99,7 +114,11 @@ const dummyProducts: Product[] = [
     image_url: "https://placehold.co/400x400/333/FFF?text=Hat",
     category: "accessories",
     stock_quantity: 40,
-    status: "active"
+    status: "active",
+    seller_id: "seller-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_featured: false
   }
 ];
 
@@ -277,7 +296,6 @@ const StreamSchedule = () => {
                 className="bg-app-yellow text-app-black" 
                 disabled={loading}
                 onClick={() => {
-                  // In a real implementation, this would save the scheduled stream
                   setLoading(true);
                   setTimeout(() => {
                     setLoading(false);

@@ -8,10 +8,10 @@ export interface Product {
   category: string;
   stock_quantity: number;
   status: 'active' | 'draft' | 'unavailable';
-  seller_id: string; // Added required property
-  created_at: string; // Added required property
-  updated_at: string; // Added required property
-  is_featured: boolean; // Added required property
+  seller_id: string;
+  created_at: string;
+  updated_at: string;
+  is_featured: boolean;
   original_price?: number;
   discount?: number;
   rating?: number;
@@ -123,16 +123,16 @@ export interface RefundRequest {
   created_at: string;
   updated_at: string;
   amount: number;
-  seller_id?: string; // Added missing property used in RefundManager
-  product_name?: string; // Added missing property used in RefundManager
-  username?: string; // Added missing property used in RefundManager
+  seller_id?: string; // Added for RefundManager
+  product_name?: string; // Added for RefundManager
+  username?: string; // Added for RefundManager
   order?: any;
   user?: {
     username: string;
     avatar_url: string;
     email?: string;
   };
-  product_id?: string; // Added missing property used in RefundManager
+  product_id?: string;
 }
 
 export interface CustomerMessage {
@@ -143,13 +143,13 @@ export interface CustomerMessage {
   read: boolean;
   created_at: string;
   updated_at: string;
-  sender_type?: 'customer' | 'seller'; // Added missing property used in SellerMessages
-  customer_id?: string; // Added missing property used in SellerMessages
-  seller_id?: string; // Added missing property used in SellerMessages
-  is_read?: boolean; // Added missing property used in SellerMessages
-  conversation_id?: string; // Added missing property used in SellerMessages
-  customer_name?: string; // Added missing property used in SellerMessages
-  customer_avatar?: string; // Added missing property used in SellerMessages
+  sender_type?: 'customer' | 'seller'; // Added for SellerMessages
+  customer_id?: string; // Added for SellerMessages
+  seller_id?: string; // Added for SellerMessages
+  is_read?: boolean; // Added for SellerMessages
+  conversation_id?: string; // Added for SellerMessages
+  customer_name?: string; // Added for SellerMessages
+  customer_avatar?: string; // Added for SellerMessages
   sender?: {
     username: string;
     avatar_url: string;
@@ -171,9 +171,9 @@ export interface SellerWallet {
   currency: string;
   can_withdraw: boolean;
   minimum_withdrawal: number;
-  seller_id?: string; // Added missing property
-  pending_amount?: number; // Added missing property used in SellerWalletView
-  last_payout_date?: string; // Added missing property used in SellerWalletView
+  seller_id?: string; // Added
+  pending_amount?: number; // Added for SellerWalletView
+  last_payout_date?: string; // Added for SellerWalletView
   transactions?: WalletTransaction[];
 }
 

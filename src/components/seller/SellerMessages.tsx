@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,10 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, MoreVertical, AlertTriangle, ShieldAlert, MessageSquare } from "lucide-react";
+import { 
+  Loader2, Send, MoreVertical, AlertTriangle, 
+  ShieldAlert, MessageSquare
+} from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,19 @@ import {
 import { CustomerMessage } from "@/types/product.types";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
+
+interface MessageData {
+  id: string;
+  sender_type: "customer" | "seller";
+  customer_id: string;
+  seller_id: string;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+  conversation_id: string;
+  customer_name?: string;
+  customer_avatar?: string;
+}
 
 const SellerMessages = () => {
   const { user } = useAuth();
@@ -56,8 +71,6 @@ const SellerMessages = () => {
   const fetchConversations = async () => {
     setLoading(true);
     try {
-      // In a real app, this would fetch conversations from the database
-      // For now, we'll create mock data
       const mockConversations = [
         {
           id: "conv-1",
@@ -98,7 +111,6 @@ const SellerMessages = () => {
       ];
       
       setConversations(mockConversations);
-      // Set the first conversation as active by default
       if (mockConversations.length > 0 && !activeConversation) {
         setActiveConversation(mockConversations[0].id);
       }
@@ -116,12 +128,9 @@ const SellerMessages = () => {
 
   const fetchMessages = async (conversationId: string) => {
     try {
-      // In a real app, this would fetch messages from the database
-      // For now, we'll create mock data
       const conversation = conversations.find(c => c.id === conversationId);
       if (!conversation) return;
       
-      // Mark all messages as read
       setConversations(prevConversations => 
         prevConversations.map(conv => 
           conv.id === conversationId 
@@ -130,8 +139,7 @@ const SellerMessages = () => {
         )
       );
       
-      // Generate mock messages
-      const mockMessages: CustomerMessage[] = [
+      const mockMessages: MessageData[] = [
         {
           id: `msg-${conversationId}-1`,
           sender_type: "customer",
@@ -178,7 +186,6 @@ const SellerMessages = () => {
         },
       ];
       
-      // Add the most recent message from the conversation
       if (conversation.last_message) {
         mockMessages.push({
           id: `msg-${conversationId}-latest`,
@@ -194,12 +201,28 @@ const SellerMessages = () => {
         });
       }
       
-      // Sort messages by date
       mockMessages.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
       
-      setMessages(mockMessages);
+      const transformedMessages: CustomerMessage[] = mockMessages.map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_type === "customer" ? msg.customer_id : msg.seller_id,
+        receiver_id: msg.sender_type === "customer" ? msg.seller_id : msg.customer_id,
+        content: msg.content,
+        read: msg.is_read,
+        created_at: msg.created_at,
+        updated_at: msg.created_at,
+        sender_type: msg.sender_type,
+        customer_id: msg.customer_id,
+        seller_id: msg.seller_id,
+        is_read: msg.is_read,
+        conversation_id: msg.conversation_id,
+        customer_name: msg.customer_name,
+        customer_avatar: msg.customer_avatar
+      }));
+      
+      setMessages(transformedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast({
@@ -215,26 +238,26 @@ const SellerMessages = () => {
     
     setSending(true);
     try {
-      // Get the current conversation
       const conversation = conversations.find(c => c.id === activeConversation);
       if (!conversation) return;
       
-      // Create the new message
       const newMessageObj: CustomerMessage = {
         id: `msg-${Date.now()}`,
+        sender_id: user?.id || "",
+        receiver_id: conversation.customer_id,
+        content: newMessage,
+        read: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         sender_type: "seller",
         customer_id: conversation.customer_id,
         seller_id: user?.id || "",
-        content: newMessage,
-        created_at: new Date().toISOString(),
         is_read: false,
         conversation_id: activeConversation,
       };
       
-      // Add the message to the list
       setMessages(prevMessages => [...prevMessages, newMessageObj]);
       
-      // Update the conversation with the new last message
       setConversations(prevConversations => 
         prevConversations.map(conv => 
           conv.id === activeConversation 
@@ -248,7 +271,6 @@ const SellerMessages = () => {
         )
       );
       
-      // Clear the input
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
