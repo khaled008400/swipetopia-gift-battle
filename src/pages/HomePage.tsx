@@ -1,225 +1,143 @@
 
-import { useEffect, useState } from "react";
-import VideoFeed from "../components/VideoFeed";
-import { useAuth } from "../context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Video } from "@/types/video.types";
-import { useToast } from "@/hooks/use-toast";
-import { useRealtimeData } from "@/hooks/useRealtimeData";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import VideoFeed from '@/components/VideoFeed';
+import TrendingVideosSection from '@/components/TrendingVideosSection';
+import PopularLiveSection from '@/components/PopularLiveSection';
+import { Video } from '@/types/video.types';
+import VideoService from '@/services/video.service';
+import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/AuthContext';
 
-const HomePage = () => {
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+const HomePage: React.FC = () => {
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState('following');
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [localVideos, setLocalVideos] = useState<Video[]>([]);
-  
-  // Fetch initial videos from Supabase
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('videos')
-          .select(`
-            id, 
-            title,
-            description,
-            video_url,
-            thumbnail_url,
-            likes_count,
-            comments_count,
-            shares_count,
-            view_count,
-            hashtags,
-            is_live,
-            created_at,
-            user_id,
-            profiles:user_id (username, avatar_url)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(50);
-          
-        if (error) {
-          console.error("Error fetching videos:", error);
-          toast({
-            title: "Error loading videos",
-            description: "Please try again later",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (data && data.length > 0) {
-          const formattedVideos = data.map(video => ({
-            id: video.id,
-            url: video.video_url,
-            description: video.description || '',
-            likes: video.likes_count || 0,
-            comments: video.comments_count || 0,
-            shares: video.shares_count || 0,
-            isLive: video.is_live || false,
-            user: {
-              username: video.profiles?.username || 'unknown',
-              avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
-            }
-          }));
-          setLocalVideos(formattedVideos);
-        } else {
-          // Fallback to sample videos if no data is available
-          setLocalVideos(sampleVideos);
-        }
-      } catch (err) {
-        console.error("Error in video fetch:", err);
-        setLocalVideos(sampleVideos);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchVideos();
-  }, [toast]);
-  
-  // Use the real-time hook to listen for changes
-  const { data: realtimeVideos } = useRealtimeData<any>(
-    'videos',
-    [], // Initial data is empty, we'll handle it separately
-    null,
-    null
-  );
-  
-  // When realtime updates come in, process them
-  useEffect(() => {
-    if (realtimeVideos && realtimeVideos.length > 0) {
-      const newVideos = realtimeVideos.map(video => ({
-        id: video.id,
-        url: video.video_url,
-        description: video.description || '',
-        likes: video.likes_count || 0,
-        comments: video.comments_count || 0,
-        shares: video.shares_count || 0,
-        isLive: video.is_live || false,
-        user: {
-          username: video.profiles?.username || 'unknown',
-          avatar: video.profiles?.avatar_url || '/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png'
-        }
-      }));
-      
-      // Add new videos to the top of the feed
-      setLocalVideos(prev => [...newVideos, ...prev]);
-      // Reset to the first video
-      setActiveVideoIndex(0);
-      
-      toast({
-        title: "New videos available",
-        description: "Fresh content has been added to your feed",
-      });
-    }
-  }, [realtimeVideos, toast]);
-  
-  // Sample videos as fallback
-  const sampleVideos = [
-    {
-      id: "1",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-waving-on-a-video-call-43892-large.mp4",
-      user: {
-        username: "fashionista",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
-      },
-      description: "Check out my new collection! #fashion #style #trending",
-      likes: 1243,
-      comments: 89,
-      shares: 56
-    },
-    {
-      id: "2",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-portrait-of-a-fashion-woman-with-silver-makeup-39875-large.mp4",
-      user: {
-        username: "makeup_artist",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
-      },
-      description: "New makeup tutorial for the weekend party! #makeup #glam",
-      likes: 2467,
-      comments: 134,
-      shares: 89,
-      isLive: true
-    },
-    {
-      id: "3",
-      url: "https://assets.mixkit.co/videos/preview/mixkit-girl-dancing-happily-in-a-field-at-sunset-1230-large.mp4",
-      user: {
-        username: "travel_vibes",
-        avatar: "/lovable-uploads/30e70013-6e07-4756-89e8-c3f883e4d4c2.png"
-      },
-      description: "Sunset vibes in Bali 🌴 #travel #sunset #bali",
-      likes: 5698,
-      comments: 241,
-      shares: 178
-    }
-  ];
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Detect swipe to change videos
-  useEffect(() => {
-    const handleScroll = (e: WheelEvent) => {
-      if (e.deltaY > 0 && activeVideoIndex < localVideos.length - 1) {
-        setActiveVideoIndex(prev => prev + 1);
-      } else if (e.deltaY < 0 && activeVideoIndex > 0) {
-        setActiveVideoIndex(prev => prev - 1);
-      }
-    };
-
-    window.addEventListener('wheel', handleScroll);
-    
-    return () => {
-      window.removeEventListener('wheel', handleScroll);
-    };
-  }, [activeVideoIndex, localVideos.length]);
-
-  // Function to track video views
-  const handleVideoView = async (videoId: string) => {
-    if (!videoId || videoId.length < 5) return; // Skip for demo videos
-    
+  const fetchVideos = useCallback(async () => {
     try {
-      // Update view count in database
-      const { error } = await supabase.rpc('increment_video_counter', {
-        video_id: videoId,
-        counter_name: 'view_count'
-      });
+      setIsLoading(true);
+      let fetchedVideos: Video[];
       
-      if (error) console.error("Error incrementing view count:", error);
-      
-      // Record the view interaction
-      if (user) {
-        const { error: interactionError } = await supabase
-          .from('video_interactions')
-          .upsert({
-            video_id: videoId,
-            user_id: user.id,
-            interaction_type: 'view'
-          }, {
-            onConflict: 'video_id,user_id,interaction_type'
-          });
-          
-        if (interactionError) console.error("Error recording view:", interactionError);
+      if (activeTab === 'following' && user) {
+        fetchedVideos = await VideoService.getFollowingVideos(user.id);
+      } else {
+        fetchedVideos = await VideoService.getForYouVideos();
       }
-    } catch (err) {
-      console.error("Error tracking view:", err);
+      
+      if (fetchedVideos && fetchedVideos.length > 0) {
+        setVideos(fetchedVideos);
+      } else if (activeTab === 'following') {
+        // If no following videos, fallback to recommended
+        const forYouVideos = await VideoService.getForYouVideos();
+        setVideos(forYouVideos);
+        
+        if (!forYouVideos.length) {
+          toast({
+            title: "No videos found",
+            description: "Follow some creators to see their content here",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load videos. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeTab, user, toast]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
+
+  const handleVideoChange = (index: number) => {
+    setActiveIndex(index);
+  };
+
+  const handleVideoView = async (videoId: string) => {
+    try {
+      await VideoService.incrementViewCount(videoId);
+    } catch (error) {
+      console.error("Error incrementing view count:", error);
     }
   };
 
+  const handleRefresh = () => {
+    fetchVideos();
+    setActiveIndex(0);
+  };
+
   return (
-    <div className="h-full w-full overflow-hidden">
-      {isLoading ? (
-        <div className="flex items-center justify-center h-full w-full bg-app-black">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
+    <div className="flex flex-col h-full overflow-hidden bg-black">
+      <Tabs 
+        defaultValue="following" 
+        value={activeTab} 
+        onValueChange={setActiveTab} 
+        className="w-full"
+      >
+        <div className="flex justify-center pt-2 sticky top-0 z-10 bg-black/50 backdrop-blur-sm">
+          <TabsList className="grid w-[200px] grid-cols-2">
+            <TabsTrigger value="following" onClick={() => setActiveIndex(0)}>
+              Following
+            </TabsTrigger>
+            <TabsTrigger value="foryou" onClick={() => setActiveIndex(0)}>
+              For You
+            </TabsTrigger>
+          </TabsList>
         </div>
-      ) : (
-        <VideoFeed 
-          videos={localVideos} 
-          activeVideoIndex={activeVideoIndex} 
-          onVideoView={handleVideoView}
-        />
-      )}
+        
+        <TabsContent value="following" className="h-full m-0 data-[state=inactive]:hidden">
+          {videos.length > 0 ? (
+            <VideoFeed 
+              videos={videos} 
+              activeIndex={activeIndex}
+              onVideoChange={handleVideoChange}
+              onVideoView={handleVideoView}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-white">
+              <h3 className="text-xl font-semibold mb-2">No videos yet</h3>
+              <p className="text-gray-400 text-center mb-4 px-6">
+                Follow some creators to see their videos here
+              </p>
+              <button
+                onClick={() => navigate("/explore")}
+                className="px-6 py-2 bg-primary text-white rounded-full"
+              >
+                Explore Creators
+              </button>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="foryou" className="h-full m-0 data-[state=inactive]:hidden">
+          {videos.length > 0 ? (
+            <VideoFeed 
+              videos={videos} 
+              activeIndex={activeIndex}
+              onVideoChange={handleVideoChange}
+              onVideoView={handleVideoView}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-white">
+              <h3 className="text-xl font-semibold mb-2">Loading videos</h3>
+              <p className="text-gray-400 text-center mb-4 px-6">
+                Please wait while we find some great content for you
+              </p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

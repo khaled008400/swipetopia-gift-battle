@@ -21,6 +21,7 @@ interface VideoOverlayProps {
       username: string;
       avatar: string;
       isFollowing?: boolean;
+      id?: string; // Add id for user actions
     };
   };
   isLiked: boolean;

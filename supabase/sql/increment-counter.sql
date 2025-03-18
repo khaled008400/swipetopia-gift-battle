@@ -1,26 +1,50 @@
 
--- Function to increment a numeric column safely
-CREATE OR REPLACE FUNCTION public.increment_counter(row_id UUID, counter_name TEXT)
-RETURNS INTEGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  current_value INTEGER;
-  new_value INTEGER;
+-- Function to increment video views
+CREATE OR REPLACE FUNCTION increment_video_views(video_id UUID)
+RETURNS void AS $$
 BEGIN
-  -- Get the current value
-  EXECUTE format('SELECT %I FROM short_videos WHERE id = $1', counter_name)
-  INTO current_value
-  USING row_id;
-  
-  -- Calculate new value, handle NULL case
-  new_value := COALESCE(current_value, 0) + 1;
-  
-  -- Return the new value
-  RETURN new_value;
+  UPDATE videos
+  SET view_count = view_count + 1
+  WHERE id = video_id;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
--- Grant execution permission
-GRANT EXECUTE ON FUNCTION public.increment_counter(UUID, TEXT) TO authenticated, anon;
+-- Function to increment video likes
+CREATE OR REPLACE FUNCTION increment_video_likes(video_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE videos
+  SET likes_count = likes_count + 1
+  WHERE id = video_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to decrement video likes
+CREATE OR REPLACE FUNCTION decrement_video_likes(video_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE videos
+  SET likes_count = GREATEST(likes_count - 1, 0)
+  WHERE id = video_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to increment video comments
+CREATE OR REPLACE FUNCTION increment_video_comments(video_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE videos
+  SET comments_count = comments_count + 1
+  WHERE id = video_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to increment video shares
+CREATE OR REPLACE FUNCTION increment_video_shares(video_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE videos
+  SET shares_count = shares_count + 1
+  WHERE id = video_id;
+END;
+$$ LANGUAGE plpgsql;

@@ -30,6 +30,7 @@ export interface Video {
     avatar: string;
     avatar_url?: string;
     isFollowing?: boolean;
+    id?: string; // Add ID for user reference
   };
   profiles?: any; // Add profiles property for VideoPlayerPage
   creator?: any; // Add creator property

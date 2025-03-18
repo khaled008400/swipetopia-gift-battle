@@ -1,591 +1,308 @@
-import { supabase } from "@/integrations/supabase/client";
+
+import axios from 'axios';
+import { Video, Comment } from '@/types/video.types';
+import { supabase } from '@/lib/supabase';
 
 class VideoService {
-  /**
-   * Get a video by its ID
-   */
-  async getVideoById(id: string) {
+  // Mock data for development
+  private mockVideos: Video[] = Array(10).fill(null).map((_, i) => ({
+    id: `video-${i+1}`,
+    title: `Video Title ${i+1}`,
+    description: `This is video description ${i+1}. #trending #viral`,
+    video_url: `https://example.com/videos/${i+1}.mp4`,
+    thumbnail_url: `https://example.com/thumbnails/${i+1}.jpg`,
+    user_id: `user-${(i % 4) + 1}`,
+    created_at: new Date(Date.now() - i * 86400000).toISOString(),
+    updated_at: new Date(Date.now() - i * 86400000).toISOString(),
+    view_count: Math.floor(Math.random() * 10000),
+    likes_count: Math.floor(Math.random() * 500),
+    comments_count: Math.floor(Math.random() * 100),
+    shares_count: Math.floor(Math.random() * 50),
+    is_live: i % 7 === 0,
+    is_private: false,
+    duration: Math.floor(Math.random() * 60) + 10,
+    category: ['dance', 'comedy', 'food', 'sports', 'music'][i % 5],
+    hashtags: ['trending', 'viral', 'fyp'],
+    is_liked: false,
+    is_saved: false,
+    user: {
+      username: `user${(i % 4) + 1}`,
+      avatar: `https://i.pravatar.cc/150?img=${(i % 4) + 1}`,
+      avatar_url: `https://i.pravatar.cc/150?img=${(i % 4) + 1}`,
+      isFollowing: false,
+      id: `user-${(i % 4) + 1}`
+    }
+  }));
+
+  async getForYouVideos(): Promise<Video[]> {
     try {
       const { data, error } = await supabase
-        .from('short_videos')
+        .from('videos')
         .select(`
           *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
+          user:profiles(id, username, avatar_url)
         `)
-        .eq('id', id)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
       
-      if (error) {
-        throw error;
+      if (data && data.length > 0) {
+        return data.map(this.mapDatabaseVideoToModel);
       }
       
-      return data;
+      // Return mock data if no real data
+      return this.mockVideos;
     } catch (error) {
-      console.error("Error fetching video:", error);
-      throw error;
+      console.error('Error getting for you videos:', error);
+      return this.mockVideos;
     }
   }
 
-  /**
-   * Get a list of videos
-   */
-  async getVideos(page = 1, limit = 50) {
+  async getFollowingVideos(userId: string): Promise<Video[]> {
     try {
-      console.log("Fetching videos with page:", page, "limit:", limit);
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
+      const { data: followingData, error: followingError } = await supabase
+        .from('followers')
+        .select('following_id')
+        .eq('follower_id', userId);
       
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .range(from, to);
+      if (followingError) throw followingError;
       
-      if (error) {
-        console.error("Error in getVideos:", error);
-        throw error;
-      }
-      
-      console.log("Retrieved videos count:", data?.length || 0);
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching videos:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Get a user's videos
-   */
-  async getUserVideos(userId: string, page = 1, limit = 10) {
-    try {
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-      
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .range(from, to);
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Format videos to match Video type
-      const formattedVideos = (data || []).map(video => ({
-        ...video,
-        user: {
-          username: video.profiles?.username || 'Unknown',
-          avatar: video.profiles?.avatar_url || '',
-          avatar_url: video.profiles?.avatar_url || '',
+      if (followingData && followingData.length > 0) {
+        const followingIds = followingData.map(follow => follow.following_id);
+        
+        const { data, error } = await supabase
+          .from('videos')
+          .select(`
+            *,
+            user:profiles(id, username, avatar_url)
+          `)
+          .in('user_id', followingIds)
+          .order('created_at', { ascending: false })
+          .limit(25);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          return data.map(this.mapDatabaseVideoToModel);
         }
-      }));
+      }
       
-      return formattedVideos;
+      // Return filtered mock videos if no real data
+      return this.mockVideos.filter((_, index) => index % 3 === 0);
     } catch (error) {
-      console.error("Error fetching user videos:", error);
-      return [];
+      console.error('Error getting following videos:', error);
+      return this.mockVideos.filter((_, index) => index % 3 === 0);
     }
   }
 
-  /**
-   * Get videos liked by a user
-   */
-  async getLikedVideos(userId: string, page = 1, limit = 10) {
+  async getUserVideos(userId: string): Promise<Video[]> {
     try {
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-      
-      // Get liked video IDs
-      const { data: likedData, error: likedError } = await supabase
-        .from('video_likes')
-        .select('video_id')
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:profiles(id, username, avatar_url)
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
         
-      if (likedError) throw likedError;
-      
-      if (!likedData || likedData.length === 0) {
-        return [];
-      }
-      
-      const videoIds = likedData.map(like => like.video_id);
-      
-      // Get video details
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
-        .in('id', videoIds)
-        .range(from, to);
-      
       if (error) throw error;
       
-      // Format videos to match Video type
-      const formattedVideos = (data || []).map(video => ({
-        ...video,
-        user: {
-          username: video.profiles?.username || 'Unknown',
-          avatar: video.profiles?.avatar_url || '',
-          avatar_url: video.profiles?.avatar_url || '',
-        },
-        isLiked: true
-      }));
-      
-      return formattedVideos;
-    } catch (error) {
-      console.error("Error fetching liked videos:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Save a video (bookmark)
-   */
-  async saveVideo(videoId: string, userId: string) {
-    try {
-      const { error } = await supabase
-        .from('video_bookmarks')
-        .insert({
-          video_id: videoId,
-          user_id: userId
-        });
-      
-      if (error) {
-        throw error;
+      if (data && data.length > 0) {
+        return data.map(this.mapDatabaseVideoToModel);
       }
       
-      return { success: true };
+      // Return filtered mock videos if no real data
+      return this.mockVideos.filter(video => video.user_id === userId);
     } catch (error) {
-      console.error("Error saving video:", error);
-      throw error;
+      console.error('Error getting user videos:', error);
+      return this.mockVideos.filter(video => video.user_id === userId);
     }
   }
 
-  /**
-   * Unsave a video (remove bookmark)
-   */
-  async unsaveVideo(videoId: string, userId: string) {
+  async getSavedVideos(userId: string): Promise<Video[]> {
     try {
-      const { error } = await supabase
-        .from('video_bookmarks')
-        .delete()
-        .match({
-          video_id: videoId,
-          user_id: userId
-        });
-      
-      if (error) {
-        throw error;
-      }
-      
-      return { success: true };
-    } catch (error) {
-      console.error("Error unsaving video:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get videos saved by a user
-   */
-  async getSavedVideos(userId: string, page = 1, limit = 10) {
-    try {
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-      
-      // Get saved video IDs
       const { data: savedData, error: savedError } = await supabase
-        .from('video_bookmarks')
+        .from('saved_videos')
         .select('video_id')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .eq('user_id', userId);
         
       if (savedError) throw savedError;
       
-      if (!savedData || savedData.length === 0) {
-        return [];
+      if (savedData && savedData.length > 0) {
+        const videoIds = savedData.map(saved => saved.video_id);
+        
+        const { data, error } = await supabase
+          .from('videos')
+          .select(`
+            *,
+            user:profiles(id, username, avatar_url)
+          `)
+          .in('id', videoIds)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          return data.map(this.mapDatabaseVideoToModel);
+        }
       }
       
-      const videoIds = savedData.map(bookmark => bookmark.video_id);
-      
-      // Get video details
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
-        .in('id', videoIds)
-        .range(from, to);
+      // Return filtered mock videos if no real data
+      return this.mockVideos.filter((_, index) => index % 4 === 0);
+    } catch (error) {
+      console.error('Error getting saved videos:', error);
+      return this.mockVideos.filter((_, index) => index % 4 === 0);
+    }
+  }
+
+  async likeVideo(videoId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('likes')
+        .insert([{ video_id: videoId, user_id: userId }]);
       
       if (error) throw error;
       
-      // Format videos to match Video type
-      const formattedVideos = (data || []).map(video => ({
-        ...video,
-        user: {
-          username: video.profiles?.username || 'Unknown',
-          avatar: video.profiles?.avatar_url || '',
-          avatar_url: video.profiles?.avatar_url || '',
-        },
-        is_saved: true
-      }));
-      
-      return formattedVideos;
+      // Increment likes count in videos table
+      await supabase.rpc('increment_video_likes', { video_id: videoId });
     } catch (error) {
-      console.error("Error fetching saved videos:", error);
-      return [];
+      console.error('Error liking video:', error);
+      throw error;
     }
   }
 
-  /**
-   * Increment video view count
-   */
-  async incrementViews(videoId: string) {
+  async unlikeVideo(videoId: string, userId: string): Promise<void> {
     try {
-      // Use the increment_counter function
-      const { data: newCount, error } = await supabase
-        .rpc('increment_counter', {
-          row_id: videoId,
-          counter_name: 'view_count'
-        });
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Update using the return value from the function
-      const { error: updateError } = await supabase
-        .from('short_videos')
-        .update({ view_count: newCount })
-        .eq('id', videoId);
-      
-      if (updateError) {
-        throw updateError;
-      }
-    } catch (error) {
-      console.error("Error incrementing view count:", error);
-    }
-  }
-
-  /**
-   * Helper method to safely get incremented count
-   */
-  private async getIncrementedCount(videoId: string, field: string): Promise<number> {
-    try {
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(field)
-        .eq('id', videoId)
-        .single();
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .match({ video_id: videoId, user_id: userId });
         
       if (error) throw error;
       
-      return (data?.[field] || 0) + 1;
+      // Decrement likes count in videos table
+      await supabase.rpc('decrement_video_likes', { video_id: videoId });
     } catch (error) {
-      console.error(`Error getting ${field}:`, error);
-      return 1; // Default to 1 if we can't get the current count
-    }
-  }
-
-  /**
-   * Like a video
-   */
-  async likeVideo(videoId: string, userId: string) {
-    try {
-      const { error } = await supabase
-        .from('video_likes')
-        .insert({
-          video_id: videoId,
-          user_id: userId
-        });
-      
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      console.error("Error liking video:", error);
+      console.error('Error unliking video:', error);
       throw error;
     }
   }
 
-  /**
-   * Unlike a video
-   */
-  async unlikeVideo(videoId: string, userId: string) {
+  async saveVideo(videoId: string, userId: string): Promise<void> {
     try {
       const { error } = await supabase
-        .from('video_likes')
+        .from('saved_videos')
+        .insert([{ video_id: videoId, user_id: userId }]);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving video:', error);
+      throw error;
+    }
+  }
+
+  async unsaveVideo(videoId: string, userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('saved_videos')
         .delete()
-        .match({
-          video_id: videoId,
-          user_id: userId
-        });
-      
-      if (error) {
-        throw error;
-      }
+        .match({ video_id: videoId, user_id: userId });
+        
+      if (error) throw error;
     } catch (error) {
-      console.error("Error unliking video:", error);
+      console.error('Error unsaving video:', error);
       throw error;
     }
   }
 
-  /**
-   * Add a comment to a video
-   */
-  async addComment(videoId: string, userId: string, comment: string) {
+  async incrementViewCount(videoId: string): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('video_comments')
-        .insert({
-          video_id: videoId,
-          user_id: userId,
-          content: comment
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data;
+      // Use RPC for atomic increment
+      await supabase.rpc('increment_video_views', { video_id: videoId });
     } catch (error) {
-      console.error("Error adding comment:", error);
-      throw error;
+      console.error('Error incrementing view count:', error);
     }
   }
 
-  /**
-   * Get comments for a video
-   */
-  async getComments(videoId: string) {
+  async getVideoComments(videoId: string): Promise<Comment[]> {
     try {
       const { data, error } = await supabase
-        .from('video_comments')
+        .from('comments')
         .select(`
           *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
+          user:profiles(username, avatar_url)
         `)
         .eq('video_id', videoId)
         .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
+        
+      if (error) throw error;
       
       return data || [];
     } catch (error) {
-      console.error("Error fetching comments:", error);
+      console.error('Error getting video comments:', error);
       return [];
     }
   }
 
-  /**
-   * Get trending videos
-   */
-  async getTrendingVideos(limit = 10) {
+  async addComment(videoId: string, userId: string, content: string): Promise<Comment | null> {
     try {
       const { data, error } = await supabase
-        .from('short_videos')
+        .from('comments')
+        .insert([{ 
+          video_id: videoId, 
+          user_id: userId, 
+          content 
+        }])
         .select(`
           *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
+          user:profiles(username, avatar_url)
         `)
-        .order('view_count', { ascending: false })
-        .limit(limit);
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching trending videos:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Search videos
-   */
-  async searchVideos(query: string) {
-    try {
-      const { data, error } = await supabase
-        .from('short_videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
-        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error("Error searching videos:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Report a video
-   */
-  async reportVideo(videoId: string, reason: string, userId: string) {
-    try {
-      const { error } = await supabase
-        .from('admin_actions')
-        .insert({
-          action_type: 'report_video',
-          target_id: videoId,
-          reason: reason,
-          admin_id: userId
-        });
-      
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      console.error("Error reporting video:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Upload a video
-   */
-  async uploadVideo(file: File, metadata: any) {
-    try {
-      console.log('Starting video upload with metadata:', metadata);
-      
-      // Check if user is authenticated
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('Session data:', sessionData);
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        throw new Error("Failed to verify authentication: " + sessionError.message);
-      }
-      
-      if (!sessionData.session) {
-        throw new Error("You must be logged in to upload videos");
-      }
-      
-      const user = sessionData.session.user;
-      console.log('Authenticated user:', user.id);
-      
-      // Generate a unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-      
-      console.log('Uploading file to storage:', filePath);
-      
-      // Upload to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw new Error("Failed to upload video: " + uploadError.message);
-      }
-      
-      console.log('File uploaded successfully:', uploadData);
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(filePath);
-      
-      console.log('Public URL:', publicUrl);
-      
-      // Create video record
-      const videoData = {
-        title: metadata.title,
-        description: metadata.description || '',
-        video_url: publicUrl,
-        user_id: user.id,
-        thumbnail_url: metadata.thumbnail || null,
-      };
-      
-      console.log('Creating video record:', videoData);
-      
-      const { data, error } = await supabase
-        .from('short_videos')
-        .insert(videoData)
-        .select()
         .single();
       
-      if (error) {
-        console.error('Database insert error:', error);
-        throw new Error("Failed to create video record: " + error.message);
-      }
+      if (error) throw error;
       
-      console.log('Video record created:', data);
+      // Increment comment count
+      await supabase.rpc('increment_video_comments', { video_id: videoId });
+      
       return data;
     } catch (error) {
-      console.error("Error uploading video:", error);
-      throw error;
+      console.error('Error adding comment:', error);
+      return null;
     }
   }
 
-  /**
-   * Share video implementation
-   */
-  async shareVideo(videoId: string) {
-    console.log(`Sharing video ${videoId}`);
-    return { success: true };
-  }
-  
-  /**
-   * Download video implementation
-   */
-  async downloadVideo(videoId: string) {
-    console.log(`Downloading video ${videoId}`);
-    return { success: true };
+  // Helper method to map database video to frontend model
+  private mapDatabaseVideoToModel(dbVideo: any): Video {
+    return {
+      id: dbVideo.id,
+      title: dbVideo.title || '',
+      description: dbVideo.description || '',
+      video_url: dbVideo.video_url,
+      thumbnail_url: dbVideo.thumbnail_url,
+      user_id: dbVideo.user_id,
+      created_at: dbVideo.created_at,
+      updated_at: dbVideo.updated_at,
+      view_count: dbVideo.view_count || 0,
+      likes_count: dbVideo.likes_count || 0,
+      comments_count: dbVideo.comments_count || 0,
+      shares_count: dbVideo.shares_count || 0,
+      is_live: dbVideo.is_live || false,
+      is_private: dbVideo.is_private || false,
+      duration: dbVideo.duration || 0,
+      category: dbVideo.category || 'general',
+      hashtags: dbVideo.hashtags || [],
+      is_liked: dbVideo.is_liked || false,
+      is_saved: dbVideo.is_saved || false,
+      user: {
+        id: dbVideo.user?.id,
+        username: dbVideo.user?.username || 'Unknown',
+        avatar: dbVideo.user?.avatar_url || 'https://i.pravatar.cc/150',
+        avatar_url: dbVideo.user?.avatar_url || 'https://i.pravatar.cc/150',
+        isFollowing: dbVideo.user?.isFollowing || false
+      }
+    };
   }
 }
 
