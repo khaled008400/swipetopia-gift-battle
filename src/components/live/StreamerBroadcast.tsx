@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Users, Zap } from 'lucide-react';
 import AgoraVideoStream from './AgoraVideoStream';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { StreamService } from '@/services/streaming';
+import { supabase } from '@/integrations/supabase/client';
+import { LiveStream } from '@/services/streaming/stream.types';
 
 interface StreamerBroadcastProps {
   streamerId: string;
@@ -20,25 +22,66 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamId, setStreamId] = useState<string | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
+  const [streamStatus, setStreamStatus] = useState<'online' | 'offline'>('offline');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!streamId) return;
+
+    // Setup realtime subscription to stream status changes
+    const channel = supabase.channel(`livestream:${streamId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'streams',
+          filter: `id=eq.${streamId}`
+        },
+        (payload) => {
+          if (payload.new) {
+            const newStreamData = payload.new as LiveStream;
+            setViewerCount(newStreamData.viewer_count || 0);
+            setStreamStatus(newStreamData.status);
+            
+            // If stream was ended remotely (by admin or system)
+            if (newStreamData.status === 'offline' && isStreaming) {
+              setIsStreaming(false);
+              toast({
+                title: "Stream Ended",
+                description: "Your stream has been ended",
+                variant: "destructive"
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [streamId, isStreaming, toast]);
 
   const startBroadcast = async () => {
     try {
       // Start a stream in the database
-      const newStreamId = await StreamService.startStream(
-        streamerId,
+      const newStream = await StreamService.startStream(
         `${streamerName}'s Live Stream`,
         `Live stream by ${streamerName}`
       );
       
-      setStreamId(newStreamId);
-      setIsStreaming(true);
-      
-      toast({
-        title: "Stream Started",
-        description: "You are now live!",
-        duration: 3000
-      });
+      if (newStream) {
+        setStreamId(newStream.id);
+        setIsStreaming(true);
+        setStreamStatus('online');
+        
+        toast({
+          title: "Stream Started",
+          description: "You are now live!",
+          duration: 3000
+        });
+      }
     } catch (error) {
       console.error("Error starting stream:", error);
       toast({
@@ -57,7 +100,7 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
       await StreamService.endStream(streamId);
       
       setIsStreaming(false);
-      setStreamId(null);
+      setStreamStatus('offline');
       
       toast({
         title: "Stream Ended",

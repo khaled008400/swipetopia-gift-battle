@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import StreamerBroadcast from '@/components/live/StreamerBroadcast';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const StreamerBroadcastPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [streamerName, setStreamerName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ const StreamerBroadcastPage = () => {
         <p className="text-gray-400 text-center mb-6">
           You need streamer privileges to broadcast live. Please contact support if you believe this is an error.
         </p>
-        <Button variant="outline" onClick={() => window.location.href = "/"}>
+        <Button variant="outline" onClick={() => navigate("/")}>
           Return Home
         </Button>
       </div>
