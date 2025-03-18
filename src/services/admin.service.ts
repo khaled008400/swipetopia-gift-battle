@@ -305,6 +305,10 @@ class AdminService {
     console.log(`User ${userId} restricted for reason: ${reason}`);
   }
 
+  async banUser(userId: string, reason: string): Promise<void> {
+    console.log(`User ${userId} banned for reason: ${reason}`);
+  }
+
   async getOrders(page = 1, statusFilter = ''): Promise<{ data: AdminOrder[], pagination: any }> {
     return {
       data: Array(10).fill(null).map((_, i) => ({

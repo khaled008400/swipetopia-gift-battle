@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AdminVideo } from '@/services/admin.service';
 import { 
@@ -32,6 +32,7 @@ interface VideoActionsProps {
   onSendWarning?: (videoId: string, userId: string, message: string) => void;
   onViewUserProfile?: (userId: string) => void;
   onRestrictUser?: (userId: string, reason: string) => void;
+  onBanUser?: (userId: string, reason: string) => void;
   compact?: boolean;
 }
 
@@ -42,12 +43,15 @@ const VideoActions: React.FC<VideoActionsProps> = ({
   onSendWarning,
   onViewUserProfile,
   onRestrictUser,
+  onBanUser,
   compact = false
 }) => {
   const [warningMessage, setWarningMessage] = useState("");
   const [restrictionReason, setRestrictionReason] = useState("");
+  const [banReason, setBanReason] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [restrictDialogOpen, setRestrictDialogOpen] = useState(false);
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
 
   const handleSendWarning = () => {
     if (onSendWarning && warningMessage.trim()) {
@@ -62,6 +66,14 @@ const VideoActions: React.FC<VideoActionsProps> = ({
       onRestrictUser(video.user.id || video.user_id, restrictionReason);
       setRestrictionReason("");
       setRestrictDialogOpen(false);
+    }
+  };
+
+  const handleBanUser = () => {
+    if (onBanUser && banReason.trim()) {
+      onBanUser(video.user.id || video.user_id, banReason);
+      setBanReason("");
+      setBanDialogOpen(false);
     }
   };
 
@@ -230,6 +242,44 @@ const VideoActions: React.FC<VideoActionsProps> = ({
             <DialogFooter>
               <Button onClick={() => setRestrictDialogOpen(false)} variant="outline">Cancel</Button>
               <Button onClick={handleRestrictUser} variant="destructive">Restrict User</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {onBanUser && (
+        <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="text-red-600"
+            >
+              <Ban className="mr-2 h-4 w-4" />
+              Ban User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Ban User</DialogTitle>
+              <DialogDescription>
+                This will permanently ban {video.user.username} from the platform. This action is severe and should be used only in cases of serious violations.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="ban-reason">Reason for Ban</Label>
+                <Textarea
+                  id="ban-reason"
+                  placeholder="Enter the reason for ban..."
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setBanDialogOpen(false)} variant="outline">Cancel</Button>
+              <Button onClick={handleBanUser} variant="destructive">Ban User</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

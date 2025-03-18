@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +24,7 @@ const AdminVideos = () => {
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [batchActionDialog, setBatchActionDialog] = useState<{
     open: boolean;
-    type: 'approve' | 'flag' | 'remove' | 'delete' | 'warn' | 'restrict';
+    type: 'approve' | 'flag' | 'remove' | 'delete' | 'warn' | 'restrict' | 'ban';
   }>({ open: false, type: 'approve' });
   const [batchActionReason, setBatchActionReason] = useState('');
   const [userDetailsDialog, setUserDetailsDialog] = useState<{
@@ -127,7 +128,7 @@ const AdminVideos = () => {
       queryClient.invalidateQueries({ queryKey: ['adminVideos'] });
       toast({
         title: "User banned",
-        description: "User has been banned from uploading new content.",
+        description: "User has been banned from the platform.",
       });
     },
     onError: () => {
@@ -370,7 +371,7 @@ const AdminVideos = () => {
               Cancel
             </Button>
             <Button
-              variant={batchActionDialog.type === 'delete' ? 'destructive' : 'default'}
+              variant={batchActionDialog.type === 'delete' || batchActionDialog.type === 'ban' ? 'destructive' : 'default'}
               onClick={handleBatchAction}
             >
               Confirm
@@ -401,7 +402,7 @@ const AdminVideos = () => {
                   <p><strong>Email:</strong> {userDetailsDialog.user.email}</p>
                   <p><strong>Status:</strong> {userDetailsDialog.user.status}</p>
                   <p><strong>Role:</strong> {userDetailsDialog.user.role}</p>
-                  <p><strong>Joined:</strong> {new Date(userDetailsDialog.user.createdAt).toLocaleDateString()}</p>
+                  <p><strong>Joined:</strong> {new Date(userDetailsDialog.user.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               <div>
