@@ -14,6 +14,8 @@ export interface VirtualGift {
   hasSound?: boolean;
   description?: string;
   isPremium?: boolean;
+  soundUrl?: string;
+  is_premium?: boolean;
 }
 
 export interface GiftTransaction {

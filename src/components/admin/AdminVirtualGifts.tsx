@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService from '@/services/admin.service';
@@ -29,7 +30,8 @@ const AdminVirtualGifts = () => {
       color: data.color || "#000000", 
       icon: data.icon || "gift",
       created_at: new Date().toISOString(),
-      is_premium: data.is_premium || false
+      is_premium: data.is_premium || false,
+      soundUrl: data.soundUrl || ""
     };
     
     createGiftMutation.mutate(newGift);
@@ -123,7 +125,9 @@ const AdminVirtualGifts = () => {
         id: editingGift.id,
         data: {
           ...data,
-          value: parseInt(data.value || "0")
+          value: parseInt(data.value || "0"),
+          is_premium: data.is_premium || false,
+          soundUrl: data.soundUrl || ""
         }
       });
     } else {
