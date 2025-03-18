@@ -1,15 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import VideoService from '@/services/video.service';
-import { X } from "lucide-react";
-import UploadStep from "./upload-steps/UploadStep";
-import EditStep from "./upload-steps/EditStep";
-import ProcessingStep from "./upload-steps/ProcessingStep";
-import CompleteStep from "./upload-steps/CompleteStep";
-import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Loader } from "@/components/ui/loader";
+import VideoService from "@/services/video.service";
+import { Upload, X, Loader2 } from "lucide-react";
 
 interface VideoUploadFormProps {
   onClose: () => void;
@@ -17,348 +15,262 @@ interface VideoUploadFormProps {
 }
 
 const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
-  const [step, setStep] = useState<"upload" | "edit" | "processing" | "complete">("upload");
-  const [activeTab, setActiveTab] = useState<"upload" | "record">("upload");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
-  const [privacy, setPrivacy] = useState<"public" | "private" | "followers">("public");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [hashtags, setHashtags] = useState<string[]>([]);
-  const [allowDownloads, setAllowDownloads] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
-  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
-  const [uploadedVideoData, setUploadedVideoData] = useState(null);
-  const { user } = useAuth();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setVideoFile(file);
+      
+      // Generate thumbnail from video (optional)
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        video.currentTime = 1; // Set to 1 second to get a frame
+      };
+      video.oncanplay = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const thumbnailDataUrl = canvas.toDataURL("image/jpeg");
+        setThumbnail(thumbnailDataUrl);
+      };
+      video.src = URL.createObjectURL(file);
+    }
+  };
 
-    if (!file.type.startsWith("video/")) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!videoFile) {
       toast({
-        title: "Invalid file type",
-        description: "Please select a video file",
+        title: "Error",
+        description: "Please select a video file to upload",
         variant: "destructive",
       });
       return;
     }
-
-    if (file.size > 100 * 1024 * 1024) {
+    
+    if (!title.trim()) {
       toast({
-        title: "File too large",
-        description: "Video must be less than 100MB",
+        title: "Error",
+        description: "Please provide a title for your video",
         variant: "destructive",
       });
       return;
     }
-
-    setVideoFile(file);
-    const url = URL.createObjectURL(file);
-    setVideoPreviewUrl(url);
-    setStep("edit");
+    
+    try {
+      setIsUploading(true);
+      setProgress(0);
+      
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 95) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 5;
+        });
+      }, 500);
+      
+      const videoData = await VideoService.uploadVideo(videoFile, {
+        title,
+        description,
+        thumbnail,
+      });
+      
+      clearInterval(progressInterval);
+      setProgress(100);
+      
+      toast({
+        title: "Success",
+        description: "Your video has been uploaded successfully",
+      });
+      
+      if (onSuccess && videoData) {
+        onSuccess(videoData.id);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
 
-  const handleUpload = async () => {
-    if (!videoFile && !recordedVideoUrl) return;
-    
-    if (!title.trim()) {
-      toast({
-        title: "Title required",
-        description: "Please add a title for your video",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "You need to be logged in to upload videos",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setStep("processing");
-      setIsUploading(true);
-      setUploadError(null);
-
-      const progressSteps = [10, 25, 45, 60, 75, 90, 95, 100];
-      let currentStepIndex = 0;
-
-      const interval = setInterval(() => {
-        if (currentStepIndex < progressSteps.length) {
-          setUploadProgress(progressSteps[currentStepIndex]);
-          currentStepIndex++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 500);
-
-      try {
-        const finalVideoFile = videoFile || 
-          (recordedVideoUrl ? 
-            await fetch(recordedVideoUrl)
-              .then(r => r.blob())
-              .then(blob => new File([blob], "recorded-video.webm", { type: "video/webm" })) 
-            : null);
-              
-        if (!finalVideoFile) {
-          throw new Error("No video file available");
-        }
-        
-        console.log('Preparing to upload file:', finalVideoFile.name, finalVideoFile.size, finalVideoFile.type);
-        console.log('Current user:', user);
-        
-        const response = await VideoService.uploadVideo(finalVideoFile, {
-          title,
-          description,
-          hashtags,
-          isPublic: privacy === "public",
-          allowDownloads
-        });
-              
-        console.log("Upload response:", response);
-        setUploadedVideoData(response);
-        setStep("complete");
-              
-        toast({
-          title: "Upload successful",
-          description: "Your video has been uploaded"
-        });
-              
-        if (onSuccess && response?.id) {
-          onSuccess(response.id);
-        }
-      } catch (error: any) {
-        console.error("Error processing upload:", error);
-        clearInterval(interval);
-        
-        const errorMessage = error instanceof Error ? error.message : "There was an error uploading your video";
-        setUploadError(errorMessage);
-        
-        toast({
-          title: "Upload failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        
-        setStep("edit");
-      } finally {
-        setIsUploading(false);
-        clearInterval(interval);
-      }
-    } catch (error) {
-      console.error("Error in upload process:", error);
-      setIsUploading(false);
-      setStep("edit");
-      
-      toast({
-        title: "Upload failed",
-        description: "There was an error processing your video",
-        variant: "destructive",
-      });
+  const clearSelectedFile = () => {
+    setVideoFile(null);
+    setThumbnail(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user", width: { ideal: 1080 }, height: { ideal: 1920 } }, 
-        audio: true 
-      });
-      setStream(mediaStream);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (error) {
-      console.error("Error accessing camera:", error);
-      toast({
-        variant: "destructive",
-        title: "Camera access denied",
-        description: "Please allow camera and microphone access to record videos",
-      });
-    }
-  };
+  if (!user) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-full">
+        <h2 className="text-xl font-semibold mb-2">Sign in Required</h2>
+        <p className="text-gray-500 mb-4 text-center">
+          You need to be signed in to upload videos.
+        </p>
+        <Button onClick={onClose}>Close</Button>
+      </div>
+    );
+  }
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-  };
-
-  const startRecording = () => {
-    if (!stream) return;
-    
-    chunksRef.current = [];
-    const mediaRecorder = new MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunksRef.current.push(e.data);
-      }
-    };
-    
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      setRecordedVideoUrl(url);
-      setVideoPreviewUrl(url);
-      setStep("edit");
-    };
-    
-    mediaRecorder.start();
-    setIsRecording(true);
-    
-    let duration = 0;
-    const timer = window.setInterval(() => {
-      duration += 1;
-      setRecordingDuration(duration);
-      
-      if (duration >= 60) {
-        stopRecording();
-      }
-    }, 1000);
-    
-    setRecordingTimer(timer);
-  };
-  
-  const stopRecording = () => {
-    if (recordingTimer) {
-      clearInterval(recordingTimer);
-      setRecordingTimer(null);
-    }
-    
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setRecordingDuration(0);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === "record") {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-    
-    return () => {
-      stopCamera();
-    };
-  }, [activeTab]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case "upload":
-        return (
-          <UploadStep
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            triggerFileInput={triggerFileInput}
-            fileInputRef={fileInputRef}
-            handleFileChange={handleFileChange}
-            videoRef={videoRef}
-            isRecording={isRecording}
-            recordingDuration={recordingDuration}
-            formatTime={formatTime}
-            startRecording={startRecording}
-            stopRecording={stopRecording}
-          />
-        );
-      
-      case "edit":
-        return (
-          <EditStep
-            title={title}
-            setTitle={setTitle}
-            description={description}
-            setDescription={setDescription}
-            hashtags={hashtags}
-            setHashtags={setHashtags}
-            privacy={privacy}
-            setPrivacy={setPrivacy}
-            allowDownloads={allowDownloads}
-            setAllowDownloads={setAllowDownloads}
-            onClose={onClose}
-            handleUpload={handleUpload}
-            videoPreviewUrl={videoPreviewUrl}
-            isAuthenticated={!!user}
-            error={uploadError}
-          />
-        );
-      
-      case "processing":
-        return (
-          <ProcessingStep uploadProgress={uploadProgress} />
-        );
-      
-      case "complete":
-        return (
-          <CompleteStep
-            onClose={onClose}
-            onReset={() => {
-              setStep("upload");
-              setVideoFile(null);
-              setVideoPreviewUrl(null);
-              setRecordedVideoUrl(null);
-              setTitle("");
-              setDescription("");
-              setHashtags([]);
-              setPrivacy("public");
-              setAllowDownloads(false);
-            }}
-            videoData={uploadedVideoData}
-          />
-        );
-    }
-  };
-
-  console.log("Current upload step:", step);
-  
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-background z-10">
-        <h2 className="text-xl font-bold">
-          {step === "upload" ? "Upload video" : 
-           step === "edit" ? "Edit video" :
-           step === "processing" ? "Processing video" :
-           "Upload complete"}
-        </h2>
-        <button onClick={onClose}>
-          <X size={24} />
-        </button>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Upload Video</h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-      
-      <div className="flex-grow p-6 overflow-y-auto">
-        {renderStep()}
-      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="video-file">Video</Label>
+          <input
+            ref={fileInputRef}
+            id="video-file"
+            type="file"
+            accept="video/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          
+          {!videoFile ? (
+            <div 
+              onClick={triggerFileInput}
+              className="border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <Upload className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-center text-gray-500">
+                Click to select a video file or drag and drop
+              </p>
+              <p className="text-center text-gray-400 text-sm mt-2">
+                MP4, WebM or MOV up to 50MB
+              </p>
+            </div>
+          ) : (
+            <div className="relative border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="h-16 w-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                    {thumbnail ? (
+                      <img src={thumbnail} alt="Video thumbnail" className="object-cover w-full h-full" />
+                    ) : (
+                      <video className="w-full h-full object-cover">
+                        <source src={URL.createObjectURL(videoFile)} />
+                      </video>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">{videoFile.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearSelectedFile}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add a title that describes your video"
+            disabled={isUploading}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Tell viewers about your video (optional)"
+            disabled={isUploading}
+            rows={4}
+          />
+        </div>
+
+        {isUploading && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Uploading...</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end space-x-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isUploading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={!videoFile || !title.trim() || isUploading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading
+              </>
+            ) : (
+              "Upload"
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

@@ -1,315 +1,235 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { Video } from "../types/video.types";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import VideoPlayer from "./VideoPlayer";
 import VideoOverlay from "./video/VideoOverlay";
+import { Video } from "@/types/video.types";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import VideoService from "@/services/video.service";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface VideoFeedProps {
   videos: Video[];
-  activeVideoIndex: number;
-  onVideoView?: (videoId: string) => void;
-  isBattlePage?: boolean; // Added to support BattlePage component
+  activeIndex: number;
+  onVideoChange?: (index: number) => void;
 }
 
-const VideoFeed = ({ videos, activeVideoIndex, onVideoView, isBattlePage }: VideoFeedProps) => {
-  const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
-  const [userSaves, setUserSaves] = useState<Record<string, boolean>>({});
+const VideoFeed: React.FC<VideoFeedProps> = ({
+  videos,
+  activeIndex,
+  onVideoChange,
+}) => {
+  const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
+  const [savedVideos, setSavedVideos] = useState<Record<string, boolean>>({});
+  const [followedUsers, setFollowedUsers] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch user interactions on load
+  // Initialize states when videos or user changes
   useEffect(() => {
-    if (user) {
-      const fetchUserInteractions = async () => {
-        try {
-          // Get likes
-          const { data: likesData, error: likesError } = await supabase
-            .from('video_interactions')
-            .select('video_id')
-            .eq('user_id', user.id)
-            .eq('interaction_type', 'like');
+    const initializeStates = () => {
+      // Set initial states based on video properties
+      const newLikedVideos: Record<string, boolean> = {};
+      const newSavedVideos: Record<string, boolean> = {};
+      const newFollowedUsers: Record<string, boolean> = {};
 
-          if (likesError) throw likesError;
-
-          const newLikes: Record<string, boolean> = {};
-          likesData?.forEach(item => { newLikes[item.video_id] = true; });
-          setUserLikes(newLikes);
-
-          // Get saves
-          const { data: savesData, error: savesError } = await supabase
-            .from('video_interactions')
-            .select('video_id')
-            .eq('user_id', user.id)
-            .eq('interaction_type', 'save');
-
-          if (savesError) throw savesError;
-
-          const newSaves: Record<string, boolean> = {};
-          savesData?.forEach(item => { newSaves[item.video_id] = true; });
-          setUserSaves(newSaves);
-        } catch (err) {
-          console.error("Error fetching user interactions:", err);
+      videos.forEach((video) => {
+        // Set liked status
+        newLikedVideos[video.id] = video.is_liked || false;
+        
+        // Set saved status
+        newSavedVideos[video.id] = video.is_saved || false;
+        
+        // Set follow status if user info exists
+        if (video.user && video.user.isFollowing !== undefined) {
+          newFollowedUsers[video.user_id] = video.user.isFollowing;
         }
-      };
+      });
 
-      fetchUserInteractions();
-    }
-  }, [user]);
+      setLikedVideos(newLikedVideos);
+      setSavedVideos(newSavedVideos);
+      setFollowedUsers(newFollowedUsers);
+    };
 
-  // Track video views
-  useEffect(() => {
-    if (videos[activeVideoIndex]?.id && onVideoView) {
-      onVideoView(videos[activeVideoIndex].id);
-    }
-  }, [activeVideoIndex, videos, onVideoView]);
+    initializeStates();
+  }, [videos, user]);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to like videos",
-      });
+      navigate("/login");
       return;
     }
 
+    setIsLoading(true);
     try {
-      const isCurrentlyLiked = userLikes[videoId];
-      
-      // Optimistically update UI
-      setUserLikes(prev => ({
-        ...prev,
-        [videoId]: !isCurrentlyLiked
-      }));
-
-      if (isCurrentlyLiked) {
-        // Unlike
-        await supabase
-          .from('video_interactions')
-          .delete()
-          .match({
-            video_id: videoId,
-            user_id: user.id,
-            interaction_type: 'like'
-          });
-
-        // Decrement likes count
-        await supabase
-          .from('videos')
-          .update({ likes_count: videos[activeVideoIndex].likes - 1 })
-          .eq('id', videoId);
+      const isLiked = likedVideos[videoId];
+      if (isLiked) {
+        await VideoService.unlikeVideo(videoId, user.id);
       } else {
-        // Like
-        await supabase
-          .from('video_interactions')
-          .upsert({
-            video_id: videoId,
-            user_id: user.id,
-            interaction_type: 'like'
-          });
-
-        // Increment likes count
-        await supabase.rpc('increment_video_counter', {
-          video_id: videoId,
-          counter_name: 'likes_count'
-        });
+        await VideoService.likeVideo(videoId, user.id);
       }
-    } catch (err) {
-      console.error("Error liking video:", err);
-      // Revert optimistic update on error
-      setUserLikes(prev => ({
+      
+      // Update liked state
+      setLikedVideos((prev) => ({
         ...prev,
-        [videoId]: !prev[videoId]
+        [videoId]: !isLiked,
       }));
+      
+      // Show feedback to user
+      toast({
+        title: isLiked ? "Removed like" : "Video liked",
+        description: isLiked ? "You've removed your like from this video" : "You've liked this video",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error toggling like:", error);
       toast({
         title: "Error",
-        description: "Failed to like video",
+        description: "There was a problem with your action",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSave = async (videoId: string) => {
     if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to save videos",
-      });
+      navigate("/login");
       return;
     }
 
+    setIsLoading(true);
     try {
-      const isCurrentlySaved = userSaves[videoId];
-      
-      // Optimistically update UI
-      setUserSaves(prev => ({
-        ...prev,
-        [videoId]: !isCurrentlySaved
-      }));
-
-      if (isCurrentlySaved) {
-        // Unsave
-        await supabase
-          .from('video_interactions')
-          .delete()
-          .match({
-            video_id: videoId,
-            user_id: user.id,
-            interaction_type: 'save'
-          });
+      const isSaved = savedVideos[videoId];
+      if (isSaved) {
+        await VideoService.unsaveVideo(videoId, user.id);
       } else {
-        // Save
-        await supabase
-          .from('video_interactions')
-          .upsert({
-            video_id: videoId,
-            user_id: user.id,
-            interaction_type: 'save'
-          });
+        await VideoService.saveVideo(videoId, user.id);
       }
-    } catch (err) {
-      console.error("Error saving video:", err);
-      // Revert optimistic update on error
-      setUserSaves(prev => ({
+      
+      // Update saved state
+      setSavedVideos((prev) => ({
         ...prev,
-        [videoId]: !prev[videoId]
+        [videoId]: !isSaved,
       }));
+      
+      // Show feedback to user
+      toast({
+        title: isSaved ? "Removed from saved" : "Video saved",
+        description: isSaved ? "Video removed from your saved collection" : "Video added to your saved collection",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error toggling save:", error);
       toast({
         title: "Error",
-        description: "Failed to save video",
+        description: "There was a problem with your action",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleFollow = async () => {
+  const handleFollow = async (userId: string) => {
     if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to follow users",
-      });
+      navigate("/login");
       return;
     }
-    
-    const videoCreatorId = videos[activeVideoIndex]?.user_id;
-    
-    if (!videoCreatorId) {
+
+    if (userId === user.id) {
       toast({
-        title: "Error",
-        description: "Cannot follow this user",
+        title: "Can't follow yourself",
+        description: "You cannot follow your own account",
         variant: "destructive",
       });
       return;
     }
-    
+
+    setIsLoading(true);
     try {
-      // Check if already following
-      const { data, error } = await supabase
-        .from('followers')
-        .select('*')
-        .eq('follower_id', user.id)
-        .eq('following_id', videoCreatorId)
-        .maybeSingle();
-        
-      if (error) throw error;
+      const isFollowing = followedUsers[userId];
+      // Implement follow/unfollow API calls here
+      // For now we'll just toggle the state
       
-      if (data) {
-        // Unfollow
-        await supabase
-          .from('followers')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', videoCreatorId);
-          
-        // Update follower count
-        await supabase.rpc('decrement_followers', {
-          user_id: videoCreatorId
-        });
-        
-        toast({
-          title: "Unfollowed",
-          description: `You unfollowed ${videos[activeVideoIndex].user.username}`,
-        });
-      } else {
-        // Follow
-        await supabase
-          .from('followers')
-          .insert({
-            follower_id: user.id,
-            following_id: videoCreatorId
-          });
-          
-        // Update follower count
-        await supabase.rpc('increment_followers', {
-          user_id: videoCreatorId
-        });
-        
-        toast({
-          title: "Following",
-          description: `You are now following ${videos[activeVideoIndex].user.username}`,
-        });
-      }
-    } catch (err) {
-      console.error("Error following user:", err);
+      // Update followed state
+      setFollowedUsers((prev) => ({
+        ...prev,
+        [userId]: !isFollowing,
+      }));
+      
+      // Show feedback to user
+      toast({
+        title: isFollowing ? "Unfollowed" : "Followed",
+        description: isFollowing ? "You've unfollowed this user" : "You're now following this user",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error toggling follow:", error);
       toast({
         title: "Error",
-        description: "Failed to follow user",
+        description: "There was a problem with your action",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // If no videos are provided, show a loading state
+  if (!videos || videos.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full">
+        <Loader2 className="w-8 h-8 animate-spin mb-4" />
+        <p className="text-center text-gray-500">Loading videos...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full w-full relative">
+    <div className="relative h-full w-full">
       {videos.map((video, index) => (
         <div
-          key={video.id || index}
-          className={`absolute top-0 left-0 h-full w-full transition-transform duration-300 ${
-            index === activeVideoIndex
-              ? "translate-y-0 opacity-100 z-10"
-              : index < activeVideoIndex
-              ? "-translate-y-full opacity-0 z-0"
-              : "translate-y-full opacity-0 z-0"
+          key={video.id}
+          className={`absolute inset-0 transition-opacity duration-300 ${
+            index === activeIndex ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
         >
           <VideoPlayer
-            videoUrl={video.video_url || video.url}
-            isActive={index === activeVideoIndex}
+            src={video.video_url}
+            poster={video.thumbnail_url}
+            isActive={index === activeIndex}
+            videoId={video.id}
           />
           <VideoOverlay
             video={{
               id: video.id,
               description: video.description || "",
-              likes: video.likes || video.likes_count || 0,
-              comments: video.comments || video.comments_count || 0,
-              shares: video.shares || video.shares_count || 0,
+              likes: video.likes_count || 0,
+              comments: video.comments_count || 0,
+              shares: video.shares_count || 0,
+              isLive: video.is_live,
+              isLiked: likedVideos[video.id],
+              isSaved: savedVideos[video.id],
+              allowDownloads: true,
               user: {
-                username: video.user?.username || "",
-                avatar: video.user?.avatar_url || video.user?.avatar || "",
-                isFollowing: false
-              }
+                username: video.user?.username || "Unknown",
+                avatar: video.user?.avatar_url || "",
+                isFollowing: followedUsers[video.user_id],
+              },
             }}
-            isLiked={userLikes[video.id] || false}
-            isSaved={userSaves[video.id] || false}
-            onLike={() => video.id && handleLike(video.id)}
-            onSave={() => video.id && handleSave(video.id)}
-            onFollow={handleFollow}
+            isLiked={likedVideos[video.id] || false}
+            isSaved={savedVideos[video.id] || false}
+            onLike={() => handleLike(video.id)}
+            onSave={() => handleSave(video.id)}
+            onFollow={() => handleFollow(video.user_id)}
           />
         </div>
       ))}
-      
-      {/* Navigation indicator */}
-      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col items-center z-20">
-        {videos.map((_, index) => (
-          <div
-            key={index}
-            className={`w-2 h-10 my-1 rounded-full ${
-              index === activeVideoIndex ? "bg-app-yellow" : "bg-gray-500 bg-opacity-50"
-            }`}
-          />
-        ))}
-      </div>
     </div>
   );
 };

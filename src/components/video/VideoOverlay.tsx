@@ -101,7 +101,7 @@ const VideoOverlay = ({
           )}
           
           <VideoActions 
-            videoId={video.id} // Ensure videoId is properly passed
+            videoId={video.id} 
             likes={video.likes}
             comments={video.comments}
             shares={video.shares}
