@@ -1,21 +1,8 @@
 
-// Shared interfaces for streaming functionality
+import { LiveStream } from "@/types/livestream.types";
 
-export interface LiveStream {
-  id: string;
-  streamer_id: string;
-  title: string;
-  description?: string;
-  status: 'live' | 'offline' | 'ended';
-  viewer_count: number;
-  started_at: string;
-  ended_at?: string;
-  profiles?: {
-    username: string;
-    avatar_url?: string;
-  };
-  is_live: boolean; // Define as a property, not a getter
-}
+// Re-export LiveStream to maintain backward compatibility
+export { LiveStream };
 
 export interface Battle {
   id: string;

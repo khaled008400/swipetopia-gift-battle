@@ -4,7 +4,7 @@ export interface LiveStream {
   user_id: string;
   title: string;
   description?: string;
-  status: 'online' | 'offline';
+  status: 'online' | 'offline' | 'live' | 'scheduled';
   started_at: string;
   ended_at?: string;
   viewer_count?: number;
@@ -28,6 +28,7 @@ export interface LiveStream {
   endedAt?: string;
   scheduledFor?: string;
   plannedDurationMinutes?: number;
+  is_live?: boolean;
 }
 
 export interface Battle {

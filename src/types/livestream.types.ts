@@ -16,7 +16,7 @@ export interface LiveStream {
   plannedDurationMinutes?: number;
   username?: string;
   avatar_url?: string;
-  status?: 'online' | 'offline' | 'live' | 'scheduled';
+  status: 'online' | 'offline' | 'live' | 'scheduled';
   description?: string;
   thumbnail_url?: string;
   is_live?: boolean;
