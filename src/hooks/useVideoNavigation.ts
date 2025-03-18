@@ -6,6 +6,13 @@ export function useVideoNavigation(initialVideos: Video[]) {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [videos, setVideos] = useState<Video[]>(initialVideos);
 
+  // Update videos when initialVideos change
+  useEffect(() => {
+    if (initialVideos && initialVideos.length > 0) {
+      setVideos(initialVideos);
+    }
+  }, [initialVideos]);
+
   useEffect(() => {
     const handleScroll = (e: WheelEvent) => {
       if (e.deltaY > 0 && activeVideoIndex < videos.length - 1) {
@@ -46,6 +53,7 @@ export function useVideoNavigation(initialVideos: Video[]) {
   return {
     activeVideoIndex,
     videos,
-    setVideos
+    setVideos,
+    setActiveVideoIndex
   };
 }

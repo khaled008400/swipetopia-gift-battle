@@ -2,13 +2,27 @@
 import React, { useEffect, useRef, useState } from "react";
 
 export interface VideoPlayerProps {
-  videoUrl: string;  // Adding this prop to match usage in VideoFeed
-  isActive: boolean;
+  src: string;
+  poster?: string;
+  autoPlay?: boolean;
+  videoId?: string;
+  videoUrl?: string;
+  isActive?: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, isActive }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
+  src, 
+  poster, 
+  autoPlay = false,
+  videoId,
+  videoUrl,
+  isActive = false
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  
+  // Use src as primary source, fall back to videoUrl if src is not provided
+  const videoSource = src || videoUrl || '';
 
   useEffect(() => {
     if (videoRef.current) {
@@ -24,11 +38,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, isActive }) => {
     }
   }, [isActive, isPlaying]);
 
+  useEffect(() => {
+    if (autoPlay && videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.error("Error auto-playing video:", error);
+      });
+    }
+  }, [autoPlay]);
+
   return (
     <div className="h-full w-full">
       <video
         ref={videoRef}
-        src={videoUrl}
+        src={videoSource}
+        poster={poster}
         className="h-full w-full object-cover"
         loop
         muted
