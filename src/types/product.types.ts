@@ -46,6 +46,8 @@ export interface ProductReview {
   rating: number;
   comment: string;
   created_at: string;
+  username: string;
+  avatar_url?: string;
   user: {
     username: string;
     avatar_url?: string;
@@ -57,10 +59,15 @@ export interface RefundRequest {
   order_id: string;
   product_id: string;
   user_id: string;
+  seller_id: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
+  updated_at?: string;
   amount: number;
+  product_id: string;
+  product_name: string;
+  username: string;
   product: {
     name: string;
     image_url: string;
@@ -78,7 +85,17 @@ export interface CustomerMessage {
   subject: string;
   message: string;
   created_at: string;
+  updated_at?: string;
   read: boolean;
+  sender_id?: string;
+  receiver_id?: string;
+  content?: string;
+  sender_type?: "seller" | "customer";
+  customer_id?: string;
+  is_read?: boolean;
+  conversation_id?: string;
+  customer_name?: string;
+  customer_avatar?: string;
   user: {
     username: string;
     avatar_url?: string;
@@ -88,24 +105,35 @@ export interface CustomerMessage {
 export interface SellerWallet {
   id: string;
   seller_id: string;
+  user_id?: string;
   balance: number;
   currency: string;
   updated_at: string;
+  pending_balance?: number;
+  total_earnings?: number;
+  pending_amount?: number;
+  last_payout_date?: string;
+  can_withdraw?: boolean;
+  minimum_withdrawal?: number;
+  transactions?: WalletTransaction[];
 }
 
 export interface WalletTransaction {
   id: string;
   wallet_id: string;
   amount: number;
-  type: 'deposit' | 'withdrawal' | 'sale';
+  type: 'deposit' | 'withdrawal' | 'sale' | 'refund';
   status: 'completed' | 'pending' | 'failed';
   created_at: string;
   description: string;
+  reference_id?: string;
 }
 
 export interface ShopProfile {
   id: string;
   seller_id: string;
+  user_id?: string;
+  name?: string;
   shop_name: string;
   description: string;
   logo_url?: string;
@@ -120,6 +148,11 @@ export interface ShopProfile {
   };
   created_at: string;
   updated_at: string;
+  policies?: {
+    returns?: string;
+    shipping?: string;
+    terms?: string;
+  };
 }
 
 export interface LimitedOffer {
@@ -136,6 +169,8 @@ export interface LimitedOffer {
 export interface LiveSeller {
   id: string;
   user_id: string;
+  username?: string;
+  avatar_url?: string;
   title?: string;
   thumbnail_url?: string;
   is_live: boolean;

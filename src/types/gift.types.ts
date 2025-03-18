@@ -6,16 +6,16 @@ export interface VirtualGift {
   icon: string;
   color: string;
   value: number;
-  created_at?: string;
   available: boolean;
   category: string; 
   imageUrl: string; 
   imageType: "svg" | "gif"; 
   hasSound: boolean; 
   description: string; 
-  isPremium?: boolean;
+  is_premium: boolean;
   soundUrl: string; 
-  is_premium?: boolean;
+  created_at?: string;
+  isPremium?: boolean;
 }
 
 export interface GiftTransaction {

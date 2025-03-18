@@ -28,7 +28,7 @@ const LiveStreamPage = () => {
         const streamData = await LiveStreamService.getLiveStream(liveStreamId);
         setLiveStream(streamData);
 
-        // Fetch related videos (replace with actual logic)
+        // Fetch related videos
         const videos = await LiveStreamService.getRelatedVideos(liveStreamId);
         setRelatedVideos(videos);
 
@@ -65,9 +65,9 @@ const LiveStreamPage = () => {
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold">{liveStream.title || "Live Stream"}</h1>
+        <h1 className="text-xl font-bold">{liveStream?.title || "Live Stream"}</h1>
         <div className="flex items-center space-x-2">
-          <span>{liveStream.username}</span>
+          <span>{liveStream?.username}</span>
         </div>
       </div>
       
