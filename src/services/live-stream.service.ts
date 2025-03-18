@@ -109,6 +109,35 @@ class LiveStreamService {
       return [];
     }
   }
+
+  // End a battle between streamers
+  async endBattle(battleId: string, winnerId?: string): Promise<void> {
+    try {
+      // In a real implementation, this would update the battle status in the database
+      console.log(`Ending battle ${battleId} with winner: ${winnerId || 'No winner (tie)'}`);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return;
+    } catch (error) {
+      console.error('Error ending battle:', error);
+      throw error;
+    }
+  }
+
+  // Tag a product in a live stream
+  async tagProduct(productId: string, streamId: string, featured: boolean, discountPercentage?: number): Promise<void> {
+    try {
+      // In a real implementation, this would add the product to the stream in the database
+      console.log(`Tagging product ${productId} in stream ${streamId}`);
+      console.log(`Featured: ${featured}, Discount: ${discountPercentage || 'None'}`);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return;
+    } catch (error) {
+      console.error('Error tagging product:', error);
+      throw error;
+    }
+  }
 }
 
 export default new LiveStreamService();

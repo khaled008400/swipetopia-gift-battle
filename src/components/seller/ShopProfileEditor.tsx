@@ -22,8 +22,10 @@ const ShopProfileEditor = () => {
   
   const [profile, setProfile] = useState<ShopProfile>({
     id: "",
+    seller_id: user?.id || "",
     user_id: user?.id || "",
     name: "",
+    shop_name: "",
     description: "",
     logo_url: "",
     banner_url: "",

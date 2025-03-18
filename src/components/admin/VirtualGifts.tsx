@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default function VirtualGifts() {
             hasSound: false,
             soundUrl: "",
             category: "Premium",
+            is_premium: true,
           },
           {
             id: "2",
@@ -79,6 +81,7 @@ export default function VirtualGifts() {
             hasSound: false,
             soundUrl: "",
             category: "Standard",
+            is_premium: false,
           },
           {
             id: "3",
@@ -95,6 +98,7 @@ export default function VirtualGifts() {
             hasSound: false,
             soundUrl: "",
             category: "Standard",
+            is_premium: false,
           },
         ];
         setGifts(mockGifts);
@@ -151,6 +155,7 @@ export default function VirtualGifts() {
         hasSound: editingGift?.hasSound || false,
         soundUrl: editingGift?.soundUrl || "",
         category: editingGift?.category || "Standard",
+        is_premium: editingGift?.is_premium || false,
       };
 
       if (editingGift) {

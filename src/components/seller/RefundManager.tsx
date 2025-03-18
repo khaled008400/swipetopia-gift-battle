@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,8 +48,6 @@ const RefundManager = () => {
   const fetchRefundRequests = async () => {
     setLoading(true);
     try {
-      // In a real app, this would fetch refund requests from the database
-      // For now, we'll create mock data
       const mockRequests: RefundRequest[] = [
         {
           id: "refund-1",
@@ -65,6 +62,14 @@ const RefundManager = () => {
           product_id: "product-1",
           product_name: "Premium Leather Wallet",
           username: "JohnDoe",
+          product: {
+            name: "Premium Leather Wallet",
+            image_url: "/assets/products/wallet.jpg"
+          },
+          user: {
+            username: "JohnDoe",
+            email: "john@example.com"
+          }
         },
         {
           id: "refund-2",
@@ -79,6 +84,14 @@ const RefundManager = () => {
           product_id: "product-2",
           product_name: "Cotton T-Shirt",
           username: "JaneSmith",
+          product: {
+            name: "Cotton T-Shirt",
+            image_url: "/assets/products/tshirt.jpg"
+          },
+          user: {
+            username: "JaneSmith",
+            email: "jane@example.com"
+          }
         },
         {
           id: "refund-3",
@@ -93,6 +106,14 @@ const RefundManager = () => {
           product_id: "product-3",
           product_name: "Bluetooth Headphones",
           username: "SamWilson",
+          product: {
+            name: "Bluetooth Headphones",
+            image_url: "/assets/products/headphones.jpg"
+          },
+          user: {
+            username: "SamWilson",
+            email: "sam@example.com"
+          }
         },
         {
           id: "refund-4",
@@ -107,10 +128,17 @@ const RefundManager = () => {
           product_id: "product-4",
           product_name: "Smart Watch",
           username: "EmilyJohnson",
+          product: {
+            name: "Smart Watch",
+            image_url: "/assets/products/smartwatch.jpg"
+          },
+          user: {
+            username: "EmilyJohnson",
+            email: "emily@example.com"
+          }
         },
       ];
       
-      // Filter requests based on selected tab
       const filteredRequests = mockRequests.filter(req => {
         if (selectedTab === "pending") return req.status === "pending";
         if (selectedTab === "approved") return req.status === "approved";
@@ -141,11 +169,8 @@ const RefundManager = () => {
     
     setIsSubmitting(true);
     try {
-      // In a real app, this would send a request to the backend to approve the refund
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Update request status locally
       setRefundRequests(prevRequests => 
         prevRequests.map(req => 
           req.id === selectedRequest.id 
@@ -154,7 +179,6 @@ const RefundManager = () => {
         )
       );
       
-      // Clear selected request
       setSelectedRequest(null);
       
       toast({
@@ -162,7 +186,6 @@ const RefundManager = () => {
         description: "The refund request has been approved and the customer will be notified.",
       });
       
-      // Refresh the list to apply the filter if needed
       fetchRefundRequests();
     } catch (error) {
       console.error("Error approving refund:", error);
@@ -188,11 +211,8 @@ const RefundManager = () => {
     
     setIsSubmitting(true);
     try {
-      // In a real app, this would send a request to the backend to reject the refund
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Update request status locally
       setRefundRequests(prevRequests => 
         prevRequests.map(req => 
           req.id === selectedRequest.id 
@@ -201,7 +221,6 @@ const RefundManager = () => {
         )
       );
       
-      // Clear selected request
       setSelectedRequest(null);
       setResponseText("");
       
@@ -210,7 +229,6 @@ const RefundManager = () => {
         description: "The refund request has been rejected and the customer will be notified.",
       });
       
-      // Refresh the list to apply the filter if needed
       fetchRefundRequests();
     } catch (error) {
       console.error("Error rejecting refund:", error);

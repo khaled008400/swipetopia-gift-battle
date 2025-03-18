@@ -14,7 +14,7 @@ export interface VirtualGift {
   description: string; 
   is_premium: boolean;
   soundUrl: string; 
-  created_at?: string;
+  created_at: string;
   isPremium?: boolean;
 }
 

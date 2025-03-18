@@ -139,65 +139,76 @@ const SellerMessages = () => {
         )
       );
       
-      const mockMessages: MessageData[] = [
+      const mockMessages: CustomerMessage[] = [
         {
           id: `msg-${conversationId}-1`,
-          sender_type: "customer",
-          customer_id: conversation.customer_id,
+          user_id: conversation.customer_id,
           seller_id: user?.id || "",
+          subject: "Product Inquiry",
+          message: "Hi, I'm interested in one of your products.",
           content: "Hi, I'm interested in one of your products.",
           created_at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+          read: true,
+          sender_id: conversation.customer_id,
+          receiver_id: user?.id || "",
+          sender_type: "customer",
+          customer_id: conversation.customer_id,
           is_read: true,
           conversation_id: conversationId,
           customer_name: conversation.customer_name,
           customer_avatar: conversation.customer_avatar,
+          user: {
+            username: conversation.customer_name,
+            avatar_url: conversation.customer_avatar
+          }
         },
         {
           id: `msg-${conversationId}-2`,
-          sender_type: "seller",
-          customer_id: conversation.customer_id,
+          user_id: user?.id || "",
           seller_id: user?.id || "",
+          subject: "Re: Product Inquiry",
+          message: "Hello! Which product are you interested in?",
           content: "Hello! Which product are you interested in?",
           created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          is_read: true,
-          conversation_id: conversationId,
-        },
-        {
-          id: `msg-${conversationId}-3`,
-          sender_type: "customer",
-          customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: "I'm looking at the black leather jacket. Do you have it in size medium?",
-          created_at: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-          is_read: true,
-          conversation_id: conversationId,
-          customer_name: conversation.customer_name,
-          customer_avatar: conversation.customer_avatar,
-        },
-        {
-          id: `msg-${conversationId}-4`,
+          updated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          read: true,
+          sender_id: user?.id || "",
+          receiver_id: conversation.customer_id,
           sender_type: "seller",
           customer_id: conversation.customer_id,
-          seller_id: user?.id || "",
-          content: "Yes, we do have the black leather jacket in medium. It's currently in stock and ready to ship!",
-          created_at: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
           is_read: true,
           conversation_id: conversationId,
+          user: {
+            username: "You",
+            avatar_url: user?.avatar_url
+          }
         },
       ];
       
       if (conversation.last_message) {
         mockMessages.push({
           id: `msg-${conversationId}-latest`,
-          sender_type: "customer",
-          customer_id: conversation.customer_id,
+          user_id: conversation.customer_id,
           seller_id: user?.id || "",
+          subject: "Latest Message",
+          message: conversation.last_message,
           content: conversation.last_message,
           created_at: conversation.last_message_time,
+          updated_at: conversation.last_message_time,
+          read: conversation.unread_count === 0,
+          sender_id: conversation.customer_id,
+          receiver_id: user?.id || "",
+          sender_type: "customer",
+          customer_id: conversation.customer_id,
           is_read: conversation.unread_count === 0,
           conversation_id: conversationId,
           customer_name: conversation.customer_name,
           customer_avatar: conversation.customer_avatar,
+          user: {
+            username: conversation.customer_name,
+            avatar_url: conversation.customer_avatar
+          }
         });
       }
       
@@ -205,24 +216,7 @@ const SellerMessages = () => {
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
       
-      const transformedMessages: CustomerMessage[] = mockMessages.map(msg => ({
-        id: msg.id,
-        sender_id: msg.sender_type === "customer" ? msg.customer_id : msg.seller_id,
-        receiver_id: msg.sender_type === "customer" ? msg.seller_id : msg.customer_id,
-        content: msg.content,
-        read: msg.is_read,
-        created_at: msg.created_at,
-        updated_at: msg.created_at,
-        sender_type: msg.sender_type,
-        customer_id: msg.customer_id,
-        seller_id: msg.seller_id,
-        is_read: msg.is_read,
-        conversation_id: msg.conversation_id,
-        customer_name: msg.customer_name,
-        customer_avatar: msg.customer_avatar
-      }));
-      
-      setMessages(transformedMessages);
+      setMessages(mockMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast({
@@ -243,17 +237,24 @@ const SellerMessages = () => {
       
       const newMessageObj: CustomerMessage = {
         id: `msg-${Date.now()}`,
-        sender_id: user?.id || "",
-        receiver_id: conversation.customer_id,
+        user_id: user?.id || "",
+        seller_id: user?.id || "",
+        subject: "Reply",
+        message: newMessage,
         content: newMessage,
         read: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        sender_id: user?.id || "",
+        receiver_id: conversation.customer_id,
         sender_type: "seller",
         customer_id: conversation.customer_id,
-        seller_id: user?.id || "",
         is_read: false,
         conversation_id: activeConversation,
+        user: {
+          username: "You",
+          avatar_url: user?.avatar_url
+        }
       };
       
       setMessages(prevMessages => [...prevMessages, newMessageObj]);

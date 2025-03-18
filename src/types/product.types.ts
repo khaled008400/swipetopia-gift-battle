@@ -65,7 +65,6 @@ export interface RefundRequest {
   created_at: string;
   updated_at?: string;
   amount: number;
-  product_id: string;
   product_name: string;
   username: string;
   product: {

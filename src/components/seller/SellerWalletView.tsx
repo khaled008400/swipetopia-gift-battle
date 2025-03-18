@@ -88,21 +88,19 @@ const SellerWalletView = () => {
     }
   };
 
-  // Use a mock wallet with the correct type structure
   const mockWallet: SellerWallet = {
     id: "wallet-1",
+    seller_id: "seller-1",
     user_id: "user-1",
     balance: 2500.00,
     pending_balance: 750.00,
     total_earnings: 5000.00,
     currency: "USD",
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     can_withdraw: true,
     minimum_withdrawal: 100.00,
-    seller_id: "seller-1", // Added for compatibility
-    pending_amount: 750.00, // Added for compatibility
-    last_payout_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+    pending_amount: 750.00,
+    last_payout_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
     transactions: [
       {
         id: "txn-1",
@@ -110,7 +108,7 @@ const SellerWalletView = () => {
         amount: 50.00,
         type: "sale",
         status: "completed",
-        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         description: "Sale of Summer T-Shirt",
         reference_id: "order-1"
       },
@@ -120,7 +118,7 @@ const SellerWalletView = () => {
         amount: 1000.00,
         type: "withdrawal",
         status: "completed",
-        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
         description: "Withdrawal to bank account",
         reference_id: "withdrawal-1"
       },
@@ -130,7 +128,7 @@ const SellerWalletView = () => {
         amount: 25.00,
         type: "refund",
         status: "completed",
-        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         description: "Refund for damaged product",
         reference_id: "refund-1"
       }
