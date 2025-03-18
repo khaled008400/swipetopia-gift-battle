@@ -108,6 +108,7 @@ class StreamingAdminService {
 
   /**
    * Ban a user from streaming
+   * Updated to match the correct interface
    */
   async banStreamer(userId: string, reason: string): Promise<void> {
     try {

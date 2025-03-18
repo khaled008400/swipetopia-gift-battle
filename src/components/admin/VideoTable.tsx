@@ -14,7 +14,7 @@ interface VideoTableProps {
   onFlagVideo: (videoId: string) => void;
   onDeleteVideo: (videoId: string) => void;
   onWarnUser: (userId: string, videoId: string) => void;
-  onRestrictUser: (userId: string) => void;
+  onRestrictUser: (userId: string, reason: string) => void; // Updated to include reason parameter
 }
 
 const VideoTable: React.FC<VideoTableProps> = ({
@@ -35,6 +35,14 @@ const VideoTable: React.FC<VideoTableProps> = ({
         return <Badge variant="destructive">Removed</Badge>;
       default:
         return <Badge>{status || 'Unknown'}</Badge>;
+    }
+  };
+
+  // Prompt for a reason when restricting a user
+  const handleRestrictUser = (userId: string) => {
+    const reason = prompt("Please enter a reason for restricting this user:");
+    if (reason) {
+      onRestrictUser(userId, reason);
     }
   };
 
@@ -117,7 +125,7 @@ const VideoTable: React.FC<VideoTableProps> = ({
                         <UserX className="mr-2 h-4 w-4" />
                         Warn Creator
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onRestrictUser(video.user_id || video.user.id || "")}>
+                      <DropdownMenuItem onClick={() => handleRestrictUser(video.user_id || video.user.id || "")}>
                         <Ban className="mr-2 h-4 w-4" />
                         Restrict Creator
                       </DropdownMenuItem>
