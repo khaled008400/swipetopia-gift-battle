@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService, { AdminShippingMethod } from '@/services/admin.service';
@@ -184,12 +183,16 @@ const AdminShipping: React.FC = () => {
         description: formData.description,
         price: formData.price,
         estimated_days: formData.estimated_days,
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        created_at: new Date().toISOString() // Add required field
       });
     } else if (dialogMode === 'edit' && selectedMethod) {
       updateMethodMutation.mutate({
         id: selectedMethod.id,
-        data: formData
+        data: {
+          ...formData,
+          created_at: selectedMethod.created_at // Preserve the original created_at
+        }
       });
     }
   };

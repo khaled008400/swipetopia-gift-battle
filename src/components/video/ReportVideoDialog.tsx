@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -29,27 +28,27 @@ const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!selectedReason) {
       toast({
         title: "Error",
-        description: "Please select a reason for reporting",
+        description: "Please select a reason for reporting this video",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
       setIsSubmitting(true);
-      const reason = `${selectedReason}${additionalInfo ? ': ' + additionalInfo : ''}`;
       
-      // Fix the reportVideo call by adding a userId parameter, which can be "anonymous" for now
-      // The actual userId would typically come from auth context
-      await VideoService.reportVideo(videoId, reason, "anonymous");
+      // Updated to match VideoService.reportVideo signature
+      await VideoService.reportVideo(videoId, reason);
       
       toast({
         title: "Report submitted",
-        description: "Thank you for helping keep our community safe",
+        description: "Thank you for helping to keep the platform safe",
       });
       
       onClose();
@@ -57,7 +56,7 @@ const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps)
       console.error("Error reporting video:", error);
       toast({
         title: "Error",
-        description: "There was a problem submitting your report",
+        description: "Failed to submit report. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -66,7 +65,7 @@ const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps)
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Report Video</DialogTitle>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,76 +40,22 @@ const ProductReviews = () => {
   const [filterProduct, setFilterProduct] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  
+
   useEffect(() => {
     if (user?.id) {
       fetchReviews();
       fetchProducts();
     }
   }, [user]);
-  
+
   useEffect(() => {
     applyFilters();
   }, [reviews, filterRating, filterProduct]);
-  
+
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      // In a real app, this would fetch reviews from the database
-      // For now, we'll create mock data
-      const mockReviews: ProductReview[] = [
-        {
-          id: "review-1",
-          product_id: "product-1",
-          user_id: "user-1",
-          rating: 5,
-          comment: "Excellent product! Exactly as described and arrived earlier than expected. The quality is outstanding and I would definitely recommend it to others.",
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          username: "JohnDoe",
-          avatar_url: "https://i.pravatar.cc/150?u=johndoe",
-        },
-        {
-          id: "review-2",
-          product_id: "product-2",
-          user_id: "user-2",
-          rating: 3,
-          comment: "The product is okay, but not as great as I expected based on the description. It works for what I need it for, but I probably wouldn't buy it again.",
-          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          username: "JaneSmith",
-          avatar_url: "https://i.pravatar.cc/150?u=janesmith",
-        },
-        {
-          id: "review-3",
-          product_id: "product-1",
-          user_id: "user-3",
-          rating: 1,
-          comment: "Very disappointed with this purchase. The product broke after just a few days of use. Would not recommend to anyone.",
-          created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-          username: "SamWilson",
-          avatar_url: "https://i.pravatar.cc/150?u=samwilson",
-        },
-        {
-          id: "review-4",
-          product_id: "product-3",
-          user_id: "user-4",
-          rating: 4,
-          comment: "Great product for the price. The only reason I'm not giving it 5 stars is because the color is slightly different than what was shown in the photos.",
-          created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-          username: "EmilyJohnson",
-          avatar_url: "https://i.pravatar.cc/150?u=emilyjohnson",
-        },
-        {
-          id: "review-5",
-          product_id: "product-4",
-          user_id: "user-5",
-          rating: 5,
-          comment: "Absolutely love this product! It exceeded my expectations in every way. Will definitely purchase from this seller again.",
-          created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-          username: "MichaelBrown",
-          avatar_url: "https://i.pravatar.cc/150?u=michaelbrown",
-        },
-      ];
-      
+      const mockReviews: ProductReview[] = getMockReviews();
       setReviews(mockReviews);
       setFilteredReviews(mockReviews);
     } catch (error) {
@@ -124,11 +69,9 @@ const ProductReviews = () => {
       setLoading(false);
     }
   };
-  
+
   const fetchProducts = async () => {
     try {
-      // In a real app, this would fetch products from the database
-      // For now, we'll create mock data
       const mockProducts = [
         {
           id: "product-1",
@@ -153,7 +96,7 @@ const ProductReviews = () => {
       console.error("Error fetching products:", error);
     }
   };
-  
+
   const applyFilters = () => {
     let filtered = [...reviews];
     
@@ -167,17 +110,90 @@ const ProductReviews = () => {
     
     setFilteredReviews(filtered);
   };
-  
+
+  const getMockReviews = (): ProductReview[] => [
+    {
+      id: "1",
+      product_id: "product-1",
+      user_id: "user-1",
+      rating: 5,
+      comment: "Excellent product! Fast shipping and exactly as described.",
+      created_at: "2023-05-15T12:00:00Z",
+      username: "JohnDoe",
+      avatar_url: "/assets/avatars/avatar-1.png",
+      user: {
+        username: "JohnDoe",
+        avatar_url: "/assets/avatars/avatar-1.png"
+      }
+    },
+    {
+      id: "2",
+      product_id: "product-1",
+      user_id: "user-2",
+      rating: 4,
+      comment: "Very good quality, but shipping took longer than expected.",
+      created_at: "2023-05-10T15:30:00Z",
+      username: "JaneSmith",
+      avatar_url: "/assets/avatars/avatar-2.png",
+      user: {
+        username: "JaneSmith",
+        avatar_url: "/assets/avatars/avatar-2.png"
+      }
+    },
+    {
+      id: "3",
+      product_id: "product-1",
+      user_id: "user-3",
+      rating: 1,
+      comment: "Very disappointed with this purchase. The product broke after just a few days of use. Would not recommend to anyone.",
+      created_at: "2023-05-05T10:00:00Z",
+      username: "SamWilson",
+      avatar_url: "/assets/avatars/avatar-3.png",
+      user: {
+        username: "SamWilson",
+        avatar_url: "/assets/avatars/avatar-3.png"
+      }
+    },
+    {
+      id: "4",
+      product_id: "product-3",
+      user_id: "user-4",
+      rating: 4,
+      comment: "Great product for the price. The only reason I'm not giving it 5 stars is because the color is slightly different than what was shown in the photos.",
+      created_at: "2023-05-01T14:00:00Z",
+      username: "EmilyJohnson",
+      avatar_url: "/assets/avatars/avatar-4.png",
+      user: {
+        username: "EmilyJohnson",
+        avatar_url: "/assets/avatars/avatar-4.png"
+      }
+    },
+    {
+      id: "5",
+      product_id: "product-4",
+      user_id: "user-5",
+      rating: 5,
+      comment: "Absolutely love this product! It exceeded my expectations in every way. Will definitely purchase from this seller again.",
+      created_at: "2023-04-25T09:00:00Z",
+      username: "MichaelBrown",
+      avatar_url: "/assets/avatars/avatar-5.png",
+      user: {
+        username: "MichaelBrown",
+        avatar_url: "/assets/avatars/avatar-5.png"
+      }
+    },
+  ];
+
   const getProductName = (productId: string) => {
     const product = products.find(p => p.id === productId);
     return product ? product.name : "Unknown Product";
   };
-  
+
   const handleViewReview = (review: ProductReview) => {
     setSelectedReview(review);
     setResponseText("");
   };
-  
+
   const handleSubmitResponse = async () => {
     if (!selectedReview || !responseText.trim()) {
       toast({
@@ -190,8 +206,6 @@ const ProductReviews = () => {
     
     setIsSubmitting(true);
     try {
-      // In a real app, this would send a request to the backend to save the response
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
@@ -199,7 +213,6 @@ const ProductReviews = () => {
         description: "Your response to the review has been submitted.",
       });
       
-      // Clear selected review
       setSelectedReview(null);
       setResponseText("");
     } catch (error) {
@@ -213,11 +226,9 @@ const ProductReviews = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleReportReview = async (reviewId: string) => {
     try {
-      // In a real app, this would send a request to the backend to report the review
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
@@ -233,7 +244,7 @@ const ProductReviews = () => {
       });
     }
   };
-  
+
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, i) => (
       <Star 
@@ -242,7 +253,7 @@ const ProductReviews = () => {
       />
     ));
   };
-  
+
   if (loading && reviews.length === 0) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -250,7 +261,7 @@ const ProductReviews = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <Card>

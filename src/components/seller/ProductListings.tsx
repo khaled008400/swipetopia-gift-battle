@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,8 @@ const ProductListings = () => {
             status: (item.status as 'active' | 'draft' | 'unavailable') || "active",
             seller_id: item.seller_id,
             created_at: item.created_at,
-            updated_at: item.updated_at
+            updated_at: item.updated_at,
+            is_featured: item.is_featured || false
           }));
           setProducts(formattedProducts);
         }

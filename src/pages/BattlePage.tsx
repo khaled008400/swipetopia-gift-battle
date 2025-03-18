@@ -1,168 +1,185 @@
-// Import necessary modules and components
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { convertBattleVideosToVideos } from '@/utils/video-converters';
-import VideoPlayer from '@/components/VideoPlayer';
-import VideoOverlay from '@/components/video/VideoOverlay';
-import { Video } from '@/types/video.types';
-import { useAuth } from '@/context/AuthContext';
-import VideoService from '@/services/video.service';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BattleVideoPlayer } from "@/components/battle/BattleVideoPlayer";
+import { BattleComments } from "@/components/battle/BattleComments";
+import { BattleVoting } from "@/components/battle/BattleVoting";
+import { BattleLeaderboard } from "@/components/battle/BattleLeaderboard";
+import { BattleInfo } from "@/components/battle/BattleInfo";
+import { BattleService } from "@/services/battle.service";
+import { useAuth } from "@/context/AuthContext";
+import { Video, BattleVideo } from "@/types/video.types";
+import { convertBattleVideosToVideos } from "@/utils/video-converters";
 
 const BattlePage = () => {
-  const { battleId } = useParams<{ battleId: string }>();
+  const { battleId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
-
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [battle, setBattle] = useState<any>(null);
+  const [leftVideo, setLeftVideo] = useState<BattleVideo | null>(null);
+  const [rightVideo, setRightVideo] = useState<BattleVideo | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("comments");
+  const [hasVoted, setHasVoted] = useState(false);
+  const [relatedBattles, setRelatedBattles] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchBattleData = async () => {
-      setIsLoading(true);
+    const fetchBattle = async () => {
+      if (!battleId) return;
+      
       try {
-        // Placeholder: Replace with actual battle data fetching logic
-        const battleVideos = [
-          {
-            id: '1',
-            title: 'Battle Video 1',
-            description: 'Description for Battle Video 1',
-            video_url: 'https://example.com/battle-video-1.mp4',
-            thumbnail_url: 'https://example.com/battle-video-1.jpg',
-            user_id: 'user1',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            view_count: 100,
-            likes_count: 10,
-            comments_count: 5,
-            shares_count: 2,
-            is_live: false,
-            is_private: false,
-            duration: 60,
-            category: 'battle',
-            likes: 10,
-            comments: 5,
-            shares: 2,
-            is_liked: false,
-            is_saved: false,
-            user: {
-              username: 'User1',
-              avatar: 'https://example.com/avatar1.jpg',
-            },
-            hashtags: ['battle', 'video1'],
-          },
-          {
-            id: '2',
-            title: 'Battle Video 2',
-            description: 'Description for Battle Video 2',
-            video_url: 'https://example.com/battle-video-2.mp4',
-            thumbnail_url: 'https://example.com/battle-video-2.jpg',
-            user_id: 'user2',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            view_count: 120,
-            likes_count: 12,
-            comments_count: 7,
-            shares_count: 3,
-            is_live: false,
-            is_private: false,
-            duration: 70,
-            category: 'battle',
-            likes: 12,
-            comments: 7,
-            shares: 3,
-            is_liked: false,
-            is_saved: false,
-            user: {
-              username: 'User2',
-              avatar: 'https://example.com/avatar2.jpg',
-            },
-            hashtags: ['battle', 'video2'],
-          },
-        ];
-      
-      // Convert battle videos to regular videos
-      const convertedVideos = convertBattleVideosToVideos(battleVideos);
-      setVideos(convertedVideos);
-      
-        setActiveIndex(0);
-      } catch (error: any) {
-        console.error("Error fetching battle data:", error);
-        setError(error.message || "Failed to load battle data");
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load battle data",
-          variant: "destructive",
-        });
+        setLoading(true);
+        const battleData = await BattleService.getBattle(battleId);
+        setBattle(battleData);
+        
+        // Set videos
+        const leftVid = battleData.videos.find((v: any) => v.position === 'left');
+        const rightVid = battleData.videos.find((v: any) => v.position === 'right');
+        
+        if (leftVid) setLeftVideo(leftVid);
+        if (rightVid) setRightVideo(rightVid);
+        
+        // Check if user has voted
+        if (user) {
+          const userVote = await BattleService.getUserVote(battleId, user.id);
+          setHasVoted(!!userVote);
+        }
+        
+        // Get related battles
+        const related = await BattleService.getRelatedBattles(battleId);
+        setRelatedBattles(related);
+        
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching battle:", err);
+        setError("Failed to load battle");
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    fetchBattleData();
-  }, [battleId]);
-  
-  if (isLoading) {
+    fetchBattle();
+  }, [battleId, user]);
+
+  const handleVote = async (videoId: string) => {
+    if (!user) {
+      // Prompt login
+      navigate("/login?redirect=" + encodeURIComponent(`/battle/${battleId}`));
+      return;
+    }
+    
+    if (!battleId) return;
+    
+    try {
+      await BattleService.voteForVideo(battleId, videoId);
+      setHasVoted(true);
+      
+      // Update battle data to reflect new vote
+      const updatedBattle = await BattleService.getBattle(battleId);
+      setBattle(updatedBattle);
+      
+      // Update videos
+      const leftVid = updatedBattle.videos.find((v: any) => v.position === 'left');
+      const rightVid = updatedBattle.videos.find((v: any) => v.position === 'right');
+      
+      if (leftVid) setLeftVideo(leftVid);
+      if (rightVid) setRightVideo(rightVid);
+    } catch (err) {
+      console.error("Error voting:", err);
+    }
+  };
+
+  const mapToBattleVideos = (videos: Video[]): BattleVideo[] => {
+    // Convert regular videos to battle videos with necessary properties
+    return videos.map(video => ({
+      ...video,
+      battle_id: "mock-battle-id", // Mock battle ID
+      score: Math.floor(Math.random() * 100), // Mock score
+      position: Math.random() > 0.5 ? 'left' : 'right' // Random position
+    }));
+  };
+
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full w-full">
-        <Loader2 className="w-8 h-8 animate-spin mb-4" />
-        <p className="text-center text-gray-500">Loading battle videos...</p>
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !battle) {
     return (
-      <div className="flex flex-col items-center justify-center h-full w-full">
-        <p className="text-center text-red-500">Error: {error}</p>
+      <div className="h-full flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold mb-4">Battle Not Found</h2>
+        <p className="text-muted-foreground mb-6">{error || "This battle doesn't exist or has been removed."}</p>
+        <Button onClick={() => navigate("/battles")}>Browse Battles</Button>
       </div>
     );
   }
 
   return (
-    <div className="relative h-screen overflow-hidden">
-      {videos.length > 0 ? (
-        <>
-          <VideoPlayer
-            src={videos[activeIndex].video_url}
-            poster={videos[activeIndex].thumbnail_url}
-            isActive={true}
-            videoId={videos[activeIndex].id}
-          />
-          <VideoOverlay
-            video={{
-              id: videos[activeIndex].id,
-              description: videos[activeIndex].description || "",
-              likes: videos[activeIndex].likes_count || 0,
-              comments: videos[activeIndex].comments_count || 0,
-              shares: videos[activeIndex].shares_count || 0,
-              isLive: videos[activeIndex].is_live,
-              isLiked: videos[activeIndex].is_liked,
-              isSaved: videos[activeIndex].is_saved,
-              allowDownloads: true,
-              user: {
-                username: videos[activeIndex].user?.username || "Unknown",
-                avatar: videos[activeIndex].user?.avatar || "",
-                isFollowing: false,
-              },
-            }}
-            isLiked={videos[activeIndex].is_liked || false}
-            isSaved={videos[activeIndex].is_saved || false}
-            onLike={() => {}}
-            onSave={() => {}}
-            onFollow={() => {}}
-          />
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center h-full w-full">
-          <p className="text-center text-gray-500">No videos found for this battle.</p>
+    <div className="h-full bg-black text-white overflow-hidden">
+      <div className="flex flex-col h-full">
+        <div className="p-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold">{battle.title || "Battle"}</h1>
+            <Badge variant="secondary">{battle.category}</Badge>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={battle.creator?.avatar_url} />
+              <AvatarFallback>{battle.creator?.username?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <span>{battle.creator?.username}</span>
+          </div>
         </div>
-      )}
+        
+        <div className="flex-1 overflow-hidden">
+          <BattleVideoPlayer 
+            leftVideo={leftVideo} 
+            rightVideo={rightVideo}
+            onVote={handleVote}
+            hasVoted={hasVoted}
+            votedFor={battle.userVote?.video_id}
+          />
+        </div>
+        
+        <div className="bg-background text-foreground border-t">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start px-4 pt-2">
+              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="voting">Voting</TabsTrigger>
+              <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+              <TabsTrigger value="info">Info</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="comments" className="p-4 h-64 overflow-y-auto">
+              <BattleComments battleId={battleId || ""} />
+            </TabsContent>
+            
+            <TabsContent value="voting" className="p-4 h-64 overflow-y-auto">
+              <BattleVoting 
+                leftVideo={leftVideo} 
+                rightVideo={rightVideo}
+                onVote={handleVote}
+                hasVoted={hasVoted}
+              />
+            </TabsContent>
+            
+            <TabsContent value="leaderboard" className="p-4 h-64 overflow-y-auto">
+              <BattleLeaderboard battleId={battleId || ""} />
+            </TabsContent>
+            
+            <TabsContent value="info" className="p-4 h-64 overflow-y-auto">
+              <BattleInfo battle={battle} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

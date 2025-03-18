@@ -60,7 +60,8 @@ const LiveStreamPage = () => {
   const [isBattle, setIsBattle] = useState<boolean>(false);
   const [battleVideos, setBattleVideos] = useState<any[]>([]);
   const [currentBattleVideos, setCurrentBattleVideos] = useState<any[]>([]);
-  
+  const [relatedVideos, setRelatedVideos] = useState<any[]>([]);
+
   const {
     activeVideoIndex,
     setActiveVideoIndex,
@@ -204,7 +205,27 @@ const LiveStreamPage = () => {
     setShowGiftMenu(!showGiftMenu);
     setSidebarTab('gifts');
   };
-  
+
+  const renderRelatedVideos = () => {
+    if (!relatedVideos || relatedVideos.length === 0) {
+      return (
+        <div className="text-center p-4">
+          <p className="text-muted-foreground">No related videos found</p>
+        </div>
+      );
+    }
+
+    const convertedVideos = convertBattleVideosToVideos(relatedVideos);
+    
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+        {convertedVideos.map((video) => (
+          <VideoCard key={video.id} video={video} onClickVideo={handleVideoClick} />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="h-[calc(100vh-64px)] overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-black relative">
       {battleMode === 'normal' ? (
@@ -393,6 +414,8 @@ const LiveStreamPage = () => {
           </p>
         </div>
       )}
+      
+      {renderRelatedVideos()}
     </div>
   );
 };

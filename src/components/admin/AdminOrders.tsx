@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Table, TableBody, TableCell, TableHead, 
@@ -40,7 +39,7 @@ const AdminOrders = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string, status: 'pending' | 'completed' | 'cancelled' }) => 
+    mutationFn: ({ orderId, status }: { orderId: string, status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' }) => 
       AdminService.updateOrderStatus(orderId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
@@ -58,7 +57,7 @@ const AdminOrders = () => {
     },
   });
 
-  const handleStatusChange = (orderId: string, status: 'pending' | 'completed' | 'cancelled') => {
+  const handleStatusChange = (orderId: string, status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled') => {
     updateStatusMutation.mutate({ orderId, status });
   };
 
@@ -104,7 +103,9 @@ const AdminOrders = () => {
             <SelectContent>
               <SelectItem value="">All Statuses</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
@@ -143,7 +144,7 @@ const AdminOrders = () => {
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">#{order.id}</TableCell>
                   <TableCell>{order.user.username}</TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
                   <TableCell>${order.total.toFixed(2)}</TableCell>
                   <TableCell>{order.products.length} items</TableCell>
@@ -168,11 +169,25 @@ const AdminOrders = () => {
                             Complete
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleStatusChange(order.id, 'pending')}
+                            onClick={() => handleStatusChange(order.id, 'processing')}
                             className="text-yellow-600"
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
-                            Set Pending
+                            Set Processing
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(order.id, 'shipped')}
+                            className="text-blue-600"
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Set Shipped
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(order.id, 'delivered')}
+                            className="text-green-600"
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Set Delivered
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleStatusChange(order.id, 'cancelled')}
@@ -240,7 +255,7 @@ const AdminOrders = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Date</h3>
-                  <p>{new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                  <p>{new Date(selectedOrder.created_at).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Customer</h3>

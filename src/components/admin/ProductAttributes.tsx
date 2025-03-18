@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService, { ProductAttribute } from '@/services/admin.service';
@@ -62,23 +61,9 @@ const ProductAttributes: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Fetch attributes data
-  const { data, isLoading } = useQuery({
+  const { data: attributesData, isLoading } = useQuery({
     queryKey: ['productAttributes', page],
-    queryFn: () => AdminService.getProductAttributes(page),
-    // For development, let's provide placeholder data
-    placeholderData: {
-      data: [
-        { id: '1', name: 'Color', values: ['Red', 'Green', 'Blue'], color: '#9b87f5', status: 'active' },
-        { id: '2', name: 'Size', values: ['S', 'M', 'L', 'XL'], status: 'active' },
-        { id: '3', name: 'Material', values: ['Cotton', 'Polyester', 'Wool'], status: 'inactive' },
-      ],
-      pagination: {
-        current_page: 1,
-        last_page: 1,
-        per_page: 10,
-        total: 3
-      }
-    }
+    queryFn: () => AdminService.getProductAttributes(page)
   });
 
   // Create attribute mutation
@@ -195,7 +180,8 @@ const ProductAttributes: React.FC = () => {
         name: formData.name,
         values,
         color: formData.color,
-        status: formData.status
+        status: formData.status,
+        created_at: new Date().toISOString()
       });
     } else if (dialogMode === 'edit' && selectedAttribute) {
       updateAttributeMutation.mutate({
@@ -204,7 +190,8 @@ const ProductAttributes: React.FC = () => {
           name: formData.name,
           values,
           color: formData.color,
-          status: formData.status
+          status: formData.status,
+          created_at: selectedAttribute.created_at
         }
       });
     }
@@ -235,7 +222,7 @@ const ProductAttributes: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data?.data.map((attribute) => (
+            {attributesData && attributesData.map((attribute: ProductAttribute) => (
               <TableRow key={attribute.id}>
                 <TableCell className="font-medium">{attribute.name}</TableCell>
                 <TableCell>
@@ -291,7 +278,7 @@ const ProductAttributes: React.FC = () => {
         </Table>
       )}
 
-      {data?.pagination && data.pagination.last_page > 1 && (
+      {attributesData && attributesData.pagination && attributesData.pagination.last_page > 1 && (
         <div className="flex justify-center">
           <Pagination>
             {/* Pagination would go here */}
@@ -299,7 +286,6 @@ const ProductAttributes: React.FC = () => {
         </div>
       )}
 
-      {/* Attribute Form Dialog */}
       <Dialog open={attributeDialog} onOpenChange={setAttributeDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

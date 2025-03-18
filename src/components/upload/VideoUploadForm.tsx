@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,11 +29,10 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       const file = e.target.files[0];
       setVideoFile(file);
       
-      // Generate thumbnail from video (optional)
       const video = document.createElement("video");
       video.preload = "metadata";
       video.onloadedmetadata = () => {
-        video.currentTime = 1; // Set to 1 second to get a frame
+        video.currentTime = 1;
       };
       video.oncanplay = () => {
         const canvas = document.createElement("canvas");
@@ -74,7 +72,6 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       setIsUploading(true);
       setProgress(0);
       
-      // Simulate progress updates
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 95) {
@@ -85,11 +82,12 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         });
       }, 500);
       
-      const videoData = await VideoService.uploadVideo(videoFile, {
+      const videoData = await VideoService.uploadVideo(
+        videoFile, 
         title,
         description,
-        thumbnail,
-      });
+        thumbnail
+      );
       
       clearInterval(progressInterval);
       setProgress(100);
