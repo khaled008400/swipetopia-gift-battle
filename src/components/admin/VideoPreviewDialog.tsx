@@ -31,7 +31,7 @@ const VideoPreviewDialog: React.FC<VideoPreviewDialogProps> = ({
 }) => {
   if (!video) return null;
 
-  const videoUrl = video.url || video.video_url;
+  const videoUrl = video.video_url || video.url;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
