@@ -47,11 +47,18 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
             .eq('status', 'online')
             .maybeSingle();
           
-          if (checkError) throw checkError;
+          if (checkError) {
+            console.error('Error checking for active streams:', checkError);
+            throw checkError;
+          }
           
           if (existingStream) {
             // If there's an existing stream, navigate to it
             navigate(`/live/${existingStream.id}`);
+            toast({
+              title: "Resuming stream",
+              description: "Reconnecting to your active stream.",
+            });
           } else {
             // Create a new stream and navigate to it
             const { data: newStream, error: createError } = await supabase
@@ -64,7 +71,15 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
               .select()
               .single();
             
-            if (createError) throw createError;
+            if (createError) {
+              console.error('Error creating stream:', createError);
+              throw createError;
+            }
+            
+            toast({
+              title: "Going live!",
+              description: "Your stream is being prepared.",
+            });
             
             navigate(`/live/${newStream.id}`);
           }
