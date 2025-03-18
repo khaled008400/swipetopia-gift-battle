@@ -29,7 +29,7 @@ const BattleVideo = ({ video, isActive }: BattleVideoProps) => {
     <div className="h-full w-full relative overflow-hidden bg-gradient-to-b from-[#1A1F2C] to-[#000000]">
       {/* Main video player */}
       <BattleVideoPlayer 
-        videoUrl={video.url}
+        url={video.url}
         isActive={isActive}
         onVideoTap={handleVideoTap}
         userName={video.user.username}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -168,7 +169,7 @@ const AdminCoupons = () => {
       code,
       type,
       value,
-      status: 'active',
+      status: 'active' as const, // Use type assertion to fix the type issue
       minimum_purchase: minimumPurchase,
       expiry_date: expiryDate ? expiryDate.toISOString() : undefined,
       usage_limit: usageLimit,
