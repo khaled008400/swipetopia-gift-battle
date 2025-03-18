@@ -71,7 +71,10 @@ export const BattleComments = ({ battleId }: BattleCommentsProps) => {
               .single();
               
             const newCommentWithUser: Comment = {
-              ...payload.new,
+              id: payload.new.id,
+              user_id: payload.new.user_id,
+              content: payload.new.content,
+              created_at: payload.new.created_at,
               user: {
                 username: data?.username || "Unknown",
                 avatar_url: data?.avatar_url || ""
