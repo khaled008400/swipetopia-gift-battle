@@ -49,7 +49,7 @@ interface GiftFormProps {
 }
 
 const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, onCancel, mode = 'create' }) => {
-  const [hasSound, setHasSound] = useState(initialData?.hasSound || false);
+  const [hasSound, setHasSound] = useState(initialData?.hasSound || initialData?.has_sound || false);
 
   const form = useForm<GiftFormData>({
     resolver: zodResolver(giftSchema),
@@ -57,12 +57,12 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, onCancel, mo
       name: initialData.name,
       description: initialData.description || '',
       price: initialData.price,
-      imageUrl: initialData.imageUrl,
-      imageType: initialData.imageType,
-      hasSound: initialData.hasSound,
+      imageUrl: initialData.imageUrl || initialData.image_url || '',
+      imageType: (initialData.imageType || initialData.image_type || 'gif') as 'gif' | 'svg',
+      hasSound: initialData.hasSound || initialData.has_sound || false,
       soundUrl: initialData.soundUrl || '',
-      category: initialData.category,
-      available: initialData.available
+      category: initialData.category || 'general',
+      available: initialData.available !== undefined ? initialData.available : true
     } : {
       name: '',
       description: '',
