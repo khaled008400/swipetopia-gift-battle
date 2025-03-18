@@ -8,14 +8,21 @@ export interface VirtualGift {
   value: number;
   available: boolean;
   category: string; 
-  imageUrl: string; 
-  imageType: "svg" | "gif"; 
-  hasSound: boolean; 
   description: string; 
   is_premium: boolean;
-  soundUrl: string; 
   created_at: string;
+  
+  // Properties can be accessed using both camelCase and snake_case
+  imageUrl?: string;
+  imageType?: "svg" | "gif";
+  hasSound?: boolean;
+  soundUrl?: string;
   isPremium?: boolean;
+  
+  // Database uses snake_case
+  image_url?: string;
+  image_type?: "svg" | "gif";
+  has_sound?: boolean;
 }
 
 export interface GiftTransaction {

@@ -156,11 +156,11 @@ const AdminVirtualGifts = () => {
     // Map the Supabase gift object to the form structure
     const formattedGift = {
       ...gift,
-      imageUrl: gift.image_url || '',
-      imageType: gift.image_type || 'gif',
-      hasSound: gift.has_sound || false,
+      imageUrl: gift.imageUrl || gift.image_url || '',
+      imageType: gift.imageType || gift.image_type || 'gif',
+      hasSound: gift.hasSound || gift.has_sound || false,
       soundUrl: gift.soundUrl || '',
-      isPremium: gift.is_premium || false
+      isPremium: gift.isPremium || gift.is_premium || false
     };
     
     setEditingGift(formattedGift);
