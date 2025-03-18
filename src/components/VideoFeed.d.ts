@@ -4,7 +4,8 @@ import { Video } from "../types/video.types";
 
 export interface VideoFeedProps {
   videos: Video[];
-  activeVideoIndex: number;
+  activeIndex: number;
+  onVideoChange?: (index: number) => void;
   onVideoView?: (videoId: string) => void;
   isBattlePage?: boolean;
   videoUrl?: string;

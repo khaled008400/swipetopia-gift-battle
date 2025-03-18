@@ -13,12 +13,19 @@ interface VideoFeedProps {
   videos: Video[];
   activeIndex: number;
   onVideoChange?: (index: number) => void;
+  onVideoView?: (videoId: string) => void;
+  isBattlePage?: boolean;
+  videoUrl?: string;
+  isActive?: boolean;
 }
 
 const VideoFeed: React.FC<VideoFeedProps> = ({
   videos,
   activeIndex,
   onVideoChange,
+  onVideoView,
+  isBattlePage = false,
+  isActive = true,
 }) => {
   const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
   const [savedVideos, setSavedVideos] = useState<Record<string, boolean>>({});
@@ -56,6 +63,13 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
 
     initializeStates();
   }, [videos, user]);
+
+  // Call onVideoView when active video changes
+  useEffect(() => {
+    if (onVideoView && videos.length > 0 && activeIndex >= 0 && activeIndex < videos.length) {
+      onVideoView(videos[activeIndex].id);
+    }
+  }, [activeIndex, videos, onVideoView]);
 
   const handleLike = async (videoId: string) => {
     if (!user) {
@@ -202,7 +216,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
           <VideoPlayer
             src={video.video_url}
             poster={video.thumbnail_url}
-            isActive={index === activeIndex}
+            isActive={index === activeIndex && isActive}
             videoId={video.id}
           />
           <VideoOverlay
