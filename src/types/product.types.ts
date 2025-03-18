@@ -177,15 +177,21 @@ export interface ShopProfile {
   user_id: string;
   name: string;
   description: string;
-  logo: string;
-  banner: string;
+  logo_url: string;
+  banner_url: string;
   contact_email: string;
   contact_phone: string;
-  social_links: Record<string, string>;
-  policy: string;
+  social_links: {
+    website: string;
+    facebook: string;
+    instagram: string;
+    twitter: string;
+  };
   created_at: string;
   updated_at: string;
-  verified: boolean;
-  rating: number;
-  categories: string[];
+  policies: {
+    returns: string;
+    shipping: string;
+    terms: string;
+  };
 }
