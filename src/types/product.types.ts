@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -19,6 +18,7 @@ export interface Product {
   tags?: string[];
   attributes?: ProductAttribute[];
   variations?: ProductVariation[];
+  suction_score?: number;
   shop?: {
     name: string;
     logo?: string;
