@@ -123,12 +123,16 @@ export interface RefundRequest {
   created_at: string;
   updated_at: string;
   amount: number;
+  seller_id?: string; // Added missing property used in RefundManager
+  product_name?: string; // Added missing property used in RefundManager
+  username?: string; // Added missing property used in RefundManager
   order?: any;
   user?: {
     username: string;
     avatar_url: string;
     email?: string;
   };
+  product_id?: string; // Added missing property used in RefundManager
 }
 
 export interface CustomerMessage {
@@ -139,6 +143,13 @@ export interface CustomerMessage {
   read: boolean;
   created_at: string;
   updated_at: string;
+  sender_type?: 'customer' | 'seller'; // Added missing property used in SellerMessages
+  customer_id?: string; // Added missing property used in SellerMessages
+  seller_id?: string; // Added missing property used in SellerMessages
+  is_read?: boolean; // Added missing property used in SellerMessages
+  conversation_id?: string; // Added missing property used in SellerMessages
+  customer_name?: string; // Added missing property used in SellerMessages
+  customer_avatar?: string; // Added missing property used in SellerMessages
   sender?: {
     username: string;
     avatar_url: string;
@@ -160,6 +171,9 @@ export interface SellerWallet {
   currency: string;
   can_withdraw: boolean;
   minimum_withdrawal: number;
+  seller_id?: string; // Added missing property
+  pending_amount?: number; // Added missing property used in SellerWalletView
+  last_payout_date?: string; // Added missing property used in SellerWalletView
   transactions?: WalletTransaction[];
 }
 

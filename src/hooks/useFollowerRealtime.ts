@@ -63,26 +63,26 @@ export function useFollowerRealtime(userId: string) {
         filter: `following_id=eq.${userId}`
       },
       async (payload) => {
-        console.log('New follower:', payload);
+        // Update follower count
+        setFollowerCount(prevCount => prevCount + 1);
         
-        // Increment follower count
-        setFollowerCount(prev => prev + 1);
-        
-        // Fetch the new follower's details
-        const { data } = await supabase
-          .from('followers')
-          .select(`
-            id,
-            follower_id,
-            created_at,
-            profiles:follower_id (username, avatar_url)
-          `)
-          .eq('id', payload.new.id)
+        // Fetch details of the new follower
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', payload.new.follower_id)
           .single();
           
-        if (data) {
+        if (!error && data) {
           // Add to recent followers
-          setRecentFollowers(prev => [data, ...prev.slice(0, 4)]);
+          const newFollower = {
+            id: payload.new.id,
+            follower_id: payload.new.follower_id,
+            created_at: payload.new.created_at,
+            profiles: data
+          };
+          
+          setRecentFollowers(prev => [newFollower, ...prev].slice(0, 5));
         }
       }
     );
@@ -97,26 +97,20 @@ export function useFollowerRealtime(userId: string) {
         filter: `following_id=eq.${userId}`
       },
       (payload) => {
-        console.log('Follower removed:', payload);
+        // Update follower count
+        setFollowerCount(prevCount => Math.max(0, prevCount - 1));
         
-        // Decrement follower count
-        setFollowerCount(prev => Math.max(0, prev - 1));
-        
-        // Remove from recent followers if present
-        if (payload.old && payload.old.id) {
-          setRecentFollowers(prev => 
-            prev.filter(follower => follower.id !== payload.old.id)
-          );
-        }
+        // Remove from recent followers
+        setRecentFollowers(prev => 
+          prev.filter(follower => follower.id !== payload.old.id)
+        );
       }
     );
     
     // Subscribe to the channel
-    channel.subscribe((status) => {
-      console.log(`Follower realtime subscription status: ${status}`);
-    });
+    channel.subscribe();
     
-    // Clean up on unmount
+    // Cleanup
     return () => {
       supabase.removeChannel(channel);
     };

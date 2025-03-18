@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -66,6 +65,7 @@ export default function VirtualGifts() {
             created_at: new Date().toISOString(),
             description: "A sparkling diamond gift", // Added required description
             imageUrl: "/assets/gifts/diamond.png", // Added required imageUrl
+            imageType: "svg", // Added required imageType
           },
           {
             id: "2",
@@ -78,6 +78,7 @@ export default function VirtualGifts() {
             created_at: new Date().toISOString(),
             description: "A loving heart gift", // Added required description
             imageUrl: "/assets/gifts/heart.png", // Added required imageUrl
+            imageType: "svg", // Added required imageType
           },
           {
             id: "3",
@@ -90,6 +91,7 @@ export default function VirtualGifts() {
             created_at: new Date().toISOString(),
             description: "A shining star gift", // Added required description
             imageUrl: "/assets/gifts/star.png", // Added required imageUrl
+            imageType: "svg", // Added required imageType
           },
         ];
         setGifts(mockGifts);
@@ -144,6 +146,7 @@ export default function VirtualGifts() {
         created_at: editingGift?.created_at || new Date().toISOString(),
         description: giftDescription, // Include required description
         imageUrl: editingGift?.imageUrl || "/assets/gifts/default.png", // Include required imageUrl
+        imageType: "svg", // Added required imageType
       };
 
       if (editingGift) {

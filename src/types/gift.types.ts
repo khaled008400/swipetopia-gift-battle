@@ -10,7 +10,7 @@ export interface VirtualGift {
   available?: boolean;
   category?: string;
   imageUrl: string; // Made this required to match AdminService.VirtualGift
-  imageType?: string;
+  imageType?: "svg" | "gif"; // Changed to union type to match AdminService.VirtualGift
   hasSound?: boolean;
   description: string; // Made this required to match AdminService.VirtualGift
   isPremium?: boolean;

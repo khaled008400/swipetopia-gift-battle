@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, MoreVertical, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Loader2, Send, MoreVertical, AlertTriangle, ShieldAlert, MessageSquare } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
