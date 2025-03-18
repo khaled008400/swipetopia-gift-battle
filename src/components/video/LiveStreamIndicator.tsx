@@ -1,21 +1,20 @@
 
-import { Zap, Users } from "lucide-react";
+import React from 'react';
+import { Eye } from 'lucide-react';
 
-interface LiveStreamIndicatorProps {
+export interface LiveStreamIndicatorProps {
   viewerCount: number;
 }
 
-const LiveStreamIndicator = ({ viewerCount }: LiveStreamIndicatorProps) => {
+const LiveStreamIndicator: React.FC<LiveStreamIndicatorProps> = ({ viewerCount }) => {
   return (
-    <div className="flex items-center space-x-2">
-      <div className="flex items-center bg-[#FE2C55]/80 backdrop-blur-sm px-2 py-1 rounded-full">
-        <Zap className="h-3.5 w-3.5 text-white mr-1 animate-pulse" />
-        <span className="text-white text-xs font-medium">LIVE</span>
+    <div className="flex items-center">
+      <div className="flex items-center bg-red-600 text-white text-xs px-2 py-0.5 rounded-full mr-2">
+        <span className="font-semibold">LIVE</span>
       </div>
-      
-      <div className="flex items-center bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
-        <Users className="h-3.5 w-3.5 text-white mr-1" />
-        <span className="text-white text-xs">{viewerCount}</span>
+      <div className="flex items-center text-white text-xs">
+        <Eye className="h-3 w-3 mr-1" />
+        <span>{viewerCount >= 1000 ? `${(viewerCount / 1000).toFixed(1)}K` : viewerCount}</span>
       </div>
     </div>
   );

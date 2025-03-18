@@ -1,6 +1,6 @@
-
 import { User } from "@/types/auth.types";
 import { Video } from "@/types/video.types";
+import { LiveStream } from "@/types/video.types";
 
 export interface AdminUser extends User {
   id: string;
@@ -14,6 +14,7 @@ export interface AdminUser extends User {
   reportsCount?: number;
   lastLogin?: string;
   isVerified?: boolean;
+  phone?: string;
 }
 
 export interface AdminVideo {
@@ -146,12 +147,39 @@ export interface VirtualGift {
   created_at: string;
 }
 
+export interface AdminStats {
+  totalUsers: number;
+  newUsersToday: number;
+  totalVideos: number;
+  videoUploadsToday: number;
+  totalOrders: number;
+  ordersToday: number;
+  revenueTotal: number;
+  revenueToday: number;
+}
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  category: string;
+  stock_quantity: number;
+  status: 'active' | 'draft' | 'unavailable';
+  seller_id: string;
+  created_at: string;
+  updated_at: string;
+  is_featured: boolean;
+  discount?: number;
+  rating?: number;
+  reviews_count?: number;
+}
+
 class AdminService {
   private baseUrl = '/api/admin';
 
-  // User management
   async getUsers(page = 1, perPage = 10, filter = ''): Promise<{ data: AdminUser[], pagination: any }> {
-    // Mock implementation - to be replaced with actual API
     return {
       data: Array(10).fill(null).map((_, i) => ({
         id: `user-${i + 1}`,
@@ -179,7 +207,6 @@ class AdminService {
   }
 
   async getUser(userId: string): Promise<AdminUser> {
-    // Mock implementation
     return {
       id: userId,
       username: `user${userId.split('-')[1]}`,
@@ -195,7 +222,6 @@ class AdminService {
     };
   }
 
-  // Video management
   async getVideosList(
     page = 1, 
     perPage = 10, 
@@ -204,7 +230,6 @@ class AdminService {
     user = '', 
     date = ''
   ): Promise<{ data: AdminVideo[], pagination: any }> {
-    // Mock implementation
     return {
       data: Array(10).fill(null).map((_, i) => ({
         id: `video-${i + 1}`,
@@ -241,7 +266,6 @@ class AdminService {
   }
 
   async updateVideoStatus(videoId: string, status: 'active' | 'flagged' | 'removed'): Promise<AdminVideo> {
-    // Mock implementation
     return {
       id: videoId,
       title: `Video Title ${videoId.split('-')[1]}`,
@@ -270,23 +294,18 @@ class AdminService {
   }
 
   async deleteVideo(videoId: string): Promise<void> {
-    // Mock implementation
     console.log(`Video ${videoId} deleted`);
   }
 
   async sendUserWarning(userId: string, message: string, videoId?: string): Promise<void> {
-    // Mock implementation
     console.log(`Warning sent to user ${userId} regarding video ${videoId}: ${message}`);
   }
 
   async restrictUser(userId: string, reason: string): Promise<void> {
-    // Mock implementation
     console.log(`User ${userId} restricted for reason: ${reason}`);
   }
 
-  // Order management
-  async getOrders(page = 1, statusFilter = ''): Promise<AdminOrder[]> {
-    // Mock implementation
+  async getOrders(page = 1, statusFilter = ''): Promise<{ data: AdminOrder[], pagination: any }> {
     return {
       data: Array(10).fill(null).map((_, i) => ({
         id: `order-${i + 1}`,
@@ -322,13 +341,10 @@ class AdminService {
   }
 
   async updateOrderStatus(orderId: string, status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'): Promise<void> {
-    // Mock implementation
     console.log(`Order ${orderId} status updated to ${status}`);
   }
 
-  // Shipping methods
   async getShippingMethods(): Promise<AdminShippingMethod[]> {
-    // Mock implementation
     return [
       {
         id: 'shipping-1',
@@ -365,7 +381,6 @@ class AdminService {
   }
 
   async createShippingMethod(data: Omit<AdminShippingMethod, 'id'>): Promise<AdminShippingMethod> {
-    // Mock implementation
     return {
       id: `shipping-${Date.now()}`,
       ...data,
@@ -374,7 +389,6 @@ class AdminService {
   }
 
   async updateShippingMethod(id: string, data: Partial<Omit<AdminShippingMethod, 'id'>>): Promise<AdminShippingMethod> {
-    // Mock implementation
     return {
       id,
       name: data.name || 'Updated Shipping Method',
@@ -389,87 +403,301 @@ class AdminService {
   }
 
   async deleteShippingMethod(id: string): Promise<void> {
-    // Mock implementation
     console.log(`Shipping method ${id} deleted`);
   }
 
-  // Analytics data 
-  async getUserGrowthData(period: 'week' | 'month' | 'year'): Promise<any> {
-    // Mock implementation
-    const dataPoints = period === 'week' ? 7 : period === 'month' ? 30 : 12;
-    
+  async getDashboardStats(): Promise<AdminStats> {
     return {
-      newUsers: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 100) + 20
+      totalUsers: 12543,
+      newUsersToday: 72,
+      totalVideos: 45280,
+      videoUploadsToday: 142,
+      totalOrders: 8753,
+      ordersToday: 53,
+      revenueTotal: 392150,
+      revenueToday: 2750
+    };
+  }
+
+  async getLiveStreams(): Promise<LiveStream[]> {
+    return Array(5).fill(null).map((_, i) => ({
+      id: `stream-${i + 1}`,
+      title: `Live Stream ${i + 1}`,
+      user_id: `user-${i + 1}`,
+      started_at: new Date(Date.now() - i * 3600000).toISOString(),
+      viewer_count: Math.floor(Math.random() * 100) + 10,
+      currentViewers: Math.floor(Math.random() * 100) + 10,
+      username: `user${i + 1}`,
+      avatar_url: `https://i.pravatar.cc/150?img=${i + 1}`,
+      user: {
+        username: `user${i + 1}`,
+        avatar_url: `https://i.pravatar.cc/150?img=${i + 1}`
+      }
+    }));
+  }
+
+  async shutdownStream(streamId: string, reason: string): Promise<void> {
+    console.log(`Stream ${streamId} shutdown for reason: ${reason}`);
+  }
+
+  async sendStreamMessage(streamId: string, message: string): Promise<void> {
+    console.log(`Message sent to stream ${streamId}: ${message}`);
+  }
+
+  async getCoupons(): Promise<AdminCoupon[]> {
+    return Array(3).fill(null).map((_, i) => ({
+      id: `coupon-${i + 1}`,
+      code: `COUPON${i + 1}`,
+      type: i % 2 === 0 ? 'percentage' : 'fixed' as 'percentage' | 'fixed',
+      value: i % 2 === 0 ? 15 + i * 5 : 10 + i * 5,
+      status: 'active' as 'active' | 'expired' | 'disabled',
+      minimum_purchase: i * 50,
+      expiry_date: new Date(Date.now() + 30 * 86400000).toISOString(),
+      usage_limit: 100,
+      usage_count: Math.floor(Math.random() * 50),
+      current_uses: Math.floor(Math.random() * 50),
+      is_active: true,
+      created_at: new Date(Date.now() - i * 86400000).toISOString(),
+      updated_at: new Date(Date.now() - i * 43200000).toISOString(),
+      applicable_products: [],
+      applicable_categories: [],
+      discount_percentage: i % 2 === 0 ? 15 + i * 5 : 0,
+      max_uses: 100
+    }));
+  }
+
+  async getCouponAnalytics(): Promise<any> {
+    return {
+      usage_over_time: Array(10).fill(null).map((_, i) => ({
+        date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 30) + 5
       })),
-      activeUsers: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 1000) + 200
+      most_used_coupons: Array(5).fill(null).map((_, i) => ({
+        code: `COUPON${i + 1}`,
+        usage_count: Math.floor(Math.random() * 100) + 20
       }))
     };
   }
 
-  async getVideoEngagementData(period: 'week' | 'month' | 'year'): Promise<any> {
-    // Mock implementation
-    const dataPoints = period === 'week' ? 7 : period === 'month' ? 30 : 12;
+  async createCoupon(data: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>): Promise<AdminCoupon> {
+    return {
+      id: `coupon-${Date.now()}`,
+      ...data,
+      usage_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  async updateCoupon(id: string, data: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>>): Promise<AdminCoupon> {
+    const existingCoupon = (await this.getCoupons()).find(coupon => coupon.id === id);
+    if (!existingCoupon) throw new Error('Coupon not found');
     
     return {
-      views: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 5000) + 1000
-      })),
-      interactions: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        likes: Math.floor(Math.random() * 2000) + 500,
-        comments: Math.floor(Math.random() * 500) + 100
-      })),
-      uploads: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 50) + 10
+      id,
+      code: data.code || 'UPDATED',
+      type: data.type || 'percentage',
+      value: data.value !== undefined ? data.value : 10,
+      status: data.status || 'active',
+      minimum_purchase: data.minimum_purchase || 0,
+      expiry_date: data.expiry_date || new Date(Date.now() + 30 * 86400000).toISOString(),
+      usage_limit: data.usage_limit || 100,
+      usage_count: 0,
+      current_uses: 0,
+      is_active: data.is_active !== undefined ? data.is_active : true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      applicable_products: data.applicable_products || [],
+      applicable_categories: data.applicable_categories || [],
+      discount_percentage: data.type === 'percentage' ? data.value : 0,
+      max_uses: data.usage_limit || 100
+    };
+  }
+
+  async deleteCoupon(id: string): Promise<void> {
+    console.log(`Coupon ${id} deleted`);
+  }
+
+  async getOffers(): Promise<AdminOffer[]> {
+    return Array(3).fill(null).map((_, i) => ({
+      id: `offer-${i + 1}`,
+      title: `Offer ${i + 1}`,
+      name: `Offer ${i + 1}`,
+      description: `Description for offer ${i + 1}`,
+      discount_type: i % 3 === 0 ? 'fixed' : i % 3 === 1 ? 'percentage' : 'special' as 'fixed' | 'percentage' | 'special',
+      discount_percentage: i % 3 === 1 ? 15 + i * 5 : 0,
+      discount_value: i % 3 === 0 ? 10 + i * 5 : i % 3 === 1 ? 0 : 1,
+      start_date: new Date(Date.now() - i * 86400000).toISOString(),
+      end_date: new Date(Date.now() + (30 - i) * 86400000).toISOString(),
+      min_purchase_amount: i * 50,
+      product_category: i % 2 === 0 ? 'electronics' : 'clothing',
+      product_id: `product-${i + 1}`,
+      active: true,
+      created_at: new Date(Date.now() - i * 86400000).toISOString(),
+      updated_at: new Date(Date.now() - i * 43200000).toISOString()
+    }));
+  }
+
+  async getOfferAnalytics(): Promise<any> {
+    return {
+      totalRevenue: 12540.75,
+      conversionRate: 23.5,
+      averageOrderValue: 87.65,
+      topOffers: Array(3).fill(null).map((_, i) => ({
+        id: `offer-${i + 1}`,
+        name: `Offer ${i + 1}`,
+        orders: Math.floor(Math.random() * 100) + 20,
+        revenue: Math.floor(Math.random() * 5000) + 1000,
+        conversionRate: Math.floor(Math.random() * 30) + 10
       }))
     };
   }
 
-  async getRevenueData(period: 'week' | 'month' | 'year'): Promise<any> {
-    // Mock implementation
-    const dataPoints = period === 'week' ? 7 : period === 'month' ? 30 : 12;
+  async createOffer(offerData: Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>): Promise<AdminOffer> {
+    return {
+      id: `offer-${Date.now()}`,
+      ...offerData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  async updateOffer(id: string, data: Partial<Omit<AdminOffer, 'id' | 'created_at' | 'updated_at'>>): Promise<AdminOffer> {
+    const existingOffer = (await this.getOffers()).find(offer => offer.id === id);
+    if (!existingOffer) throw new Error('Offer not found');
     
     return {
-      total: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        amount: Math.floor(Math.random() * 10000) + 2000
+      ...existingOffer,
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  async deleteOffer(id: string): Promise<void> {
+    console.log(`Offer ${id} deleted`);
+  }
+
+  async getVirtualGifts(): Promise<VirtualGift[]> {
+    return Array(5).fill(null).map((_, i) => ({
+      id: `gift-${i + 1}`,
+      name: `Gift ${i + 1}`,
+      description: `Description for gift ${i + 1}`,
+      price: 10 + i * 5,
+      value: 50 + i * 25,
+      imageUrl: `https://example.com/gifts/${i + 1}.png`,
+      imageType: i % 2 === 0 ? 'svg' : 'gif' as 'svg' | 'gif',
+      hasSound: i % 3 === 0,
+      soundUrl: i % 3 === 0 ? `https://example.com/sounds/${i + 1}.mp3` : '',
+      category: i % 2 === 0 ? 'premium' : 'standard',
+      available: true,
+      color: ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3'][i],
+      icon: ['gift', 'heart', 'star', 'diamond', 'crown'][i],
+      is_premium: i % 2 === 0,
+      created_at: new Date(Date.now() - i * 86400000).toISOString()
+    }));
+  }
+
+  async getGiftUsageStats(): Promise<any> {
+    return {
+      totalUsage: 12540,
+      byGift: Array(5).fill(null).map((_, i) => ({
+        id: `gift-${i + 1}`,
+        name: `Gift ${i + 1}`,
+        usageCount: Math.floor(Math.random() * 5000) + 1000,
+        revenue: Math.floor(Math.random() * 10000) + 2000
       })),
-      byCategory: [
-        { category: 'Electronics', amount: Math.floor(Math.random() * 5000) + 1000 },
-        { category: 'Clothing', amount: Math.floor(Math.random() * 4000) + 800 },
-        { category: 'Home & Garden', amount: Math.floor(Math.random() * 3000) + 600 },
-        { category: 'Beauty', amount: Math.floor(Math.random() * 2500) + 500 },
-        { category: 'Sports', amount: Math.floor(Math.random() * 2000) + 400 }
-      ],
-      orders: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 100) + 20
+      byDay: Array(7).fill(null).map((_, i) => ({
+        date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 500) + 100
+      }))
+    };
+  }
+
+  async createVirtualGift(giftData: any): Promise<VirtualGift> {
+    return {
+      id: `gift-${Date.now()}`,
+      ...giftData,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  async updateVirtualGift(id: string, data: any): Promise<VirtualGift> {
+    return {
+      id,
+      ...data,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  async deleteVirtualGift(id: string): Promise<void> {
+    console.log(`Virtual gift ${id} deleted`);
+  }
+
+  async toggleGiftAvailability(id: string, available: boolean): Promise<VirtualGift> {
+    const gifts = await this.getVirtualGifts();
+    const gift = gifts.find(g => g.id === id);
+    if (!gift) throw new Error('Gift not found');
+    
+    return {
+      ...gift,
+      available
+    };
+  }
+
+  async getProductAttributes(): Promise<ProductAttribute[]> {
+    return Array(3).fill(null).map((_, i) => ({
+      id: `attr-${i + 1}`,
+      name: ['Color', 'Size', 'Material'][i],
+      values: i === 0 
+        ? ['Red', 'Blue', 'Green', 'Black', 'White'] 
+        : i === 1 
+        ? ['XS', 'S', 'M', 'L', 'XL'] 
+        : ['Cotton', 'Polyester', 'Wool', 'Silk'],
+      color: i === 0 ? '#FF5733' : i === 1 ? '#33FF57' : '#3357FF',
+      status: 'active' as 'active' | 'inactive',
+      created_at: new Date(Date.now() - i * 86400000).toISOString()
+    }));
+  }
+
+  async createProductAttribute(attributeData: Omit<ProductAttribute, 'id'> & { created_at: string }): Promise<ProductAttribute> {
+    return {
+      id: `attr-${Date.now()}`,
+      ...attributeData
+    };
+  }
+
+  async updateProductAttribute(id: string, data: Partial<ProductAttribute>): Promise<ProductAttribute> {
+    const attributes = await this.getProductAttributes();
+    const attribute = attributes.find(a => a.id === id);
+    if (!attribute) throw new Error('Attribute not found');
+    
+    return {
+      ...attribute,
+      ...data
+    };
+  }
+
+  async deleteProductAttribute(id: string): Promise<void> {
+    console.log(`Product attribute ${id} deleted`);
+  }
+
+  async getProductSalesData(): Promise<any> {
+    return {
+      salesByProduct: Array(5).fill(null).map((_, i) => ({
+        id: `product-${i + 1}`,
+        name: `Product ${i + 1}`,
+        sales: Math.floor(Math.random() * 500) + 100,
+        revenue: Math.floor(Math.random() * 10000) + 2000
       })),
-      aov: Array(dataPoints).fill(null).map((_, i) => ({
-        date: period === 'year' 
-          ? `${new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`
-          : new Date(Date.now() - (dataPoints - i) * 86400000).toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 100) + 50
+      salesByCategory: Array(4).fill(null).map((_, i) => ({
+        category: ['Electronics', 'Clothing', 'Home & Garden', 'Beauty'][i],
+        sales: Math.floor(Math.random() * 1000) + 200,
+        revenue: Math.floor(Math.random() * 20000) + 5000
+      })),
+      salesByDay: Array(7).fill(null).map((_, i) => ({
+        date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
+        sales: Math.floor(Math.random() * 100) + 20,
+        revenue: Math.floor(Math.random() * 5000) + 1000
       }))
     };
   }

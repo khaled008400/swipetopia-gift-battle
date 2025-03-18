@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MusicNote } from "lucide-react";
+import { Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LiveStreamIndicator from "./LiveStreamIndicator";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +80,7 @@ const VideoInfo: React.FC<VideoInfoProps> = ({
             </span>
             {isLive && (
               <div className="ml-2">
-                <LiveStreamIndicator />
+                <LiveStreamIndicator viewerCount={100} />
               </div>
             )}
           </div>
@@ -104,7 +104,7 @@ const VideoInfo: React.FC<VideoInfoProps> = ({
       
       {songName && (
         <div className="flex items-center text-sm text-white">
-          <MusicNote className="h-3 w-3 mr-1" />
+          <Music className="h-3 w-3 mr-1" />
           <span className="truncate">{songName}</span>
         </div>
       )}

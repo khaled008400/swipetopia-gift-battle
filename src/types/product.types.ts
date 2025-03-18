@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -45,6 +44,8 @@ export interface ProductReview {
   rating: number;
   comment: string;
   created_at: string;
+  username?: string;
+  avatar_url?: string;
   user: {
     username: string;
     avatar_url: string;
@@ -75,4 +76,115 @@ export interface PaymentMethod {
   is_default?: boolean;
   display_name?: string;
   last4?: string;
+}
+
+export interface LimitedOffer {
+  id: string;
+  product_id: string;
+  discount_percentage: number;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+  updated_at: string;
+  product?: Product;
+}
+
+export interface LiveSeller {
+  id: string;
+  user_id: string;
+  title: string;
+  thumbnail_url: string;
+  is_live: boolean;
+  viewers: number;
+  started_at: string;
+  stream_key: string;
+  updated_at: string;
+  username?: string;
+  avatar_url?: string;
+  profiles?: {
+    username: string;
+    avatar_url: string;
+  };
+  user?: {
+    username: string;
+    avatar_url: string;
+  };
+}
+
+export interface RefundRequest {
+  id: string;
+  order_id: string;
+  user_id: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  amount: number;
+  order?: any;
+  user?: {
+    username: string;
+    avatar_url: string;
+    email?: string;
+  };
+}
+
+export interface CustomerMessage {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  read: boolean;
+  created_at: string;
+  updated_at: string;
+  sender?: {
+    username: string;
+    avatar_url: string;
+  };
+  receiver?: {
+    username: string;
+    avatar_url: string;
+  };
+}
+
+export interface SellerWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  pending_balance: number;
+  total_earnings: number;
+  created_at: string;
+  updated_at: string;
+  currency: string;
+  can_withdraw: boolean;
+  minimum_withdrawal: number;
+  transactions?: WalletTransaction[];
+}
+
+export interface WalletTransaction {
+  id: string;
+  wallet_id: string;
+  amount: number;
+  type: 'deposit' | 'withdrawal' | 'refund' | 'sale';
+  status: 'pending' | 'completed' | 'failed';
+  created_at: string;
+  description: string;
+  reference_id?: string;
+}
+
+export interface ShopProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  logo: string;
+  banner: string;
+  contact_email: string;
+  contact_phone: string;
+  social_links: Record<string, string>;
+  policy: string;
+  created_at: string;
+  updated_at: string;
+  verified: boolean;
+  rating: number;
+  categories: string[];
 }
