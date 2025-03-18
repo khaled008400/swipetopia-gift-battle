@@ -29,8 +29,8 @@ const productSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   price: z.number().min(0.01, "Price must be greater than 0"),
   description: z.string().optional(),
-  image: z.string().url("Must be a valid URL"),
-  inventory: z.number().min(0, "Inventory cannot be negative"),
+  image_url: z.string().url("Must be a valid URL"),
+  inventory_count: z.number().min(0, "Inventory cannot be negative"),
   category: z.string().min(1, "Category is required"),
   status: z.enum(["active", "draft", "unavailable"])
 });
@@ -50,16 +50,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit, mode }
       name: initialData.name,
       price: initialData.price,
       description: initialData.description || '',
-      image: initialData.image,
-      inventory: initialData.inventory,
+      image_url: initialData.image_url,
+      inventory_count: initialData.inventory_count,
       category: initialData.category,
       status: initialData.status
     } : {
       name: '',
       price: 0,
       description: '',
-      image: '',
-      inventory: 0,
+      image_url: '',
+      inventory_count: 0,
       category: '',
       status: 'active'
     }
@@ -104,7 +104,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit, mode }
           
           <FormField
             control={form.control}
-            name="inventory"
+            name="inventory_count"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Inventory</FormLabel>
@@ -149,7 +149,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit, mode }
         
         <FormField
           control={form.control}
-          name="image"
+          name="image_url"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Image URL</FormLabel>

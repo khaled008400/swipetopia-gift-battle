@@ -57,7 +57,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onEdit, onDelet
           <TableRow key={product.id}>
             <TableCell>
               <img 
-                src={product.image} 
+                src={product.image_url} 
                 alt={product.name} 
                 className="w-10 h-10 object-cover rounded-md"
               />
@@ -65,7 +65,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onEdit, onDelet
             <TableCell className="font-medium">{product.name}</TableCell>
             <TableCell>${product.price.toFixed(2)}</TableCell>
             <TableCell>{product.category}</TableCell>
-            <TableCell>{product.inventory}</TableCell>
+            <TableCell>{product.inventory_count}</TableCell>
             <TableCell>{getStatusBadge(product.status)}</TableCell>
             <TableCell>
               <div className="flex space-x-1">

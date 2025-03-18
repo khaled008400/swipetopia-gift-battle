@@ -165,7 +165,7 @@ export interface AdminProduct {
   price: number;
   image_url: string;
   category: string;
-  stock_quantity: number;
+  inventory_count: number;
   status: 'active' | 'draft' | 'unavailable';
   seller_id: string;
   created_at: string;
