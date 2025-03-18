@@ -11,10 +11,10 @@ export interface VirtualGift {
   category?: string;
   imageUrl: string; // Required to match AdminService.VirtualGift
   imageType: "svg" | "gif"; // Required and limited to these two values
-  hasSound: boolean; // Making this required
+  hasSound: boolean; // Required
   description: string; // Required to match AdminService.VirtualGift
   isPremium?: boolean;
-  soundUrl?: string;
+  soundUrl: string; // Make it required
   is_premium?: boolean;
 }
 

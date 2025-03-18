@@ -34,7 +34,7 @@ const ProductAnalytics: React.FC<ProductAnalyticsProps> = ({ productId }) => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['productSalesData', productId, period],
-    queryFn: () => AdminService.getProductSalesData(productId, period),
+    queryFn: () => AdminService.getProductSalesData(productId), // Remove the second parameter
   });
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];

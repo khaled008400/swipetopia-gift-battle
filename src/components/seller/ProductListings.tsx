@@ -35,7 +35,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Product } from "@/types/product.types";
-import ShopService from "@/services/shop.service";
+import SellerService from "@/services/seller.service";
 
 interface AdminProduct {
   id: string;
@@ -88,18 +88,16 @@ const ProductListings = () => {
   }, [user]);
 
   const fetchProducts = async () => {
-    if (!user) return;
-    setLoading(true);
     try {
-      const productsData = await ShopService.getSellerProducts(user.id);
-      setProducts(productsData);
-      setError(null);
-    } catch (err: any) {
-      console.error("Error fetching products:", err);
-      setError(err.message || "Failed to fetch products");
+      setLoading(true);
+      const products = await SellerService.getSellerProducts();
+      setProducts(products);
+      setFilteredProducts(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch products. Please try again.",
+        description: "Failed to load products. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -137,92 +135,77 @@ const ProductListings = () => {
     });
   };
 
-  const createProduct = async () => {
-    if (!user) return;
+  const handleCreateProduct = async (productData: any) => {
     try {
-      const productData = {
-        ...newProduct,
-        price: parseFloat(String(newProduct.price)),
-        inventory_count: parseInt(String(newProduct.inventory_count)),
-        seller_id: user.id,
-      };
-      await ShopService.createProduct(productData);
+      setSubmitting(true);
+      const newProduct = await SellerService.createProduct(productData);
+      setProducts([...products, newProduct]);
+      setFilteredProducts([...filteredProducts, newProduct]);
       toast({
-        title: "Success",
-        description: "Product created successfully.",
+        title: "Product Created",
+        description: "Your product has been created successfully.",
       });
-      setOpen(false);
-      setNewProduct({
-        name: "",
-        price: 0,
-        description: "",
-        image_url: "",
-        inventory_count: 0,
-        category: "",
-        status: "draft",
-      });
-      fetchProducts();
-    } catch (err: any) {
-      console.error("Error creating product:", err);
+      setOpenDialog(false);
+    } catch (error) {
+      console.error("Error creating product:", error);
       toast({
         title: "Error",
         description: "Failed to create product. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const updateProduct = async () => {
+  const handleUpdateProduct = async (productData: any) => {
     try {
-      const productData = {
-        ...editProduct,
-        price: parseFloat(String(editProduct.price)),
-        inventory_count: parseInt(String(editProduct.inventory_count)),
-      };
-      await ShopService.updateProduct(editProduct.id, productData);
+      setSubmitting(true);
+      const updatedProduct = await SellerService.updateProduct(
+        editingProduct!.id,
+        productData
+      );
+      
+      setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+      setFilteredProducts(filteredProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+      
       toast({
-        title: "Success",
-        description: "Product updated successfully.",
+        title: "Product Updated",
+        description: "Your product has been updated successfully.",
       });
-      setEditOpen(false);
-      setEditProduct({
-        id: "",
-        name: "",
-        price: 0,
-        description: "",
-        image_url: "",
-        inventory_count: 0,
-        category: "",
-        status: "draft",
-      });
-      fetchProducts();
-    } catch (err: any) {
-      console.error("Error updating product:", err);
+      setOpenDialog(false);
+    } catch (error) {
+      console.error("Error updating product:", error);
       toast({
         title: "Error",
         description: "Failed to update product. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const deleteProduct = async (productId: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await ShopService.deleteProduct(productId);
-        toast({
-          title: "Success",
-          description: "Product deleted successfully.",
-        });
-        fetchProducts();
-      } catch (err: any) {
-        console.error("Error deleting product:", err);
-        toast({
-          title: "Error",
-          description: "Failed to delete product. Please try again.",
-          variant: "destructive",
-        });
-      }
+  const handleDeleteProduct = async (productId: string) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    
+    try {
+      await SellerService.deleteProduct(productId);
+      
+      setProducts(products.filter(p => p.id !== productId));
+      setFilteredProducts(filteredProducts.filter(p => p.id !== productId));
+      
+      toast({
+        title: "Product Deleted",
+        description: "Your product has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -249,66 +232,6 @@ const ProductListings = () => {
     setSearchQuery("");
     setSearchResults([]);
   };
-
-  // Update mock product data to include all required fields
-  const mockProducts = [
-    {
-      id: "product-1",
-      name: "Summer T-shirt",
-      price: 29.99,
-      description: "Comfortable cotton t-shirt perfect for summer.",
-      image_url: "/products/tshirt.jpg",
-      inventory_count: 45,
-      category: "Clothing",
-      status: "active" as const,
-      seller_id: "seller-123", // Add required fields
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_featured: false
-    },
-    {
-      id: "product-2",
-      name: "Denim Jeans",
-      price: 59.99,
-      description: "Classic denim jeans for all occasions.",
-      image_url: "/products/jeans.jpg",
-      inventory_count: 30,
-      category: "Clothing",
-      status: "active" as const,
-      seller_id: "seller-123", // Add required fields
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_featured: true
-    },
-    {
-      id: "product-3",
-      name: "Leather Jacket",
-      price: 129.99,
-      description: "Stylish leather jacket to keep you warm.",
-      image_url: "/products/jacket.jpg",
-      inventory_count: 15,
-      category: "Outerwear",
-      status: "draft" as const,
-      seller_id: "seller-123", // Add required fields
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_featured: false
-    },
-    {
-      id: "product-4",
-      name: "Running Shoes",
-      price: 79.99,
-      description: "Comfortable running shoes for your workouts.",
-      image_url: "/products/shoes.jpg",
-      inventory_count: 60,
-      category: "Footwear",
-      status: "active" as const,
-      seller_id: "seller-123", // Add required fields
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_featured: true
-    }
-  ];
 
   if (loading) {
     return (
@@ -432,7 +355,7 @@ const ProductListings = () => {
               </div>
             </div>
             <div className="flex justify-end">
-              <Button type="submit" onClick={createProduct} className="bg-app-yellow text-app-black hover:bg-yellow-500">
+              <Button type="submit" onClick={handleCreateProduct} className="bg-app-yellow text-app-black hover:bg-yellow-500">
                 Create Product
               </Button>
             </div>
@@ -612,13 +535,13 @@ const ProductListings = () => {
                         </div>
                       </div>
                       <div className="flex justify-end">
-                        <Button type="submit" onClick={updateProduct} className="bg-app-yellow text-app-black hover:bg-yellow-500">
+                        <Button type="submit" onClick={handleUpdateProduct} className="bg-app-yellow text-app-black hover:bg-yellow-500">
                           Update Product
                         </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="destructive" size="sm" onClick={() => deleteProduct(product.id)}>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id)}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </Button>

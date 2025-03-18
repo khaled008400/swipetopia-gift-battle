@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Component code with fixed array access
@@ -10,16 +11,14 @@ const TrendingHashtags = () => {
   ];
 
   const hashtagCreators = {
-    '#SummerVibes': [{ id: 'user1', username: 'summerLover', avatar_url: '/avatars/summerLover.jpg' }],
-    '#TravelGoals': [{ id: 'user2', username: 'travelBug', avatar_url: '/avatars/travelBug.jpg' }],
-    '#FitnessChallenge': [{ id: 'user3', username: 'fitLife', avatar_url: '/avatars/fitLife.jpg' }],
+    '#SummerVibes': { id: 'user1', username: 'summerLover', avatar_url: '/avatars/summerLover.jpg' },
+    '#TravelGoals': { id: 'user2', username: 'travelBug', avatar_url: '/avatars/travelBug.jpg' },
+    '#FitnessChallenge': { id: 'user3', username: 'fitLife', avatar_url: '/avatars/fitLife.jpg' },
   };
 
-  const renderCreators = (creators: any) => {
-    if (!creators || creators.length === 0) return null;
+  const renderCreators = (creator: any) => {
+    if (!creator) return null;
     
-    // Access the first element, then get username and avatar_url from it
-    const creator = creators[0]; // Get the first creator
     return (
       <div className="flex items-center mt-2">
         <img

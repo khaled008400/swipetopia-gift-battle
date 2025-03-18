@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -63,9 +64,11 @@ export default function VirtualGifts() {
             value: 500,
             available: true,
             created_at: new Date().toISOString(),
-            description: "A sparkling diamond gift", // Added required description
-            imageUrl: "/assets/gifts/diamond.png", // Added required imageUrl
-            imageType: "svg", // Added required imageType
+            description: "A sparkling diamond gift", 
+            imageUrl: "/assets/gifts/diamond.png", 
+            imageType: "svg",
+            hasSound: false, // Add hasSound property
+            soundUrl: "", // Add soundUrl property
           },
           {
             id: "2",
@@ -76,9 +79,11 @@ export default function VirtualGifts() {
             value: 100,
             available: true,
             created_at: new Date().toISOString(),
-            description: "A loving heart gift", // Added required description
-            imageUrl: "/assets/gifts/heart.png", // Added required imageUrl
-            imageType: "svg", // Added required imageType
+            description: "A loving heart gift", 
+            imageUrl: "/assets/gifts/heart.png", 
+            imageType: "svg",
+            hasSound: false, // Add hasSound property
+            soundUrl: "", // Add soundUrl property
           },
           {
             id: "3",
@@ -89,9 +94,11 @@ export default function VirtualGifts() {
             value: 250,
             available: true,
             created_at: new Date().toISOString(),
-            description: "A shining star gift", // Added required description
-            imageUrl: "/assets/gifts/star.png", // Added required imageUrl
-            imageType: "svg", // Added required imageType
+            description: "A shining star gift", 
+            imageUrl: "/assets/gifts/star.png", 
+            imageType: "svg",
+            hasSound: false, // Add hasSound property
+            soundUrl: "", // Add soundUrl property
           },
         ];
         setGifts(mockGifts);
@@ -147,6 +154,8 @@ export default function VirtualGifts() {
         description: giftDescription, // Include required description
         imageUrl: editingGift?.imageUrl || "/assets/gifts/default.png", // Include required imageUrl
         imageType: "svg", // Added required imageType
+        hasSound: editingGift?.hasSound || false, // Add required hasSound property
+        soundUrl: editingGift?.soundUrl || "", // Add required soundUrl property
       };
 
       if (editingGift) {

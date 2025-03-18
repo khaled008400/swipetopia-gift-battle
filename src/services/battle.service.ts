@@ -1,3 +1,4 @@
+
 // battle.service.ts
 
 // Fix the array access in the getRelatedBattles method
@@ -20,7 +21,7 @@ const getRelatedBattles = async (battleId: string) => {
       }
     ];
 
-    // Fix array access - each item in the array has an id property
+    // Fix array access - filter the array properly
     return mockRelatedBattles.filter(battle => battle.id !== battleId);
   } catch (error) {
     console.error('Error fetching related battles:', error);

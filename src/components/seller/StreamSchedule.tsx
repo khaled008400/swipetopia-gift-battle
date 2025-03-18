@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar } from "@/components/ui/calendar"
-import { CalendarDaysIcon } from "@radix-ui/react-icons"
+import { CalendarIcon } from "lucide-react" // Replace @radix-ui/react-icons with lucide-react
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -29,7 +30,7 @@ const StreamSchedule: React.FC<StreamScheduleProps> = ({ onScheduleStream }) => 
 
   const categories = ["Entertainment", "Music", "Gaming", "Education", "Sports"];
 
-  const mockFeaturedProducts = [
+  const mockFeaturedProducts: Product[] = [
     {
       id: "product-1",
       name: "Summer T-shirt",
@@ -39,7 +40,7 @@ const StreamSchedule: React.FC<StreamScheduleProps> = ({ onScheduleStream }) => 
       category: "Clothing",
       stock_quantity: 45,
       status: "active" as const,
-      seller_id: "seller-123", // Add required fields
+      seller_id: "seller-123",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_featured: true
@@ -53,7 +54,7 @@ const StreamSchedule: React.FC<StreamScheduleProps> = ({ onScheduleStream }) => 
       category: "Electronics",
       stock_quantity: 20,
       status: "active" as const,
-      seller_id: "seller-123", // Add required fields
+      seller_id: "seller-123",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_featured: true
@@ -100,14 +101,17 @@ const StreamSchedule: React.FC<StreamScheduleProps> = ({ onScheduleStream }) => 
                 !date && "text-muted-foreground"
               )}
             >
-              <CalendarDaysIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-4 w-4" />
               {date ? format(date, "PPP") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="center" side="bottom">
-            <Calendar mode="single" selected={date} onSelect={setDate} disabledDates={date =>
-              date < new Date()
-            } />
+            <Calendar 
+              mode="single" 
+              selected={date} 
+              onSelect={setDate} 
+              disabled={(date) => date < new Date()} // Fix: Use disabled prop instead of disabledDates
+            />
           </PopoverContent>
         </Popover>
       </div>
