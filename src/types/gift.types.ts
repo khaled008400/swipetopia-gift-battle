@@ -12,7 +12,7 @@ export interface VirtualGift {
   imageUrl?: string;
   imageType?: string;
   hasSound?: boolean;
-  description?: string;
+  description: string; // Made this required to match AdminService.VirtualGift
   isPremium?: boolean;
   soundUrl?: string;
   is_premium?: boolean;

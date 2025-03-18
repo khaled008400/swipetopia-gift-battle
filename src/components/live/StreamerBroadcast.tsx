@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { StreamService } from '@/services/streaming';
 import { supabase } from '@/integrations/supabase/client';
-import { LiveStream } from '@/services/streaming/stream.types';
+import { LiveStream } from '@/types/livestream.types';
 
 interface StreamerBroadcastProps {
   streamerId: string;
@@ -22,7 +22,7 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamId, setStreamId] = useState<string | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
-  const [streamStatus, setStreamStatus] = useState<'online' | 'offline'>('offline');
+  const [streamStatus, setStreamStatus] = useState<'online' | 'offline' | 'live' | 'scheduled'>('offline');
   const { toast } = useToast();
 
   useEffect(() => {

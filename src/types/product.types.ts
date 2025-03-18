@@ -23,6 +23,7 @@ export interface Product {
     name: string;
     logo?: string;
   };
+  inventory_count?: number;
 }
 
 export interface ProductAttribute {

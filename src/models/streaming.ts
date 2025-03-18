@@ -2,7 +2,7 @@
 import { LiveStream } from "@/types/livestream.types";
 
 // Re-export LiveStream to maintain backward compatibility
-export { LiveStream };
+export type { LiveStream };
 
 export interface Battle {
   id: string;
