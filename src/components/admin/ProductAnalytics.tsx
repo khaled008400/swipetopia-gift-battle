@@ -1,8 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import { 
+  ResponsiveContainer, BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  PieChart, Pie, Cell 
+} from 'recharts';
+import { Loader2, DollarSign, TrendingUp, Package, TrendingDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import ProductService from "@/services/product.service";
 
 const ProductAnalytics = () => {
@@ -11,7 +17,7 @@ const ProductAnalytics = () => {
   
   const { data: allProducts, isLoading } = useQuery({
     queryKey: ['products'],
-    queryFn: () => ProductService.getProducts()
+    queryFn: () => ProductService.getTopProducts()
   });
   
   const [salesData, setSalesData] = useState([]);
@@ -20,7 +26,7 @@ const ProductAnalytics = () => {
   
   useEffect(() => {
     if (allProducts) {
-      // Generate mock sales data based on time range
+      // Generate mock data based on time range
       generateMockData(timeRange);
     }
   }, [allProducts, timeRange]);
@@ -160,6 +166,7 @@ const ProductAnalytics = () => {
                     <YAxis yAxisId="left" />
                     <YAxis yAxisId="right" orientation="right" />
                     <Tooltip />
+                    <Legend />
                     <Line yAxisId="left" type="monotone" dataKey="sales" stroke="#8884d8" name="Sales" />
                     <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#82ca9d" name="Revenue ($)" />
                   </LineChart>

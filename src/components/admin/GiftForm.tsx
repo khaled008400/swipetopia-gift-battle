@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { VirtualGift } from '@/services/admin.service';
+import { VirtualGift } from '@/types/gift.types';
 import {
   Form,
   FormField,
@@ -44,10 +44,11 @@ export type GiftFormData = z.infer<typeof giftSchema>;
 interface GiftFormProps {
   initialData?: VirtualGift | null;
   onSubmit: (data: GiftFormData) => void;
-  mode: 'create' | 'edit';
+  onCancel: () => void;
+  mode?: 'create' | 'edit';
 }
 
-const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
+const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, onCancel, mode = 'create' }) => {
   const [hasSound, setHasSound] = useState(initialData?.hasSound || false);
 
   const form = useForm<GiftFormData>({
@@ -267,7 +268,7 @@ const GiftForm: React.FC<GiftFormProps> = ({ initialData, onSubmit, mode }) => {
         
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
           </DialogClose>
           <Button type="submit">
             {mode === 'create' ? 'Create Gift' : 'Save Changes'}
