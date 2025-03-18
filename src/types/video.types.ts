@@ -1,4 +1,3 @@
-
 export interface Video {
   id: string;
   title: string;
@@ -89,4 +88,17 @@ export interface LiveStream {
 
 export interface LiveStreamIndicatorProps {
   viewerCount: number;
+}
+
+export interface VideoTableProps {
+  videos: any[];
+  onStatusChange: (videoId: string, status: 'active' | 'flagged' | 'removed') => void;
+  onDeleteVideo: (videoId: string) => void;
+  onOpenPreview: (video: any) => void;
+  onViewUserProfile: (userId: string) => void;
+  onSendWarning?: (videoId: string, userId: string, message: string) => void;
+  onRestrictUser?: (userId: string, reason: string) => void;
+  selectedVideos: string[];
+  onSelectVideo: (videoId: string, selected: boolean) => void;
+  onSelectAllVideos: (selected: boolean) => void;
 }

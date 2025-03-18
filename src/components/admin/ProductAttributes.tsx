@@ -60,10 +60,10 @@ const ProductAttributes: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch attributes data
+  // Fetch attributes data - fixed to not pass any arguments to getProductAttributes
   const { data: attributesData, isLoading } = useQuery({
     queryKey: ['productAttributes', page],
-    queryFn: () => AdminService.getProductAttributes(page)
+    queryFn: () => AdminService.getProductAttributes()
   });
 
   // Create attribute mutation
@@ -197,6 +197,34 @@ const ProductAttributes: React.FC = () => {
     }
   };
 
+  // Render pagination only if needed
+  const renderPagination = () => {
+    // Since the API doesn't return pagination info, we just show a simple prev/next
+    return (
+      <div className="flex justify-center mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page <= 1}
+        >
+          Previous
+        </Button>
+        <div className="mx-4 flex items-center">
+          Page {page}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage(p => p + 1)}
+          disabled={attributesData && attributesData.length < 10} // Assume 10 per page
+        >
+          Next
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -278,13 +306,7 @@ const ProductAttributes: React.FC = () => {
         </Table>
       )}
 
-      {attributesData && attributesData.pagination && attributesData.pagination.last_page > 1 && (
-        <div className="flex justify-center">
-          <Pagination>
-            {/* Pagination would go here */}
-          </Pagination>
-        </div>
-      )}
+      {attributesData && attributesData.length > 0 && renderPagination()}
 
       <Dialog open={attributeDialog} onOpenChange={setAttributeDialog}>
         <DialogContent className="sm:max-w-md">

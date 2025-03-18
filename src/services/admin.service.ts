@@ -433,6 +433,7 @@ class AdminService {
       currentViewers: Math.floor(Math.random() * 100) + 10,
       username: `user${i + 1}`,
       avatar_url: `https://i.pravatar.cc/150?img=${i + 1}`,
+      status: 'live',
       user: {
         username: `user${i + 1}`,
         avatar_url: `https://i.pravatar.cc/150?img=${i + 1}`

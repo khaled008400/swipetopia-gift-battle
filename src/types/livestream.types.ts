@@ -28,4 +28,5 @@ export interface LiveStream {
     username: string;
     avatar_url?: string;
   };
+  ended_at?: string; // Alternative to endedAt for consistency
 }

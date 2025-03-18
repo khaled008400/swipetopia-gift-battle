@@ -9,7 +9,7 @@ export interface VirtualGift {
   created_at?: string;
   available?: boolean;
   category?: string;
-  imageUrl?: string;
+  imageUrl: string; // Made this required to match AdminService.VirtualGift
   imageType?: string;
   hasSound?: boolean;
   description: string; // Made this required to match AdminService.VirtualGift

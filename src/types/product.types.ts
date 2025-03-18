@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -7,10 +8,10 @@ export interface Product {
   category: string;
   stock_quantity: number;
   status: 'active' | 'draft' | 'unavailable';
-  seller_id: string;
-  created_at: string;
-  updated_at: string;
-  is_featured: boolean;
+  seller_id: string; // Added required property
+  created_at: string; // Added required property
+  updated_at: string; // Added required property
+  is_featured: boolean; // Added required property
   original_price?: number;
   discount?: number;
   rating?: number;
