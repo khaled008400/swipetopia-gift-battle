@@ -48,3 +48,23 @@ BEGIN
   WHERE id = video_id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to increment comment likes
+CREATE OR REPLACE FUNCTION increment_comment_likes(comment_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE comments
+  SET likes_count = likes_count + 1
+  WHERE id = comment_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to decrement comment likes
+CREATE OR REPLACE FUNCTION decrement_comment_likes(comment_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE comments
+  SET likes_count = GREATEST(likes_count - 1, 0)
+  WHERE id = comment_id;
+END;
+$$ LANGUAGE plpgsql;
