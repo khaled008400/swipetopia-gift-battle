@@ -68,12 +68,16 @@ const AdminOrders = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-500">Completed</Badge>;
+      case 'delivered':
+        return <Badge className="bg-green-500">Delivered</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-500">Pending</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-500">Cancelled</Badge>;
+      case 'processing':
+        return <Badge className="bg-blue-500">Processing</Badge>;
+      case 'shipped':
+        return <Badge className="bg-purple-500">Shipped</Badge>;
       default:
         return <Badge className="bg-gray-500">Unknown</Badge>;
     }
@@ -162,7 +166,7 @@ const AdminOrders = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => handleStatusChange(order.id, 'completed')}
+                            onClick={() => handleStatusChange(order.id, 'delivered')}
                             className="text-green-600"
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
@@ -294,10 +298,10 @@ const AdminOrders = () => {
 
               <div className="flex justify-end space-x-2">
                 <Button
-                  onClick={() => handleStatusChange(selectedOrder.id, 'completed')}
+                  onClick={() => handleStatusChange(selectedOrder.id, 'delivered')}
                   className="bg-green-500 hover:bg-green-600"
                 >
-                  Mark Completed
+                  Mark Delivered
                 </Button>
                 <Button
                   variant="outline"
