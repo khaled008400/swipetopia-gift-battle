@@ -70,9 +70,12 @@ export const BattleComments = ({ battleId }: BattleCommentsProps) => {
               .eq("id", payload.new.user_id)
               .single();
               
-            const newCommentWithUser = {
+            const newCommentWithUser: Comment = {
               ...payload.new,
-              user: data,
+              user: {
+                username: data?.username || "Unknown",
+                avatar_url: data?.avatar_url || ""
+              }
             };
             
             setComments((prev) => [newCommentWithUser, ...prev]);

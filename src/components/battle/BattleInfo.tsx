@@ -1,6 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, Award } from "lucide-react";
+import { Calendar, Clock, Users, Award, Trophy } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface BattleInfoProps {
   battle: any;
@@ -67,7 +68,7 @@ export const BattleInfo = ({ battle }: BattleInfoProps) => {
             <p className="text-xs text-muted-foreground">Status</p>
             <Badge variant={
               battle?.status === "completed" ? "default" : 
-              battle?.status === "active" ? "success" : "secondary"
+              battle?.status === "active" ? "secondary" : "outline"
             }>
               {battle?.status === "completed" ? "Completed" : 
                battle?.status === "active" ? "Active" : "Pending"}
