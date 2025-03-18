@@ -12,6 +12,7 @@ const ProductDetailPage = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -23,6 +24,8 @@ const ProductDetailPage = () => {
         const response = await fetch(`/api/products/${id}`);
         const data = await response.json();
         setProduct(data);
+        // Initialize like state based on user's previous interaction if available
+        setIsLiked(!!data.is_liked);
       } catch (error) {
         console.error("Error fetching product:", error);
         toast({
@@ -38,15 +41,9 @@ const ProductDetailPage = () => {
     fetchProduct();
   }, [id, toast]);
 
-  // Fix property access for is_liked
+  // Toggle like state
   const toggleLike = () => {
-    setProduct(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        is_liked: !prev.is_liked
-      };
-    });
+    setIsLiked(prev => !prev);
   };
 
   const addToCart = () => {
@@ -90,7 +87,7 @@ const ProductDetailPage = () => {
               Add to Cart
             </Button>
             <Button variant="outline" className="flex-1" onClick={toggleLike}>
-              {product?.is_liked ? "Liked" : "Like"}
+              {isLiked ? "Liked" : "Like"}
             </Button>
             <Button variant="outline" size="icon">
               <Share className="h-4 w-4" />

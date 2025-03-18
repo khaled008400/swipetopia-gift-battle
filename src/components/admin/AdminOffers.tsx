@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminService, { AdminOffer } from '@/services/admin.service';
@@ -61,13 +60,16 @@ import { format } from 'date-fns';
 // Define the form schema for offers
 const offerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
+  title: z.string().min(2, "Title must be at least 2 characters"),
   description: z.string().min(2, "Description must be at least 2 characters"),
   discount_type: z.enum(['percentage', 'fixed', 'special']),
   discount_value: z.number().min(0, "Discount value cannot be negative"),
+  discount_percentage: z.number().min(0, "Discount percentage cannot be negative"),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   min_purchase_amount: z.number().optional(),
   product_category: z.string().optional(),
+  product_id: z.string().optional(),
   active: z.boolean().default(true)
 });
 
@@ -163,13 +165,16 @@ const AdminOffers: React.FC = () => {
     resolver: zodResolver(offerSchema),
     defaultValues: {
       name: '',
+      title: '',
       description: '',
       discount_type: 'percentage',
       discount_value: 0,
+      discount_percentage: 0,
       start_date: '',
       end_date: '',
       min_purchase_amount: 0,
       product_category: '',
+      product_id: '',
       active: true
     }
   });
@@ -178,13 +183,16 @@ const AdminOffers: React.FC = () => {
   const handleCreateOffer = () => {
     form.reset({
       name: '',
+      title: '',
       description: '',
       discount_type: 'percentage',
       discount_value: 0,
+      discount_percentage: 0,
       start_date: '',
       end_date: '',
       min_purchase_amount: 0,
       product_category: '',
+      product_id: '',
       active: true
     });
     setDialogMode('create');
@@ -196,13 +204,16 @@ const AdminOffers: React.FC = () => {
   const handleEditOffer = (offer: AdminOffer) => {
     form.reset({
       name: offer.name,
+      title: offer.title,
       description: offer.description,
       discount_type: offer.discount_type,
       discount_value: offer.discount_value,
+      discount_percentage: offer.discount_percentage,
       start_date: offer.start_date || '',
       end_date: offer.end_date || '',
       min_purchase_amount: offer.min_purchase_amount || 0,
       product_category: offer.product_category || '',
+      product_id: offer.product_id || '',
       active: offer.active || true
     });
     setDialogMode('edit');
@@ -219,15 +230,20 @@ const AdminOffers: React.FC = () => {
 
   // Handle form submission
   const onSubmit = (formData: OfferFormValues) => {
+    const discountPercentage = formData.discount_type === 'percentage' ? formData.discount_value : 0;
+    
     const offerData = {
       name: formData.name,
+      title: formData.title,
       description: formData.description,
       discount_type: formData.discount_type,
       discount_value: formData.discount_value,
+      discount_percentage: discountPercentage,
       start_date: formData.start_date || undefined,
       end_date: formData.end_date || undefined,
       min_purchase_amount: formData.min_purchase_amount || undefined,
       product_category: formData.product_category || undefined,
+      product_id: formData.product_id || '',
       active: formData.active
     };
     
@@ -302,7 +318,6 @@ const AdminOffers: React.FC = () => {
                 </CardContent>
               </Card>
               
-              {/* Top performing offers */}
               <Card className="col-span-3">
                 <CardHeader>
                   <CardTitle>Top Performing Offers</CardTitle>
@@ -401,7 +416,6 @@ const AdminOffers: React.FC = () => {
         </Table>
       )}
 
-      {/* Offer Form Dialog */}
       <Dialog open={offerDialog} onOpenChange={setOfferDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -420,6 +434,20 @@ const AdminOffers: React.FC = () => {
                     <FormLabel>Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Summer Sale" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Summer Sale Title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -564,6 +592,20 @@ const AdminOffers: React.FC = () => {
                     <FormDescription>
                       Leave empty to apply to all products
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="product_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. prod_123" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

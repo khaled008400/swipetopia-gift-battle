@@ -1,63 +1,54 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
 import VideoService from '@/services/video.service';
-import { useToast } from "@/hooks/use-toast";
 
 interface ReportVideoDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   videoId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const reportReasons = [
-  { id: "inappropriate", label: "Inappropriate content" },
-  { id: "harmful", label: "Harmful or dangerous acts" },
-  { id: "harassment", label: "Harassment or bullying" },
-  { id: "misinformation", label: "Misinformation" },
-  { id: "copyright", label: "Copyright infringement" },
-  { id: "other", label: "Other" },
-];
-
-const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps) => {
-  const [selectedReason, setSelectedReason] = useState("");
-  const [additionalInfo, setAdditionalInfo] = useState("");
+export default function ReportVideoDialog({ videoId, open, onOpenChange }: ReportVideoDialogProps) {
+  const [category, setCategory] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedReason) {
+  const handleSubmit = async () => {
+    if (!category) {
       toast({
         title: "Error",
-        description: "Please select a reason for reporting this video",
+        description: "Please select a reason for reporting.",
         variant: "destructive",
       });
       return;
     }
-    
+
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      
-      // Updated to match VideoService.reportVideo signature
-      await VideoService.reportVideo(videoId, reason);
-      
-      toast({
-        title: "Report submitted",
-        description: "Thank you for helping to keep the platform safe",
+      // You would need to implement this method on your VideoService
+      await VideoService.reportVideo(videoId, {
+        category,
+        description: reason
       });
       
-      onClose();
+      toast({
+        title: "Report Submitted",
+        description: "Thank you for helping us keep the community safe."
+      });
+      
+      onOpenChange(false);
     } catch (error) {
       console.error("Error reporting video:", error);
       toast({
         title: "Error",
         description: "Failed to submit report. Please try again later.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
@@ -65,40 +56,47 @@ const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps)
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Report Video</DialogTitle>
+          <DialogDescription>
+            Thank you for helping us maintain a safe environment.
+            Your report will be reviewed by our moderation team.
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <Label>Why are you reporting this video?</Label>
-            <RadioGroup value={selectedReason} onValueChange={setSelectedReason}>
-              {reportReasons.map((reason) => (
-                <div key={reason.id} className="flex items-center space-x-2">
-                  <RadioGroupItem value={reason.id} id={reason.id} />
-                  <Label htmlFor={reason.id}>{reason.label}</Label>
-                </div>
-              ))}
-            </RadioGroup>
+            <label htmlFor="report-reason" className="text-sm font-medium">Reason for reporting</label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="report-reason">
+                <SelectValue placeholder="Select a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inappropriate">Inappropriate content</SelectItem>
+                <SelectItem value="harmful">Harmful or dangerous</SelectItem>
+                <SelectItem value="spam">Spam or misleading</SelectItem>
+                <SelectItem value="copyright">Copyright or intellectual property violation</SelectItem>
+                <SelectItem value="harassment">Harassment or bullying</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="additional-info">Additional information (optional)</Label>
-            <Textarea
-              id="additional-info"
-              placeholder="Please provide any additional details that might help us understand the issue"
-              value={additionalInfo}
-              onChange={(e) => setAdditionalInfo(e.target.value)}
-              className="resize-none"
-              rows={4}
+            <label htmlFor="report-details" className="text-sm font-medium">Additional details (optional)</label>
+            <Textarea 
+              id="report-details" 
+              placeholder="Please provide more details about the issue..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
             />
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Report"}
           </Button>
@@ -106,6 +104,4 @@ const ReportVideoDialog = ({ isOpen, onClose, videoId }: ReportVideoDialogProps)
       </DialogContent>
     </Dialog>
   );
-};
-
-export default ReportVideoDialog;
+}

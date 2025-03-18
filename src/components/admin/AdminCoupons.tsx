@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,19 +34,16 @@ const AdminCoupons = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch coupons
   const { data: coupons, isLoading } = useQuery({
     queryKey: ['adminCoupons'],
     queryFn: () => AdminService.getCoupons(),
   });
 
-  // Fetch coupon analytics
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['couponAnalytics'],
     queryFn: () => AdminService.getCouponAnalytics(),
   });
 
-  // Add coupon mutation
   const addMutation = useMutation({
     mutationFn: (coupon: Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>) => AdminService.createCoupon(coupon),
     onSuccess: () => {
@@ -69,7 +65,6 @@ const AdminCoupons = () => {
     }
   });
 
-  // Update coupon mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string, data: Partial<Omit<AdminCoupon, 'id' | 'usage_count' | 'created_at' | 'updated_at'>> }) => 
       AdminService.updateCoupon(id, data),
@@ -92,7 +87,6 @@ const AdminCoupons = () => {
     }
   });
 
-  // Delete coupon mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => AdminService.deleteCoupon(id),
     onSuccess: () => {
@@ -159,7 +153,6 @@ const AdminCoupons = () => {
   };
 
   const handleSubmit = () => {
-    // Validate form
     if (!code || !value) {
       toast({
         title: "Validation Error",
@@ -169,16 +162,22 @@ const AdminCoupons = () => {
       return;
     }
 
+    const discountPercentage = type === 'percentage' ? value : 0;
+
     const couponData = {
       code,
       type,
       value,
+      status: 'active',
       minimum_purchase: minimumPurchase,
       expiry_date: expiryDate ? expiryDate.toISOString() : undefined,
       usage_limit: usageLimit,
       is_active: isActive,
       applicable_products: applicableProducts.length > 0 ? applicableProducts : undefined,
       applicable_categories: applicableCategories.length > 0 ? applicableCategories : undefined,
+      current_uses: 0,
+      discount_percentage: discountPercentage,
+      max_uses: usageLimit || 100
     };
 
     if (isEditing && currentCoupon) {
@@ -187,17 +186,7 @@ const AdminCoupons = () => {
         data: couponData
       });
     } else {
-      addMutation.mutate({
-        code,
-        type,
-        value,
-        minimum_purchase: minimumPurchase,
-        expiry_date: expiryDate ? expiryDate.toISOString() : null,
-        usage_limit: usageLimit,
-        is_active: isActive,
-        applicable_products: applicableProducts.length > 0 ? applicableProducts : undefined,
-        applicable_categories: applicableCategories.length > 0 ? applicableCategories : undefined,
-      });
+      addMutation.mutate(couponData);
     }
   };
 
@@ -337,9 +326,6 @@ const AdminCoupons = () => {
                   <Label htmlFor="is-active">Active</Label>
                 </div>
               </div>
-              
-              {/* Additional fields can be added here for applicable products and categories */}
-              
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -351,7 +337,6 @@ const AdminCoupons = () => {
         </Dialog>
       </div>
 
-      {/* Analytics Section */}
       {analytics && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
@@ -402,7 +387,6 @@ const AdminCoupons = () => {
         </div>
       )}
 
-      {/* Coupons List */}
       <div className="grid gap-6">
         {coupons && coupons.length > 0 ? (
           coupons.map((coupon: AdminCoupon) => (
