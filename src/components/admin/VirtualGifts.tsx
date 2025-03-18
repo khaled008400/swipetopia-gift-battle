@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -32,14 +31,13 @@ export default function VirtualGifts() {
   const [editingGift, setEditingGift] = useState<VirtualGift | null>(null);
   const { toast } = useToast();
 
-  // Form state
   const [giftName, setGiftName] = useState("");
   const [giftPrice, setGiftPrice] = useState<number>(0);
   const [giftIcon, setGiftIcon] = useState("");
-  const [giftColor, setGiftColor] = useState("#FFD700"); // Default gold
+  const [giftColor, setGiftColor] = useState("#FFD700");
   const [giftValue, setGiftValue] = useState<number>(0);
   const [isAvailable, setIsAvailable] = useState(true);
-  const [giftDescription, setGiftDescription] = useState(""); // Added description state
+  const [giftDescription, setGiftDescription] = useState("");
 
   useEffect(() => {
     fetchGifts();
@@ -48,11 +46,6 @@ export default function VirtualGifts() {
   const fetchGifts = async () => {
     setLoading(true);
     try {
-      // In a real app, we would fetch from a real API endpoint
-      // const response = await adminApi.get("/gifts");
-      // setGifts(response.data);
-
-      // For now, simulate a delay and set mock data
       setTimeout(() => {
         const mockGifts: VirtualGift[] = [
           {
@@ -67,8 +60,9 @@ export default function VirtualGifts() {
             description: "A sparkling diamond gift", 
             imageUrl: "/assets/gifts/diamond.png", 
             imageType: "svg",
-            hasSound: false, // Add hasSound property
-            soundUrl: "", // Add soundUrl property
+            hasSound: false,
+            soundUrl: "",
+            category: "Premium",
           },
           {
             id: "2",
@@ -82,8 +76,9 @@ export default function VirtualGifts() {
             description: "A loving heart gift", 
             imageUrl: "/assets/gifts/heart.png", 
             imageType: "svg",
-            hasSound: false, // Add hasSound property
-            soundUrl: "", // Add soundUrl property
+            hasSound: false,
+            soundUrl: "",
+            category: "Standard",
           },
           {
             id: "3",
@@ -97,8 +92,9 @@ export default function VirtualGifts() {
             description: "A shining star gift", 
             imageUrl: "/assets/gifts/star.png", 
             imageType: "svg",
-            hasSound: false, // Add hasSound property
-            soundUrl: "", // Add soundUrl property
+            hasSound: false,
+            soundUrl: "",
+            category: "Standard",
           },
         ];
         setGifts(mockGifts);
@@ -117,7 +113,6 @@ export default function VirtualGifts() {
 
   const handleOpenDialog = (gift?: VirtualGift) => {
     if (gift) {
-      // Editing existing gift
       setEditingGift(gift);
       setGiftName(gift.name);
       setGiftPrice(gift.price);
@@ -125,9 +120,8 @@ export default function VirtualGifts() {
       setGiftColor(gift.color);
       setGiftValue(gift.value);
       setIsAvailable(gift.available ?? true);
-      setGiftDescription(gift.description); // Added description handling
+      setGiftDescription(gift.description);
     } else {
-      // Creating new gift
       setEditingGift(null);
       setGiftName("");
       setGiftPrice(0);
@@ -135,7 +129,7 @@ export default function VirtualGifts() {
       setGiftColor("#FFD700");
       setGiftValue(0);
       setIsAvailable(true);
-      setGiftDescription(""); // Reset description
+      setGiftDescription("");
     }
     setIsOpen(true);
   };
@@ -151,30 +145,21 @@ export default function VirtualGifts() {
         value: giftValue,
         available: isAvailable,
         created_at: editingGift?.created_at || new Date().toISOString(),
-        description: giftDescription, // Include required description
-        imageUrl: editingGift?.imageUrl || "/assets/gifts/default.png", // Include required imageUrl
-        imageType: "svg", // Added required imageType
-        hasSound: editingGift?.hasSound || false, // Add required hasSound property
-        soundUrl: editingGift?.soundUrl || "", // Add required soundUrl property
+        description: giftDescription,
+        imageUrl: editingGift?.imageUrl || "/assets/gifts/default.png",
+        imageType: "svg",
+        hasSound: editingGift?.hasSound || false,
+        soundUrl: editingGift?.soundUrl || "",
+        category: "Standard",
       };
 
       if (editingGift) {
-        // Update existing gift
-        // In a real app, we would use:
-        // await adminApi.put(`/gifts/${editingGift.id}`, giftData);
-        
-        // For now, update in local state
         setGifts(gifts.map(g => g.id === editingGift.id ? giftData : g));
         toast({
           title: "Gift Updated",
           description: "The virtual gift has been updated successfully.",
         });
       } else {
-        // Create new gift
-        // In a real app, we would use:
-        // const response = await adminApi.post("/gifts", giftData);
-        
-        // For now, add to local state
         setGifts([...gifts, giftData]);
         toast({
           title: "Gift Created",
@@ -195,10 +180,6 @@ export default function VirtualGifts() {
 
   const handleDelete = async (id: string) => {
     try {
-      // In a real app, we would use:
-      // await adminApi.delete(`/gifts/${id}`);
-      
-      // For now, remove from local state
       setGifts(gifts.filter(gift => gift.id !== id));
       toast({
         title: "Gift Deleted",
@@ -355,7 +336,6 @@ export default function VirtualGifts() {
               />
             </div>
             
-            {/* Added Description field */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">Description</Label>
               <Input

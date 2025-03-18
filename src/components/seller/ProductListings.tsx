@@ -34,31 +34,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Product } from "@/types/product.types";
+import { Product, AdminProduct } from "@/types/product.types";
 import SellerService from "@/services/seller.service";
-
-interface AdminProduct {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  image_url: string;
-  inventory_count: number;
-  category: string;
-  status: 'active' | 'draft' | 'unavailable';
-  seller_id: string;
-  created_at: string;
-  updated_at: string;
-  is_featured: boolean;
-}
 
 const ProductListings = () => {
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: 0,
@@ -212,7 +201,7 @@ const ProductListings = () => {
   const handleSearch = async () => {
     setLoading(true);
     try {
-      const results = await ShopService.searchProducts(searchQuery);
+      const results = await SellerService.searchProducts(searchQuery);
       setSearchResults(results);
       setError(null);
     } catch (err: any) {

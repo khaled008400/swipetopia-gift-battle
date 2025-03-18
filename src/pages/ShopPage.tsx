@@ -98,7 +98,7 @@ const ShopPage = () => {
       const result = await ShopService.toggleProductLike(productId);
       
       // Fix the property access - handle both boolean and object return types
-      const isLiked = typeof result === 'boolean' ? result : (result?.liked === true);
+      const isLiked = typeof result === 'boolean' ? result : (result && 'liked' in result ? result.liked : false);
       
       if (isLiked) {
         setLikedProducts([...likedProducts, productId]);

@@ -8,13 +8,13 @@ export interface VirtualGift {
   value: number;
   created_at?: string;
   available?: boolean;
-  category?: string;
-  imageUrl: string; // Required to match AdminService.VirtualGift
-  imageType: "svg" | "gif"; // Required and limited to these two values
-  hasSound: boolean; // Required
-  description: string; // Required to match AdminService.VirtualGift
+  category: string; // Changed from optional to required
+  imageUrl: string; 
+  imageType: "svg" | "gif"; 
+  hasSound: boolean; 
+  description: string; 
   isPremium?: boolean;
-  soundUrl: string; // Make it required
+  soundUrl: string; 
   is_premium?: boolean;
 }
 
@@ -26,7 +26,6 @@ export interface GiftTransaction {
   gift_id: string;
   amount: number;
   created_at?: string;
-  // Add the missing properties that are used in RecentGifts.tsx
   sender?: {
     username: string;
     avatar_url?: string;
