@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [privacy, setPrivacy] = useState<"public" | "followers" | "private">("public");
   const [allowDownloads, setAllowDownloads] = useState(true);
   const [step, setStep] = useState<"upload" | "edit">("upload");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -108,6 +110,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     
     if (!videoFile) {
       toast({
@@ -192,6 +195,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       onClose();
     } catch (error: any) {
       console.error("Error uploading video:", error);
+      setErrorMessage(error?.message || "There was an error uploading your video");
       toast({
         title: "Upload failed",
         description: error?.message || "There was an error uploading your video. Please try again.",
@@ -238,6 +242,12 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
           <X className="h-4 w-4" />
         </Button>
       </div>
+
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <p>{errorMessage}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {step === "upload" ? (
@@ -298,6 +308,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
                   hashtags={hashtags}
                   onAdd={handleAddHashtag}
                   onRemove={handleRemoveHashtag}
+                  disabled={isUploading}
                 />
               </div>
 

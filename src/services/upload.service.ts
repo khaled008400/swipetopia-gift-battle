@@ -61,13 +61,18 @@ class UploadService {
    */
   async uploadVideo(videoFile: File, thumbnailFile: File | null): Promise<{ videoUrl: string, thumbnailUrl: string | null }> {
     try {
+      console.log('Starting video upload process...');
+      
       // Upload video file
       const videoUrl = await this.uploadFile(videoFile, 'videos');
+      console.log('Video uploaded successfully:', videoUrl);
       
       // Upload thumbnail if provided
       let thumbnailUrl = null;
       if (thumbnailFile) {
+        console.log('Uploading thumbnail...');
         thumbnailUrl = await this.uploadFile(thumbnailFile, 'thumbnails');
+        console.log('Thumbnail uploaded successfully:', thumbnailUrl);
       }
       
       return { videoUrl, thumbnailUrl };

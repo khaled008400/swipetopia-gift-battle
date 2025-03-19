@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import UploadService from './upload.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,27 +16,45 @@ class VideoService {
     hashtags: string[] = []
   ) {
     try {
+      console.log('Starting video upload process in VideoService...');
+      
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error('No authenticated user found');
         throw new Error('You must be logged in to upload videos');
       }
+      
+      console.log('Authenticated user:', user.id);
       
       // Upload video if it's a file
       let videoUrl = '';
       if (videoFile instanceof File) {
+        console.log('Uploading video file...');
         const uploadResult = await UploadService.uploadFile(videoFile, 'videos');
         videoUrl = uploadResult;
+        console.log('Video uploaded to:', videoUrl);
       }
       
       if (!videoUrl) {
         throw new Error('Failed to upload video file');
       }
       
-      // Insert into videos table
+      // Create short_videos table record
+      console.log('Creating video record in database...');
+      console.log('Data to insert:', {
+        title, 
+        description, 
+        video_url: videoUrl, 
+        thumbnail_url: thumbnailUrl,
+        user_id: user.id,
+        is_private: isPrivate,
+        hashtags
+      });
+      
       const { data, error } = await supabase
-        .from('videos')
+        .from('short_videos')
         .insert({
           title,
           description,
@@ -55,6 +72,7 @@ class VideoService {
         throw error;
       }
       
+      console.log('Video record created successfully:', data);
       return data;
     } catch (error) {
       console.error('Error in uploadVideo:', error);
