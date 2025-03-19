@@ -24,12 +24,19 @@ class UploadService {
       
       if (!bucketExists) {
         console.log(`Creating bucket: ${bucketName}`);
-        await supabase.storage.createBucket(bucketName, {
-          public: true
-        });
+        try {
+          await supabase.storage.createBucket(bucketName, {
+            public: true
+          });
+          console.log(`Created bucket: ${bucketName}`);
+        } catch (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          // Continue anyway as the bucket might exist but the API call failed
+        }
       }
       
       // Upload file to Supabase Storage
+      console.log('Starting file upload...');
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {

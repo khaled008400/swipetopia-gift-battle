@@ -13,7 +13,7 @@ class VideoService {
     hashtags: string[] = []
   ) {
     try {
-      console.log('Starting video upload process...');
+      console.log('Starting video upload process in VideoService...');
       
       // 1. Generate a unique filename
       const fileExt = videoFile.name.split('.').pop();
@@ -51,6 +51,8 @@ class VideoService {
       if (!user) {
         throw new Error("User not authenticated");
       }
+      
+      console.log('Inserting with user ID:', user.id);
       
       const { data: videoData, error: insertError } = await supabase
         .from('videos')

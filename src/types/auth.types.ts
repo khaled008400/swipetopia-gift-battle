@@ -1,68 +1,67 @@
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  avatar_url?: string;
-  role?: string;
-  tokens?: string[];
-}
 
-export type UserRole = 
-  | "user" 
-  | "seller";
+import { Session } from '@supabase/supabase-js';
 
-export interface NotificationPreferences {
-  battles: boolean;
-  orders: boolean;
-  messages: boolean;
-  followers: boolean;
-}
+export type UserRole = 'admin' | 'user' | 'seller' | 'moderator';
 
 export interface PaymentMethod {
   id: string;
-  type: "credit_card" | "paypal" | "wallet";
+  type: string;
   last4?: string;
+  brand?: string;
   exp_month?: number;
   exp_year?: number;
-  is_default: boolean;
-  name?: string; // Added to match usage in components
+  name?: string;
 }
 
 export interface UserProfile {
   id: string;
   username: string;
   email: string;
+  full_name?: string;
   avatar_url?: string;
   bio?: string;
-  location?: string;
+  website?: string;
   roles: UserRole[];
-  coins: number;
+  created_at?: string;
+  updated_at?: string;
   followers: number;
   following: number;
-  interests?: string[];
-  stream_key?: string;
-  shop_name?: string;
+  coins: number;
   payment_methods: PaymentMethod[];
-  notification_preferences: NotificationPreferences;
+  is_verified?: boolean;
+  seller_info?: {
+    shop_name?: string;
+    shop_description?: string;
+    shipping_address?: string;
+    tax_id?: string;
+  };
 }
 
 export interface AuthContextType {
   user: UserProfile | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  loading: boolean;
-  error: Error | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<any>;
-  register: (email: string, username: string, password: string, role?: UserRole) => Promise<any>;
+  loading: boolean;
+  error: Error | null;
+  
+  // Login methods
+  signIn: (email: string, password: string) => Promise<{ error: any; }>;
+  signUp: (email: string, username: string, password: string, role?: UserRole) => Promise<{ error: any; }>;
+  signOut: () => Promise<void>;
+  
+  // Renamed to be more consistent
+  login: (email: string, password: string) => Promise<{ data: any; error: any; }>;
+  register: (email: string, username: string, password: string, role?: UserRole) => Promise<{ error?: any }>;
   logout: () => Promise<void>;
+  
+  // Profile methods
   updateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
   addPaymentMethod: (method: any) => Promise<boolean>;
   removePaymentMethod: (id: string) => Promise<boolean>;
-  requiresAuth: (action: () => void, redirectUrl?: string) => void;
-  session: any;
+  
+  // Auth helpers
+  requiresAuth: () => void;
   isAdmin: () => boolean;
-  hasRole: (role: UserRole | string) => boolean;
+  hasRole: (role: string) => boolean;
 }

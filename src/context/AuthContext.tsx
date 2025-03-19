@@ -44,7 +44,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   
-  // Use our custom hooks
   const { 
     fetchUserProfile, 
     updateProfile: updateUserProfile,
@@ -59,13 +58,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     isLoading 
   } = useAuthMethods();
 
-  // Initialize auth state
   useEffect(() => {
     console.log("Setting up auth state listener in AuthProvider");
     
     const setupAuthSubscription = async () => {
       try {
-        // First, check for an existing session
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", existingSession ? "Found session" : "No session");
         
@@ -84,7 +81,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           }
         }
         
-        // Set up the auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, currentSession) => {
             console.log("Auth state changed:", event, currentSession?.user?.id);
@@ -115,13 +111,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           }
         );
         
-        // Clean up function to unsubscribe
         return () => {
           console.log("Cleaning up auth subscription");
           subscription.unsubscribe();
         };
       } finally {
-        // Always set loading to false when done
         setLoading(false);
       }
     };
@@ -129,7 +123,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setupAuthSubscription();
   }, []);
 
-  // Wrap the login function to properly handle auth
   const login = async (email: string, password: string) => {
     console.log("login called with:", email);
     const result = await authLogin(email, password);
@@ -196,36 +189,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     login,
     register,
     logout,
-    updateProfile: async (updates) => {
-      if (!user) return false;
-      const success = await updateUserProfile(user.id, updates);
-      if (success) {
-        setUser(prev => prev ? { ...prev, ...updates } : null);
-      }
-      return success;
-    },
-    addPaymentMethod: async (method) => {
-      if (!user) return false;
-      const success = await addUserPaymentMethod(user.id, user.payment_methods, method);
-      if (success) {
-        setUser(prev => prev ? {
-          ...prev,
-          payment_methods: [...prev.payment_methods, method]
-        } : null);
-      }
-      return success;
-    },
-    removePaymentMethod: async (id) => {
-      if (!user) return false;
-      const success = await removeUserPaymentMethod(user.id, user.payment_methods, id);
-      if (success) {
-        setUser(prev => prev ? {
-          ...prev,
-          payment_methods: prev.payment_methods.filter(method => method.id !== id)
-        } : null);
-      }
-      return success;
-    },
+    updateProfile,
+    addPaymentMethod,
+    removePaymentMethod,
     requiresAuth: () => {},
     isAdmin: () => isAdmin(user?.roles),
     hasRole: userHasRole

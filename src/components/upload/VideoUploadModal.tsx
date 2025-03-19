@@ -8,6 +8,7 @@ import EditStep from './upload-steps/EditStep';
 import VideoService from '@/services/video.service';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 interface VideoUploadModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   const [privacy, setPrivacy] = useState<"public" | "private" | "followers">("public");
   const [allowDownloads, setAllowDownloads] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -39,6 +41,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setPrivacy("public");
     setAllowDownloads(true);
     setIsUploading(false);
+    setUploadProgress(0);
     setUploadError(null);
   };
 
@@ -70,14 +73,37 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     }
   };
 
+  const simulateProgress = () => {
+    // This simulates progress during upload since we don't have real progress events
+    setUploadProgress(0);
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 95) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 5;
+      });
+    }, 500);
+    
+    return interval;
+  };
+
   const handleUpload = async () => {
     if (!videoFile || !title.trim() || !isAuthenticated) {
       setUploadError("Please provide a title and ensure you're logged in.");
+      toast({
+        title: "Upload Error",
+        description: "Please provide a title and ensure you're logged in.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsUploading(true);
     setUploadError(null);
+    
+    const progressInterval = simulateProgress();
     
     try {
       console.log('Starting video upload process...');
@@ -86,23 +112,31 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         videoFile,
         title,
         description,
-        null, // thumbnailUrl - we're not handling thumbnails in this simplified version
+        null, // thumbnailUrl - we're generating this in the service
         privacy === "private",
         hashtags
       );
       
       console.log('Video uploaded successfully:', uploadedVideo);
       
-      toast({
-        title: "Upload Successful",
-        description: "Your video has been uploaded successfully!",
-      });
+      // Set to 100% complete
+      setUploadProgress(100);
       
-      resetState();
-      onClose();
-      onSuccess(uploadedVideo.id);
+      setTimeout(() => {
+        toast({
+          title: "Upload Successful",
+          description: "Your video has been uploaded successfully!",
+        });
+        
+        resetState();
+        onClose();
+        onSuccess(uploadedVideo.id);
+      }, 500);
+      
     } catch (error: any) {
       console.error('Error uploading video:', error);
+      clearInterval(progressInterval);
+      
       setUploadError(error.message || "Failed to upload video. Please try again.");
       
       toast({
@@ -110,7 +144,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         description: error.message || "Failed to upload video. Please try again.",
         variant: "destructive",
       });
-    } finally {
+      
       setIsUploading(false);
     }
   };
@@ -124,6 +158,13 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
             Share your video with the world
           </DialogDescription>
         </DialogHeader>
+        
+        {uploadError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            <p className="font-medium">Error uploading video</p>
+            <p className="text-sm">{uploadError}</p>
+          </div>
+        )}
         
         <div className="pb-4">
           {step === 1 && (
@@ -153,7 +194,17 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
           )}
         </div>
         
-        {step === 2 && (
+        {isUploading && (
+          <div className="mt-4 px-4">
+            <div className="flex justify-between text-sm mb-1">
+              <span>Uploading...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-2" />
+          </div>
+        )}
+        
+        {step === 2 && !isUploading && (
           <div className="flex justify-between pt-4 border-t">
             <Button 
               variant="outline" 
@@ -168,17 +219,8 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
               onClick={handleUpload} 
               disabled={!title.trim() || isUploading || !isAuthenticated}
             >
-              {isUploading ? (
-                <>
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-opacity-50 border-t-transparent rounded-full"></div>
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload
-                </>
-              )}
+              <Upload className="mr-2 h-4 w-4" />
+              Upload
             </Button>
           </div>
         )}
