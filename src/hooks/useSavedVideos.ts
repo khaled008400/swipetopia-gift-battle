@@ -10,26 +10,37 @@ export const useSavedVideos = (userId: string) => {
 
   const fetchSavedVideos = useCallback(async () => {
     if (!userId) {
+      console.log('useSavedVideos: No user ID provided, setting empty videos array');
       setVideos([]);
       setIsLoading(false);
       return;
     }
 
+    console.log('useSavedVideos: Fetching saved videos for user ID:', userId);
     try {
       setIsLoading(true);
       const savedVideos = await VideoService.getSavedVideos(userId);
-      setVideos(savedVideos);
+      console.log('useSavedVideos: Fetched saved videos:', savedVideos?.length || 0);
+      setVideos(savedVideos || []);
       setError(null);
     } catch (err) {
       console.error("Error fetching saved videos:", err);
       setError("Failed to load saved videos");
+      // Return empty array on error to prevent UI crashes
+      setVideos([]);
     } finally {
       setIsLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
+    console.log('useSavedVideos useEffect triggered for user ID:', userId);
     fetchSavedVideos();
+
+    // Add cleanup function
+    return () => {
+      console.log('useSavedVideos: cleaning up for user ID:', userId);
+    };
   }, [fetchSavedVideos]);
 
   return { videos, isLoading, error, refreshVideos: fetchSavedVideos };

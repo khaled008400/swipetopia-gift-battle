@@ -22,6 +22,15 @@ const ProfilePage = () => {
   
   const isCurrentUserProfile = !!user && user.id === profileId;
 
+  // Debug logging
+  console.log('ProfilePage render:', { 
+    profileId, 
+    isLoading, 
+    hasProfile: !!profile, 
+    isEditing,
+    isCurrentUserProfile
+  });
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -32,6 +41,7 @@ const ProfilePage = () => {
   };
 
   const handleEditComplete = () => {
+    console.log('Edit completed, refreshing profile');
     setIsEditing(false);
     refreshProfile();
   };
@@ -39,11 +49,13 @@ const ProfilePage = () => {
   useEffect(() => {
     // Refresh profile when the component mounts or profileId changes
     if (profileId) {
+      console.log('ProfilePage useEffect: Refreshing profile for ID:', profileId);
       refreshProfile();
     }
   }, [profileId, refreshProfile]);
 
   if (isLoading) {
+    console.log('ProfilePage: Showing loading skeleton');
     return (
       <div className="container max-w-4xl mx-auto py-8 px-4">
         <Skeleton className="h-48 w-full rounded-lg mb-6" />
@@ -54,6 +66,7 @@ const ProfilePage = () => {
   }
 
   if (!profile && !isLoading) {
+    console.log('ProfilePage: Profile not found');
     return (
       <div className="container max-w-4xl mx-auto py-8 px-4 text-center">
         <h2 className="text-xl font-medium mb-2">Profile Not Found</h2>
@@ -69,7 +82,12 @@ const ProfilePage = () => {
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4 space-y-6">
-      {profile && <ProfileHeader profile={profile} />}
+      {profile && (
+        <>
+          <ProfileHeader profile={profile} />
+          {console.log('ProfilePage: Rendering ProfileHeader')}
+        </>
+      )}
       
       {isCurrentUserProfile && !isEditing && (
         <div className="flex justify-end gap-2">
@@ -85,11 +103,17 @@ const ProfilePage = () => {
       )}
 
       {isEditing && profile ? (
-        <ProfileEdit
-          onComplete={handleEditComplete}
-        />
+        <>
+          {console.log('ProfilePage: Rendering ProfileEdit')}
+          <ProfileEdit onComplete={handleEditComplete} />
+        </>
       ) : (
-        profile && <ProfileContent profile={profile} />
+        profile && (
+          <>
+            {console.log('ProfilePage: Rendering ProfileContent')}
+            <ProfileContent profile={profile} />
+          </>
+        )
       )}
     </div>
   );

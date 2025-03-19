@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { UserProfile } from '@/types/auth.types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -8,7 +8,16 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
+  useEffect(() => {
+    console.log('ProfileHeader mounted with profile:', profile);
+    
+    return () => {
+      console.log('ProfileHeader unmounted');
+    };
+  }, [profile]);
+
   if (!profile) {
+    console.log('ProfileHeader: No profile, showing loading state');
     return (
       <div className="h-40 bg-app-gray-dark rounded-lg animate-pulse mb-4">
         <div className="p-6 flex items-center justify-center h-full">
@@ -24,11 +33,17 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
       ? profile.email.charAt(0).toUpperCase()
       : '?';
 
+  console.log('ProfileHeader: Rendering with initials:', initials, 'and avatar URL:', profile.avatar_url);
+
   return (
     <div className="bg-app-gray-dark rounded-lg p-6 shadow-md mb-4">
       <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
         <Avatar className="h-24 w-24 border-2 border-app-yellow">
-          <AvatarImage src={profile.avatar_url || ''} alt={profile.username || 'User'} />
+          <AvatarImage 
+            src={profile.avatar_url || ''} 
+            alt={profile.username || 'User'} 
+            onError={() => console.log('Avatar image failed to load for', profile.username || profile.email)}
+          />
           <AvatarFallback className="text-2xl bg-app-gray-light text-app-yellow">{initials}</AvatarFallback>
         </Avatar>
         

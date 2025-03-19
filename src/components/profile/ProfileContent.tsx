@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,11 +11,16 @@ import UserActivity from './UserActivity';
 import { Video } from '@/types/video.types';
 import { useNavigate } from 'react-router-dom';
 
+let renderCount = 0;
+
 interface ProfileContentProps {
   profile: UserProfile | null;
 }
 
 const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
+  renderCount++;
+  console.log(`ProfileContent render #${renderCount} with profile:`, profile?.username || 'null');
+  
   const [activeTab, setActiveTab] = useState('about');
   const navigate = useNavigate();
   
@@ -24,7 +28,24 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
   const { videos: likedVideos, isLoading: likedLoading } = useLikedVideos(profile?.id || '');
   const { videos: savedVideos, isLoading: savedLoading } = useSavedVideos(profile?.id || '');
 
+  useEffect(() => {
+    console.log('ProfileContent: Active tab changed to', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    console.log('ProfileContent: User videos loaded:', userVideos.length);
+  }, [userVideos]);
+
+  useEffect(() => {
+    console.log('ProfileContent: Liked videos loaded:', likedVideos.length);
+  }, [likedVideos]);
+
+  useEffect(() => {
+    console.log('ProfileContent: Saved videos loaded:', savedVideos.length);
+  }, [savedVideos]);
+
   if (!profile) {
+    console.log('ProfileContent: No profile provided');
     return <div className="text-center py-8">Profile not found</div>;
   }
 
@@ -51,9 +72,8 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
           </TabsTrigger>
         </TabsList>
 
-        {/* About Tab Content */}
         <TabsContent value="about" className="space-y-6">
-          {/* Bio Section */}
+          {console.log('Rendering About tab content')}
           <Card className="bg-app-gray-dark border-0">
             <CardHeader>
               <CardTitle>About</CardTitle>
@@ -65,7 +85,6 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
             </CardContent>
           </Card>
 
-          {/* User Details */}
           <Card className="bg-app-gray-dark border-0">
             <CardHeader>
               <CardTitle>Details</CardTitle>
@@ -103,7 +122,6 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
             </CardContent>
           </Card>
 
-          {/* Interests Section (if available) */}
           {profile.interests && profile.interests.length > 0 && (
             <Card className="bg-app-gray-dark border-0">
               <CardHeader>
@@ -124,7 +142,6 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
             </Card>
           )}
 
-          {/* Streamer Information (if applicable) */}
           {profile.roles?.includes('streamer') && (
             <Card className="bg-app-gray-dark border-0">
               <CardHeader>
@@ -152,18 +169,21 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
           )}
         </TabsContent>
 
-        {/* Videos Tab Content */}
         <TabsContent value="videos">
+          {console.log('Rendering Videos tab content')}
           <UserVideosGrid 
             videos={userVideos}
             isLoading={videosLoading}
             emptyMessage="No videos uploaded yet"
-            onVideoClick={(videoId) => navigate(`/video/${videoId}`)}
+            onVideoClick={(videoId) => {
+              console.log('Video clicked:', videoId);
+              navigate(`/video/${videoId}`);
+            }}
           />
         </TabsContent>
 
-        {/* Liked Videos Tab Content */}
         <TabsContent value="liked">
+          {console.log('Rendering Liked tab content')}
           <UserVideosGrid 
             videos={likedVideos}
             isLoading={likedLoading}
@@ -172,8 +192,8 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
           />
         </TabsContent>
 
-        {/* Saved Videos Tab Content */}
         <TabsContent value="saved">
+          {console.log('Rendering Saved tab content')}
           <UserVideosGrid 
             videos={savedVideos}
             isLoading={savedLoading}
@@ -182,8 +202,8 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
           />
         </TabsContent>
         
-        {/* Activity Tab Content */}
         <TabsContent value="activity">
+          {console.log('Rendering Activity tab content')}
           <UserActivity userId={profile.id} />
         </TabsContent>
       </Tabs>
@@ -191,7 +211,6 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
   );
 };
 
-// Video Grid Component for displaying videos in tabs
 interface UserVideosGridProps {
   videos: Video[];
   isLoading: boolean;
@@ -200,6 +219,8 @@ interface UserVideosGridProps {
 }
 
 const UserVideosGrid: React.FC<UserVideosGridProps> = ({ videos, isLoading, emptyMessage, onVideoClick }) => {
+  console.log('UserVideosGrid render:', { isLoading, videoCount: videos.length });
+  
   if (isLoading) {
     return <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {Array.from({ length: 6 }).map((_, index) => (
@@ -225,22 +246,29 @@ const UserVideosGrid: React.FC<UserVideosGridProps> = ({ videos, isLoading, empt
   );
 };
 
-// Video Thumbnail Component
 interface VideoThumbnailProps {
   video: Video;
   onClick: () => void;
 }
 
 const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ video, onClick }) => {
+  const handleImageError = () => {
+    console.log('Video thumbnail failed to load:', video.id, video.thumbnail_url);
+  };
+
   return (
     <div 
       className="group relative aspect-video overflow-hidden rounded-md bg-app-gray-light cursor-pointer"
-      onClick={onClick}
+      onClick={() => {
+        console.log('Thumbnail clicked:', video.id);
+        onClick();
+      }}
     >
       <img 
         src={video.thumbnail_url || '/placeholder.svg'}
         alt={video.title}
         className="h-full w-full object-cover transition-transform group-hover:scale-105"
+        onError={handleImageError}
       />
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
         <h3 className="text-sm font-medium text-white truncate">{video.title}</h3>

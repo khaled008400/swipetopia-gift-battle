@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { UserProfile, UserRole, NotificationPreferences } from "@/types/auth.types";
@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 export const fetchUserProfile = async (authUser: User | string): Promise<UserProfile | null> => {
   try {
     const userId = typeof authUser === 'string' ? authUser : authUser.id;
+    console.log('fetchUserProfile called for user ID:', userId);
     
     const { data, error } = await supabase
       .from('profiles')
@@ -21,6 +22,7 @@ export const fetchUserProfile = async (authUser: User | string): Promise<UserPro
     }
     
     if (data) {
+      console.log('Profile data fetched successfully:', data);
       // Get roles from database if available, otherwise from metadata, or default to "user"
       let userRoles: UserRole[] = [];
       
@@ -62,6 +64,7 @@ export const fetchUserProfile = async (authUser: User | string): Promise<UserPro
         } // Default notification preferences
       };
     }
+    console.log('No profile data found for user ID:', userId);
     return null;
   } catch (error) {
     console.error("Unexpected error fetching profile:", error);
@@ -76,16 +79,19 @@ export const useUserProfile = (authUser: User | string | null) => {
   const { toast } = useToast();
 
   // Function to load the profile
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!authUser) {
+      console.log('useUserProfile: No authUser provided, clearing profile');
       setProfile(null);
       setIsLoading(false);
       return;
     }
 
+    console.log('loadProfile started for:', typeof authUser === 'string' ? authUser : authUser.id);
     setIsLoading(true);
     try {
       const userProfile = await fetchUserProfile(authUser);
+      console.log('loadProfile result:', userProfile ? 'Profile loaded' : 'No profile found');
       setProfile(userProfile);
       setError(null);
     } catch (err) {
@@ -99,18 +105,20 @@ export const useUserProfile = (authUser: User | string | null) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authUser, toast]);
 
   // Initial load
   useEffect(() => {
+    console.log('useUserProfile useEffect triggered with authUser:', authUser ? 'exists' : 'null');
     loadProfile();
-  }, [authUser]);
+  }, [authUser, loadProfile]);
 
   // Set up real-time subscriptions for profile updates
   useEffect(() => {
     if (!authUser) return;
     
     const userId = typeof authUser === 'string' ? authUser : authUser.id;
+    console.log('Setting up real-time profile subscription for user ID:', userId);
     
     const profileSubscription = supabase
       .channel('profile-updates')
@@ -122,7 +130,8 @@ export const useUserProfile = (authUser: User | string | null) => {
           table: 'profiles',
           filter: `id=eq.${userId}`,
         },
-        () => {
+        (payload) => {
+          console.log('Real-time profile update received:', payload);
           // Refresh the profile when changes are detected
           loadProfile();
         }
@@ -130,13 +139,15 @@ export const useUserProfile = (authUser: User | string | null) => {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up profile subscription');
       supabase.removeChannel(profileSubscription);
     };
-  }, [authUser]);
+  }, [authUser, loadProfile]);
 
   // Function to update profile
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!authUser || !profile) {
+      console.error('updateProfile: No authUser or profile');
       toast({
         variant: "destructive",
         title: "Error",
@@ -149,6 +160,7 @@ export const useUserProfile = (authUser: User | string | null) => {
       setIsLoading(true);
       
       const userId = typeof authUser === 'string' ? authUser : authUser.id;
+      console.log('Updating profile for user ID:', userId, 'with data:', updates);
       
       // Prepare the data for update, excluding fields that aren't in the database schema
       const { payment_methods, notification_preferences, ...dbUpdates } = updates;
@@ -159,6 +171,8 @@ export const useUserProfile = (authUser: User | string | null) => {
         .eq('id', userId);
 
       if (error) throw error;
+      
+      console.log('Profile update successful');
       
       // Update local state optimistically
       setProfile(prev => prev ? { ...prev, ...updates } : null);
