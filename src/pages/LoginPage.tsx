@@ -9,7 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -20,11 +20,11 @@ const LoginPage = () => {
 
   // If user is already authenticated, redirect them
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       console.log("User already authenticated, redirecting to:", from);
       navigate(from);
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, navigate, from, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,10 +32,10 @@ const LoginPage = () => {
 
     try {
       console.log("Attempting login with:", email);
-      const result = await login(email, password);
-      console.log("Login result:", result);
+      const { data, error } = await login(email, password);
+      console.log("Login result:", { data, error });
       
-      if (!result.error) {
+      if (!error) {
         toast({
           title: "Login Successful",
           description: "Welcome back!",
@@ -44,7 +44,7 @@ const LoginPage = () => {
         console.log("Redirecting after successful login to:", from);
         navigate(from);
       } else {
-        throw result.error;
+        throw error;
       }
     } catch (error: any) {
       console.error("Login error:", error);
