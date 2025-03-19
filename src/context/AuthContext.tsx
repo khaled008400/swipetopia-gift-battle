@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -20,8 +21,8 @@ export const AuthContext = createContext<AuthContextType>({
   register: async () => ({}),
   logout: async () => {},
   updateProfile: async () => false,
-  addPaymentMethod: async () => false,
-  removePaymentMethod: async () => false,
+  addPaymentMethod: async () => {},
+  removePaymentMethod: async () => {},
   requiresAuth: () => {},
   session: null,
   isAdmin: () => false,
@@ -142,46 +143,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return success;
   };
 
-  const addPaymentMethod = async (method: any) => {
-    if (!user) return false;
-    
-    const success = await addUserPaymentMethod(user.id, user.payment_methods, method);
-    
-    if (success) {
-      setUser(prev => prev ? {
-        ...prev,
-        payment_methods: [...prev.payment_methods, method]
-      } : null);
-    }
-    
-    return success;
+  // Wrap the payment methods to handle Promise<void> vs Promise<boolean> mismatch
+  const addPaymentMethod = async (method: any): Promise<void> => {
+    if (!user) return;
+    await addUserPaymentMethod(user.id, user.payment_methods, method);
+    // Update the user state with the new payment method
+    setUser(prev => prev ? {
+      ...prev,
+      payment_methods: [...prev.payment_methods, method]
+    } : null);
   };
 
-  const removePaymentMethod = async (id: string) => {
-    if (!user) return false;
-    
-    const success = await removeUserPaymentMethod(user.id, user.payment_methods, id);
-    
-    if (success) {
-      setUser(prev => prev ? {
-        ...prev,
-        payment_methods: prev.payment_methods.filter(method => method.id !== id)
-      } : null);
-    }
-    
-    return success;
+  const removePaymentMethod = async (id: string): Promise<void> => {
+    if (!user) return;
+    await removeUserPaymentMethod(user.id, user.payment_methods, id);
+    // Update the user state by filtering out the removed payment method
+    setUser(prev => prev ? {
+      ...prev,
+      payment_methods: prev.payment_methods.filter(method => method.id !== id)
+    } : null);
   };
 
   const userHasRole = (role: string): boolean => {
     return hasRole(user?.roles, role);
-  };
-  
-  const enhancedAddPaymentMethod = async (method: any): Promise<void> => {
-    await addPaymentMethod(method);
-  };
-  
-  const enhancedRemovePaymentMethod = async (id: string): Promise<void> => {
-    await removePaymentMethod(id);
   };
   
   const value: AuthContextType = {
@@ -198,8 +182,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     register,
     logout,
     updateProfile,
-    addPaymentMethod: enhancedAddPaymentMethod,
-    removePaymentMethod: enhancedRemovePaymentMethod,
+    addPaymentMethod,
+    removePaymentMethod,
     requiresAuth: () => {},
     isAdmin: () => isAdmin(user?.roles),
     hasRole: userHasRole

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Gift, X, Heart, Star, Award, Zap } from 'lucide-react';
@@ -10,7 +11,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const GiftSelector = () => {
+interface GiftSelectorProps {
+  videoId?: string;
+  creatorId?: string;
+}
+
+const GiftSelector: React.FC<GiftSelectorProps> = ({ videoId, creatorId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('popular');
   const { gifts, isLoading, error } = useGifts();
@@ -41,7 +47,7 @@ const GiftSelector = () => {
     }
     
     // Here you would call your API to send the gift
-    console.log(`Sending gift ${giftId} for ${price} coins`);
+    console.log(`Sending gift ${giftId} for ${price} coins to creator ${creatorId} on video ${videoId}`);
     
     toast({
       title: "Gift Sent!",

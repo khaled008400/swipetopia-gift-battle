@@ -70,8 +70,8 @@ export interface AuthContextType {
   
   // Profile methods
   updateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
-  addPaymentMethod: (method: any) => Promise<boolean>;
-  removePaymentMethod: (id: string) => Promise<boolean>;
+  addPaymentMethod: (method: any) => Promise<void>;
+  removePaymentMethod: (id: string) => Promise<void>;
   
   // Auth helpers
   requiresAuth: () => void;
@@ -79,21 +79,25 @@ export interface AuthContextType {
   hasRole: (role: string) => boolean;
 }
 
-// Add the User type that's missing for admin.service.ts
+// User type for admin.service.ts
 export interface User {
   id: string;
   email: string;
   username?: string;
   created_at: string;
   roles?: UserRole[];
+  tokens?: any[];
 }
 
-// Add AdminUser interface for admin.service.ts
-export interface AdminUser {
-  id: string;
-  email: string;
-  username?: string;
-  created_at: string;
-  roles?: UserRole[];
+// AdminUser interface for admin.service.ts
+export interface AdminUser extends User {
+  role: string;
+  status: string;
+  videosCount: number;
+  ordersCount: number;
+  reportsCount?: number;
+  lastLogin?: string;
+  isVerified?: boolean;
+  phone?: string;
   avatar_url?: string;
 }

@@ -95,8 +95,7 @@ const VideoOverlay = ({
           
           {showGiftSelector && (
             <GiftSelector 
-              onClose={() => setShowGiftSelector(false)} 
-              videoId={video.id || ""} 
+              videoId={video.id} 
               creatorId={video.user.username}
             />
           )}

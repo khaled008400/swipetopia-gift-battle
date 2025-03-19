@@ -1,8 +1,10 @@
-import { UserRole, User, AdminUser } from '@/types/auth.types';
+
+import { UserRole, User } from '@/types/auth.types';
 import { Video } from "@/types/video.types";
 import { LiveStream } from "@/types/video.types";
 
-export interface AdminUser extends User {
+// Define AdminUser here but don't import it
+export interface AdminUser {
   id: string;
   username: string;
   email: string;
@@ -15,6 +17,8 @@ export interface AdminUser extends User {
   lastLogin?: string;
   isVerified?: boolean;
   phone?: string;
+  avatar_url?: string;
+  tokens?: any[];
 }
 
 export interface AdminVideo {
