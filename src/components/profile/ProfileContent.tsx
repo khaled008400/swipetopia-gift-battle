@@ -1,314 +1,225 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileVideo, Share2, ShoppingBag, Ticket, Heart, Clock, Award, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useFollower } from "@/hooks/useFollower";
+import { useUserVideos } from "@/hooks/useUserVideos";
+import { VideoCard } from "@/components/cards/VideoCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { UserProfile } from '@/types/auth.types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { MapPin, Calendar, AtSign, Tag, Film, Heart, Bookmark, Activity, MessageCircle } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useUserVideos } from '@/hooks/useUserVideos';
-import { useLikedVideos } from '@/hooks/useLikedVideos';
-import { useSavedVideos } from '@/hooks/useSavedVideos';
+import { useAuth } from '@/context/AuthContext';
+import { useFollowerRealtime } from '@/hooks/useFollowerRealtime';
+import ProfileStats from './ProfileStats';
+import NotificationPreferences from './NotificationPreferences';
+import PaymentMethods from './PaymentMethods';
+import StreamerFields from './StreamerFields';
 import UserActivity from './UserActivity';
-import { Video } from '@/types/video.types';
-import { useNavigate } from 'react-router-dom';
+import WalletSection from './WalletSection';
+import RolesDisplay from './RolesDisplay';
 
-let renderCount = 0;
+type ProfileContentProps = {
+  profile: UserProfile;
+  isOwnProfile: boolean;
+};
 
-interface ProfileContentProps {
-  profile: UserProfile | null;
-}
-
-const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
-  renderCount++;
-  console.log(`ProfileContent render #${renderCount} with profile:`, profile?.username || 'null');
+const ProfileContent = ({ profile, isOwnProfile }: ProfileContentProps) => {
+  const [activeTab, setActiveTab] = useState("videos");
+  const { user, hasRole } = useAuth();
   
-  const [activeTab, setActiveTab] = useState('about');
-  const navigate = useNavigate();
+  const { isFollowing, followUser, unfollowUser, followCount, followLoading } = useFollower(profile.id);
+  const { videos, isLoading: videosLoading } = useUserVideos(profile.id);
+  const { followerCount, recentFollowers } = useFollowerRealtime(profile.id);
   
-  const { videos: userVideos, isLoading: videosLoading } = useUserVideos(profile?.id || '');
-  const { videos: likedVideos, isLoading: likedLoading } = useLikedVideos(profile?.id || '');
-  const { videos: savedVideos, isLoading: savedLoading } = useSavedVideos(profile?.id || '');
-
-  useEffect(() => {
-    console.log('ProfileContent: Active tab changed to', activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
-    console.log('ProfileContent: User videos loaded:', userVideos.length);
-  }, [userVideos]);
-
-  useEffect(() => {
-    console.log('ProfileContent: Liked videos loaded:', likedVideos.length);
-  }, [likedVideos]);
-
-  useEffect(() => {
-    console.log('ProfileContent: Saved videos loaded:', savedVideos.length);
-  }, [savedVideos]);
-
-  if (!profile) {
-    console.log('ProfileContent: No profile provided');
-    return <div className="text-center py-8">Profile not found</div>;
-  }
-
-  // Log when rendering the About tab content
-  const logAboutTabRender = () => {
-    console.log('Rendering About tab content');
-    return null;
+  const userIsSeller = profile.roles?.includes('seller') || profile.role === 'seller';
+  
+  const handleFollow = async () => {
+    if (isFollowing) {
+      await unfollowUser();
+    } else {
+      await followUser();
+    }
   };
-
-  // Log when rendering the Videos tab content
-  const logVideosTabRender = () => {
-    console.log('Rendering Videos tab content');
-    return null;
-  };
-
-  // Log when rendering the Liked tab content
-  const logLikedTabRender = () => {
-    console.log('Rendering Liked tab content');
-    return null;
-  };
-
-  // Log when rendering the Saved tab content
-  const logSavedTabRender = () => {
-    console.log('Rendering Saved tab content');
-    return null;
-  };
-
-  // Log when rendering the Activity tab content
-  const logActivityTabRender = () => {
-    console.log('Rendering Activity tab content');
-    return null;
-  };
-
+  
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="about" onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full bg-app-gray-dark overflow-x-auto mb-4 p-1 rounded-lg">
-          <TabsTrigger value="about" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">About</TabsTrigger>
-          <TabsTrigger value="videos" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
-            <Film className="h-4 w-4 mr-2" />
-            Videos
-          </TabsTrigger>
-          <TabsTrigger value="liked" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
-            <Heart className="h-4 w-4 mr-2" />
-            Liked
-          </TabsTrigger>
-          <TabsTrigger value="saved" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
-            <Bookmark className="h-4 w-4 mr-2" />
-            Saved
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
-            <Activity className="h-4 w-4 mr-2" />
-            Activity
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="about" className="space-y-6">
-          {logAboutTabRender()}
-          <Card className="bg-app-gray-dark border-0">
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base">
-                {profile.bio || "No bio information provided."}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-app-gray-dark border-0">
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {profile.location && (
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-app-yellow" />
-                  <span>{profile.location}</span>
-                </div>
-              )}
+    <div className="w-full max-w-4xl mx-auto pt-8 px-4">
+      <Card className="border-none shadow-sm mb-8 bg-transparent">
+        <CardContent className="p-0">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Profile Avatar and Stats Section */}
+            <div className="flex flex-col items-center">
+              <Avatar className="w-24 h-24 md:w-32 md:h-32 border-2 border-app-yellow">
+                <AvatarImage src={profile.avatar_url || 'https://i.pravatar.cc/150?u=' + profile.username} />
+                <AvatarFallback>{profile.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
+              </Avatar>
               
-              {profile.email && (
-                <div className="flex items-center">
-                  <AtSign className="h-5 w-5 mr-2 text-app-yellow" />
-                  <span>{profile.email}</span>
-                </div>
-              )}
-
-              {profile.roles && profile.roles.length > 0 && (
-                <div className="flex items-start">
-                  <Tag className="h-5 w-5 mr-2 text-app-yellow mt-0.5" />
-                  <div className="flex flex-wrap gap-2">
-                    {profile.roles.map((role, index) => (
-                      <span 
-                        key={index} 
-                        className="px-2 py-1 bg-app-gray-light rounded-md text-sm"
-                      >
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {profile.interests && profile.interests.length > 0 && (
-            <Card className="bg-app-gray-dark border-0">
-              <CardHeader>
-                <CardTitle>Interests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {profile.interests.map((interest, index) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1 bg-app-gray-light text-app-yellow rounded-full text-sm"
-                    >
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {profile.roles?.includes('streamer') && (
-            <Card className="bg-app-gray-dark border-0">
-              <CardHeader>
-                <CardTitle>Streaming Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {profile.shop_name && (
-                  <div>
-                    <h3 className="font-medium text-app-yellow">Shop Name</h3>
-                    <p>{profile.shop_name}</p>
-                  </div>
+              <div className="mt-3 text-center">
+                <h2 className="text-xl font-bold">{profile.username}</h2>
+                
+                <RolesDisplay roles={profile.roles || [profile.role || 'user']} />
+                
+                {profile.bio && (
+                  <p className="text-sm text-gray-400 mt-2">{profile.bio}</p>
                 )}
                 
-                <div>
-                  <h3 className="font-medium text-app-yellow">Followers</h3>
-                  <p>{profile.followers?.toLocaleString() || 0}</p>
+                {!isOwnProfile && (
+                  <Button 
+                    onClick={handleFollow} 
+                    className="mt-4" 
+                    variant={isFollowing ? "outline" : "default"}
+                    disabled={followLoading}
+                  >
+                    {isFollowing ? 'Unfollow' : 'Follow'}
+                  </Button>
+                )}
+              </div>
+              
+              <ProfileStats 
+                followersCount={followerCount} 
+                followingCount={profile.following} 
+                videosCount={videos?.length || 0} 
+                className="mt-6"
+              />
+              
+              {/* Show Wallet for own profile */}
+              {isOwnProfile && (
+                <div className="mt-6 w-full">
+                  <WalletSection coins={profile.coins} />
                 </div>
-                
-                <div>
-                  <h3 className="font-medium text-app-yellow">Following</h3>
-                  <p>{profile.following?.toLocaleString() || 0}</p>
+              )}
+            </div>
+            
+            {/* Recent Followers */}
+            <div className="flex-1">
+              <h3 className="text-lg font-medium mb-4">Recent Followers</h3>
+              {recentFollowers.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {recentFollowers.map((follower) => (
+                    <Card key={follower.follower_id} className="bg-gray-800">
+                      <CardContent className="p-3 flex items-center space-x-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={follower.profiles?.avatar_url || 'https://i.pravatar.cc/150?u=' + follower.profiles?.username} />
+                          <AvatarFallback>{follower.profiles?.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{follower.profiles?.username}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(follower.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+              ) : (
+                <p className="text-gray-500">No followers yet</p>
+              )}
+              
+              {/* Only show Activity for own profile */}
+              {isOwnProfile && (
+                <div className="mt-6">
+                  <UserActivity userId={profile.id} />
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Profile Tabs */}
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="mt-8">
+        <TabsList className="grid grid-cols-4 mb-8">
+          <TabsTrigger value="videos">
+            <FileVideo className="w-4 h-4 mr-2" /> Videos
+          </TabsTrigger>
+          <TabsTrigger value="liked">
+            <Heart className="w-4 h-4 mr-2" /> Liked
+          </TabsTrigger>
+          
+          {isOwnProfile && (
+            <TabsTrigger value="settings">
+              <Clock className="w-4 h-4 mr-2" /> Settings
+            </TabsTrigger>
+          )}
+          
+          {userIsSeller && (
+            <TabsTrigger value="shop">
+              <ShoppingBag className="w-4 h-4 mr-2" /> Shop
+            </TabsTrigger>
+          )}
+        </TabsList>
+        
+        <TabsContent value="videos" className="mt-0">
+          {videosLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-40 rounded-md bg-gray-800" />
+              ))}
+            </div>
+          ) : videos && videos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {videos.map((video) => (
+                <VideoCard key={video.id} video={video} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileVideo className="w-12 h-12 mx-auto text-gray-400" />
+              <h3 className="mt-4 text-xl font-medium">No Videos Yet</h3>
+              <p className="mt-2 text-gray-500">Videos uploaded will appear here</p>
+            </div>
           )}
         </TabsContent>
-
-        <TabsContent value="videos">
-          {logVideosTabRender()}
-          <UserVideosGrid 
-            videos={userVideos}
-            isLoading={videosLoading}
-            emptyMessage="No videos uploaded yet"
-            onVideoClick={(videoId) => {
-              console.log('Video clicked:', videoId);
-              navigate(`/video/${videoId}`);
-            }}
-          />
-        </TabsContent>
-
-        <TabsContent value="liked">
-          {logLikedTabRender()}
-          <UserVideosGrid 
-            videos={likedVideos}
-            isLoading={likedLoading}
-            emptyMessage="No liked videos yet"
-            onVideoClick={(videoId) => navigate(`/video/${videoId}`)}
-          />
-        </TabsContent>
-
-        <TabsContent value="saved">
-          {logSavedTabRender()}
-          <UserVideosGrid 
-            videos={savedVideos}
-            isLoading={savedLoading}
-            emptyMessage="No saved videos yet"
-            onVideoClick={(videoId) => navigate(`/video/${videoId}`)}
-          />
+        
+        <TabsContent value="liked" className="mt-0">
+          <div className="text-center py-12">
+            <Heart className="w-12 h-12 mx-auto text-gray-400" />
+            <h3 className="mt-4 text-xl font-medium">Liked Videos</h3>
+            <p className="mt-2 text-gray-500">Videos liked by this user will appear here</p>
+          </div>
         </TabsContent>
         
-        <TabsContent value="activity">
-          {logActivityTabRender()}
-          <UserActivity userId={profile.id} />
-        </TabsContent>
+        {isOwnProfile && (
+          <TabsContent value="settings" className="mt-0">
+            <div className="space-y-8">
+              {/* Notification Preferences */}
+              <NotificationPreferences 
+                preferences={profile.notification_preferences}
+                onUpdate={(prefs) => {/* Handle update */}}
+              />
+              
+              {/* Payment Methods Management */}
+              <PaymentMethods 
+                paymentMethods={profile.payment_methods || []}
+                onAdd={() => {/* Handle add */}}
+                onRemove={() => {/* Handle remove */}}
+              />
+              
+              {/* Seller or Streamer Additional Fields */}
+              {(hasRole && (hasRole('seller'))) && (
+                <StreamerFields 
+                  streamKey={profile.stream_key}
+                  shopName={profile.shop_name}
+                  onUpdate={() => {/* Handle update */}}
+                />
+              )}
+            </div>
+          </TabsContent>
+        )}
+        
+        {userIsSeller && (
+          <TabsContent value="shop" className="mt-0">
+            <div className="text-center py-12">
+              <ShoppingBag className="w-12 h-12 mx-auto text-gray-400" />
+              <h3 className="mt-4 text-xl font-medium">Shop</h3>
+              <p className="mt-2 text-gray-500">Products from this seller will appear here</p>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
-    </div>
-  );
-};
-
-interface UserVideosGridProps {
-  videos: Video[];
-  isLoading: boolean;
-  emptyMessage: string;
-  onVideoClick: (videoId: string) => void;
-}
-
-const UserVideosGrid: React.FC<UserVideosGridProps> = ({ videos, isLoading, emptyMessage, onVideoClick }) => {
-  console.log('UserVideosGrid render:', { isLoading, videoCount: videos.length });
-  
-  if (isLoading) {
-    return <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="aspect-video bg-app-gray-light animate-pulse rounded-md" />
-      ))}
-    </div>;
-  }
-
-  if (videos.length === 0) {
-    return <div className="text-center py-12 text-gray-400">{emptyMessage}</div>;
-  }
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      {videos.map((video, index) => (
-        <VideoThumbnail 
-          key={`${video.id}-${index}`} 
-          video={video} 
-          onClick={() => onVideoClick(video.id)}
-        />
-      ))}
-    </div>
-  );
-};
-
-interface VideoThumbnailProps {
-  video: Video;
-  onClick: () => void;
-}
-
-const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ video, onClick }) => {
-  const handleImageError = () => {
-    console.log('Video thumbnail failed to load:', video.id, video.thumbnail_url);
-  };
-
-  return (
-    <div 
-      className="group relative aspect-video overflow-hidden rounded-md bg-app-gray-light cursor-pointer"
-      onClick={() => {
-        console.log('Thumbnail clicked:', video.id);
-        onClick();
-      }}
-    >
-      <img 
-        src={video.thumbnail_url || '/placeholder.svg'}
-        alt={video.title}
-        className="h-full w-full object-cover transition-transform group-hover:scale-105"
-        onError={handleImageError}
-      />
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
-        <h3 className="text-sm font-medium text-white truncate">{video.title}</h3>
-        <div className="flex items-center text-xs text-gray-300 mt-1">
-          <span>{video.view_count || 0} views</span>
-          <span className="mx-1">•</span>
-          <span>{new Date(video.created_at).toLocaleDateString()}</span>
-        </div>
-      </div>
     </div>
   );
 };

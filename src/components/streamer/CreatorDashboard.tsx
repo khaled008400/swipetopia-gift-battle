@@ -1,110 +1,98 @@
 
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StreamHistory from "./StreamHistory";
-import BattleStats from "./BattleStats";
-import StreamerSchedule from "./StreamerSchedule";
-import StreamHighlights from "./StreamHighlights";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Video, BarChart2, Calendar, Clock, Users, Gift } from 'lucide-react';
+import BattleStats from './BattleStats';
+import StreamHistory from './StreamHistory';
+import StreamerSchedule from './StreamerSchedule';
+import StreamHighlights from './StreamHighlights';
+import { useAuth } from '@/context/AuthContext';
 
 const CreatorDashboard = () => {
-  const { user } = useAuth();
-  const [hasStreamRole, setHasStreamRole] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('stats');
+  const navigate = useNavigate();
+  const { user, hasRole } = useAuth();
   
-  useEffect(() => {
-    // Check if the user has the streamer role
-    if (user) {
-      setHasStreamRole(user.roles?.includes("streamer") || user.roles?.includes("admin") || false);
-    }
-  }, [user]);
-
-  const handleApplyToStream = async () => {
-    if (!user) return;
-    
-    setIsSubmitting(true);
-    try {
-      // Update the user profile to add a streamer role request
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          // Use a custom field that's not in the type definition but allowed in the database
-          streamer_application: true,
-          streamer_application_date: new Date().toISOString()
-        } as any)
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Application Submitted",
-        description: "Your application to become a streamer has been submitted for review.",
-      });
-    } catch (error) {
-      console.error("Error applying to stream:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit your application. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // If user doesn't have streamer role, prompt them to become a streamer
-  if (!hasStreamRole) {
+  if (!user || !(hasRole && hasRole('seller'))) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Creator Dashboard</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Creator Access Required</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">You need to be a registered seller to access the creator dashboard.</p>
+          <Button onClick={() => navigate('/')}>Return to Home</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return (
+    <div className="container max-w-6xl mx-auto py-6 px-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold mb-2">Creator Dashboard</h1>
+          <p className="text-gray-500">Manage your content, streams, and audience</p>
+        </div>
         
-        <div className="bg-app-gray-dark p-8 rounded-lg text-center">
-          <h2 className="text-xl font-semibold mb-4">Become a Streamer</h2>
-          <p className="mb-6 max-w-md mx-auto">
-            You need to be a verified streamer to access the Creator Dashboard. Apply now to start streaming!
-          </p>
-          <Button 
-            className="bg-app-yellow text-app-black px-4 py-2 rounded font-medium"
-            onClick={handleApplyToStream}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Submitting..." : "Apply to Stream"}
+        <div className="mt-4 md:mt-0 flex space-x-3">
+          <Button variant="outline" onClick={() => navigate('/upload')}>
+            <Video className="mr-2 h-4 w-4" /> Upload Video
+          </Button>
+          <Button onClick={() => navigate('/streamer-broadcast')}>
+            Go Live
           </Button>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Creator Dashboard</h1>
       
-      <Tabs defaultValue="history" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="history">Stream History</TabsTrigger>
-          <TabsTrigger value="battles">Battle Stats</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule & Invites</TabsTrigger>
-          <TabsTrigger value="highlights">Highlights</TabsTrigger>
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="stats" className="flex items-center">
+            <BarChart2 className="mr-2 h-4 w-4" /> Statistics
+          </TabsTrigger>
+          <TabsTrigger value="streams" className="flex items-center">
+            <Clock className="mr-2 h-4 w-4" /> Past Streams
+          </TabsTrigger>
+          <TabsTrigger value="schedule" className="flex items-center">
+            <Calendar className="mr-2 h-4 w-4" /> Schedule
+          </TabsTrigger>
+          <TabsTrigger value="highlights" className="flex items-center">
+            <Video className="mr-2 h-4 w-4" /> Highlights
+          </TabsTrigger>
+          <TabsTrigger value="followers" className="flex items-center">
+            <Users className="mr-2 h-4 w-4" /> Audience
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="history" className="mt-6">
-          {user && <StreamHistory />}
+        <TabsContent value="stats" className="space-y-6">
+          <BattleStats />
         </TabsContent>
         
-        <TabsContent value="battles" className="mt-6">
-          {user && <BattleStats />}
+        <TabsContent value="streams" className="space-y-6">
+          <StreamHistory />
         </TabsContent>
         
-        <TabsContent value="schedule" className="mt-6">
-          {user && <StreamerSchedule />}
+        <TabsContent value="schedule" className="space-y-6">
+          <StreamerSchedule />
         </TabsContent>
         
-        <TabsContent value="highlights" className="mt-6">
-          {user && <StreamHighlights />}
+        <TabsContent value="highlights" className="space-y-6">
+          <StreamHighlights />
+        </TabsContent>
+        
+        <TabsContent value="followers" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Audience Insights</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center py-8">
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p>Audience insights will be available soon</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
