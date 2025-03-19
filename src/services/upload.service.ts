@@ -15,6 +15,20 @@ class UploadService {
       
       console.log(`Uploading file to ${bucketName}/${filePath}`);
       
+      // Check if bucket exists and create if needed
+      const { data: buckets } = await supabase
+        .storage
+        .listBuckets();
+        
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+      
+      if (!bucketExists) {
+        console.log(`Creating bucket: ${bucketName}`);
+        await supabase.storage.createBucket(bucketName, {
+          public: true
+        });
+      }
+      
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucketName)
