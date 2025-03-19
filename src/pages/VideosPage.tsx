@@ -38,7 +38,7 @@ const VideosPage: React.FC = () => {
     const channel = supabase
       .channel('videos-changes')
       .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'short_videos' }, 
+        { event: 'INSERT', schema: 'public', table: 'videos' }, 
         (payload) => {
           console.log('New video added:', payload);
           fetchVideos();

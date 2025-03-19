@@ -49,23 +49,24 @@ class VideoUploadService {
       
       console.log('Inserting with user ID:', user.id);
 
-      // Create a basic insert object with required fields
+      // Create video data with all required fields
       const videoData = {
         title,
         description,
         video_url: videoUrl,
         thumbnail_url: thumbnailUrl || `${videoUrl}?preview`,
-        is_private: isPrivate, // Now using the is_private column correctly
+        is_private: isPrivate, 
         user_id: user.id,
         hashtags,
         view_count: 0,
         likes_count: 0,
         shares_count: 0,
-        comments_count: 0 // Explicitly including comments_count
+        comments_count: 0
       };
       
-      console.log('Inserting video with data:', videoData);
+      console.log('Inserting video with data:', JSON.stringify(videoData));
       
+      // Insert the video data and return the inserted record
       const { data: insertedVideo, error: insertError } = await supabase
         .from('videos')
         .insert(videoData)
