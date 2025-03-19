@@ -7,6 +7,7 @@ import VideoInteractionService from './interaction.service';
 const VideoService = {
   // Upload methods
   uploadVideo: VideoUploadService.uploadVideo.bind(VideoUploadService),
+  checkVideoExists: VideoUploadService.checkVideoExists.bind(VideoUploadService),
   
   // Fetch methods
   getVideoById: VideoFetchService.getVideoById.bind(VideoFetchService),
@@ -17,6 +18,11 @@ const VideoService = {
   getLikedVideos: VideoFetchService.getLikedVideos.bind(VideoFetchService),
   getSavedVideos: VideoFetchService.getSavedVideos.bind(VideoFetchService),
   searchVideos: VideoFetchService.searchVideos.bind(VideoFetchService),
+  
+  // For backward compatibility
+  fetchVideo: VideoFetchService.fetchVideo.bind(VideoFetchService),
+  fetchVideos: VideoFetchService.fetchVideos.bind(VideoFetchService),
+  fetchUserVideos: VideoFetchService.fetchUserVideos.bind(VideoFetchService),
   
   // Interaction methods
   updateVideo: VideoInteractionService.updateVideo.bind(VideoInteractionService),

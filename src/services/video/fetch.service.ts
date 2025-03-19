@@ -19,6 +19,11 @@ class VideoFetchService {
     }
   }
 
+  // Alternative name for getVideoById for backward compatibility
+  async fetchVideo(id: string) {
+    return this.getVideoById(id);
+  }
+
   // Get videos for feed
   async getForYouVideos(limit: number = 20) {
     try {
@@ -84,6 +89,11 @@ class VideoFetchService {
     }
   }
 
+  // Alias for getUserVideos for backward compatibility
+  async fetchUserVideos(userId: string, limit: number = 20) {
+    return this.getUserVideos(userId, limit);
+  }
+
   // Get trending videos
   async getTrendingVideos(limit: number = 10) {
     try {
@@ -117,6 +127,11 @@ class VideoFetchService {
       console.error('Error in getVideos:', error);
       return [];
     }
+  }
+
+  // Alias for getVideos for backward compatibility
+  async fetchVideos(limit: number = 50) {
+    return this.getVideos(limit);
   }
 
   // Get liked videos

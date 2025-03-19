@@ -99,7 +99,7 @@ class VideoUploadService {
     }
   }
 
-  // New method to check if a video exists in the database by its ID
+  // Method to check if a video exists in the database by its ID
   async checkVideoExists(videoId: string) {
     try {
       const { data, error } = await supabase
