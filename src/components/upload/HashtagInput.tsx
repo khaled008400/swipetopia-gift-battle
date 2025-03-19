@@ -7,7 +7,7 @@ interface HashtagInputProps {
   hashtags: string[];
   onAdd: (tag: string) => void;
   onRemove: (tag: string) => void;
-  disabled?: boolean;
+  disabled?: boolean; // Make disabled prop optional with a default value
 }
 
 const HashtagInput = ({ hashtags, onAdd, onRemove, disabled = false }: HashtagInputProps) => {

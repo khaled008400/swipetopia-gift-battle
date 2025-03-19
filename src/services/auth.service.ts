@@ -51,35 +51,56 @@ export const signupUser = async (email: string, username: string, password: stri
       throw error;
     }
     
+    console.log('User signup successful, user data:', data);
+    
     // Create the user profile if signup was successful
     if (data.user) {
       console.log('Creating profile for new user:', data.user.id);
       
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          username: username,
-          email: data.user.email,
-          roles: roles, // Store roles array in profile
-          avatar_url: `https://i.pravatar.cc/150?u=${username}` // Placeholder avatar
-        });
-      
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            username: username,
+            email: data.user.email,
+            roles: roles, // Store roles array in profile
+            avatar_url: `https://i.pravatar.cc/150?u=${username}` // Placeholder avatar
+          });
         
-        // Additional debugging information
-        console.log("Attempted to create profile with:", {
-          id: data.user.id,
-          username,
-          email: data.user.email,
-          roles
-        });
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          
+          // Additional debugging information
+          console.log("Attempted to create profile with:", {
+            id: data.user.id,
+            username,
+            email: data.user.email,
+            roles
+          });
+          
+          throw profileError;
+        }
         
-        throw profileError;
+        console.log('Profile created successfully for:', username);
+        
+        // Verify profile was created by fetching it
+        const { data: profileData, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (fetchError) {
+          console.error('Error verifying profile creation:', fetchError);
+        } else {
+          console.log('Profile verification successful:', profileData);
+        }
+      } catch (profileCreateError) {
+        console.error('Profile creation failed:', profileCreateError);
+        // Continue with signup process even if profile creation fails
+        // The getCurrentUser function will attempt to create the profile later
       }
-      
-      console.log('Profile created successfully for:', username);
     } else {
       console.warn('No user data returned from signup');
     }
@@ -112,30 +133,38 @@ export const getCurrentUser = async () => {
   if (error) throw error;
   
   if (user) {
+    console.log('Current user found:', user.id);
+    
     // Try to fetch user profile
-    const profile = await fetchUserProfile(user);
+    let profile = await fetchUserProfile(user);
+    console.log('Profile fetch result:', profile ? 'Profile found' : 'No profile found');
     
     // If profile doesn't exist, try to create it
-    if (!profile && user.user_metadata && user.user_metadata.username) {
+    if (!profile) {
       console.log("Profile not found for existing user, attempting to create one");
       
+      // Get username from metadata or use email as fallback
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'user';
+      const roles = user.user_metadata?.roles || ["user"];
+      
       try {
-        const { error: profileError } = await supabase
+        const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
             id: user.id,
-            username: user.user_metadata.username,
+            username: username,
             email: user.email,
-            roles: user.user_metadata.roles || ["user"],
-            avatar_url: `https://i.pravatar.cc/150?u=${user.user_metadata.username}`
-          });
+            roles: roles,
+            avatar_url: `https://i.pravatar.cc/150?u=${username}`
+          })
+          .select('*')
+          .single();
           
         if (profileError) {
           console.error("Error creating profile for existing user:", profileError);
         } else {
           console.log("Created profile for existing user:", user.id);
-          // Fetch the newly created profile
-          return { ...user, profile: await fetchUserProfile(user) };
+          profile = newProfile;
         }
       } catch (err) {
         console.error("Failed to create profile for existing user:", err);
