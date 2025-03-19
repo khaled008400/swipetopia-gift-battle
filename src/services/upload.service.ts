@@ -1,13 +1,33 @@
 
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { createStorageBucket } from '@/pages/api/create-storage-bucket';
 
 class UploadService {
+  /**
+   * Initialize storage buckets
+   */
+  async initBuckets() {
+    try {
+      console.log('Initializing storage buckets...');
+      await createStorageBucket();
+      console.log('Storage buckets initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('Error initializing storage buckets:', error);
+      // Continue anyway as the buckets might exist
+      return false;
+    }
+  }
+
   /**
    * Upload a file to Supabase storage
    */
   async uploadFile(file: File, bucketName: string = 'videos'): Promise<string> {
     try {
+      // Initialize buckets first
+      await this.initBuckets();
+      
       // Create a unique file name to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
@@ -15,22 +35,25 @@ class UploadService {
       
       console.log(`Uploading file to ${bucketName}/${filePath}`);
       
-      // Check if bucket exists and create if needed
-      const { data: buckets } = await supabase
-        .storage
-        .listBuckets();
-        
+      // Check if bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
       const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
       
       if (!bucketExists) {
-        console.log(`Creating bucket: ${bucketName}`);
+        console.log(`Bucket ${bucketName} not found in list, trying to create it directly...`);
         try {
-          await supabase.storage.createBucket(bucketName, {
-            public: true
+          const { error } = await supabase.storage.createBucket(bucketName, {
+            public: true,
+            fileSizeLimit: bucketName === 'videos' ? 104857600 : 10485760
           });
-          console.log(`Created bucket: ${bucketName}`);
+          
+          if (error) {
+            console.error('Error creating bucket directly:', error);
+          } else {
+            console.log(`Created bucket: ${bucketName} directly`);
+          }
         } catch (bucketError) {
-          console.error('Error creating bucket:', bucketError);
+          console.error('Exception creating bucket directly:', bucketError);
           // Continue anyway as the bucket might exist but the API call failed
         }
       }

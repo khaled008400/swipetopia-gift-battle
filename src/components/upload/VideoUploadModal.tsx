@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Upload, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import UploadStep from './upload-steps/UploadStep';
 import EditStep from './upload-steps/EditStep';
 import VideoService from '@/services/video.service';
+import UploadService from '@/services/upload.service';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
@@ -29,6 +30,21 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      const initStorage = async () => {
+        try {
+          console.log('Initializing storage buckets on modal open...');
+          await UploadService.initBuckets();
+        } catch (error) {
+          console.warn('Failed to initialize storage buckets:', error);
+        }
+      };
+      
+      initStorage();
+    }
+  }, [isOpen]);
 
   const resetState = () => {
     setStep(1);
@@ -104,17 +120,50 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       console.log('Starting video upload process...', videoFile.name, videoFile.size);
       
       try {
-        const res = await fetch(`${window.location.origin}/api/create-storage-bucket`);
-        console.log('Storage bucket check response:', await res.json());
+        console.log('Initializing storage buckets before upload...');
+        await UploadService.initBuckets();
       } catch (bucketError) {
         console.warn('Failed to check storage buckets, continuing anyway:', bucketError);
+      }
+      
+      let thumbnailFile = null;
+      if (videoPreviewUrl) {
+        try {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          video.src = videoPreviewUrl;
+          video.currentTime = 1;
+          
+          await new Promise<void>((resolve) => {
+            video.onloadeddata = () => {
+              video.currentTime = 1;
+              video.onseeked = () => resolve();
+            };
+          });
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
+            
+            const response = await fetch(thumbnailDataUrl);
+            const blob = await response.blob();
+            thumbnailFile = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
+            console.log('Created thumbnail:', thumbnailFile.size, 'bytes');
+          }
+        } catch (thumbError) {
+          console.error('Error creating thumbnail:', thumbError);
+        }
       }
       
       const uploadedVideo = await VideoService.uploadVideo(
         videoFile,
         title,
         description,
-        null, // thumbnailUrl - we're generating this in the service
+        null, // thumbnailUrl will be generated in the service
         privacy === "private",
         hashtags
       );
