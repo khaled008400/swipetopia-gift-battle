@@ -31,21 +31,21 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="about" onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto mb-4">
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="videos">
+        <TabsList className="w-full bg-app-gray-dark overflow-x-auto mb-4 p-1 rounded-lg">
+          <TabsTrigger value="about" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">About</TabsTrigger>
+          <TabsTrigger value="videos" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
             <Film className="h-4 w-4 mr-2" />
             Videos
           </TabsTrigger>
-          <TabsTrigger value="liked">
+          <TabsTrigger value="liked" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
             <Heart className="h-4 w-4 mr-2" />
             Liked
           </TabsTrigger>
-          <TabsTrigger value="saved">
+          <TabsTrigger value="saved" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
             <Bookmark className="h-4 w-4 mr-2" />
             Saved
           </TabsTrigger>
-          <TabsTrigger value="activity">
+          <TabsTrigger value="activity" className="rounded-md data-[state=active]:bg-app-yellow data-[state=active]:text-app-black">
             <Activity className="h-4 w-4 mr-2" />
             Activity
           </TabsTrigger>
@@ -54,7 +54,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
         {/* About Tab Content */}
         <TabsContent value="about" className="space-y-6">
           {/* Bio Section */}
-          <Card>
+          <Card className="bg-app-gray-dark border-0">
             <CardHeader>
               <CardTitle>About</CardTitle>
             </CardHeader>
@@ -66,33 +66,33 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
           </Card>
 
           {/* User Details */}
-          <Card>
+          <Card className="bg-app-gray-dark border-0">
             <CardHeader>
               <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {profile.location && (
                 <div className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                  <MapPin className="h-5 w-5 mr-2 text-app-yellow" />
                   <span>{profile.location}</span>
                 </div>
               )}
               
               {profile.email && (
                 <div className="flex items-center">
-                  <AtSign className="h-5 w-5 mr-2 text-gray-500" />
+                  <AtSign className="h-5 w-5 mr-2 text-app-yellow" />
                   <span>{profile.email}</span>
                 </div>
               )}
 
               {profile.roles && profile.roles.length > 0 && (
                 <div className="flex items-start">
-                  <Tag className="h-5 w-5 mr-2 text-gray-500 mt-0.5" />
+                  <Tag className="h-5 w-5 mr-2 text-app-yellow mt-0.5" />
                   <div className="flex flex-wrap gap-2">
                     {profile.roles.map((role, index) => (
                       <span 
                         key={index} 
-                        className="px-2 py-1 bg-gray-100 rounded-md text-sm"
+                        className="px-2 py-1 bg-app-gray-light rounded-md text-sm"
                       >
                         {role}
                       </span>
@@ -105,7 +105,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
 
           {/* Interests Section (if available) */}
           {profile.interests && profile.interests.length > 0 && (
-            <Card>
+            <Card className="bg-app-gray-dark border-0">
               <CardHeader>
                 <CardTitle>Interests</CardTitle>
               </CardHeader>
@@ -114,7 +114,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
                   {profile.interests.map((interest, index) => (
                     <span 
                       key={index} 
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      className="px-3 py-1 bg-app-gray-light text-app-yellow rounded-full text-sm"
                     >
                       {interest}
                     </span>
@@ -126,25 +126,25 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
 
           {/* Streamer Information (if applicable) */}
           {profile.roles?.includes('streamer') && (
-            <Card>
+            <Card className="bg-app-gray-dark border-0">
               <CardHeader>
                 <CardTitle>Streaming Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {profile.shop_name && (
                   <div>
-                    <h3 className="font-medium text-gray-700">Shop Name</h3>
+                    <h3 className="font-medium text-app-yellow">Shop Name</h3>
                     <p>{profile.shop_name}</p>
                   </div>
                 )}
                 
                 <div>
-                  <h3 className="font-medium text-gray-700">Followers</h3>
+                  <h3 className="font-medium text-app-yellow">Followers</h3>
                   <p>{profile.followers?.toLocaleString() || 0}</p>
                 </div>
                 
                 <div>
-                  <h3 className="font-medium text-gray-700">Following</h3>
+                  <h3 className="font-medium text-app-yellow">Following</h3>
                   <p>{profile.following?.toLocaleString() || 0}</p>
                 </div>
               </CardContent>
@@ -203,13 +203,13 @@ const UserVideosGrid: React.FC<UserVideosGridProps> = ({ videos, isLoading, empt
   if (isLoading) {
     return <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="aspect-video bg-gray-200 animate-pulse rounded-md" />
+        <div key={index} className="aspect-video bg-app-gray-light animate-pulse rounded-md" />
       ))}
     </div>;
   }
 
   if (videos.length === 0) {
-    return <div className="text-center py-12 text-gray-500">{emptyMessage}</div>;
+    return <div className="text-center py-12 text-gray-400">{emptyMessage}</div>;
   }
 
   return (
@@ -234,7 +234,7 @@ interface VideoThumbnailProps {
 const VideoThumbnail: React.FC<VideoThumbnailProps> = ({ video, onClick }) => {
   return (
     <div 
-      className="group relative aspect-video overflow-hidden rounded-md bg-gray-100 cursor-pointer"
+      className="group relative aspect-video overflow-hidden rounded-md bg-app-gray-light cursor-pointer"
       onClick={onClick}
     >
       <img 

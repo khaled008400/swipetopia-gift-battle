@@ -1,92 +1,46 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import React, { useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { UserProfile, UserRole } from '@/types/auth.types';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage,
-  FormDescription
-} from '@/components/ui/form';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Save, Upload } from 'lucide-react';
-import StreamerFields from './StreamerFields';
-import WalletSection from './WalletSection';
+import { Loader2, Upload } from 'lucide-react';
+import UploadService from '@/services/upload.service';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ProfileEditProps {
   onComplete: () => void;
 }
 
 const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
-  const { user, hasRole } = useAuth();
-  const userId = user?.id || '';
-  const { profile, updateProfile, isLoading } = useUserProfile(userId);
-  const [avatar, setAvatar] = useState<File | null>(null);
+  const { user } = useAuth();
+  const { profile, updateProfile } = useUserProfile(user?.id || null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formValues, setFormValues] = useState({
+    username: profile?.username || '',
+    bio: profile?.bio || '',
+    location: profile?.location || '',
+    avatar_url: profile?.avatar_url || '',
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  const formSchema = z.object({
-    username: z.string().min(2, "Username must be at least 2 characters"),
-    bio: z.string().optional(),
-    location: z.string().optional(),
-    interests: z.string().optional(),
-    shop_name: z.string().optional(),
-    stream_key: z.string().optional(),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: '',
-      bio: '',
-      location: '',
-      interests: '',
-      shop_name: '',
-      stream_key: '',
-    }
-  });
-
-  // Update form when profile data loads
-  useEffect(() => {
-    if (profile) {
-      form.reset({
-        username: profile.username || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        interests: profile.interests ? profile.interests.join(', ') : '',
-        shop_name: profile.shop_name || '',
-        stream_key: profile.stream_key || '',
-      });
-      
-      if (profile.avatar_url) {
-        setAvatarPreview(profile.avatar_url);
-      }
-    }
-  }, [profile]);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAvatar(file);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -95,230 +49,168 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
     }
   };
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    if (!profile) return;
-    
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      setSubmitting(true);
-      
-      // Process interests from comma-separated string to array
-      const interestsArray = data.interests ? 
-        data.interests.split(',').map(i => i.trim()).filter(Boolean) : 
-        undefined;
+      let avatarUrl = formValues.avatar_url;
 
-      const updateData: Partial<UserProfile> = {
-        ...data,
-        interests: interestsArray,
-      };
-
-      const { success } = await updateProfile(updateData);
-      if (success) {
-        onComplete();
+      // Upload avatar if changed
+      if (avatarFile) {
+        avatarUrl = await UploadService.uploadFile(avatarFile, 'avatars');
       }
-    } catch (error) {
-      console.error("Error updating profile:", error);
+
+      // Update profile
+      const result = await updateProfile({
+        ...formValues,
+        avatar_url: avatarUrl,
+      });
+
+      if (result.success) {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been successfully updated.",
+          variant: "default",
+        });
+        onComplete();
+      } else {
+        toast({
+          title: "Update Failed",
+          description: result.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
-      setSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const isStreamer = hasRole ? hasRole('streamer') : false;
-  const isSeller = hasRole ? hasRole('seller') : false;
-
-  if (!profile && isLoading) {
-    return (
-      <div className="w-full p-8 flex justify-center items-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+  const handleCancel = () => {
+    onComplete();
+  };
 
   if (!profile) {
-    return (
-      <div className="w-full p-8 text-center">
-        <h3 className="text-lg font-medium">Profile Not Found</h3>
-        <p className="text-gray-500 mt-2">Unable to load profile information.</p>
-        <Button onClick={onComplete} className="mt-4">Go Back</Button>
-      </div>
-    );
+    return <div className="text-center py-8 text-gray-400">Loading profile information...</div>;
   }
 
   return (
-    <Card className="w-full">
+    <Card className="bg-app-gray-dark border-0 shadow-md">
       <CardHeader>
         <CardTitle>Edit Profile</CardTitle>
-        <CardDescription>Update your personal information</CardDescription>
       </CardHeader>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Tabs defaultValue="basic">
-            <TabsList className="mb-4">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              {isStreamer && <TabsTrigger value="streaming">Streaming</TabsTrigger>}
-              {isSeller && <TabsTrigger value="seller">Seller</TabsTrigger>}
-              <TabsTrigger value="wallet">Wallet</TabsTrigger>
-            </TabsList>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Avatar Upload */}
+          <div className="flex flex-col items-center space-y-4">
+            <Avatar className="h-24 w-24 border-2 border-app-yellow">
+              <AvatarImage src={avatarPreview || profile.avatar_url || ''} alt={profile.username || 'User'} />
+              <AvatarFallback className="text-2xl bg-app-gray-light text-app-yellow">
+                {profile.username ? profile.username.charAt(0).toUpperCase() : '?'}
+              </AvatarFallback>
+            </Avatar>
             
-            <TabsContent value="basic">
-              <CardContent className="space-y-4">
-                <div className="flex flex-col items-center mb-6">
-                  <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={avatarPreview || ''} />
-                    <AvatarFallback>
-                      {profile.username?.charAt(0).toUpperCase() || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" type="button" asChild>
-                      <label>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Change Avatar
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                        />
-                      </label>
-                    </Button>
-                  </div>
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="bio"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bio</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Tell us about yourself" 
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="City, Country" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="interests"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Interests</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Fashion, Tech, Gaming, etc. (comma separated)" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enter your interests separated by commas
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </TabsContent>
-            
-            {isStreamer && (
-              <TabsContent value="streaming">
-                <CardContent className="space-y-4">
-                  <StreamerFields form={form} />
-                </CardContent>
-              </TabsContent>
-            )}
-            
-            {isSeller && (
-              <TabsContent value="seller">
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="shop_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Shop Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your shop name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Additional seller fields could go here */}
-                </CardContent>
-              </TabsContent>
-            )}
-            
-            <TabsContent value="wallet">
-              <CardContent>
-                {profile && <WalletSection profile={profile} />}
-              </CardContent>
-            </TabsContent>
-          </Tabs>
-          
-          <CardFooter className="flex justify-between border-t p-4 mt-4">
-            <Button 
-              variant="outline" 
-              onClick={onComplete}
+            <div className="flex items-center">
+              <Label htmlFor="avatar-upload" className="cursor-pointer bg-app-gray-light hover:bg-app-gray text-app-yellow px-4 py-2 rounded-l-md flex items-center">
+                <Upload className="h-4 w-4 mr-2" />
+                Choose Image
+              </Label>
+              <Input 
+                id="avatar-upload" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleAvatarChange} 
+                className="hidden"
+              />
+              <span className="bg-app-gray-light px-4 py-2 rounded-r-md text-gray-400 text-sm truncate max-w-[150px]">
+                {avatarFile ? avatarFile.name : 'No file chosen'}
+              </span>
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              name="username"
+              value={formValues.username}
+              onChange={handleChange}
+              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow"
+            />
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-2">
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea
+              id="bio"
+              name="bio"
+              value={formValues.bio}
+              onChange={handleChange}
+              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow min-h-[100px]"
+            />
+          </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              name="location"
+              value={formValues.location}
+              onChange={handleChange}
+              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow"
+              placeholder="City, Country"
+            />
+          </div>
+
+          {/* Email (read-only) */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={profile.email || ''}
+              disabled
+              className="bg-app-gray-light/50 border-0 text-gray-400"
+            />
+            <p className="text-xs text-gray-400">Email cannot be changed</p>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
               type="button"
-              disabled={submitting}
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isLoading}
+              className="border-app-yellow text-app-yellow hover:bg-app-yellow hover:text-app-black"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isLoading || submitting}
+              disabled={isLoading}
+              className="bg-app-yellow text-app-black hover:bg-app-yellow/90"
             >
-              {submitting ? (
+              {isLoading ? (
                 <>
-                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Saving...
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
                 </>
               ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
+                'Save Changes'
               )}
             </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Form>
+      </CardContent>
     </Card>
   );
 };
