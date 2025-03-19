@@ -4,8 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import BottomNavigation from './BottomNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import CreateContentMenu from './CreateContentMenu';
+import { Outlet } from 'react-router-dom';
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+const Layout = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
@@ -28,7 +29,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex flex-col min-h-screen relative bg-app-black">
       <main className="flex-grow pb-20">
-        {children}
+        <Outlet />
       </main>
       
       {isMobile && <BottomNavigation />}
@@ -40,12 +41,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </footer>
 
       {/* Create Content Menu */}
-      {isCreateMenuOpen && (
-        <CreateContentMenu 
-          isOpen={isCreateMenuOpen} 
-          onClose={() => setIsCreateMenuOpen(false)} 
-        />
-      )}
+      <CreateContentMenu 
+        isOpen={isCreateMenuOpen} 
+        onClose={() => setIsCreateMenuOpen(false)} 
+      />
     </div>
   );
 };
