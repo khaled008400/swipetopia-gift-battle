@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +13,22 @@ import AdminVirtualGifts from '@/components/admin/AdminVirtualGifts';
 import AdminSettings from '@/components/admin/AdminSettings';
 import { useAuth } from '@/context/AuthContext';
 import AuthCheck from '@/components/auth/AuthCheck';
+import { AdminStats } from '@/services/admin.service';
 
 const AdminDashboardPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState<AdminStats>({
+    totalUsers: 1250,
+    newUsersToday: 42,
+    totalVideos: 3800,
+    videoUploadsToday: 158,
+    totalOrders: 762,
+    ordersToday: 24,
+    revenueTotal: 25680,
+    revenueToday: 1250
+  });
 
   if (!user) {
     return (
@@ -81,7 +92,7 @@ const AdminDashboardPage = () => {
 
           <div className="p-4 mt-4 bg-white rounded-md shadow-sm dark:bg-gray-800">
             <TabsContent value="dashboard" className="m-0">
-              <AdminDashboard />
+              <AdminDashboard stats={stats} />
             </TabsContent>
             <TabsContent value="users" className="m-0">
               <AdminUsers />
