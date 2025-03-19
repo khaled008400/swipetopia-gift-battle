@@ -19,17 +19,28 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { requiresAuth, AuthDialog } = useAuthCheck();
   
   const handleCreateContent = async (type: string) => {
     onClose();
     
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create content",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+    
     switch (type) {
       case 'video':
         requiresAuth(() => {
+          console.log("Navigating to videos page with upload modal");
           // Navigate directly to videos page with upload modal
-          navigate('/videos');
+          navigate('/videos?upload=true');
         });
         break;
       case 'live':
@@ -61,6 +72,12 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
             });
           }
         });
+        break;
+      case 'shop':
+        navigate('/shop');
+        break;
+      case 'wallet':
+        navigate('/wallet');
         break;
       case 'post':
         requiresAuth(() => {
@@ -107,33 +124,19 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
             <Button 
               variant="ghost" 
               className="flex flex-col items-center justify-center py-4"
-              onClick={() => {
-                requiresAuth(() => {
-                  toast({
-                    title: "Coming soon",
-                    description: "Photo upload feature is coming soon!",
-                  });
-                });
-              }}
+              onClick={() => handleCreateContent('shop')}
             >
               <Camera className="h-5 w-5 mb-2" />
-              <span className="text-xs">Photo</span>
+              <span className="text-xs">Shop</span>
             </Button>
             
             <Button 
               variant="ghost" 
               className="flex flex-col items-center justify-center py-4"
-              onClick={() => {
-                requiresAuth(() => {
-                  toast({
-                    title: "Coming soon",
-                    description: "Audio upload feature is coming soon!",
-                  });
-                });
-              }}
+              onClick={() => handleCreateContent('wallet')}
             >
               <Mic className="h-5 w-5 mb-2" />
-              <span className="text-xs">Audio</span>
+              <span className="text-xs">Wallet</span>
             </Button>
             
             <Button 

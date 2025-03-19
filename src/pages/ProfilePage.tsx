@@ -20,7 +20,7 @@ const ProfilePage = () => {
   
   // If userId is provided in URL, show that profile, else show current user's profile
   const profileId = userId || user?.id || '';
-  const { profile, isLoading, refreshProfile, error } = useUserProfile(profileId);
+  const { profile, isLoading, refreshProfile, error, updateProfile } = useUserProfile(profileId);
   
   const isCurrentUserProfile = !!user && user.id === profileId;
 
