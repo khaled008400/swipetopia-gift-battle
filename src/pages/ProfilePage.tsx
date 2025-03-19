@@ -46,7 +46,7 @@ const ProfilePage = () => {
   if (isLoading) {
     return (
       <div className="container max-w-4xl mx-auto py-8 px-4">
-        <Skeleton className="h-32 w-full rounded-lg mb-6" />
+        <Skeleton className="h-48 w-full rounded-lg mb-6" />
         <Skeleton className="h-8 w-1/4 rounded mb-4" />
         <Skeleton className="h-64 w-full rounded" />
       </div>
@@ -68,23 +68,21 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
+    <div className="container max-w-4xl mx-auto py-8 px-4 space-y-6">
       {profile && <ProfileHeader profile={profile} />}
       
-      <div className="flex justify-end mb-4">
-        {isCurrentUserProfile && !isEditing && (
-          <>
-            <Button variant="outline" className="mr-2" onClick={() => setIsEditing(true)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
-            <Button variant="destructive" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
-          </>
-        )}
-      </div>
+      {isCurrentUserProfile && !isEditing && (
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsEditing(true)}>
+            <Edit className="w-4 h-4 mr-2" />
+            Edit Profile
+          </Button>
+          <Button variant="destructive" onClick={handleSignOut}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+      )}
 
       {isEditing && profile ? (
         <ProfileEdit
