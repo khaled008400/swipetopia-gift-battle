@@ -1,6 +1,5 @@
 
-import { useState, useRef, useEffect } from "react";
-import { Play, Pause } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface VideoPreviewProps {
   src: string;
@@ -8,51 +7,52 @@ interface VideoPreviewProps {
 
 const VideoPreview = ({ src }: VideoPreviewProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const togglePlay = () => {
-    if (videoRef.current) {
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  
+  useEffect(() => {
+    if (videoElement) {
       if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch(err => {
+        videoElement.play().catch(err => {
           console.error("Error playing video:", err);
+          setIsPlaying(false);
         });
+      } else {
+        videoElement.pause();
       }
-      setIsPlaying(!isPlaying);
     }
+  }, [isPlaying, videoElement]);
+
+  const handleVideoRef = (el: HTMLVideoElement) => {
+    setVideoElement(el);
   };
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleEnded = () => setIsPlaying(false);
-    
-    video.addEventListener("ended", handleEnded);
-    return () => {
-      video.removeEventListener("ended", handleEnded);
-    };
-  }, []);
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
 
   return (
-    <div className="relative w-full max-w-[300px] rounded-md overflow-hidden aspect-[9/16] bg-black">
-      <video
-        ref={videoRef}
-        src={src}
+    <div className="relative aspect-[9/16] w-full bg-black rounded-lg overflow-hidden">
+      <video 
+        ref={handleVideoRef}
+        src={src} 
         className="w-full h-full object-contain"
-        playsInline
+        onClick={togglePlay}
         loop
         muted
       />
-      
-      <div
+      <div 
         className="absolute inset-0 flex items-center justify-center cursor-pointer"
         onClick={togglePlay}
       >
         {!isPlaying && (
-          <div className="w-14 h-14 bg-black/50 rounded-full flex items-center justify-center">
-            <Play size={24} className="text-white ml-1" />
+          <div className="bg-black bg-opacity-50 rounded-full p-3">
+            <svg 
+              className="w-8 h-8 text-white" 
+              fill="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
           </div>
         )}
       </div>

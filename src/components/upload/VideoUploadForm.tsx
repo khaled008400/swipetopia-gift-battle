@@ -8,7 +8,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import VideoService from "@/services/video.service";
 import UploadService from "@/services/upload.service";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, Users, Globe, Lock } from "lucide-react";
+import HashtagInput from "./HashtagInput";
 
 interface VideoUploadFormProps {
   onClose: () => void;
@@ -23,6 +24,11 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [privacy, setPrivacy] = useState<"public" | "followers" | "private">("public");
+  const [allowDownloads, setAllowDownloads] = useState(true);
+  const [step, setStep] = useState<"upload" | "edit">("upload");
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -53,9 +59,22 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
             const thumbnailFile = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
             setThumbnailFile(thumbnailFile);
           });
+        
+        // Move to edit step
+        setStep("edit");
       };
       video.src = URL.createObjectURL(file);
     }
+  };
+
+  const handleAddHashtag = (tag: string) => {
+    if (!hashtags.includes(tag)) {
+      setHashtags([...hashtags, tag]);
+    }
+  };
+
+  const handleRemoveHashtag = (tag: string) => {
+    setHashtags(hashtags.filter(t => t !== tag));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,12 +116,17 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       // Upload video and thumbnail to Supabase storage
       const { videoUrl, thumbnailUrl } = await UploadService.uploadVideo(videoFile, thumbnailFile);
       
+      // Calculate privacy setting
+      const isPrivate = privacy === "private";
+      
       // Save video metadata to database
       const videoData = await VideoService.uploadVideo(
         videoFile, 
         title,
         description,
-        thumbnailUrl
+        thumbnailUrl,
+        isPrivate,
+        hashtags
       );
       
       clearInterval(progressInterval);
@@ -137,6 +161,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const clearSelectedFile = () => {
     setVideoFile(null);
     setThumbnail(null);
+    setStep("upload");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -157,25 +182,27 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Upload Video</h2>
+        <h2 className="text-2xl font-bold">
+          {step === "upload" ? "Upload Video" : "Edit Video"}
+        </h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="video-file">Video</Label>
-          <input
-            ref={fileInputRef}
-            id="video-file"
-            type="file"
-            accept="video/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          
-          {!videoFile ? (
+        {step === "upload" ? (
+          <div className="space-y-2">
+            <Label htmlFor="video-file">Select Video</Label>
+            <input
+              ref={fileInputRef}
+              id="video-file"
+              type="file"
+              accept="video/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            
             <div 
               onClick={triggerFileInput}
               className="border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
@@ -188,102 +215,170 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
                 MP4, WebM or MOV up to 50MB
               </p>
             </div>
-          ) : (
-            <div className="relative border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="h-16 w-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                    {thumbnail ? (
-                      <img src={thumbnail} alt="Video thumbnail" className="object-cover w-full h-full" />
-                    ) : (
-                      <video className="w-full h-full object-cover">
-                        <source src={URL.createObjectURL(videoFile)} />
-                      </video>
-                    )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Add a title that describes your video"
+                  disabled={isUploading}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Tell viewers about your video (optional)"
+                  disabled={isUploading}
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Hashtags</Label>
+                <HashtagInput 
+                  hashtags={hashtags}
+                  onAdd={handleAddHashtag}
+                  onRemove={handleRemoveHashtag}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label>Privacy</Label>
+                <div className="space-y-2">
+                  <div 
+                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer ${privacy === "public" ? "bg-gray-100 dark:bg-gray-800" : "hover:bg-gray-50 dark:hover:bg-gray-900"}`}
+                    onClick={() => setPrivacy("public")}
+                  >
+                    <div className="flex items-center">
+                      <Globe className="h-5 w-5 mr-2 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Public</p>
+                        <p className="text-sm text-gray-500">Anyone can view</p>
+                      </div>
+                    </div>
+                    <div className={`h-5 w-5 rounded-full ${privacy === "public" ? "bg-blue-500" : "border border-gray-300"}`}></div>
                   </div>
-                  <div>
-                    <p className="font-medium">{videoFile.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                    </p>
+                  
+                  <div 
+                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer ${privacy === "followers" ? "bg-gray-100 dark:bg-gray-800" : "hover:bg-gray-50 dark:hover:bg-gray-900"}`}
+                    onClick={() => setPrivacy("followers")}
+                  >
+                    <div className="flex items-center">
+                      <Users className="h-5 w-5 mr-2 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Followers only</p>
+                        <p className="text-sm text-gray-500">Only your followers can view</p>
+                      </div>
+                    </div>
+                    <div className={`h-5 w-5 rounded-full ${privacy === "followers" ? "bg-blue-500" : "border border-gray-300"}`}></div>
+                  </div>
+                  
+                  <div 
+                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer ${privacy === "private" ? "bg-gray-100 dark:bg-gray-800" : "hover:bg-gray-50 dark:hover:bg-gray-900"}`}
+                    onClick={() => setPrivacy("private")}
+                  >
+                    <div className="flex items-center">
+                      <Lock className="h-5 w-5 mr-2 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Private</p>
+                        <p className="text-sm text-gray-500">Only you can view</p>
+                      </div>
+                    </div>
+                    <div className={`h-5 w-5 rounded-full ${privacy === "private" ? "bg-blue-500" : "border border-gray-300"}`}></div>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={clearSelectedFile}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
+
+              <div className="flex items-center justify-between pt-4">
+                <span>Allow downloads</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={allowDownloads}
+                    onChange={() => setAllowDownloads(!allowDownloads)}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${allowDownloads ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"} peer`}>
+                    <div className={`w-5 h-5 rounded-full bg-white absolute top-[2px] ${allowDownloads ? "right-[2px]" : "left-[2px]"} transition-all`}></div>
+                  </div>
+                </label>
+              </div>
+
+              {isUploading && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Uploading...</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add a title that describes your video"
-            disabled={isUploading}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Tell viewers about your video (optional)"
-            disabled={isUploading}
-            rows={4}
-          />
-        </div>
-
-        {isUploading && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Uploading...</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full"
-                style={{ width: `${progress}%` }}
-              ></div>
+            
+            <div className="flex flex-col space-y-4">
+              <div className="aspect-[9/16] bg-black rounded-lg overflow-hidden">
+                {videoFile && (
+                  <video 
+                    src={URL.createObjectURL(videoFile)} 
+                    className="w-full h-full object-contain" 
+                    controls
+                  />
+                )}
+              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={clearSelectedFile}
+                disabled={isUploading}
+              >
+                Choose different video
+              </Button>
             </div>
           </div>
         )}
 
-        <div className="flex justify-end space-x-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isUploading}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={!videoFile || !title.trim() || isUploading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading
-              </>
-            ) : (
-              "Upload"
-            )}
-          </Button>
-        </div>
+        {step === "edit" && (
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isUploading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!videoFile || !title.trim() || isUploading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading
+                </>
+              ) : (
+                "Upload"
+              )}
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   );
