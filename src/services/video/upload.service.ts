@@ -39,6 +39,8 @@ class VideoUploadService {
         throw uploadError;
       }
 
+      console.log('Video file upload successful, getting public URL...');
+      
       // 3. Get the public URL
       const { data: publicUrlData } = supabase.storage
         .from('videos')

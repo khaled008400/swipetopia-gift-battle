@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -87,14 +88,15 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
 
   const simulateProgress = (onComplete: () => void) => {
     setUploadProgress(0);
+    let progressValue = 0;
     const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
-        }
-        return prev + 5;
-      });
+      progressValue += 5;
+      if (progressValue >= 95) {
+        clearInterval(interval);
+        setUploadProgress(95);
+      } else {
+        setUploadProgress(progressValue);
+      }
     }, 500);
     
     return {
@@ -102,7 +104,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       complete: () => {
         clearInterval(interval);
         setUploadProgress(100);
-        onComplete();
+        setTimeout(() => {
+          onComplete();
+        }, 800); // Give time for the 100% to be visible
       }
     };
   };
@@ -122,6 +126,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setUploadError(null);
     
     const progress = simulateProgress(() => {
+      console.log("Upload completed, progress at 100%");
       toast({
         title: "Upload Successful",
         description: "Your video has been uploaded successfully!",
@@ -174,6 +179,13 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         }
       }
       
+      console.log('Calling VideoService.uploadVideo with:', { 
+        videoFileSize: videoFile.size, 
+        title, 
+        description, 
+        isPrivate: privacy === "private" 
+      });
+      
       const uploadedVideo = await VideoService.uploadVideo(
         videoFile,
         title,
@@ -183,11 +195,13 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         hashtags
       );
       
-      console.log('Video uploaded successfully:', uploadedVideo);
+      console.log('Video uploaded successfully, response:', uploadedVideo);
       
+      // Ensure we complete the progress animation
       progress.complete();
       
       if (uploadedVideo && uploadedVideo.id) {
+        console.log('Upload successful with video ID:', uploadedVideo.id);
         onSuccess(uploadedVideo.id);
       } else {
         console.error('Missing video ID in upload response');
@@ -203,6 +217,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       clearInterval(progress.interval);
       
       setUploadError(error.message || "Failed to upload video. Please try again.");
+      setUploadProgress(0);
       
       toast({
         title: "Upload Failed",
