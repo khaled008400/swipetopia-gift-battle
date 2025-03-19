@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -117,7 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           ? profile.roles.map(role => role as UserRole)
           : profile.role 
             ? [profile.role as UserRole]
-            : ['user'];
+            : ['user' as UserRole]; // Fixed: explicitly cast 'user' to UserRole
 
         const userProfile: UserProfile = {
           id: profile.id,
