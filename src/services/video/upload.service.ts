@@ -39,15 +39,20 @@ class VideoUploadService {
         throw uploadError;
       }
 
-      console.log('Video file upload successful, getting public URL...');
+      console.log('Video file upload successful, getting public URL...', uploadData);
       
       // 3. Get the public URL
       const { data: publicUrlData } = supabase.storage
         .from('videos')
         .getPublicUrl(filePath);
 
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        console.error('Failed to get public URL for uploaded video');
+        throw new Error('Failed to get public URL for uploaded video');
+      }
+
       const videoUrl = publicUrlData.publicUrl;
-      console.log('Video uploaded successfully, public URL:', videoUrl);
+      console.log('Video URL generated successfully:', videoUrl);
 
       // 4. Insert the video metadata into the videos table
       console.log('Inserting video metadata into database...');
@@ -91,6 +96,27 @@ class VideoUploadService {
     } catch (error) {
       console.error('Error in uploadVideo:', error);
       throw error;
+    }
+  }
+
+  // New method to check if a video exists in the database by its ID
+  async checkVideoExists(videoId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('id, title')
+        .eq('id', videoId)
+        .single();
+      
+      if (error) {
+        console.error('Error checking if video exists:', error);
+        return false;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error('Error in checkVideoExists:', error);
+      return false;
     }
   }
 }

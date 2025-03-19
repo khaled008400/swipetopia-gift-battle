@@ -29,6 +29,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedVideoId, setUploadedVideoId] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -47,6 +48,39 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     }
   }, [isOpen]);
 
+  // Add effect to verify upload completion
+  useEffect(() => {
+    // Check if we've just completed an upload
+    const verifyUpload = async () => {
+      if (uploadedVideoId && !isUploading && uploadProgress === 100) {
+        console.log('Verifying upload completion for video ID:', uploadedVideoId);
+        
+        try {
+          // Wait a bit to ensure database consistency
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if the video exists in the database
+          const exists = await VideoService.checkVideoExists(uploadedVideoId);
+          
+          if (exists) {
+            console.log('Video upload verified successfully');
+            onSuccess(uploadedVideoId);
+            resetState();
+            onClose();
+          } else {
+            console.error('Video not found in database after upload');
+            setUploadError("Upload appeared to complete but the video couldn't be verified. Please try again.");
+            setUploadProgress(0);
+          }
+        } catch (error) {
+          console.error('Error verifying video upload:', error);
+        }
+      }
+    };
+    
+    verifyUpload();
+  }, [uploadedVideoId, isUploading, uploadProgress, onSuccess, onClose]);
+
   const resetState = () => {
     setStep(1);
     setVideoFile(null);
@@ -59,9 +93,16 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setIsUploading(false);
     setUploadProgress(0);
     setUploadError(null);
+    setUploadedVideoId(null);
   };
 
   const handleClose = () => {
+    // If we're in the middle of an upload, confirm before closing
+    if (isUploading) {
+      const shouldClose = window.confirm('Upload in progress. Are you sure you want to cancel?');
+      if (!shouldClose) return;
+    }
+    
     resetState();
     onClose();
   };
@@ -91,9 +132,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     let progressValue = 0;
     const interval = setInterval(() => {
       progressValue += 5;
-      if (progressValue >= 95) {
+      if (progressValue >= 90) {
         clearInterval(interval);
-        setUploadProgress(95);
+        setUploadProgress(90);
       } else {
         setUploadProgress(progressValue);
       }
@@ -103,10 +144,20 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       interval,
       complete: () => {
         clearInterval(interval);
-        setUploadProgress(100);
+        // Set to 95% first to show we're almost done
+        setUploadProgress(95);
+        // Then after a delay set to 100% to give visual feedback
         setTimeout(() => {
-          onComplete();
-        }, 800); // Give time for the 100% to be visible
+          setUploadProgress(100);
+          // Call onComplete callback after a brief delay
+          setTimeout(() => {
+            onComplete();
+          }, 1000);
+        }, 500);
+      },
+      fail: () => {
+        clearInterval(interval);
+        setUploadProgress(0);
       }
     };
   };
@@ -127,13 +178,6 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     
     const progress = simulateProgress(() => {
       console.log("Upload completed, progress at 100%");
-      toast({
-        title: "Upload Successful",
-        description: "Your video has been uploaded successfully!",
-      });
-      
-      resetState();
-      onClose();
     });
     
     try {
@@ -186,6 +230,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         isPrivate: privacy === "private" 
       });
       
+      // Set progress to 95% to indicate we're starting the actual server upload
+      setUploadProgress(95);
+      
       const uploadedVideo = await VideoService.uploadVideo(
         videoFile,
         title,
@@ -197,35 +244,34 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       
       console.log('Video uploaded successfully, response:', uploadedVideo);
       
-      // Ensure we complete the progress animation
-      progress.complete();
-      
+      // Store the uploaded video ID so we can verify it in the effect
       if (uploadedVideo && uploadedVideo.id) {
+        setUploadedVideoId(uploadedVideo.id);
         console.log('Upload successful with video ID:', uploadedVideo.id);
-        onSuccess(uploadedVideo.id);
-      } else {
-        console.error('Missing video ID in upload response');
+        
+        // Ensure we complete the progress animation
+        progress.complete();
+        
         toast({
-          title: "Warning",
-          description: "Video uploaded but some metadata may be missing.",
-          variant: "destructive",
+          title: "Upload Successful",
+          description: "Your video has been uploaded successfully!",
         });
+      } else {
+        throw new Error('Missing video ID in upload response');
       }
       
     } catch (error: any) {
       console.error('Error uploading video:', error);
-      clearInterval(progress.interval);
+      progress.fail();
       
       setUploadError(error.message || "Failed to upload video. Please try again.");
-      setUploadProgress(0);
+      setIsUploading(false);
       
       toast({
         title: "Upload Failed",
         description: error.message || "Failed to upload video. Please try again.",
         variant: "destructive",
       });
-      
-      setIsUploading(false);
     }
   };
 
@@ -281,6 +327,11 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
               <span>{uploadProgress}%</span>
             </div>
             <Progress value={uploadProgress} className="h-2" />
+            {uploadProgress === 100 && (
+              <p className="text-sm text-center mt-2 text-green-600">
+                Finalizing upload, please wait...
+              </p>
+            )}
           </div>
         )}
         
