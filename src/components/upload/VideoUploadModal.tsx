@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,17 +52,14 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   const handleFileSelected = (file: File) => {
     setVideoFile(file);
     
-    // Generate preview URL
     const url = URL.createObjectURL(file);
     setVideoPreviewUrl(url);
     
-    // Auto-generate title from filename
     const filename = file.name.split('.');
-    filename.pop(); // Remove extension
+    filename.pop();
     const suggestedTitle = filename.join('.').replace(/[_-]/g, ' ');
     setTitle(suggestedTitle);
     
-    // Move to next step
     setStep(2);
   };
 
@@ -74,7 +70,6 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   };
 
   const simulateProgress = () => {
-    // This simulates progress during upload since we don't have real progress events
     setUploadProgress(0);
     const interval = setInterval(() => {
       setUploadProgress(prev => {
@@ -106,7 +101,14 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     const progressInterval = simulateProgress();
     
     try {
-      console.log('Starting video upload process...');
+      console.log('Starting video upload process...', videoFile.name, videoFile.size);
+      
+      try {
+        const res = await fetch(`${window.location.origin}/api/create-storage-bucket`);
+        console.log('Storage bucket check response:', await res.json());
+      } catch (bucketError) {
+        console.warn('Failed to check storage buckets, continuing anyway:', bucketError);
+      }
       
       const uploadedVideo = await VideoService.uploadVideo(
         videoFile,
@@ -119,7 +121,6 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       
       console.log('Video uploaded successfully:', uploadedVideo);
       
-      // Set to 100% complete
       setUploadProgress(100);
       
       setTimeout(() => {
@@ -130,7 +131,17 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         
         resetState();
         onClose();
-        onSuccess(uploadedVideo.id);
+        
+        if (uploadedVideo && uploadedVideo.id) {
+          onSuccess(uploadedVideo.id);
+        } else {
+          console.error('Missing video ID in upload response');
+          toast({
+            title: "Warning",
+            description: "Video uploaded but some metadata may be missing.",
+            variant: "destructive",
+          });
+        }
       }, 500);
       
     } catch (error: any) {

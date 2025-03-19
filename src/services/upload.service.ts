@@ -36,12 +36,12 @@ class UploadService {
       }
       
       // Upload file to Supabase Storage
-      console.log('Starting file upload...');
+      console.log('Starting file upload...', file.size, 'bytes');
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true // Changed to true to prevent upload errors on filename conflicts
         });
       
       if (error) {
