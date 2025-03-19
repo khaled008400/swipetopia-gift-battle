@@ -42,7 +42,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
           <AvatarImage 
             src={profile.avatar_url || ''} 
             alt={profile.username || 'User'} 
-            onError={() => console.log('Avatar image failed to load for', profile.username || profile.email)}
+            onError={(e) => {
+              console.log('Avatar image failed to load for', profile.username || profile.email);
+              // Provide fallback if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.src = `https://ui-avatars.com/api/?name=${profile.username || 'User'}&background=random`;
+            }}
           />
           <AvatarFallback className="text-2xl bg-app-gray-light text-app-yellow">{initials}</AvatarFallback>
         </Avatar>

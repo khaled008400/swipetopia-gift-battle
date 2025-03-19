@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { UserProfile, UserRole, NotificationPreferences } from "@/types/auth.types";
+import { UserProfile, UserRole } from "@/types/auth.types";
 import { useToast } from "@/components/ui/use-toast";
 
 export const fetchUserProfile = async (authUser: User | string): Promise<UserProfile | null> => {
@@ -14,7 +14,7 @@ export const fetchUserProfile = async (authUser: User | string): Promise<UserPro
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error("Error fetching user profile:", error);
@@ -52,7 +52,7 @@ export const fetchUserProfile = async (authUser: User | string): Promise<UserPro
         location: data.location || undefined,
         followers: data.followers || 0,
         following: data.following || 0,
-        interests: data.interests || undefined,
+        interests: data.interests || [],
         shop_name: data.shop_name || undefined,
         stream_key: data.stream_key || undefined,
         payment_methods: [], // Default empty array
@@ -84,16 +84,80 @@ export const useUserProfile = (authUser: User | string | null) => {
       console.log('useUserProfile: No authUser provided, clearing profile');
       setProfile(null);
       setIsLoading(false);
+      setError(null);
       return;
     }
 
     console.log('loadProfile started for:', typeof authUser === 'string' ? authUser : authUser.id);
     setIsLoading(true);
+    setError(null);
+    
     try {
       const userProfile = await fetchUserProfile(authUser);
-      console.log('loadProfile result:', userProfile ? 'Profile loaded' : 'No profile found');
-      setProfile(userProfile);
-      setError(null);
+      
+      if (userProfile) {
+        console.log('loadProfile result: Profile loaded successfully');
+        setProfile(userProfile);
+      } else {
+        console.log('loadProfile result: No profile found, attempting to create one');
+        
+        // If no profile found, try to create one
+        try {
+          const userId = typeof authUser === 'string' ? authUser : authUser.id;
+          const { data: userData } = await supabase.auth.getUser();
+          
+          if (userData.user && userData.user.id === userId) {
+            console.log('Creating profile for existing user:', userId);
+            
+            // Use metadata or generate default values
+            const username = userData.user.user_metadata?.username || 
+                             userData.user.email?.split('@')[0] || 
+                             `user_${Math.floor(Math.random() * 10000)}`;
+                             
+            const roles = userData.user.user_metadata?.roles || ["user"];
+            
+            const { data: newProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                username: username,
+                email: userData.user.email,
+                roles: roles,
+                avatar_url: `https://i.pravatar.cc/150?u=${username}`,
+                coins: 1000,
+                followers: 0,
+                following: 0
+              })
+              .select('*')
+              .single();
+              
+            if (insertError) {
+              console.error("Error creating profile:", insertError);
+              setError("Failed to create user profile");
+            } else if (newProfile) {
+              console.log('Profile created successfully:', newProfile);
+              setProfile({
+                ...newProfile,
+                roles: newProfile.roles || ["user"],
+                interests: newProfile.interests || [],
+                payment_methods: [],
+                notification_preferences: {
+                  battles: true,
+                  orders: true,
+                  messages: true,
+                  followers: true
+                }
+              });
+            }
+          } else {
+            console.error("Cannot create profile: User data mismatch or not authenticated");
+            setError("Profile not found and could not be created");
+          }
+        } catch (createError) {
+          console.error("Error creating profile:", createError);
+          setError("Failed to create user profile");
+        }
+      }
     } catch (err) {
       console.error("Error in useUserProfile:", err);
       setError("Failed to load user profile");

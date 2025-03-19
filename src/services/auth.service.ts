@@ -1,23 +1,38 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { fetchUserProfile } from "@/hooks/useUserProfile";
 import { UserRole } from "@/types/auth.types";
 
 export const loginUser = async (email: string, password: string) => {
+  console.log(`Attempting to login user with email: ${email}`);
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
   
-  if (error) throw error;
+  if (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+  
+  console.log("Login successful, checking/creating profile...");
+  
+  // Ensure profile exists after login
+  try {
+    if (data.user) {
+      await ensureProfileExists(data.user);
+    }
+  } catch (profileError) {
+    console.error("Profile check failed after login:", profileError);
+    // Continue with login despite profile issues
+  }
   
   return data;
 };
 
 export const signupUser = async (email: string, username: string, password: string, roles: UserRole[] = ["user"]) => {
+  console.log(`Starting signup process for ${email} with username ${username}`);
+  
   try {
-    console.log(`Starting signup process for ${email} with username ${username}`);
-    
     // First, check if username is already taken
     const { data: existingUsers, error: checkError } = await supabase
       .from('profiles')
@@ -31,6 +46,7 @@ export const signupUser = async (email: string, username: string, password: stri
     }
     
     if (existingUsers && existingUsers.length > 0) {
+      console.error('Username already taken:', username);
       throw new Error("Username is already taken");
     }
     
@@ -41,7 +57,7 @@ export const signupUser = async (email: string, username: string, password: stri
       options: {
         data: {
           username,
-          roles // Store roles in user metadata
+          roles
         }
       }
     });
@@ -51,47 +67,13 @@ export const signupUser = async (email: string, username: string, password: stri
       throw error;
     }
     
-    console.log('User signup successful, user data:', data);
+    console.log('User signup successful, user data:', data.user?.id);
     
-    // Create the user profile if signup was successful and user is immediately available
+    // Immediately create profile after successful signup
     if (data.user) {
-      console.log('Creating profile for new user:', data.user.id);
-      
-      try {
-        const { error: profileError, data: profileData } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            username: username,
-            email: data.user.email,
-            roles: roles, // Store roles array in profile
-            avatar_url: `https://i.pravatar.cc/150?u=${username}` // Placeholder avatar
-          })
-          .select('*')
-          .single();
-        
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          
-          // Additional debugging information
-          console.log("Attempted to create profile with:", {
-            id: data.user.id,
-            username,
-            email: data.user.email,
-            roles
-          });
-          
-          throw profileError;
-        }
-        
-        console.log('Profile created successfully:', profileData);
-      } catch (profileCreateError) {
-        console.error('Profile creation failed:', profileCreateError);
-        // Continue with signup process even if profile creation fails
-        // The getCurrentUser function will attempt to create the profile later
-      }
+      await createProfile(data.user.id, username, email, roles);
     } else {
-      console.warn('No user data returned from signup');
+      console.warn('No user data returned from signup, profile creation deferred');
     }
     
     return data;
@@ -101,17 +83,92 @@ export const signupUser = async (email: string, username: string, password: stri
   }
 };
 
+// Helper function to create a profile
+const createProfile = async (userId: string, username: string, email: string, roles: UserRole[]) => {
+  console.log(`Creating profile for user ${userId} with username ${username}`);
+  
+  try {
+    // First check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (existingProfile) {
+      console.log('Profile already exists for user:', userId);
+      return existingProfile;
+    }
+    
+    // Create new profile
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        username: username,
+        email: email,
+        roles: roles,
+        avatar_url: `https://i.pravatar.cc/150?u=${username}`, // Placeholder avatar
+        coins: 1000, // Default starting coins
+        followers: 0,
+        following: 0
+      })
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error creating profile:', error);
+      throw error;
+    }
+    
+    console.log('Profile created successfully:', profile.id);
+    return profile;
+  } catch (error) {
+    console.error('Profile creation failed:', error);
+    throw error;
+  }
+};
+
+// Ensure a profile exists for a user
+const ensureProfileExists = async (user: any) => {
+  console.log(`Ensuring profile exists for user: ${user.id}`);
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+    
+  if (profile) {
+    console.log('Profile found for user:', user.id);
+    return profile;
+  }
+  
+  // If no profile, create one with data from user metadata
+  console.log('No profile found, creating one for user:', user.id);
+  const username = user.user_metadata?.username || user.email?.split('@')[0] || `user_${Math.floor(Math.random() * 10000)}`;
+  const roles = user.user_metadata?.roles || ["user"];
+  
+  return await createProfile(user.id, username, user.email, roles);
+};
+
 export const logoutUser = async () => {
+  console.log('Logging out user');
   return await supabase.auth.signOut();
 };
 
 export const getSession = async () => {
+  console.log('Getting current session');
   const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
+  if (error) {
+    console.error('Error getting session:', error);
+    throw error;
+  }
   return data;
 };
 
 export const getCurrentUser = async () => {
+  console.log('Fetching current user');
   try {
     // First check the session
     const { session } = await getSession();
@@ -135,70 +192,50 @@ export const getCurrentUser = async () => {
     
     console.log('Current user found:', user.id);
     
-    // Try to fetch user profile
-    let profile = await fetchUserProfile(user);
-    console.log('Profile fetch result:', profile ? 'Profile found' : 'No profile found');
-    
-    // If profile doesn't exist, create it
-    if (!profile) {
-      console.log("Profile not found for existing user, creating new profile");
+    try {
+      // First try to get existing profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
       
-      // Get username from metadata or use email as fallback
-      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'user';
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+      }
+      
+      // If profile exists, return user with profile
+      if (profile) {
+        console.log('Profile found for user:', user.id);
+        return { ...user, profile };
+      }
+      
+      // If profile doesn't exist, create it
+      console.log('Profile not found, creating new profile for user:', user.id);
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || `user_${Math.floor(Math.random() * 10000)}`;
       const roles = user.user_metadata?.roles || ["user"];
       
-      try {
-        const { data: newProfile, error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            username: username,
-            email: user.email,
-            roles: roles,
-            avatar_url: `https://i.pravatar.cc/150?u=${username}`
-          })
-          .select('*')
-          .single();
-          
-        if (profileError) {
-          console.error("Error creating profile for existing user:", profileError);
-          
-          // Try to check if profile was actually created despite the error
-          const { data: checkProfile, error: checkError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-          if (!checkError && checkProfile) {
-            console.log("Profile exists despite error, using existing profile:", checkProfile);
-            profile = checkProfile;
-          } else {
-            console.error("Failed to create or find profile:", checkError || profileError);
-          }
-        } else {
-          console.log("Created profile for existing user:", newProfile);
-          profile = newProfile;
-        }
-      } catch (err) {
-        console.error("Failed to create profile for existing user:", err);
-      }
-    }
-    
-    // Return the user with profile, but ensure we don't return null if profile creation failed
-    return { 
-      ...user, 
-      profile: profile || {
+      const newProfile = await createProfile(user.id, username, user.email || '', roles);
+      
+      return { ...user, profile: newProfile };
+    } catch (profileError) {
+      console.error('Error handling profile:', profileError);
+      
+      // Create a minimal profile object to prevent UI errors
+      const fallbackProfile = {
         id: user.id,
-        username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+        username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${Math.floor(Math.random() * 10000)}`,
         email: user.email || '',
         roles: user.user_metadata?.roles || ["user"],
         avatar_url: `https://i.pravatar.cc/150?u=${user.id}`,
-        coins: 0,
+        coins: 1000,
         followers: 0,
         following: 0
-      }
-    };
+      };
+      
+      console.log('Using fallback profile:', fallbackProfile);
+      return { ...user, profile: fallbackProfile };
+    }
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
     return null;

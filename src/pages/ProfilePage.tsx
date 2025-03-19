@@ -6,30 +6,49 @@ import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileContent from '@/components/profile/ProfileContent';
 import ProfileEdit from '@/components/profile/ProfileEdit';
 import { Button } from '@/components/ui/button';
-import { Edit, LogOut } from 'lucide-react';
+import { Edit, LogOut, RefreshCcw } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { userId } = useParams<{ userId: string }>();
+  const { toast } = useToast();
   
   // If userId is provided in URL, show that profile, else show current user's profile
   const profileId = userId || user?.id || '';
-  const { profile, isLoading, refreshProfile } = useUserProfile(profileId);
+  const { profile, isLoading, refreshProfile, error } = useUserProfile(profileId);
   
   const isCurrentUserProfile = !!user && user.id === profileId;
 
   // Debug logging
-  console.log('ProfilePage render:', { 
-    profileId, 
-    isLoading, 
-    hasProfile: !!profile, 
-    isEditing,
-    isCurrentUserProfile
-  });
+  useEffect(() => {
+    console.log('ProfilePage mounted:', { 
+      profileId, 
+      hasUser: !!user,
+      userId: user?.id,
+      hasProfile: !!profile,
+      isLoading 
+    });
+    
+    return () => {
+      console.log('ProfilePage unmounted');
+    };
+  }, [profileId, user, profile, isLoading]);
+
+  // If we have an error, show toast
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error loading profile",
+        description: error
+      });
+    }
+  }, [error, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -43,6 +62,11 @@ const ProfilePage = () => {
   const handleEditComplete = () => {
     console.log('Edit completed, refreshing profile');
     setIsEditing(false);
+    refreshProfile();
+  };
+
+  const handleRefresh = () => {
+    console.log('Manual refresh triggered');
     refreshProfile();
   };
 
@@ -70,12 +94,26 @@ const ProfilePage = () => {
     return (
       <div className="container max-w-4xl mx-auto py-8 px-4 text-center">
         <h2 className="text-xl font-medium mb-2">Profile Not Found</h2>
-        <p className="text-gray-500">The user profile you're looking for doesn't exist or is not available.</p>
-        {user && (
-          <Button className="mt-4" onClick={() => navigate(`/profile/${user.id}`)}>
-            Go to Your Profile
+        <p className="text-gray-500 mb-4">The user profile you're looking for doesn't exist or is not available.</p>
+        
+        <div className="flex justify-center gap-2">
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCcw className="w-4 h-4 mr-2" />
+            Refresh
           </Button>
-        )}
+          
+          {user && (
+            <Button onClick={() => navigate(`/profile`)}>
+              Go to Your Profile
+            </Button>
+          )}
+          
+          {!user && (
+            <Button onClick={() => navigate('/login')}>
+              Sign In
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -91,10 +129,16 @@ const ProfilePage = () => {
       
       {isCurrentUserProfile && !isEditing && (
         <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCcw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          
           <Button variant="outline" onClick={() => setIsEditing(true)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit Profile
           </Button>
+          
           <Button variant="destructive" onClick={handleSignOut}>
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
