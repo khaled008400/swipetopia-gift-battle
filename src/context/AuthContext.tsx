@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -143,8 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return success;
   };
 
-  // Wrap the payment methods to handle Promise<void> vs Promise<boolean> mismatch
-  const addPaymentMethod = async (method: any): Promise<void> => {
+  const addPaymentMethodWrapper = async (method: any): Promise<void> => {
     if (!user) return;
     await addUserPaymentMethod(user.id, user.payment_methods, method);
     // Update the user state with the new payment method
@@ -154,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     } : null);
   };
 
-  const removePaymentMethod = async (id: string): Promise<void> => {
+  const removePaymentMethodWrapper = async (id: string): Promise<void> => {
     if (!user) return;
     await removeUserPaymentMethod(user.id, user.payment_methods, id);
     // Update the user state by filtering out the removed payment method
@@ -182,8 +180,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     register,
     logout,
     updateProfile,
-    addPaymentMethod,
-    removePaymentMethod,
+    addPaymentMethod: addPaymentMethodWrapper,
+    removePaymentMethod: removePaymentMethodWrapper,
     requiresAuth: () => {},
     isAdmin: () => isAdmin(user?.roles),
     hasRole: userHasRole

@@ -15,7 +15,14 @@ export function useGifts() {
       try {
         setIsLoading(true);
         const giftsData = await GiftService.getVirtualGifts();
-        setGifts(giftsData);
+        
+        // Add is_popular flag based on other criteria if it doesn't exist
+        const processedGifts = giftsData.map(gift => ({
+          ...gift,
+          is_popular: gift.is_popular || gift.is_premium || gift.price > 50 // Mark premium or expensive gifts as popular
+        }));
+        
+        setGifts(processedGifts);
       } catch (err) {
         console.error('Error fetching gifts:', err);
         setError(err instanceof Error ? err : new Error('Failed to fetch gifts'));

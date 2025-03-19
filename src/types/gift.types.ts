@@ -10,6 +10,7 @@ export interface VirtualGift {
   category: string; 
   description: string; 
   is_premium: boolean;
+  is_popular?: boolean;
   created_at: string;
   
   // Properties can be accessed using both camelCase and snake_case

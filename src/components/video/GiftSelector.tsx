@@ -60,7 +60,7 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ videoId, creatorId }) => {
   
   // Filter gifts by category
   const filteredGifts = gifts?.filter(gift => {
-    if (selectedCategory === 'popular') return gift.is_popular;
+    if (selectedCategory === 'popular') return gift.is_premium || gift.is_popular; // Using is_premium as fallback
     return gift.category === selectedCategory;
   });
   
