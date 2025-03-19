@@ -85,19 +85,26 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     }
   };
 
-  const simulateProgress = () => {
+  const simulateProgress = (onComplete: () => void) => {
     setUploadProgress(0);
     const interval = setInterval(() => {
       setUploadProgress(prev => {
         if (prev >= 95) {
           clearInterval(interval);
-          return prev;
+          return 95;
         }
         return prev + 5;
       });
     }, 500);
     
-    return interval;
+    return {
+      interval,
+      complete: () => {
+        clearInterval(interval);
+        setUploadProgress(100);
+        onComplete();
+      }
+    };
   };
 
   const handleUpload = async () => {
@@ -114,7 +121,15 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setIsUploading(true);
     setUploadError(null);
     
-    const progressInterval = simulateProgress();
+    const progress = simulateProgress(() => {
+      toast({
+        title: "Upload Successful",
+        description: "Your video has been uploaded successfully!",
+      });
+      
+      resetState();
+      onClose();
+    });
     
     try {
       console.log('Starting video upload process...', videoFile.name, videoFile.size);
@@ -170,32 +185,22 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       
       console.log('Video uploaded successfully:', uploadedVideo);
       
-      setUploadProgress(100);
+      progress.complete();
       
-      setTimeout(() => {
+      if (uploadedVideo && uploadedVideo.id) {
+        onSuccess(uploadedVideo.id);
+      } else {
+        console.error('Missing video ID in upload response');
         toast({
-          title: "Upload Successful",
-          description: "Your video has been uploaded successfully!",
+          title: "Warning",
+          description: "Video uploaded but some metadata may be missing.",
+          variant: "destructive",
         });
-        
-        resetState();
-        onClose();
-        
-        if (uploadedVideo && uploadedVideo.id) {
-          onSuccess(uploadedVideo.id);
-        } else {
-          console.error('Missing video ID in upload response');
-          toast({
-            title: "Warning",
-            description: "Video uploaded but some metadata may be missing.",
-            variant: "destructive",
-          });
-        }
-      }, 500);
+      }
       
     } catch (error: any) {
       console.error('Error uploading video:', error);
-      clearInterval(progressInterval);
+      clearInterval(progress.interval);
       
       setUploadError(error.message || "Failed to upload video. Please try again.");
       

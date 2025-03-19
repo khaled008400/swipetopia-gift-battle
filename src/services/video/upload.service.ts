@@ -27,7 +27,7 @@ class VideoUploadService {
 
       // 2. Upload the video file to storage
       console.log(`Uploading video file to storage: ${filePath}`);
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('videos')
         .upload(filePath, videoFile, {
           cacheControl: '3600',
