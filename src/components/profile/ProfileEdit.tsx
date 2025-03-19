@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -21,14 +21,26 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
   const { profile, updateProfile } = useUserProfile(user?.id || null);
   const [isLoading, setIsLoading] = useState(false);
   const [formValues, setFormValues] = useState({
-    username: profile?.username || '',
-    bio: profile?.bio || '',
-    location: profile?.location || '',
-    avatar_url: profile?.avatar_url || '',
+    username: '',
+    bio: '',
+    location: '',
+    avatar_url: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Update form values when profile is loaded
+  useEffect(() => {
+    if (profile) {
+      setFormValues({
+        username: profile.username || '',
+        bio: profile.bio || '',
+        location: profile.location || '',
+        avatar_url: profile.avatar_url || '',
+      });
+    }
+  }, [profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -97,13 +109,18 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
   };
 
   if (!profile) {
-    return <div className="text-center py-8 text-gray-400">Loading profile information...</div>;
+    return (
+      <div className="text-center py-8 text-gray-400">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-app-yellow" />
+        Loading profile information...
+      </div>
+    );
   }
 
   return (
     <Card className="bg-app-gray-dark border-0 shadow-md">
       <CardHeader>
-        <CardTitle>Edit Profile</CardTitle>
+        <CardTitle className="text-white">Edit Profile</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -136,44 +153,44 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
 
           {/* Username */}
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username" className="text-white">Username</Label>
             <Input
               id="username"
               name="username"
               value={formValues.username}
               onChange={handleChange}
-              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow"
+              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow text-white"
             />
           </div>
 
           {/* Bio */}
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio" className="text-white">Bio</Label>
             <Textarea
               id="bio"
               name="bio"
               value={formValues.bio}
               onChange={handleChange}
-              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow min-h-[100px]"
+              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow min-h-[100px] text-white"
             />
           </div>
 
           {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location" className="text-white">Location</Label>
             <Input
               id="location"
               name="location"
               value={formValues.location}
               onChange={handleChange}
-              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow"
+              className="bg-app-gray-light border-0 focus-visible:ring-app-yellow text-white"
               placeholder="City, Country"
             />
           </div>
 
           {/* Email (read-only) */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-white">Email</Label>
             <Input
               id="email"
               value={profile.email || ''}

@@ -40,10 +40,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </footer>
 
       {/* Create Content Menu */}
-      <CreateContentMenu 
-        isOpen={isCreateMenuOpen} 
-        onClose={() => setIsCreateMenuOpen(false)} 
-      />
+      {isCreateMenuOpen && (
+        <CreateContentMenu 
+          isOpen={isCreateMenuOpen} 
+          onClose={() => setIsCreateMenuOpen(false)} 
+        />
+      )}
     </div>
   );
 };

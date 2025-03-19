@@ -9,7 +9,13 @@ interface ProfileHeaderProps {
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
   if (!profile) {
-    return <div className="h-40 bg-gray-100 rounded-lg animate-pulse"></div>;
+    return (
+      <div className="h-40 bg-app-gray-dark rounded-lg animate-pulse mb-4">
+        <div className="p-6 flex items-center justify-center h-full">
+          <div className="w-8 h-8 border-2 border-app-yellow border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
   }
 
   const initials = profile.username 
@@ -19,7 +25,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
       : '?';
 
   return (
-    <div className="bg-app-gray-dark rounded-lg p-6 shadow-md">
+    <div className="bg-app-gray-dark rounded-lg p-6 shadow-md mb-4">
       <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
         <Avatar className="h-24 w-24 border-2 border-app-yellow">
           <AvatarImage src={profile.avatar_url || ''} alt={profile.username || 'User'} />
@@ -27,7 +33,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
         </Avatar>
         
         <div className="text-center md:text-left flex-1">
-          <h1 className="text-2xl font-bold">{profile.username || 'User'}</h1>
+          <h1 className="text-2xl font-bold text-white">{profile.username || 'User'}</h1>
           {profile.email && <p className="text-gray-400">{profile.email}</p>}
           
           <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
@@ -44,11 +50,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
         
         <div className="flex space-x-6">
           <div className="text-center">
-            <p className="text-2xl font-bold">{profile.followers || 0}</p>
+            <p className="text-2xl font-bold text-white">{profile.followers || 0}</p>
             <p className="text-sm text-gray-400">Followers</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold">{profile.following || 0}</p>
+            <p className="text-2xl font-bold text-white">{profile.following || 0}</p>
             <p className="text-sm text-gray-400">Following</p>
           </div>
         </div>

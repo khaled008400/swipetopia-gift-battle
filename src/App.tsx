@@ -22,7 +22,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Toaster } from '@/components/ui/toaster';
 
-// Create a React Query client
+// Create a React Query client with proper configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -63,48 +63,50 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="App flex flex-col min-h-screen bg-app-black text-white">
-        <AuthProvider supabaseClient={supabase} session={session}>
-          <CartProvider>
-            <Router>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/" element={<Layout><HomePage /></Layout>} />
-                <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-                <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
-                <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-                <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
-                <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
-                <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
-                
-                {/* Admin routes with auth check */}
-                <Route path="/admin" element={
-                  <AuthCheck requireAdmin={true}>
-                    <Layout><AdminPage /></Layout>
-                  </AuthCheck>
-                } />
-                <Route path="/admin-dashboard" element={
-                  <AuthCheck requireAdmin={true}>
-                    <Layout><AdminDashboardPage /></Layout>
-                  </AuthCheck>
-                } />
-                
-                {/* Seller routes with auth check */}
-                <Route path="/seller-dashboard" element={
-                  <AuthCheck requireSeller={true}>
-                    <Layout><SellerDashboardPage /></Layout>
-                  </AuthCheck>
-                } />
-              </Routes>
-            </Router>
-            <Toaster />
-          </CartProvider>
-        </AuthProvider>
-      </div>
-    </QueryClientProvider>
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <div className="App flex flex-col min-h-screen bg-app-black text-white">
+          <AuthProvider supabaseClient={supabase} session={session}>
+            <CartProvider>
+              <Router>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/" element={<Layout><HomePage /></Layout>} />
+                  <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+                  <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
+                  <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+                  <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
+                  <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
+                  <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
+                  
+                  {/* Admin routes with auth check */}
+                  <Route path="/admin" element={
+                    <AuthCheck requireAdmin={true}>
+                      <Layout><AdminPage /></Layout>
+                    </AuthCheck>
+                  } />
+                  <Route path="/admin-dashboard" element={
+                    <AuthCheck requireAdmin={true}>
+                      <Layout><AdminDashboardPage /></Layout>
+                    </AuthCheck>
+                  } />
+                  
+                  {/* Seller routes with auth check */}
+                  <Route path="/seller-dashboard" element={
+                    <AuthCheck requireSeller={true}>
+                      <Layout><SellerDashboardPage /></Layout>
+                    </AuthCheck>
+                  } />
+                </Routes>
+              </Router>
+              <Toaster />
+            </CartProvider>
+          </AuthProvider>
+        </div>
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 }
 
