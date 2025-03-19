@@ -1,0 +1,199 @@
+
+import { supabase } from './base.service';
+
+class VideoFetchService {
+  // Get video by ID
+  async getVideoById(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getVideoById:', error);
+      throw error;
+    }
+  }
+
+  // Get videos for feed
+  async getForYouVideos(limit: number = 20) {
+    try {
+      console.log('Fetching For You videos...');
+      // Modified to not use the foreign key relationship that's causing issues
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error in getForYouVideos:', error);
+        throw error;
+      }
+
+      // Fetch user profiles separately and combine the data
+      const userIds = [...new Set(data.map(video => video.user_id))];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', userIds);
+          
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        } else {
+          // Create a map for quick lookups
+          const profileMap = new Map(profiles.map(profile => [profile.id, profile]));
+          
+          // Add profile information to videos
+          return data.map(video => ({
+            ...video,
+            profiles: profileMap.get(video.user_id) || null
+          }));
+        }
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getForYouVideos:', error);
+      // Return empty array instead of throwing to avoid app crashes
+      return [];
+    }
+  }
+
+  // Get videos for a specific user
+  async getUserVideos(userId: string, limit: number = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getUserVideos:', error);
+      throw error;
+    }
+  }
+
+  // Get trending videos
+  async getTrendingVideos(limit: number = 10) {
+    try {
+      // In a real app, this would use more complex criteria
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('view_count', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getTrendingVideos:', error);
+      throw error;
+    }
+  }
+
+  // Get all videos - for VideosPage
+  async getVideos(limit: number = 50) {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*, profiles(*)')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getVideos:', error);
+      return [];
+    }
+  }
+
+  // Get liked videos
+  async getLikedVideos(userId: string, limit: number = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('video_likes')
+        .select('video_id')
+        .eq('user_id', userId)
+        .limit(limit);
+
+      if (error) throw error;
+      
+      if (data.length === 0) return [];
+      
+      const videoIds = data.map(like => like.video_id);
+      
+      const { data: videos, error: videosError } = await supabase
+        .from('videos')
+        .select('*')
+        .in('id', videoIds);
+        
+      if (videosError) throw videosError;
+      
+      return videos;
+    } catch (error) {
+      console.error('Error in getLikedVideos:', error);
+      return [];
+    }
+  }
+
+  // Get saved videos
+  async getSavedVideos(userId: string, limit: number = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('saved_videos')
+        .select('video_id')
+        .eq('user_id', userId)
+        .limit(limit);
+
+      if (error) throw error;
+      
+      if (data.length === 0) return [];
+      
+      const videoIds = data.map(saved => saved.video_id);
+      
+      const { data: videos, error: videosError } = await supabase
+        .from('videos')
+        .select('*')
+        .in('id', videoIds);
+        
+      if (videosError) throw videosError;
+      
+      return videos;
+    } catch (error) {
+      console.error('Error in getSavedVideos:', error);
+      return [];
+    }
+  }
+
+  // Search videos by title or hashtags
+  async searchVideos(query: string, limit: number = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in searchVideos:', error);
+      throw error;
+    }
+  }
+}
+
+export default new VideoFetchService();
