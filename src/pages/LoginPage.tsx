@@ -9,7 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -20,6 +20,7 @@ const LoginPage = () => {
 
   // If user is already authenticated, redirect them
   useEffect(() => {
+    console.log("LoginPage effect - Auth status:", { isAuthenticated, user, from });
     if (isAuthenticated && user) {
       console.log("User already authenticated, redirecting to:", from);
       navigate(from);
@@ -32,7 +33,7 @@ const LoginPage = () => {
 
     try {
       console.log("Attempting login with:", email);
-      const { error } = await signIn(email, password);
+      const { error } = await login(email, password);
       
       if (error) {
         console.error("Login error:", error);
@@ -47,7 +48,7 @@ const LoginPage = () => {
         // once isAuthenticated becomes true
       }
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login error in form submission:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",

@@ -19,28 +19,28 @@ const AuthCheck = ({
   fallback, 
   requireSeller = false 
 }: AuthCheckProps) => {
-  const { isAuthenticated, isLoading, hasRole, user } = useAuth();
+  const { isAuthenticated, isLoading, hasRole, user, session } = useAuth();
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
+    console.log("AuthCheck effect - Auth status:", { 
+      isAuthenticated, 
+      isLoading, 
+      user: user?.id,
+      session: session?.user.id,
+      path: window.location.pathname
+    });
+    
     // Only perform the check when loading is complete
     if (!isLoading) {
       const userIsSeller = hasRole ? hasRole('seller') : false;
-      
-      console.log("AuthCheck - Auth status:", { 
-        isAuthenticated, 
-        requireSeller,
-        isSeller: userIsSeller,
-        user,
-        path: window.location.pathname
-      });
       
       // First check if user is authenticated
       if (!isAuthenticated || !user) {
         // If not authenticated, redirect to login with a return path
         console.log("User is not authenticated, redirecting to login");
-        const returnPath = window.location.pathname;
+        const returnPath = encodeURIComponent(window.location.pathname);
         navigate(`/login?from=${returnPath}`);
         setIsAuthorized(false);
         return;
@@ -65,7 +65,7 @@ const AuthCheck = ({
       // Regular authenticated access
       setIsAuthorized(true);
     }
-  }, [isAuthenticated, isLoading, navigate, requireSeller, hasRole, user]);
+  }, [isAuthenticated, isLoading, navigate, requireSeller, hasRole, user, session]);
 
   // Show loading state
   if (isLoading || isAuthorized === null) {
