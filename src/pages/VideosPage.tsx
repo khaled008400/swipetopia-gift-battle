@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const VideosPage: React.FC = () => {
   const location = useLocation();
@@ -18,6 +18,7 @@ const VideosPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { requiresAuth, AuthDialog } = useAuthCheck();
 
   useEffect(() => {
     fetchVideos();
@@ -59,7 +60,9 @@ const VideosPage: React.FC = () => {
   };
 
   const handleOpenUploadModal = () => {
-    setIsUploadModalOpen(true);
+    requiresAuth(() => {
+      setIsUploadModalOpen(true);
+    });
   };
 
   const handleCloseUploadModal = () => {
@@ -113,11 +116,12 @@ const VideosPage: React.FC = () => {
         onClose={handleCloseUploadModal} 
         onSuccess={handleVideoUploadSuccess}
       />
+      
+      <AuthDialog />
     </div>
   );
 };
 
-// Video card component to display each video
 const VideoCard = ({ video }: { video: Video }) => {
   console.log('Rendering video card:', video);
   return (

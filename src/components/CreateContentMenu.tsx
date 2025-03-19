@@ -6,6 +6,7 @@ import { Upload, Video, Mic, Camera, MessageSquareText } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { StreamService } from "@/services/streaming";
+import { useAuthCheck } from "@/hooks/useAuthCheck";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -19,55 +20,54 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { requiresAuth, AuthDialog } = useAuthCheck();
   
   const handleCreateContent = async (type: string) => {
     onClose();
     
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to create content",
-        variant: "destructive",
-      });
-      navigate('/login');
-      return;
-    }
-    
     switch (type) {
       case 'video':
-        // Navigate directly to videos page with upload modal
-        navigate('/videos');
+        requiresAuth(() => {
+          // Navigate directly to videos page with upload modal
+          navigate('/videos');
+        });
         break;
       case 'live':
-        try {
-          // Use StreamService to start a live stream
-          const streamTitle = `${user.username || user.email}'s Live Stream`;
-          const stream = await StreamService.startStream(
-            streamTitle,
-            `Live stream by ${user.username || user.email}`
-          );
-          
-          if (stream) {
-            toast({
-              title: "Going live!",
-              description: "Your stream is being prepared.",
-            });
+        requiresAuth(async () => {
+          try {
+            if (!user) return;
             
-            navigate(`/live/${stream.id}`);
+            // Use StreamService to start a live stream
+            const streamTitle = `${user.username || user.email}'s Live Stream`;
+            const stream = await StreamService.startStream(
+              streamTitle,
+              `Live stream by ${user.username || user.email}`
+            );
+            
+            if (stream) {
+              toast({
+                title: "Going live!",
+                description: "Your stream is being prepared.",
+              });
+              
+              navigate(`/live/${stream.id}`);
+            }
+          } catch (error) {
+            console.error('Error starting live stream:', error);
+            toast({
+              title: "Error",
+              description: "Failed to start live stream. Please try again.",
+              variant: "destructive",
+            });
           }
-        } catch (error) {
-          console.error('Error starting live stream:', error);
-          toast({
-            title: "Error",
-            description: "Failed to start live stream. Please try again.",
-            variant: "destructive",
-          });
-        }
+        });
         break;
       case 'post':
-        toast({
-          title: "Coming soon",
-          description: "Post creation feature is coming soon!",
+        requiresAuth(() => {
+          toast({
+            title: "Coming soon",
+            description: "Post creation feature is coming soon!",
+          });
         });
         break;
       default:
@@ -108,9 +108,11 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
               variant="ghost" 
               className="flex flex-col items-center justify-center py-4"
               onClick={() => {
-                toast({
-                  title: "Coming soon",
-                  description: "Photo upload feature is coming soon!",
+                requiresAuth(() => {
+                  toast({
+                    title: "Coming soon",
+                    description: "Photo upload feature is coming soon!",
+                  });
                 });
               }}
             >
@@ -122,9 +124,11 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
               variant="ghost" 
               className="flex flex-col items-center justify-center py-4"
               onClick={() => {
-                toast({
-                  title: "Coming soon",
-                  description: "Audio upload feature is coming soon!",
+                requiresAuth(() => {
+                  toast({
+                    title: "Coming soon",
+                    description: "Audio upload feature is coming soon!",
+                  });
                 });
               }}
             >
@@ -142,6 +146,7 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
             </Button>
           </div>
         </div>
+        <AuthDialog />
       </SheetContent>
     </Sheet>
   );

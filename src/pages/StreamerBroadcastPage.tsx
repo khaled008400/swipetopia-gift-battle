@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import StreamerBroadcast from '@/components/live/StreamerBroadcast';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const StreamerBroadcastPage = () => {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ const StreamerBroadcastPage = () => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [streamerName, setStreamerName] = useState('');
   const [loading, setLoading] = useState(true);
+  const { AuthDialog } = useAuthCheck();
   
   useEffect(() => {
     const checkAuthorization = async () => {
@@ -57,6 +59,21 @@ const StreamerBroadcastPage = () => {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-black">
+        <h1 className="text-2xl font-bold text-white mb-4">Authentication Required</h1>
+        <p className="text-gray-400 text-center mb-6">
+          Please sign in to access the broadcasting studio.
+        </p>
+        <Button variant="outline" onClick={() => navigate("/login?from=/streamer-broadcast")}>
+          Sign In
+        </Button>
+        <AuthDialog />
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuthCheck } from "@/hooks/useAuthCheck";
 
 interface VideoActionsProps {
   videoId?: string; // Made optional
@@ -40,12 +41,15 @@ const VideoActions = ({
   onGift,
   onSave
 }: VideoActionsProps) => {
-  const { requiresAuth, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { requiresAuth, AuthDialog } = useAuthCheck();
   
-  const handleAction = (action: () => void, actionName: string) => {
-    requiresAuth(action, `/login?redirect=/watch/${videoId}&action=${actionName}`);
+  const handleAction = (action: () => void | undefined, actionName: string) => {
+    if (action) {
+      requiresAuth(action, `/video/${videoId}`, actionName);
+    }
   };
   
   return (
@@ -54,7 +58,7 @@ const VideoActions = ({
         variant="ghost"
         size="icon"
         className="rounded-full bg-black bg-opacity-50 text-white"
-        onClick={() => handleAction(onLike || (() => {}), 'like')}
+        onClick={() => handleAction(onLike, 'like')}
       >
         <Heart className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
         {likes !== undefined && <span className="text-white text-xs mt-1">{likes}</span>}
@@ -64,7 +68,7 @@ const VideoActions = ({
         variant="ghost"
         size="icon"
         className="rounded-full bg-black bg-opacity-50 text-white"
-        onClick={() => handleAction(onComment || (() => {}), 'comment')}
+        onClick={() => handleAction(onComment, 'comment')}
       >
         <MessageCircle className="h-6 w-6" />
         {comments !== undefined && <span className="text-white text-xs mt-1">{comments}</span>}
@@ -84,7 +88,7 @@ const VideoActions = ({
         variant="ghost"
         size="icon"
         className="rounded-full bg-black bg-opacity-50 text-white"
-        onClick={() => handleAction(onGift || (() => {}), 'gift')}
+        onClick={() => handleAction(onGift, 'gift')}
       >
         <Gift className="h-6 w-6" />
       </Button>
@@ -94,7 +98,7 @@ const VideoActions = ({
           variant="ghost"
           size="icon"
           className="rounded-full bg-black bg-opacity-50 text-white"
-          onClick={onDownload || (() => {})}
+          onClick={() => handleAction(onDownload, 'download')}
         >
           <Download className="h-6 w-6" />
         </Button>
@@ -104,7 +108,7 @@ const VideoActions = ({
         variant="ghost"
         size="icon"
         className="rounded-full bg-black bg-opacity-50 text-white"
-        onClick={() => handleAction(onReport || (() => {}), 'report')}
+        onClick={() => handleAction(onReport, 'report')}
       >
         <Flag className="h-6 w-6" />
       </Button>
@@ -121,6 +125,8 @@ const VideoActions = ({
           </span>
         </Button>
       )}
+      
+      <AuthDialog />
     </div>
   );
 };

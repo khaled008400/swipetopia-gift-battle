@@ -9,6 +9,7 @@ import HashtagInput from "../HashtagInput";
 import VideoPreview from "../VideoPreview";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuthCheck } from "@/hooks/useAuthCheck";
 
 interface EditStepProps {
   title: string;
@@ -45,6 +46,8 @@ const EditStep = ({
   isAuthenticated = true,
   error = null
 }: EditStepProps) => {
+  const { AuthDialog } = useAuthCheck();
+  
   const handleAddHashtag = (tag: string) => {
     if (!hashtags.includes(tag)) {
       setHashtags([...hashtags, tag]);
@@ -85,6 +88,7 @@ const EditStep = ({
               onChange={(e) => setTitle(e.target.value)} 
               placeholder="Add a title that describes your video"
               className="w-full"
+              disabled={!isAuthenticated}
             />
           </div>
           
@@ -97,6 +101,7 @@ const EditStep = ({
               placeholder="Tell viewers about your video"
               className="w-full resize-none"
               rows={4}
+              disabled={!isAuthenticated}
             />
           </div>
           
@@ -105,14 +110,18 @@ const EditStep = ({
             <HashtagInput 
               hashtags={hashtags} 
               onAdd={handleAddHashtag} 
-              onRemove={handleRemoveHashtag} 
+              onRemove={handleRemoveHashtag}
+              disabled={!isAuthenticated}
             />
           </div>
           
           <div className="space-y-3">
             <Label className="block">Privacy</Label>
             <div className="space-y-2">
-              <div className="flex items-center justify-between border p-3 rounded-md cursor-pointer" onClick={() => setPrivacy("public")}>
+              <div 
+                className={`flex items-center justify-between border p-3 rounded-md ${isAuthenticated ? 'cursor-pointer' : 'opacity-70 cursor-not-allowed'}`} 
+                onClick={() => isAuthenticated && setPrivacy("public")}
+              >
                 <div className="flex items-center">
                   <Globe size={18} className="mr-2" />
                   <span>Public</span>
@@ -120,7 +129,10 @@ const EditStep = ({
                 <div className={`h-4 w-4 rounded-full ${privacy === "public" ? "bg-blue-500" : "border border-gray-400"}`}></div>
               </div>
               
-              <div className="flex items-center justify-between border p-3 rounded-md cursor-pointer" onClick={() => setPrivacy("followers")}>
+              <div 
+                className={`flex items-center justify-between border p-3 rounded-md ${isAuthenticated ? 'cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
+                onClick={() => isAuthenticated && setPrivacy("followers")}
+              >
                 <div className="flex items-center">
                   <Users size={18} className="mr-2" />
                   <span>Followers only</span>
@@ -128,7 +140,10 @@ const EditStep = ({
                 <div className={`h-4 w-4 rounded-full ${privacy === "followers" ? "bg-blue-500" : "border border-gray-400"}`}></div>
               </div>
               
-              <div className="flex items-center justify-between border p-3 rounded-md cursor-pointer" onClick={() => setPrivacy("private")}>
+              <div 
+                className={`flex items-center justify-between border p-3 rounded-md ${isAuthenticated ? 'cursor-pointer' : 'opacity-70 cursor-not-allowed'}`}
+                onClick={() => isAuthenticated && setPrivacy("private")}
+              >
                 <div className="flex items-center">
                   <Lock size={18} className="mr-2" />
                   <span>Private</span>
@@ -143,7 +158,11 @@ const EditStep = ({
               <span>Allow downloads</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Switch checked={allowDownloads} onCheckedChange={setAllowDownloads} />
+              <Switch 
+                checked={allowDownloads} 
+                onCheckedChange={setAllowDownloads}
+                disabled={!isAuthenticated}
+              />
             </div>
           </div>
           
@@ -167,6 +186,7 @@ const EditStep = ({
           )}
         </div>
       </div>
+      <AuthDialog />
     </ScrollArea>
   );
 };
