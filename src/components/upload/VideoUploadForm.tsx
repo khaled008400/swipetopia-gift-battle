@@ -53,33 +53,44 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         video.currentTime = 1;
       };
       
-      video.oncanplay = () => {
-        console.log("Video can play, creating thumbnail");
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const thumbnailDataUrl = canvas.toDataURL("image/jpeg");
-          setThumbnail(thumbnailDataUrl);
+      video.addEventListener('timeupdate', function() {
+        // Only create the thumbnail once we've seeked to the desired time
+        if (video.currentTime >= 1) {
+          console.log("Video seeked to timestamp, creating thumbnail");
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const thumbnailDataUrl = canvas.toDataURL("image/jpeg");
+            setThumbnail(thumbnailDataUrl);
+            
+            // Convert data URL to file
+            fetch(thumbnailDataUrl)
+              .then(res => res.blob())
+              .then(blob => {
+                const thumbnailFile = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
+                setThumbnailFile(thumbnailFile);
+                console.log("Thumbnail created:", thumbnailFile.size);
+                
+                // Move to edit step
+                setStep("edit");
+              })
+              .catch(err => {
+                console.error("Error creating thumbnail file:", err);
+                // Still move to edit step even if thumbnail fails
+                setStep("edit");
+              });
+          } else {
+            console.error("Could not get canvas context");
+            setStep("edit");
+          }
           
-          // Convert data URL to file
-          fetch(thumbnailDataUrl)
-            .then(res => res.blob())
-            .then(blob => {
-              const thumbnailFile = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
-              setThumbnailFile(thumbnailFile);
-              console.log("Thumbnail created:", thumbnailFile.size);
-            })
-            .catch(err => {
-              console.error("Error creating thumbnail file:", err);
-            });
+          // Remove the event listener once we've created the thumbnail
+          video.removeEventListener('timeupdate', arguments.callee);
         }
-        
-        // Move to edit step
-        setStep("edit");
-      };
+      });
     }
   };
 
@@ -109,6 +120,15 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       toast({
         title: "Error",
         description: "Please provide a title for your video",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload videos",
         variant: "destructive",
       });
       return;
@@ -168,11 +188,11 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       }
       
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading video:", error);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your video. Please try again.",
+        description: error?.message || "There was an error uploading your video. Please try again.",
         variant: "destructive",
       });
     } finally {

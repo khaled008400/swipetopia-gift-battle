@@ -28,7 +28,7 @@ const VideoPreview = ({ src }: VideoPreviewProps) => {
   };
 
   return (
-    <div className="relative aspect-[9/16] w-full bg-black rounded-lg overflow-hidden">
+    <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
       <video 
         ref={videoRef}
         src={src} 

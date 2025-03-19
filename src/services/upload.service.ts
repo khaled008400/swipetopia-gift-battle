@@ -2,28 +2,22 @@
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Service for handling file uploads to Supabase storage
- */
 class UploadService {
   /**
-   * Upload a file to the specified bucket
-   * @param file The file to upload
-   * @param bucket The storage bucket to upload to
-   * @param folder Optional folder path within the bucket
-   * @returns URL of the uploaded file
+   * Upload a file to Supabase storage
    */
-  async uploadFile(file: File, bucket: 'videos' | 'thumbnails' | 'sounds' | 'icons', folder: string = ''): Promise<string> {
+  async uploadFile(file: File, bucketName: string = 'videos'): Promise<string> {
     try {
-      // Generate a unique filename to prevent collisions
+      // Create a unique file name to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = folder ? `${folder}/${fileName}` : fileName;
+      const filePath = `${fileName}`;
       
-      console.log(`Uploading file to ${bucket}/${filePath}`);
+      console.log(`Uploading file to ${bucketName}/${filePath}`);
       
+      // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
-        .from(bucket)
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -34,52 +28,39 @@ class UploadService {
         throw error;
       }
       
-      // Get the public URL for the file
+      // Get public URL for the file
       const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
+        .from(bucketName)
         .getPublicUrl(filePath);
       
       console.log('File uploaded successfully:', publicUrl);
+      
       return publicUrl;
     } catch (error) {
-      console.error('Upload service error:', error);
+      console.error('Error in uploadFile:', error);
       throw error;
     }
   }
   
   /**
-   * Upload a video file and generate thumbnail
-   * @param videoFile The video file to upload
-   * @param thumbnailFile Optional thumbnail file (if not provided, one will be generated)
-   * @returns Object containing URLs for video and thumbnail
+   * Upload a video and its thumbnail
    */
-  async uploadVideo(videoFile: File, thumbnailFile?: File | null): Promise<{videoUrl: string, thumbnailUrl: string | null}> {
-    const videoUrl = await this.uploadFile(videoFile, 'videos');
-    
-    let thumbnailUrl = null;
-    if (thumbnailFile) {
-      thumbnailUrl = await this.uploadFile(thumbnailFile, 'thumbnails');
+  async uploadVideo(videoFile: File, thumbnailFile: File | null): Promise<{ videoUrl: string, thumbnailUrl: string | null }> {
+    try {
+      // Upload video file
+      const videoUrl = await this.uploadFile(videoFile, 'videos');
+      
+      // Upload thumbnail if provided
+      let thumbnailUrl = null;
+      if (thumbnailFile) {
+        thumbnailUrl = await this.uploadFile(thumbnailFile, 'thumbnails');
+      }
+      
+      return { videoUrl, thumbnailUrl };
+    } catch (error) {
+      console.error('Error in uploadVideo:', error);
+      throw error;
     }
-    
-    return { videoUrl, thumbnailUrl };
-  }
-  
-  /**
-   * Upload an audio file for a gift
-   * @param audioFile The audio file to upload
-   * @returns URL of the uploaded audio file
-   */
-  async uploadAudio(audioFile: File): Promise<string> {
-    return this.uploadFile(audioFile, 'sounds');
-  }
-  
-  /**
-   * Upload an icon image
-   * @param iconFile The icon file to upload
-   * @returns URL of the uploaded icon
-   */
-  async uploadIcon(iconFile: File): Promise<string> {
-    return this.uploadFile(iconFile, 'icons');
   }
 }
 
