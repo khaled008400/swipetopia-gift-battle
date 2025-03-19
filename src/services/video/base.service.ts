@@ -1,16 +1,17 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 
-// Base utility functions for video services
+// Get the currently authenticated user
 export const getAuthenticatedUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getUser();
   
-  if (error || !user) {
-    throw new Error("User not authenticated");
+  if (error || !data.user) {
+    console.error('Error getting authenticated user:', error);
+    throw new Error('You must be logged in to perform this action');
   }
   
-  return user;
+  return data.user;
 };
 
-// Export supabase for other video services
+// Export the supabase client
 export { supabase };

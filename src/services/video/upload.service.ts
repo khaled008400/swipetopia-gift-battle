@@ -83,7 +83,7 @@ class VideoUploadService {
       const { data: insertedVideo, error: insertError } = await supabase
         .from('videos')
         .insert(videoData)
-        .select()
+        .select('*')
         .single();
 
       if (insertError) {
@@ -101,7 +101,7 @@ class VideoUploadService {
 
   // Method to check if a video exists in the database by its ID
   async checkVideoExists(videoId: string): Promise<boolean> {
-    if (!videoId) {
+    if (!videoId || typeof videoId !== 'string') {
       console.error('Invalid video ID provided to checkVideoExists:', videoId);
       return false;
     }
@@ -109,29 +109,19 @@ class VideoUploadService {
     try {
       console.log(`Checking if video with ID ${videoId} exists in database...`);
       
-      const { data, error, status } = await supabase
+      const { data, error } = await supabase
         .from('videos')
-        .select('id, title')
+        .select('id')
         .eq('id', videoId)
-        .single();
+        .limit(1);
       
       if (error) {
-        if (status === 406) {
-          // No rows returned
-          console.log(`Video with ID ${videoId} does not exist in database (no rows)`);
-          return false;
-        }
-        
         console.error('Error checking if video exists:', error);
         return false;
       }
       
-      const exists = !!data;
-      console.log(`Video existence check result for ID ${videoId}: ${exists ? 'Found' : 'Not found'}, Status: ${status}`);
-      
-      if (exists) {
-        console.log('Video data found:', data);
-      }
+      const exists = Array.isArray(data) && data.length > 0;
+      console.log(`Video existence check result for ID ${videoId}: ${exists ? 'Found' : 'Not found'}`);
       
       return exists;
     } catch (error) {

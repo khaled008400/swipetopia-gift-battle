@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -75,6 +74,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
           // Clear any existing timeout
           if (checkVideoExistsTimeoutRef.current) {
             clearTimeout(checkVideoExistsTimeoutRef.current);
+            checkVideoExistsTimeoutRef.current = null;
           }
           
           // Check if the video exists in the database
@@ -98,14 +98,14 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
             setVerificationAttempts(newAttemptCount);
             
             // If we've tried 5 times and still can't verify, show error
-            if (newAttemptCount >= 4) {
+            if (newAttemptCount >= 5) {
               console.error(`Failed to verify video after ${newAttemptCount} attempts`);
               setUploadError("Upload appeared to complete but the video couldn't be verified. Please try again.");
               setUploadProgress(0);
               setIsUploading(false);
             } else {
               // Try again after a delay (increasing delay with each attempt)
-              const delayMs = 2000 * (newAttemptCount + 1);
+              const delayMs = 2000 * Math.pow(2, newAttemptCount);
               console.log(`Scheduling next verification attempt in ${delayMs}ms`);
               
               checkVideoExistsTimeoutRef.current = window.setTimeout(() => {
@@ -128,6 +128,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     return () => {
       if (checkVideoExistsTimeoutRef.current) {
         clearTimeout(checkVideoExistsTimeoutRef.current);
+        checkVideoExistsTimeoutRef.current = null;
       }
     };
   }, [uploadedVideoId, isUploading, uploadProgress, verificationAttempts, onSuccess, onClose]);
@@ -193,6 +194,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     // Clear any existing interval
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
     }
     
     setUploadProgress(0);
@@ -277,7 +279,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         console.log('Upload successful with video ID:', uploadedVideo.id);
         
         toast({
-          title: "Upload Successful",
+          title: "Upload Processing",
           description: "Your video has been uploaded and is being processed.",
         });
       } else {
@@ -353,10 +355,10 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
           <div className="mt-4 px-4">
             <div className="flex justify-between text-sm mb-1">
               <span>Uploading...</span>
-              <span>{uploadProgress}%</span>
+              <span>{uploadProgress.toFixed(0)}%</span>
             </div>
             <Progress value={uploadProgress} className="h-2" />
-            {uploadProgress === 100 && (
+            {uploadProgress >= 95 && (
               <p className="text-sm text-center mt-2 text-green-600">
                 Finalizing upload, please wait...
               </p>
