@@ -97,7 +97,7 @@ const StreamerBroadcast: React.FC<StreamerBroadcastProps> = ({
     
     try {
       // End the stream in the database
-      await StreamService.endStream(streamId);
+      await StreamService.endStream(streamId, streamerId);
       
       setIsStreaming(false);
       setStreamStatus('offline');

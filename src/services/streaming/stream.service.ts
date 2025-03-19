@@ -51,6 +51,25 @@ class StreamService {
   }
   
   /**
+   * Start a stream - alias for createStream
+   */
+  async startStream(title: string, description?: string) {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('You must be logged in to start a stream');
+      }
+      
+      return this.createStream(user.id, title, description);
+    } catch (error) {
+      console.error('Error in startStream:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * End a live stream
    */
   async endStream(streamId: string, userId: string) {
