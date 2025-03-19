@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video.service';
@@ -9,8 +8,6 @@ import { Video } from '@/types/video.types';
 import TrendingVideosSection from '@/components/TrendingVideosSection';
 import PopularLiveSection from '@/components/PopularLiveSection';
 import { Helmet } from 'react-helmet-async';
-
-<lov-add-dependency>react-helmet-async@1.3.0</lov-add-dependency>
 
 const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
