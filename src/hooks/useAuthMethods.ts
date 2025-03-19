@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -10,6 +11,7 @@ export const useAuthMethods = () => {
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
+    setError(null);
     
     try {
       console.log(`Attempting to login with: ${email}`);
@@ -21,15 +23,15 @@ export const useAuthMethods = () => {
       
       if (error) {
         console.error("Supabase login error:", error);
-        throw error;
+        setError(error);
+        return { data: null, error };
       }
       
       console.log("Login successful:", data);
-      
       return { data, error: null };
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(new Error(err.message));
+      setError(err);
       return { data: null, error: err };
     } finally {
       setIsLoading(false);

@@ -9,7 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated, user } = useAuth();
+  const { signIn, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -32,19 +32,19 @@ const LoginPage = () => {
 
     try {
       console.log("Attempting login with:", email);
-      const { data, error } = await login(email, password);
-      console.log("Login result:", { data, error });
+      const { error } = await signIn(email, password);
       
-      if (!error) {
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      } else {
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
         
-        console.log("Redirecting after successful login to:", from);
-        navigate(from);
-      } else {
-        throw error;
+        // No need to navigate here - the useEffect above will handle redirection
+        // once isAuthenticated becomes true
       }
     } catch (error: any) {
       console.error("Login error:", error);

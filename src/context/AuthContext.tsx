@@ -63,38 +63,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   useEffect(() => {
     console.log("Setting up auth state listener in AuthProvider");
     
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.id);
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          try {
-            const profile = await fetchUserProfile(currentSession.user.id);
-            if (profile) {
-              console.log("Profile loaded in auth state change:", profile.username);
-              setUser(profile);
-              setIsAuthenticated(true);
-            } else {
-              console.log("No profile found for user in auth state change");
-              setUser(null);
-              setIsAuthenticated(false);
-            }
-          } catch (err) {
-            console.error("Error fetching profile in auth state change:", err);
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    // Define the auth state change handler
+    const handleAuthChange = async (event: string, currentSession: Session | null) => {
+      console.log("Auth state changed:", event, currentSession?.user?.id);
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        try {
+          const profile = await fetchUserProfile(currentSession.user.id);
+          if (profile) {
+            console.log("Profile loaded in auth state change:", profile.username);
+            setUser(profile);
+            setIsAuthenticated(true);
+          } else {
+            console.log("No profile found for user in auth state change");
             setUser(null);
             setIsAuthenticated(false);
           }
-        } else {
-          console.log("No session in auth state change, clearing user");
+        } catch (err) {
+          console.error("Error fetching profile in auth state change:", err);
           setUser(null);
           setIsAuthenticated(false);
         }
+      } else {
+        console.log("No session in auth state change, clearing user");
+        setUser(null);
+        setIsAuthenticated(false);
       }
-    );
-
-    // THEN check for existing session
+    };
+    
+    // Set up the auth state listener and store the subscription
+    const setupAuthListener = async () => {
+      const { data } = supabase.auth.onAuthStateChange(handleAuthChange);
+      subscription = data.subscription;
+    };
+    
+    // Initialize auth - check for existing session
     const initializeAuth = async () => {
       try {
         setLoading(true);
@@ -131,12 +137,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setLoading(false);
       }
     };
+    
+    // Setup auth listener first, then check for session
+    setupAuthListener().then(() => {
+      initializeAuth();
+    });
 
-    initializeAuth();
-
+    // Clean up on unmount
     return () => {
       console.log("Cleaning up auth subscription");
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -186,6 +198,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return hasRole(user?.roles, role);
   };
   
+  // Wrap the login function to properly handle auth
+  const handleSignIn = async (email: string, password: string) => {
+    console.log("handleSignIn called with:", email);
+    const result = await login(email, password);
+    if (!result.error) {
+      console.log("Sign in successful:", result.data);
+    } else {
+      console.error("Sign in failed:", result.error);
+    }
+    return { error: result.error };
+  };
+  
   // Wrap the logout function to maintain the Promise<void> return type
   const handleSignOut = async () => {
     await logout();
@@ -199,7 +223,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     session,
     isAuthenticated,
     isLoading,
-    signIn: login,
+    signIn: handleSignIn,
     signUp: register,
     signOut: handleSignOut,
     loading,
@@ -207,9 +231,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     login,
     register,
     logout: handleSignOut,
-    updateProfile,
-    addPaymentMethod,
-    removePaymentMethod,
+    updateProfile: async (updates) => {
+      if (!user) return false;
+      const success = await updateUserProfile(user.id, updates);
+      if (success) {
+        setUser(prev => prev ? { ...prev, ...updates } : null);
+      }
+      return success;
+    },
+    addPaymentMethod: async (method) => {
+      if (!user) return false;
+      const success = await addUserPaymentMethod(user.id, user.payment_methods, method);
+      if (success) {
+        setUser(prev => prev ? {
+          ...prev,
+          payment_methods: [...prev.payment_methods, method]
+        } : null);
+      }
+      return success;
+    },
+    removePaymentMethod: async (id) => {
+      if (!user) return false;
+      const success = await removeUserPaymentMethod(user.id, user.payment_methods, id);
+      if (success) {
+        setUser(prev => prev ? {
+          ...prev,
+          payment_methods: prev.payment_methods.filter(method => method.id !== id)
+        } : null);
+      }
+      return success;
+    },
     requiresAuth: () => {},
     isAdmin: () => isAdmin(user?.roles),
     hasRole: userHasRole
