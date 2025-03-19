@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 
 interface VideoFeedProps {
   videos: Video[];
-  activeIndex: number;
+  activeIndex?: number;
   onVideoChange?: (index: number) => void;
   onVideoView?: (videoId: string) => void;
   isBattlePage?: boolean;
@@ -21,7 +21,7 @@ interface VideoFeedProps {
 
 const VideoFeed: React.FC<VideoFeedProps> = ({
   videos,
-  activeIndex,
+  activeIndex = 0,
   onVideoChange,
   onVideoView,
   isBattlePage = false,
@@ -81,9 +81,9 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     try {
       const isLiked = likedVideos[videoId];
       if (isLiked) {
-        await VideoService.unlikeVideo(videoId, user.id);
+        await VideoService.unlikeVideo(videoId);
       } else {
-        await VideoService.likeVideo(videoId, user.id);
+        await VideoService.likeVideo(videoId);
       }
       
       // Update liked state
@@ -120,9 +120,9 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     try {
       const isSaved = savedVideos[videoId];
       if (isSaved) {
-        await VideoService.unsaveVideo(videoId, user.id);
+        await VideoService.unsaveVideo(videoId);
       } else {
-        await VideoService.saveVideo(videoId, user.id);
+        await VideoService.saveVideo(videoId);
       }
       
       // Update saved state

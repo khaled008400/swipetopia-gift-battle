@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,6 @@ const VideosPage: React.FC = () => {
 
   const handleVideoUploadSuccess = (videoId: string) => {
     console.log('Video uploaded successfully, ID:', videoId);
-    // Refresh the video list after successful upload
     fetchVideos();
     
     toast({

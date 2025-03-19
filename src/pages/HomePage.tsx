@@ -1,20 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video.service';
 import { ChevronDown, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { VideoTypes } from '@/types/video.types';
+import { Video } from '@/types/video.types';
 import TrendingVideosSection from '@/components/TrendingVideosSection';
 import PopularLiveSection from '@/components/PopularLiveSection';
+import { Helmet } from 'react-helmet-async';
+
+<lov-add-dependency>react-helmet-async@1.3.0</lov-add-dependency>
 
 const HomePage = () => {
-  const [videos, setVideos] = useState<VideoTypes[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('for-you');
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     fetchVideos();
@@ -26,7 +29,7 @@ const HomePage = () => {
     
     try {
       console.log("Fetching videos for tab:", activeTab);
-      let fetchedVideos: VideoTypes[] = [];
+      let fetchedVideos: Video[] = [];
       
       if (activeTab === 'for-you') {
         try {
@@ -50,10 +53,18 @@ const HomePage = () => {
       console.error("Error fetching videos:", err);
       setError(err.message || "Failed to load videos");
       
-      // Fallback to mock data if available
-      if (window.demo?.videosMock) {
-        console.log("Using mock data as fallback");
-        setVideos(window.demo.videosMock);
+      // Try to use mock data if available in development
+      if (import.meta.env.DEV) {
+        try {
+          // Try to import mock data
+          const { videosMock } = await import('@/data/videosMock');
+          if (videosMock) {
+            console.log("Using mock data as fallback");
+            setVideos(videosMock);
+          }
+        } catch (e) {
+          console.error("No mock data available");
+        }
       }
     } finally {
       setLoading(false);
@@ -119,7 +130,11 @@ const HomePage = () => {
             </Button>
           </div>
         ) : videos.length > 0 ? (
-          <VideoFeed videos={videos} />
+          <VideoFeed 
+            videos={videos} 
+            activeIndex={activeIndex}
+            onVideoChange={setActiveIndex}
+          />
         ) : (
           <div className="flex flex-col gap-6 p-4">
             <div className="text-center py-8">
@@ -130,8 +145,8 @@ const HomePage = () => {
               </Button>
             </div>
             
-            <TrendingVideosSection />
-            <PopularLiveSection />
+            <TrendingVideosSection videos={[]} />
+            <PopularLiveSection creators={[]} />
             
             <div className="text-center mt-4">
               <ChevronDown className="h-6 w-6 mx-auto text-gray-400 animate-bounce" />

@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { VideoTypes } from "@/types/video.types";
+import { Video } from "@/types/video.types";
 import { v4 as uuidv4 } from 'uuid';
 
 class VideoService {
@@ -167,7 +166,7 @@ class VideoService {
   }
 
   // Update video metadata
-  async updateVideo(id: string, updates: Partial<VideoTypes>) {
+  async updateVideo(id: string, updates: Partial<Video>) {
     try {
       const { data, error } = await supabase
         .from('videos')
@@ -215,6 +214,23 @@ class VideoService {
     } catch (error) {
       console.error('Error in getTrendingVideos:', error);
       throw error;
+    }
+  }
+
+  // Get all videos - for VideosPage
+  async getVideos(limit: number = 50) {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*, profiles(*)')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in getVideos:', error);
+      return [];
     }
   }
 
@@ -276,6 +292,112 @@ class VideoService {
     }
   }
 
+  // Save video to user's collection
+  async saveVideo(videoId: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const { data, error } = await supabase
+        .from('saved_videos')
+        .insert({
+          video_id: videoId,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in saveVideo:', error);
+      throw error;
+    }
+  }
+
+  // Remove video from user's collection
+  async unsaveVideo(videoId: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const { error } = await supabase
+        .from('saved_videos')
+        .delete()
+        .match({ video_id: videoId, user_id: user.id });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error in unsaveVideo:', error);
+      throw error;
+    }
+  }
+
+  // Get liked videos
+  async getLikedVideos(userId: string, limit: number = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('video_likes')
+        .select('video_id')
+        .eq('user_id', userId)
+        .limit(limit);
+
+      if (error) throw error;
+      
+      if (data.length === 0) return [];
+      
+      const videoIds = data.map(like => like.video_id);
+      
+      const { data: videos, error: videosError } = await supabase
+        .from('videos')
+        .select('*')
+        .in('id', videoIds);
+        
+      if (videosError) throw videosError;
+      
+      return videos;
+    } catch (error) {
+      console.error('Error in getLikedVideos:', error);
+      return [];
+    }
+  }
+
+  // Get saved videos
+  async getSavedVideos(userId: string, limit: number = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('saved_videos')
+        .select('video_id')
+        .eq('user_id', userId)
+        .limit(limit);
+
+      if (error) throw error;
+      
+      if (data.length === 0) return [];
+      
+      const videoIds = data.map(saved => saved.video_id);
+      
+      const { data: videos, error: videosError } = await supabase
+        .from('videos')
+        .select('*')
+        .in('id', videoIds);
+        
+      if (videosError) throw videosError;
+      
+      return videos;
+    } catch (error) {
+      console.error('Error in getSavedVideos:', error);
+      return [];
+    }
+  }
+
   // Search videos by title or hashtags
   async searchVideos(query: string, limit: number = 20) {
     try {
@@ -320,6 +442,35 @@ class VideoService {
       console.error('Error in incrementViewCount:', error);
       // Don't throw error for view count issues
       return null;
+    }
+  }
+
+  // Report video
+  async reportVideo(videoId: string, report: { category: string, description: string }) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const { data, error } = await supabase
+        .from('video_reports')
+        .insert({
+          video_id: videoId,
+          user_id: user.id,
+          report_category: report.category,
+          report_description: report.description,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in reportVideo:', error);
+      throw error;
     }
   }
 }

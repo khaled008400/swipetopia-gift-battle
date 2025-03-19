@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Video } from "@/types/video.types";
@@ -40,9 +39,9 @@ export const useVideoInteractions = (
 
     try {
       if (newLikedState) {
-        await VideoService.likeVideo(video.id, user.id);
+        await VideoService.likeVideo(video.id);
       } else {
-        await VideoService.unlikeVideo(video.id, user.id);
+        await VideoService.unlikeVideo(video.id);
       }
     } catch (error) {
       console.error("Error toggling like:", error);
