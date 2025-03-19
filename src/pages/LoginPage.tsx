@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -25,21 +24,14 @@ const LoginPage = () => {
     try {
       console.log("Attempting login with:", email);
       const result = await login(email, password);
-      console.log("Login result:", result);
+      console.log("Login successful:", result);
 
-      if (result) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        });
-        
-        // Added delay to ensure context is updated before navigation
-        setTimeout(() => {
-          navigate(from);
-        }, 300);
-      } else {
-        throw new Error("Login failed");
-      }
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      
+      navigate(from);
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
