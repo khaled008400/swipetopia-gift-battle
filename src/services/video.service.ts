@@ -51,5 +51,5 @@ export default {
   reportVideo: VideoService.reportVideo,
 
   // Check if a video exists
-  checkVideoExists: VideoService.uploadVideo.bind(VideoService).constructor.prototype.checkVideoExists
+  checkVideoExists: VideoService.checkVideoExists
 };

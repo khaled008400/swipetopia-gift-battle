@@ -102,18 +102,22 @@ class VideoUploadService {
   // Method to check if a video exists in the database by its ID
   async checkVideoExists(videoId: string) {
     try {
+      console.log(`Checking if video with ID ${videoId} exists in database...`);
+      
       const { data, error } = await supabase
         .from('videos')
         .select('id, title')
         .eq('id', videoId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error checking if video exists:', error);
         return false;
       }
       
-      return !!data;
+      const exists = !!data;
+      console.log(`Video existence check result: ${exists ? 'Found' : 'Not found'}`);
+      return exists;
     } catch (error) {
       console.error('Error in checkVideoExists:', error);
       return false;
