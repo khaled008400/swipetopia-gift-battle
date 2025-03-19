@@ -92,6 +92,11 @@ function App() {
                       <AdminDashboardPage />
                     </AuthCheck>
                   } />
+                  <Route path="/admin-dashboard/:tab" element={
+                    <AuthCheck requireAdmin={true}>
+                      <AdminDashboardPage />
+                    </AuthCheck>
+                  } />
                   
                   {/* Seller routes with auth check */}
                   <Route path="/seller-dashboard" element={
