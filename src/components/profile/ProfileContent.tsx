@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +50,36 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
     return <div className="text-center py-8">Profile not found</div>;
   }
 
+  // Log when rendering the About tab content
+  const logAboutTabRender = () => {
+    console.log('Rendering About tab content');
+    return null;
+  };
+
+  // Log when rendering the Videos tab content
+  const logVideosTabRender = () => {
+    console.log('Rendering Videos tab content');
+    return null;
+  };
+
+  // Log when rendering the Liked tab content
+  const logLikedTabRender = () => {
+    console.log('Rendering Liked tab content');
+    return null;
+  };
+
+  // Log when rendering the Saved tab content
+  const logSavedTabRender = () => {
+    console.log('Rendering Saved tab content');
+    return null;
+  };
+
+  // Log when rendering the Activity tab content
+  const logActivityTabRender = () => {
+    console.log('Rendering Activity tab content');
+    return null;
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="about" onValueChange={setActiveTab} className="w-full">
@@ -73,7 +104,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
         </TabsList>
 
         <TabsContent value="about" className="space-y-6">
-          {console.log('Rendering About tab content')}
+          {logAboutTabRender()}
           <Card className="bg-app-gray-dark border-0">
             <CardHeader>
               <CardTitle>About</CardTitle>
@@ -170,7 +201,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
         </TabsContent>
 
         <TabsContent value="videos">
-          {console.log('Rendering Videos tab content')}
+          {logVideosTabRender()}
           <UserVideosGrid 
             videos={userVideos}
             isLoading={videosLoading}
@@ -183,7 +214,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
         </TabsContent>
 
         <TabsContent value="liked">
-          {console.log('Rendering Liked tab content')}
+          {logLikedTabRender()}
           <UserVideosGrid 
             videos={likedVideos}
             isLoading={likedLoading}
@@ -193,7 +224,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
         </TabsContent>
 
         <TabsContent value="saved">
-          {console.log('Rendering Saved tab content')}
+          {logSavedTabRender()}
           <UserVideosGrid 
             videos={savedVideos}
             isLoading={savedLoading}
@@ -203,7 +234,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile }) => {
         </TabsContent>
         
         <TabsContent value="activity">
-          {console.log('Rendering Activity tab content')}
+          {logActivityTabRender()}
           <UserActivity userId={profile.id} />
         </TabsContent>
       </Tabs>
