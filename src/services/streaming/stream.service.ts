@@ -1,233 +1,157 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { LiveStream } from './stream.types';
+import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Service for managing live streams
- */
-const StreamService = {
-  // Fetch active live streams
-  getLiveStreams: async (): Promise<LiveStream[]> => {
+class StreamService {
+  /**
+   * Create a new live stream
+   */
+  async createStream(userId: string, title: string, description?: string) {
     try {
-      const { data, error } = await supabase
+      // Check if user already has an active stream
+      const { data: existingStream, error: checkError } = await supabase
         .from('streams')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
+        .select('id, status')
+        .eq('user_id', userId)
         .eq('status', 'online')
-        .order('started_at', { ascending: false });
+        .maybeSingle();
       
-      if (error) throw error;
-      
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching live streams:', error);
-      return [];
-    }
-  },
-  
-  // Get a single stream by ID
-  getStream: async (streamId: string): Promise<LiveStream | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('streams')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `)
-        .eq('id', streamId)
-        .single();
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching stream:', error);
-      return null;
-    }
-  },
-  
-  // Start a new stream
-  startStream: async (title: string, description?: string): Promise<LiveStream | null> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User must be authenticated to start a stream');
+      if (checkError) {
+        console.error('Error checking existing streams:', checkError);
+        throw checkError;
       }
       
+      // If stream exists and is active, return it
+      if (existingStream) {
+        return existingStream;
+      }
+      
+      // Create a new stream
       const { data, error } = await supabase
         .from('streams')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           title,
           description,
           status: 'online',
-          viewer_count: 0
         })
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating stream:', error);
+        throw error;
+      }
       
       return data;
     } catch (error) {
-      console.error('Error starting stream:', error);
-      return null;
+      console.error('Error in createStream:', error);
+      throw error;
     }
-  },
+  }
   
-  // End a stream
-  endStream: async (streamId: string): Promise<boolean> => {
+  /**
+   * End a live stream
+   */
+  async endStream(streamId: string, userId: string) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User must be authenticated to end a stream');
-      }
-      
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('streams')
         .update({
           status: 'offline',
           ended_at: new Date().toISOString()
         })
         .eq('id', streamId)
-        .eq('user_id', user.id);
+        .eq('user_id', userId)
+        .select()
+        .single();
       
-      if (error) throw error;
-      
-      return true;
-    } catch (error) {
-      console.error('Error ending stream:', error);
-      return false;
-    }
-  },
-  
-  // Update viewer count
-  updateViewerCount: async (streamId: string, count: number): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('streams')
-        .update({
-          viewer_count: count
-        })
-        .eq('id', streamId);
-      
-      if (error) throw error;
-      
-      return true;
-    } catch (error) {
-      console.error('Error updating viewer count:', error);
-      return false;
-    }
-  },
-  
-  // Send a message to a stream's chat
-  sendStreamMessage: async (streamId: string, message: string): Promise<boolean> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User must be authenticated to send a message');
+      if (error) {
+        console.error('Error ending stream:', error);
+        throw error;
       }
       
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          stream_id: streamId,
-          sender_id: user.id,
-          message
-        });
-      
-      if (error) throw error;
-      
-      return true;
+      return data;
     } catch (error) {
-      console.error('Error sending message:', error);
-      return false;
+      console.error('Error in endStream:', error);
+      throw error;
     }
-  },
+  }
   
-  // Get chat messages for a stream
-  getStreamMessages: async (streamId: string): Promise<any[]> => {
+  /**
+   * Get a specific stream by ID
+   */
+  async getStream(streamId: string) {
     try {
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from('streams')
         .select(`
           *,
-          profiles:sender_id (
-            username,
-            avatar_url
-          )
+          profiles:user_id (username, avatar_url)
         `)
-        .eq('stream_id', streamId)
-        .order('created_at', { ascending: true });
+        .eq('id', streamId)
+        .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stream:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getStream:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get active streams
+   */
+  async getActiveStreams(limit = 20) {
+    try {
+      const { data, error } = await supabase
+        .from('streams')
+        .select(`
+          *,
+          profiles:user_id (username, avatar_url)
+        `)
+        .eq('status', 'online')
+        .order('viewer_count', { ascending: false })
+        .limit(limit);
+      
+      if (error) {
+        console.error('Error fetching active streams:', error);
+        throw error;
+      }
       
       return data || [];
     } catch (error) {
-      console.error('Error fetching stream messages:', error);
-      return [];
+      console.error('Error in getActiveStreams:', error);
+      throw error;
     }
-  },
+  }
   
-  // Admin function to shut down a stream
-  shutdownStream: async (streamId: string, reason: string): Promise<boolean> => {
+  /**
+   * Update viewer count for a stream
+   */
+  async updateViewerCount(streamId: string, count: number) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User must be authenticated to shut down a stream');
-      }
-      
-      // Get user profile to check if admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, roles')
-        .eq('id', user.id)
-        .single();
-      
-      if (profileError) throw profileError;
-      
-      const isAdmin = profile.role === 'admin' || 
-                      (profile.roles && profile.roles.includes('admin'));
-      
-      if (!isAdmin) {
-        throw new Error('Only admins can shut down streams');
-      }
-      
       const { error } = await supabase
         .from('streams')
-        .update({
-          status: 'offline',
-          ended_at: new Date().toISOString()
-        })
+        .update({ viewer_count: count })
         .eq('id', streamId);
       
-      if (error) throw error;
-      
-      // Log admin action
-      await supabase.rpc('log_admin_action', {
-        p_action_type: 'shutdown_stream',
-        p_target_id: streamId,
-        p_reason: reason
-      });
+      if (error) {
+        console.error('Error updating viewer count:', error);
+        throw error;
+      }
       
       return true;
     } catch (error) {
-      console.error('Error shutting down stream:', error);
-      return false;
+      console.error('Error in updateViewerCount:', error);
+      throw error;
     }
   }
-};
+}
 
-export default StreamService;
+export default new StreamService();
