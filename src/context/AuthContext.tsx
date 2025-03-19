@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -166,6 +167,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return hasRole(user?.roles, role);
   };
   
+  // Create void-returning wrapper functions for login/logout
+  const loginWrapper = async (email: string, password: string): Promise<void> => {
+    await login(email, password);
+  };
+  
+  const logoutWrapper = async (): Promise<void> => {
+    await logout();
+  };
+  
   const value: AuthContextType = {
     user,
     session,
@@ -173,12 +183,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     isLoading,
     signIn: login,
     signUp: register,
-    signOut: logout,
+    signOut: logoutWrapper,
     loading,
     error,
     login,
     register,
-    logout,
+    logout: logoutWrapper,
     updateProfile,
     addPaymentMethod: addPaymentMethodWrapper,
     removePaymentMethod: removePaymentMethodWrapper,
