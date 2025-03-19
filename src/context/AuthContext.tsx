@@ -129,11 +129,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         await fetchUserProfile(data.user.id);
       }
       
-      return data;
+      return { error: null };
     } catch (err: any) {
       console.error("Login error:", err);
       setError(new Error(err.message));
-      throw err;
+      return { error: err };
     } finally {
       setIsLoading(false);
     }
@@ -186,11 +186,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           ]);
       }
 
-      return data;
+      return { error: null };
     } catch (err: any) {
       setError(new Error(err.message));
       console.error("Registration error:", err);
-      throw err;
+      return { error: err };
     } finally {
       setIsLoading(false);
     }
@@ -296,9 +296,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     login,
     register,
     logout,
-    updateProfile: async () => false, // Implement these if needed
-    addPaymentMethod: async () => false,
-    removePaymentMethod: async () => false,
+    updateProfile,
+    addPaymentMethod,
+    removePaymentMethod,
     requiresAuth: () => {},
     isAdmin: () => user?.roles?.includes('admin') || false,
     hasRole: (role) => user?.roles?.includes(role as UserRole) || false
