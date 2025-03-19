@@ -1,117 +1,64 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import HomePage from './pages/HomePage';
-import ProfilePage from './pages/ProfilePage';
-import WalletPage from './pages/WalletPage';
-import SettingsPage from './pages/SettingsPage';
-import { AuthProvider } from './context/AuthContext';
-import VideoPlayerPage from './pages/VideoPlayerPage';
-import Layout from './components/Layout';
-import { CartProvider } from './context/CartContext';
-import ShopPage from './pages/ShopPage';
-import ExplorePage from './pages/ExplorePage';
-import SignupPage from './pages/SignupPage';
-import AdminPage from './pages/AdminPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import SellerDashboardPage from './pages/SellerDashboardPage';
-import AuthCheck from './components/auth/AuthCheck';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Toaster } from '@/components/ui/toaster';
-
-// Create a React Query client with proper configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import HomePage from '@/pages/HomePage';
+import ExplorePage from '@/pages/ExplorePage';
+import ProfilePage from '@/pages/ProfilePage';
+import ActivityPage from '@/pages/ActivityPage';
+import LivePage from '@/pages/LivePage';
+import SettingsPage from '@/pages/SettingsPage';
+import BattlePage from '@/pages/BattlePage';
+import LiveStreamPage from '@/pages/LiveStreamPage';
+import StreamerBroadcastPage from '@/pages/StreamerBroadcastPage';
+import StreamerProfilePage from '@/pages/StreamerProfilePage';
+import WatchPage from '@/pages/WatchPage';
+import ShopPage from '@/pages/ShopPage';
+import ProductDetailPage from '@/pages/ProductDetailPage';
+import CheckoutPage from '@/pages/CheckoutPage';
+import SellerDashboardPage from '@/pages/SellerDashboardPage';
+import SellerProfilePage from '@/pages/SellerProfilePage';
+import AdminPage from '@/pages/AdminPage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import SearchPage from '@/pages/SearchPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import WalletPage from '@/pages/WalletPage';
+import VideoPlayerPage from '@/pages/VideoPlayerPage';
+import VideosPage from '@/pages/VideosPage';  // Add import for VideosPage
+import './App.css';
 
 function App() {
-  const [session, setSession] = React.useState(null);
-
-  React.useEffect(() => {
-    // Log configuration for debugging
-    console.log("App initialized with Supabase client");
-
-    // Check for existing session on mount
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data?.session || null);
-      console.log("Initial session check:", data?.session ? "Session found" : "No session");
-    };
-    
-    checkSession();
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        console.log("Auth state changed:", _event);
-        setSession(newSession);
-      }
-    );
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, []);
-
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <div className="App flex flex-col min-h-screen bg-app-black text-white">
-          <AuthProvider supabaseClient={supabase} session={session}>
-            <CartProvider>
-              <Router>
-                <Routes>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/" element={<Layout><HomePage /></Layout>} />
-                  <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-                  <Route path="/wallet" element={<Layout><WalletPage /></Layout>} />
-                  <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-                  <Route path="/video/:videoId" element={<Layout><VideoPlayerPage /></Layout>} />
-                  <Route path="/explore" element={<Layout><ExplorePage /></Layout>} />
-                  <Route path="/shop" element={<Layout><ShopPage /></Layout>} />
-                  
-                  {/* Admin routes with auth check */}
-                  <Route path="/admin" element={
-                    <AuthCheck requireAdmin={true}>
-                      <Layout><AdminPage /></Layout>
-                    </AuthCheck>
-                  } />
-                  <Route path="/admin-dashboard" element={
-                    <AuthCheck requireAdmin={true}>
-                      <AdminDashboardPage />
-                    </AuthCheck>
-                  } />
-                  <Route path="/admin-dashboard/:tab" element={
-                    <AuthCheck requireAdmin={true}>
-                      <AdminDashboardPage />
-                    </AuthCheck>
-                  } />
-                  
-                  {/* Seller routes with auth check */}
-                  <Route path="/seller-dashboard" element={
-                    <AuthCheck requireSeller={true}>
-                      <Layout><SellerDashboardPage /></Layout>
-                    </AuthCheck>
-                  } />
-                </Routes>
-              </Router>
-              <Toaster />
-            </CartProvider>
-          </AuthProvider>
-        </div>
-      </QueryClientProvider>
-    </React.StrictMode>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="explore" element={<ExplorePage />} />
+          <Route path="live" element={<LivePage />} />
+          <Route path="battles/:id" element={<BattlePage />} />
+          <Route path="shop" element={<ShopPage />} />
+          <Route path="profile/:id" element={<ProfilePage />} />
+          <Route path="streamer/:id" element={<StreamerProfilePage />} />
+          <Route path="activity" element={<ActivityPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="livestream/:id" element={<LiveStreamPage />} />
+          <Route path="broadcast" element={<StreamerBroadcastPage />} />
+          <Route path="watch/:id" element={<WatchPage />} />
+          <Route path="product/:id" element={<ProductDetailPage />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="seller-dashboard" element={<SellerDashboardPage />} />
+          <Route path="seller/:id" element={<SellerProfilePage />} />
+          <Route path="admin/*" element={<AdminPage />} />
+          <Route path="search" element={<SearchPage />} />
+          <Route path="wallet" element={<WalletPage />} />
+          <Route path="video-player/:id" element={<VideoPlayerPage />} />
+          <Route path="videos" element={<VideosPage />} /> {/* Add new route for videos page */}
+        </Route>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Router>
   );
 }
 

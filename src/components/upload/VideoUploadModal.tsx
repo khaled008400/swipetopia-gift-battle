@@ -1,6 +1,5 @@
-
 import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Upload, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import UploadStep from './upload-steps/UploadStep';
@@ -120,14 +119,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upload Video</DialogTitle>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-4 top-4" 
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <DialogDescription>
+            Share your video with the world
+          </DialogDescription>
         </DialogHeader>
         
         <div className="pb-4">
