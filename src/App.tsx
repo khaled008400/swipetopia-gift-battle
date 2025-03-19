@@ -8,20 +8,23 @@ import Layout from './components/Layout';
 import { supabase } from './integrations/supabase/client';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
+import { CartProvider } from './context/CartContext';
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            {/* Add more routes as needed */}
-          </Routes>
-        </Layout>
-        <Toaster position="top-right" />
-      </BrowserRouter>
+      <CartProvider>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              {/* Add more routes as needed */}
+            </Routes>
+          </Layout>
+          <Toaster position="top-right" />
+        </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   );
 }
