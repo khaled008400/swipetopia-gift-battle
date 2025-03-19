@@ -112,6 +112,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
       if (profile) {
         console.log("Profile fetched successfully:", profile);
+        // Convert roles to UserRole[] type - fixing the TS error
+        const userRoles: UserRole[] = Array.isArray(profile.roles) 
+          ? profile.roles.map(role => role as UserRole)
+          : profile.role 
+            ? [profile.role as UserRole]
+            : ['user'];
+
         const userProfile: UserProfile = {
           id: profile.id,
           username: profile.username || 'User',
@@ -120,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           coins: profile.coins || 0,
           followers: profile.followers || 0,
           following: profile.following || 0,
-          roles: Array.isArray(profile.roles) ? profile.roles : [profile.role as UserRole] || ['user'],
+          roles: userRoles,
           bio: profile.bio,
           location: profile.location,
           interests: profile.interests || [],
@@ -167,7 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
                      authUser.email?.split('@')[0] || 
                      `user_${Math.floor(Math.random() * 10000)}`;
       
-      // Create a new profile
+      // Create a new profile with properly typed roles
       const newProfile = {
         id: userId,
         username: username,
@@ -176,7 +183,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         coins: 1000,
         followers: 0,
         following: 0,
-        roles: ['user'],
+        roles: ['user' as UserRole],
         interests: [],
         payment_methods: []
       };
