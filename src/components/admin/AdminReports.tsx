@@ -1,158 +1,195 @@
+
 import React, { useState } from 'react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, CartesianGrid, Legend } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AdminReportsService, { UserGrowthData, EngagementData, RevenueData } from '@/services/admin-reports.service';
+import { AreaChart, Area } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import AdminReportsService from '@/services/admin-reports.service';
 import { Loader2 } from 'lucide-react';
 
 const AdminReports = () => {
-  const [period, setPeriod] = useState('monthly');
+  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
   
-  const { data: userGrowthData, isLoading: isLoadingUserData } = useQuery({
+  // Fetch user growth data
+  const { data: userGrowthData, isLoading: userGrowthLoading } = useQuery({
     queryKey: ['userGrowth', period],
-    queryFn: () => AdminReportsService.getUserGrowthData(period),
+    queryFn: async () => await AdminReportsService.getUserGrowthData(period),
   });
   
-  const { data: engagementData, isLoading: isLoadingEngagementData } = useQuery({
-    queryKey: ['videoEngagement', period],
-    queryFn: () => AdminReportsService.getVideoEngagementData(period),
+  // Fetch engagement data
+  const { data: engagementData, isLoading: engagementLoading } = useQuery({
+    queryKey: ['engagement', period],
+    queryFn: async () => await AdminReportsService.getVideoEngagementData(period),
   });
   
-  const { data: revenueData, isLoading: isLoadingRevenueData } = useQuery({
+  // Fetch revenue data
+  const { data: revenueData, isLoading: revenueLoading } = useQuery({
     queryKey: ['revenue', period],
-    queryFn: () => AdminReportsService.getRevenueData(period),
+    queryFn: async () => await AdminReportsService.getRevenueData(period),
   });
+  
+  const handlePeriodChange = (value: string) => {
+    setPeriod(value as 'daily' | 'weekly' | 'monthly');
+  };
+  
+  if (userGrowthLoading || engagementLoading || revenueLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Admin Reports</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold">Analytics &amp; Reports</h2>
+        <Select defaultValue={period} onValueChange={handlePeriodChange}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Select period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Daily</SelectItem>
+            <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
-      <Tabs defaultValue="users" className="space-y-4">
+      <Tabs defaultValue="growth" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="users">User Growth</TabsTrigger>
-          <TabsTrigger value="engagement">Video Engagement</TabsTrigger>
+          <TabsTrigger value="growth">User Growth</TabsTrigger>
+          <TabsTrigger value="engagement">Engagement</TabsTrigger>
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
         </TabsList>
         
-        <div className="flex justify-end">
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <TabsContent value="users" className="space-y-4">
+        <TabsContent value="growth" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>User Growth</CardTitle>
-              <CardDescription>
-                Track the growth of users over time.
-              </CardDescription>
+              <CardDescription>New and total users over time</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingUserData ? (
-                <div className="flex justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : userGrowthData ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={userGrowthData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
+              <div className="h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={userGrowthData || []}>
                     <XAxis dataKey="date" />
-                    <YAxis />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="newUsers" stroke="#8884d8" name="New Users" />
-                    <Line type="monotone" dataKey="totalUsers" stroke="#82ca9d" name="Total Users" />
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <Line yAxisId="left" type="monotone" dataKey="newUsers" name="New Users" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="totalUsers" name="Total Users" stroke="#82ca9d" />
                   </LineChart>
                 </ResponsiveContainer>
-              ) : (
-                <p>No user growth data available.</p>
-              )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="engagement" className="space-y-4">
+        <TabsContent value="engagement" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Video Engagement</CardTitle>
-              <CardDescription>
-                Analyze video engagement metrics.
-              </CardDescription>
+              <CardDescription>Views, likes, comments and shares</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingEngagementData ? (
-                <div className="flex justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : engagementData ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={engagementData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <div className="h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={engagementData || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="views" stroke="#8884d8" name="Views" />
-                    <Line type="monotone" dataKey="likes" stroke="#82ca9d" name="Likes" />
-                    <Line type="monotone" dataKey="comments" stroke="#ffc658" name="Comments" />
-                    <Line type="monotone" dataKey="shares" stroke="#a45de2" name="Shares" />
-                  </LineChart>
+                    <Bar dataKey="views" fill="#8884d8" />
+                    <Bar dataKey="likes" fill="#82ca9d" />
+                    <Bar dataKey="comments" fill="#ffc658" />
+                    <Bar dataKey="shares" fill="#ff8042" />
+                  </BarChart>
                 </ResponsiveContainer>
-              ) : (
-                <p>No video engagement data available.</p>
-              )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="revenue" className="space-y-4">
+        <TabsContent value="revenue" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Revenue</CardTitle>
-              <CardDescription>
-                Track revenue and transaction data.
-              </CardDescription>
+              <CardDescription>Revenue and transactions over time</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingRevenueData ? (
-                <div className="flex justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : revenueData ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={revenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <div className="h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueData || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue" />
-                    <Line type="monotone" dataKey="transactions" stroke="#82ca9d" name="Transactions" />
-                  </LineChart>
+                    <Area type="monotone" dataKey="revenue" name="Revenue ($)" stroke="#8884d8" fill="#8884d8" />
+                    <Area type="monotone" dataKey="transactions" name="Transactions" stroke="#82ca9d" fill="#82ca9d" />
+                  </AreaChart>
                 </ResponsiveContainer>
-              ) : (
-                <p>No revenue data available.</p>
-              )}
+              </div>
             </CardContent>
           </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${revenueData?.reduce((sum, item) => sum + item.revenue, 0).toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {revenueData?.reduce((sum, item) => sum + item.transactions, 0).toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Average Transaction</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${revenueData && revenueData.length > 0 ? (
+                    (revenueData.reduce((sum, item) => sum + item.revenue, 0) / 
+                    revenueData.reduce((sum, item) => sum + item.transactions, 0)).toFixed(2)
+                  ) : '0.00'}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {userGrowthData && revenueData ? (
+                    (revenueData.reduce((sum, item) => sum + item.transactions, 0) / 
+                    userGrowthData[userGrowthData.length - 1]?.totalUsers * 100).toFixed(2)
+                  ) : '0.00'}%
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -15,7 +15,10 @@ import {
   Users, 
   Video,
   Wallet,
-  Loader2
+  Loader2,
+  Database,
+  HardDrive,
+  Shield
 } from 'lucide-react';
 import { AdminStats } from '@/services/admin.service';
 import AdminDashboard from './AdminDashboard';
@@ -33,6 +36,8 @@ import TestUsersGenerator from './TestUsersGenerator';
 import AdminStreamingSettings from './AdminStreamingSettings';
 import AdminVirtualGifts from './AdminVirtualGifts';
 import AdminWallets from './AdminWallets';
+import StorageManager from './StorageManager';
+import SecuritySettings from './SecuritySettings';
 
 interface AdminTabbedInterfaceProps {
   stats: AdminStats;
@@ -55,17 +60,19 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: Layout },
-    { id: "products", label: "Products", icon: Package },
     { id: "users", label: "Users", icon: Users },
-    { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "videos", label: "Videos", icon: Video },
+    { id: "products", label: "Products", icon: Package },
+    { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "virtual-gifts", label: "Virtual Gifts", icon: Gift },
     { id: "wallets", label: "Wallets", icon: Wallet },
     { id: "coupons", label: "Coupons", icon: Ticket },
     { id: "offers", label: "Offers", icon: PercentCircle },
     { id: "shipping", label: "Shipping", icon: Truck },
     { id: "streaming", label: "Streaming", icon: Radio },
+    { id: "storage", label: "Storage", icon: HardDrive },
     { id: "reports", label: "Reports", icon: BarChart },
+    { id: "security", label: "Security", icon: Shield },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -139,6 +146,14 @@ const AdminTabbedInterface: React.FC<AdminTabbedInterfaceProps> = ({ stats, stat
         
         <TabsContent value="wallets">
           <AdminWallets />
+        </TabsContent>
+
+        <TabsContent value="storage">
+          <StorageManager />
+        </TabsContent>
+
+        <TabsContent value="security">
+          <SecuritySettings />
         </TabsContent>
 
         <TabsContent value="settings">

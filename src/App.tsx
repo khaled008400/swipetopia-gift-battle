@@ -89,7 +89,7 @@ function App() {
                   } />
                   <Route path="/admin-dashboard" element={
                     <AuthCheck requireAdmin={true}>
-                      <Layout><AdminDashboardPage /></Layout>
+                      <AdminDashboardPage />
                     </AuthCheck>
                   } />
                   
