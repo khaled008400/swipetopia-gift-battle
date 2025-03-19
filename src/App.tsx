@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import HomePage from '@/pages/HomePage';
 import ExplorePage from '@/pages/ExplorePage';
@@ -31,7 +31,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={<Layout><Outlet /></Layout>}>
           <Route index element={<HomePage />} />
           <Route path="explore" element={<ExplorePage />} />
           <Route path="live" element={<LivePage />} />
@@ -52,7 +52,7 @@ function App() {
           <Route path="search" element={<SearchPage />} />
           <Route path="wallet" element={<WalletPage />} />
           <Route path="video-player/:id" element={<VideoPlayerPage />} />
-          <Route path="videos" element={<VideosPage />} /> {/* Add new route for videos page */}
+          <Route path="videos" element={<VideosPage />} />
         </Route>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
