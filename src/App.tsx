@@ -11,7 +11,9 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Layout />
+        <Layout>
+          {/* Routes will go here */}
+        </Layout>
         <Toaster position="top-right" />
       </BrowserRouter>
     </AuthProvider>
