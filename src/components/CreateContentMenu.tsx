@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Upload, Video, Mic, Camera, MessageSquareText } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { StreamService } from "@/services/streaming";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -35,53 +35,25 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
     
     switch (type) {
       case 'video':
+        // Navigate directly to videos page with upload modal
         navigate('/videos');
         break;
       case 'live':
         try {
-          // Check if user already has an active stream
-          const { data: existingStream, error: checkError } = await supabase
-            .from('streams')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('status', 'online')
-            .maybeSingle();
+          // Use StreamService to start a live stream
+          const streamTitle = `${user.username || user.email}'s Live Stream`;
+          const stream = await StreamService.startStream(
+            streamTitle,
+            `Live stream by ${user.username || user.email}`
+          );
           
-          if (checkError) {
-            console.error('Error checking for active streams:', checkError);
-            throw checkError;
-          }
-          
-          if (existingStream) {
-            // If there's an existing stream, navigate to it
-            navigate(`/live/${existingStream.id}`);
-            toast({
-              title: "Resuming stream",
-              description: "Reconnecting to your active stream.",
-            });
-          } else {
-            // Create a new stream and navigate to it
-            const { data: newStream, error: createError } = await supabase
-              .from('streams')
-              .insert({
-                title: `${user.username || user.email}'s Live Stream`,
-                user_id: user.id,
-                status: 'online'
-              })
-              .select()
-              .single();
-            
-            if (createError) {
-              console.error('Error creating stream:', createError);
-              throw createError;
-            }
-            
+          if (stream) {
             toast({
               title: "Going live!",
               description: "Your stream is being prepared.",
             });
             
-            navigate(`/live/${newStream.id}`);
+            navigate(`/live/${stream.id}`);
           }
         } catch (error) {
           console.error('Error starting live stream:', error);

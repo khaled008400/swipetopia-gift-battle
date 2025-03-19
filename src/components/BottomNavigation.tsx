@@ -14,6 +14,12 @@ const BottomNavigation = () => {
     return location.pathname === path;
   };
 
+  const handleCreateMenuClick = () => {
+    // Use a more direct approach to communicate with the Layout component
+    const event = new CustomEvent('toggle-create-menu');
+    window.dispatchEvent(event);
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-app-black border-t border-app-gray-dark rounded-t-xl mx-0 h-16 flex items-center justify-between px-6 z-40 shadow-lg">
       <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow' : 'text-gray-400'}`}>
@@ -27,7 +33,8 @@ const BottomNavigation = () => {
       </Link>
       <button 
         className="bg-app-yellow text-app-black rounded-full p-3 -mt-5 shadow-lg"
-        onClick={() => window.dispatchEvent(new CustomEvent('toggle-create-menu'))}
+        onClick={handleCreateMenuClick}
+        aria-label="Create content"
       >
         <Plus className="h-6 w-6" />
       </button>

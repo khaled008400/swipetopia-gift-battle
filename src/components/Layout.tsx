@@ -16,8 +16,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       setIsCreateMenuOpen(prevState => !prevState);
     };
 
+    // Add event listener
     window.addEventListener('toggle-create-menu', handleToggleCreateMenu);
 
+    // Clean up event listener on component unmount
     return () => {
       window.removeEventListener('toggle-create-menu', handleToggleCreateMenu);
     };
