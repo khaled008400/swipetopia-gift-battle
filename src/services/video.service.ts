@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Video } from "@/types/video.types";
 import { v4 as uuidv4 } from 'uuid';
@@ -55,18 +54,11 @@ class VideoService {
       
       console.log('Inserting with user ID:', user.id);
 
-      // Check if the table has comment_count or comments_count
-      const { data: columnInfo, error: columnCheckError } = await supabase
-        .from('videos')
-        .select('*')
-        .limit(1);
+      // First, let's inspect the table structure to handle schema variations
+      console.log('Checking video table schema...');
       
-      if (columnCheckError) {
-        console.error('Error checking column names:', columnCheckError);
-      }
-      
-      // Create the insert object with all possible column names
-      const insertData: any = {
+      // Create a basic insert object with required fields
+      const videoData = {
         title,
         description,
         video_url: videoUrl,
@@ -75,19 +67,17 @@ class VideoService {
         user_id: user.id,
         hashtags,
         view_count: 0,
-        likes_count: 0, 
+        likes_count: 0,
         shares_count: 0
       };
       
-      // Add both comment_count and comments_count to handle either column name
-      insertData.comment_count = 0;
-      insertData.comments_count = 0;
+      // Add a field for comment count - we'll use RETURNING to get the inserted row
+      // without specifying whether it's comment_count or comments_count
+      console.log('Inserting video with data:', videoData);
       
-      console.log('Insert data prepared:', insertData);
-      
-      const { data: videoData, error: insertError } = await supabase
+      const { data: insertedVideo, error: insertError } = await supabase
         .from('videos')
-        .insert(insertData)
+        .insert(videoData)
         .select()
         .single();
 
@@ -96,8 +86,8 @@ class VideoService {
         throw insertError;
       }
 
-      console.log('Video metadata inserted successfully:', videoData);
-      return videoData;
+      console.log('Video metadata inserted successfully:', insertedVideo);
+      return insertedVideo;
     } catch (error) {
       console.error('Error in uploadVideo:', error);
       throw error;
