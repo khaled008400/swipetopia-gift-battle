@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 
-interface UploadStepProps {
+export interface UploadStepProps {
   onSelectFile: (file: File) => void;
 }
 
