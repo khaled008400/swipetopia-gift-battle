@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useAuth } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,27 +8,27 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Upload } from 'lucide-react';
 import UploadService from '@/services/upload.service';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Debug render counter
 let renderCount = 0;
 
 interface ProfileEditProps {
   onComplete: () => void;
+  profile: UserProfile;
 }
 
-const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
+const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete, profile }) => {
   renderCount++;
   console.log(`ProfileEdit render #${renderCount}`);
   
-  const { user } = useAuth();
-  const { profile, updateProfile } = useUserProfile(user?.id || null);
   const [isLoading, setIsLoading] = useState(false);
   const [formValues, setFormValues] = useState({
-    username: '',
-    bio: '',
-    location: '',
-    avatar_url: '',
+    username: profile.username || '',
+    bio: profile.bio || '',
+    location: profile.location || '',
+    avatar_url: profile.avatar_url || '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -45,25 +43,6 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
   useEffect(() => {
     console.log('Avatar file changed:', avatarFile?.name || 'null');
   }, [avatarFile]);
-
-  // Update form values when profile is loaded
-  useEffect(() => {
-    if (profile) {
-      console.log('ProfileEdit: Setting form values from profile:', {
-        username: profile.username || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        avatar_url: profile.avatar_url || '',
-      });
-      
-      setFormValues({
-        username: profile.username || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        avatar_url: profile.avatar_url || '',
-      });
-    }
-  }, [profile]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -114,33 +93,31 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
         }
       }
 
-      // Update profile
+      // Update profile directly through Supabase
       console.log('Updating profile with data:', {
         ...formValues,
         avatar_url: avatarUrl,
       });
       
-      const result = await updateProfile({
-        ...formValues,
-        avatar_url: avatarUrl,
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          username: formValues.username,
+          bio: formValues.bio,
+          location: formValues.location,
+          avatar_url: avatarUrl,
+          updated_at: new Date()
+        })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+        variant: "default",
       });
-
-      console.log('Profile update result:', result);
-
-      if (result.success) {
-        toast({
-          title: "Profile Updated",
-          description: "Your profile has been successfully updated.",
-          variant: "default",
-        });
-        onComplete();
-      } else {
-        toast({
-          title: "Update Failed",
-          description: result.error || "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
-      }
+      onComplete();
     } catch (error: any) {
       console.error('Profile update error:', error);
       toast({
@@ -158,18 +135,6 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({ onComplete }) => {
     onComplete();
   };
 
-  if (!profile) {
-    console.log('ProfileEdit: No profile available, showing loading state');
-    return (
-      <div className="text-center py-8 text-gray-400">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-app-yellow" />
-        Loading profile information...
-      </div>
-    );
-  }
-
-  console.log('ProfileEdit: Rendering form');
-  
   return (
     <Card className="bg-app-gray-dark border-0 shadow-md">
       <CardHeader>

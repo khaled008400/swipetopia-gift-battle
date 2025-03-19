@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, LogOut, RefreshCcw } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -149,7 +149,7 @@ const ProfilePage = () => {
       {isEditing && profile ? (
         <>
           {console.log('ProfilePage: Rendering ProfileEdit')}
-          <ProfileEdit onComplete={handleEditComplete} />
+          <ProfileEdit onComplete={handleEditComplete} profile={profile} />
         </>
       ) : (
         profile && (
