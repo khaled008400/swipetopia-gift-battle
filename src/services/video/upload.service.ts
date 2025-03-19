@@ -101,6 +101,11 @@ class VideoUploadService {
 
   // Method to check if a video exists in the database by its ID
   async checkVideoExists(videoId: string) {
+    if (!videoId) {
+      console.error('Invalid video ID provided to checkVideoExists:', videoId);
+      return false;
+    }
+    
     try {
       console.log(`Checking if video with ID ${videoId} exists in database...`);
       
@@ -116,7 +121,12 @@ class VideoUploadService {
       }
       
       const exists = !!data;
-      console.log(`Video existence check result: ${exists ? 'Found' : 'Not found'}`);
+      console.log(`Video existence check result for ID ${videoId}: ${exists ? 'Found' : 'Not found'}`);
+      
+      if (exists) {
+        console.log('Video data found:', data);
+      }
+      
       return exists;
     } catch (error) {
       console.error('Error in checkVideoExists:', error);
