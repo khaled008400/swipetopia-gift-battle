@@ -11,6 +11,14 @@ export interface PaymentMethod {
   exp_month?: number;
   exp_year?: number;
   name?: string;
+  is_default?: boolean;
+}
+
+export interface NotificationPreferences {
+  battles: boolean;
+  orders: boolean;
+  messages: boolean;
+  followers: boolean;
 }
 
 export interface UserProfile {
@@ -21,6 +29,7 @@ export interface UserProfile {
   avatar_url?: string;
   bio?: string;
   website?: string;
+  location?: string;
   roles: UserRole[];
   created_at?: string;
   updated_at?: string;
@@ -29,6 +38,10 @@ export interface UserProfile {
   coins: number;
   payment_methods: PaymentMethod[];
   is_verified?: boolean;
+  notification_preferences?: NotificationPreferences;
+  interests?: string[];
+  shop_name?: string;
+  stream_key?: string;
   seller_info?: {
     shop_name?: string;
     shop_description?: string;
@@ -64,4 +77,23 @@ export interface AuthContextType {
   requiresAuth: () => void;
   isAdmin: () => boolean;
   hasRole: (role: string) => boolean;
+}
+
+// Add the User type that's missing for admin.service.ts
+export interface User {
+  id: string;
+  email: string;
+  username?: string;
+  created_at: string;
+  roles?: UserRole[];
+}
+
+// Add AdminUser interface for admin.service.ts
+export interface AdminUser {
+  id: string;
+  email: string;
+  username?: string;
+  created_at: string;
+  roles?: UserRole[];
+  avatar_url?: string;
 }

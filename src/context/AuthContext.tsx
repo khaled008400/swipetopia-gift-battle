@@ -176,6 +176,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return hasRole(user?.roles, role);
   };
   
+  const enhancedAddPaymentMethod = async (method: any): Promise<void> => {
+    await addPaymentMethod(method);
+  };
+  
+  const enhancedRemovePaymentMethod = async (id: string): Promise<void> => {
+    await removePaymentMethod(id);
+  };
+  
   const value: AuthContextType = {
     user,
     session,
@@ -190,8 +198,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     register,
     logout,
     updateProfile,
-    addPaymentMethod,
-    removePaymentMethod,
+    addPaymentMethod: enhancedAddPaymentMethod,
+    removePaymentMethod: enhancedRemovePaymentMethod,
     requiresAuth: () => {},
     isAdmin: () => isAdmin(user?.roles),
     hasRole: userHasRole

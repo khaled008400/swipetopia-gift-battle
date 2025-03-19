@@ -1,4 +1,4 @@
-import { User } from "@/types/auth.types";
+import { UserRole, User, AdminUser } from '@/types/auth.types';
 import { Video } from "@/types/video.types";
 import { LiveStream } from "@/types/video.types";
 
