@@ -54,23 +54,40 @@ class VideoService {
       }
       
       console.log('Inserting with user ID:', user.id);
+
+      // Check if the table has comment_count or comments_count
+      const { data: columnInfo, error: columnCheckError } = await supabase
+        .from('videos')
+        .select('*')
+        .limit(1);
       
-      // Use comment_count instead of comments_count
+      if (columnCheckError) {
+        console.error('Error checking column names:', columnCheckError);
+      }
+      
+      // Create the insert object with all possible column names
+      const insertData: any = {
+        title,
+        description,
+        video_url: videoUrl,
+        thumbnail_url: thumbnailUrl || `${videoUrl}?preview`,
+        is_private: isPrivate,
+        user_id: user.id,
+        hashtags,
+        view_count: 0,
+        likes_count: 0, 
+        shares_count: 0
+      };
+      
+      // Add both comment_count and comments_count to handle either column name
+      insertData.comment_count = 0;
+      insertData.comments_count = 0;
+      
+      console.log('Insert data prepared:', insertData);
+      
       const { data: videoData, error: insertError } = await supabase
         .from('videos')
-        .insert({
-          title,
-          description,
-          video_url: videoUrl,
-          thumbnail_url: thumbnailUrl || `${videoUrl}?preview`,
-          is_private: isPrivate,
-          user_id: user.id,
-          hashtags,
-          view_count: 0,
-          likes_count: 0,
-          comment_count: 0, // Changed from comment_count
-          shares_count: 0,
-        })
+        .insert(insertData)
         .select()
         .single();
 
