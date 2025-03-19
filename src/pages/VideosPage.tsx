@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
+import DatabaseDebug from '@/components/debug/DatabaseDebug';
 
 const VideosPage: React.FC = () => {
   const location = useLocation();
@@ -88,6 +90,11 @@ const VideosPage: React.FC = () => {
           <Upload className="mr-2 h-4 w-4" />
           Upload Video
         </Button>
+      </div>
+
+      {/* Add debug component */}
+      <div className="mb-6">
+        <DatabaseDebug />
       </div>
 
       {isLoading ? (

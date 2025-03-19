@@ -1,12 +1,19 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const UserVerification = () => {
+const UserVerification: React.FC = () => {
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">User Verification</h2>
-      <p>User verification interface would go here.</p>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Verify User Identities</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-500">
+          Use this interface to review user verification requests and manual identity checks.
+        </p>
+      </CardContent>
+    </Card>
   );
 };
 
