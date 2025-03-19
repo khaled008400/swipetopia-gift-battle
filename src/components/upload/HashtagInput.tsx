@@ -7,9 +7,10 @@ interface HashtagInputProps {
   hashtags: string[];
   onAdd: (tag: string) => void;
   onRemove: (tag: string) => void;
+  disabled?: boolean;
 }
 
-const HashtagInput = ({ hashtags, onAdd, onRemove }: HashtagInputProps) => {
+const HashtagInput = ({ hashtags, onAdd, onRemove, disabled = false }: HashtagInputProps) => {
   const [inputValue, setInputValue] = useState("");
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -21,7 +22,7 @@ const HashtagInput = ({ hashtags, onAdd, onRemove }: HashtagInputProps) => {
 
   const addHashtag = () => {
     const tag = inputValue.trim().replace(/^#/, "");
-    if (tag && !hashtags.includes(tag)) {
+    if (tag && !hashtags.includes(tag) && !disabled) {
       onAdd(tag);
       setInputValue("");
     }
@@ -40,6 +41,7 @@ const HashtagInput = ({ hashtags, onAdd, onRemove }: HashtagInputProps) => {
           onBlur={addHashtag}
           placeholder="Add hashtags (press Enter or Space)"
           className="border-0 focus-visible:ring-0"
+          disabled={disabled}
         />
       </div>
       
@@ -54,6 +56,7 @@ const HashtagInput = ({ hashtags, onAdd, onRemove }: HashtagInputProps) => {
               <button
                 onClick={() => onRemove(tag)}
                 className="ml-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                disabled={disabled}
               >
                 <X size={14} />
               </button>
