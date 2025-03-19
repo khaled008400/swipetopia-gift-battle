@@ -24,41 +24,44 @@ import SearchPage from '@/pages/SearchPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import WalletPage from '@/pages/WalletPage';
 import VideoPlayerPage from '@/pages/VideoPlayerPage';
-import VideosPage from '@/pages/VideosPage';  // Add import for VideosPage
+import VideosPage from '@/pages/VideosPage';
+import { CartProvider } from '@/context/CartContext';
 import './App.css';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Layout><Outlet /></Layout>}>
-          <Route index element={<HomePage />} />
-          <Route path="explore" element={<ExplorePage />} />
-          <Route path="live" element={<LivePage />} />
-          <Route path="battles/:id" element={<BattlePage />} />
-          <Route path="shop" element={<ShopPage />} />
-          <Route path="profile/:id" element={<ProfilePage />} />
-          <Route path="streamer/:id" element={<StreamerProfilePage />} />
-          <Route path="activity" element={<ActivityPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="livestream/:id" element={<LiveStreamPage />} />
-          <Route path="broadcast" element={<StreamerBroadcastPage />} />
-          <Route path="watch/:id" element={<WatchPage />} />
-          <Route path="product/:id" element={<ProductDetailPage />} />
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="seller-dashboard" element={<SellerDashboardPage />} />
-          <Route path="seller/:id" element={<SellerProfilePage />} />
-          <Route path="admin/*" element={<AdminPage />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="wallet" element={<WalletPage />} />
-          <Route path="video-player/:id" element={<VideoPlayerPage />} />
-          <Route path="videos" element={<VideosPage />} />
-        </Route>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Router>
+    <CartProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Layout><Outlet /></Layout>}>
+            <Route index element={<HomePage />} />
+            <Route path="explore" element={<ExplorePage />} />
+            <Route path="live" element={<LivePage />} />
+            <Route path="battles/:id" element={<BattlePage />} />
+            <Route path="shop" element={<ShopPage />} />
+            <Route path="profile/:id" element={<ProfilePage />} />
+            <Route path="streamer/:id" element={<StreamerProfilePage />} />
+            <Route path="activity" element={<ActivityPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="livestream/:id" element={<LiveStreamPage />} />
+            <Route path="broadcast" element={<StreamerBroadcastPage />} />
+            <Route path="watch/:id" element={<WatchPage />} />
+            <Route path="product/:id" element={<ProductDetailPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="seller-dashboard" element={<SellerDashboardPage />} />
+            <Route path="seller/:id" element={<SellerProfilePage />} />
+            <Route path="admin/*" element={<AdminPage />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="wallet" element={<WalletPage />} />
+            <Route path="video-player/:id" element={<VideoPlayerPage />} />
+            <Route path="videos" element={<VideosPage />} />
+          </Route>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Router>
+    </CartProvider>
   );
 }
 

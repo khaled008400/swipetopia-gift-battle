@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 
 const BottomNavigation = () => {
   const location = useLocation();
+  
+  // Get cart context and handle case where it might not be available
   const cartContext = useCart();
   // Use a default value if cart context is not available
   const itemCount = cartContext?.itemCount || 0;
