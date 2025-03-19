@@ -107,28 +107,30 @@ class VideoUploadService {
     }
     
     try {
-      console.log(`Checking if video with ID ${videoId} exists in database...`);
+      console.log(`[CheckVideoExists] Checking if video with ID ${videoId} exists in database...`);
       
-      const { data, error } = await supabase
+      // Use a more comprehensive query to check video existence
+      const { data, error, count } = await supabase
         .from('videos')
-        .select('id')
+        .select('id', { count: 'exact' })
         .eq('id', videoId)
         .limit(1);
       
       if (error) {
-        console.error('Error checking if video exists:', error);
+        console.error('[CheckVideoExists] Error checking if video exists:', error);
         return false;
       }
       
       const exists = Array.isArray(data) && data.length > 0;
-      console.log(`Video existence check result for ID ${videoId}: ${exists ? 'Found' : 'Not found'}`);
+      console.log(`[CheckVideoExists] Video existence check result for ID ${videoId}: ${exists ? 'Found' : 'Not found'}, count: ${count}`);
       
       return exists;
     } catch (error) {
-      console.error('Error in checkVideoExists:', error);
+      console.error('[CheckVideoExists] Error in checkVideoExists:', error);
       return false;
     }
   }
 }
 
+// Important: Export an instance, not the class itself
 export default new VideoUploadService();

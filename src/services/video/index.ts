@@ -3,36 +3,79 @@ import VideoUploadService from './upload.service';
 import VideoFetchService from './fetch.service';
 import VideoInteractionService from './interaction.service';
 
+// Create the instance here, so we don't need to use bind
+const uploadServiceInstance = VideoUploadService;
+const fetchServiceInstance = VideoFetchService;
+const interactionServiceInstance = VideoInteractionService;
+
 // Combine all services into a single export
 const VideoService = {
   // Upload methods
-  uploadVideo: VideoUploadService.uploadVideo.bind(VideoUploadService),
-  checkVideoExists: VideoUploadService.checkVideoExists.bind(VideoUploadService),
+  uploadVideo: (videoFile: File, title: string, description: string, thumbnailUrl: string | null, isPrivate: boolean = false, hashtags: string[] = []) => 
+    uploadServiceInstance.uploadVideo(videoFile, title, description, thumbnailUrl, isPrivate, hashtags),
+  
+  checkVideoExists: (videoId: string) => 
+    uploadServiceInstance.checkVideoExists(videoId),
   
   // Fetch methods
-  getVideoById: VideoFetchService.getVideoById.bind(VideoFetchService),
-  getForYouVideos: VideoFetchService.getForYouVideos.bind(VideoFetchService),
-  getUserVideos: VideoFetchService.getUserVideos.bind(VideoFetchService),
-  getTrendingVideos: VideoFetchService.getTrendingVideos.bind(VideoFetchService),
-  getVideos: VideoFetchService.getVideos.bind(VideoFetchService),
-  getLikedVideos: VideoFetchService.getLikedVideos.bind(VideoFetchService),
-  getSavedVideos: VideoFetchService.getSavedVideos.bind(VideoFetchService),
-  searchVideos: VideoFetchService.searchVideos.bind(VideoFetchService),
+  getVideoById: (id: string) => 
+    fetchServiceInstance.getVideoById(id),
+  
+  getForYouVideos: () => 
+    fetchServiceInstance.getForYouVideos(),
+  
+  getUserVideos: (userId: string) => 
+    fetchServiceInstance.getUserVideos(userId),
+  
+  getTrendingVideos: () => 
+    fetchServiceInstance.getTrendingVideos(),
+  
+  getVideos: (params: any) => 
+    fetchServiceInstance.getVideos(params),
+  
+  getLikedVideos: () => 
+    fetchServiceInstance.getLikedVideos(),
+  
+  getSavedVideos: () => 
+    fetchServiceInstance.getSavedVideos(),
+  
+  searchVideos: (query: string) => 
+    fetchServiceInstance.searchVideos(query),
   
   // For backward compatibility
-  fetchVideo: VideoFetchService.getVideoById.bind(VideoFetchService),
-  fetchVideos: VideoFetchService.getVideos.bind(VideoFetchService),
-  fetchUserVideos: VideoFetchService.getUserVideos.bind(VideoFetchService),
+  fetchVideo: (id: string) => 
+    fetchServiceInstance.getVideoById(id),
+  
+  fetchVideos: (params: any) => 
+    fetchServiceInstance.getVideos(params),
+  
+  fetchUserVideos: (userId: string) => 
+    fetchServiceInstance.getUserVideos(userId),
   
   // Interaction methods
-  updateVideo: VideoInteractionService.updateVideo.bind(VideoInteractionService),
-  deleteVideo: VideoInteractionService.deleteVideo.bind(VideoInteractionService),
-  likeVideo: VideoInteractionService.likeVideo.bind(VideoInteractionService),
-  unlikeVideo: VideoInteractionService.unlikeVideo.bind(VideoInteractionService),
-  saveVideo: VideoInteractionService.saveVideo.bind(VideoInteractionService),
-  unsaveVideo: VideoInteractionService.unsaveVideo.bind(VideoInteractionService),
-  incrementViewCount: VideoInteractionService.incrementViewCount.bind(VideoInteractionService),
-  reportVideo: VideoInteractionService.reportVideo.bind(VideoInteractionService),
+  updateVideo: (videoId: string, data: any) => 
+    interactionServiceInstance.updateVideo(videoId, data),
+  
+  deleteVideo: (videoId: string) => 
+    interactionServiceInstance.deleteVideo(videoId),
+  
+  likeVideo: (videoId: string) => 
+    interactionServiceInstance.likeVideo(videoId),
+  
+  unlikeVideo: (videoId: string) => 
+    interactionServiceInstance.unlikeVideo(videoId),
+  
+  saveVideo: (videoId: string) => 
+    interactionServiceInstance.saveVideo(videoId),
+  
+  unsaveVideo: (videoId: string) => 
+    interactionServiceInstance.unsaveVideo(videoId),
+  
+  incrementViewCount: (videoId: string) => 
+    interactionServiceInstance.incrementViewCount(videoId),
+  
+  reportVideo: (videoId: string, reason: string) => 
+    interactionServiceInstance.reportVideo(videoId, reason),
 };
 
 export default VideoService;

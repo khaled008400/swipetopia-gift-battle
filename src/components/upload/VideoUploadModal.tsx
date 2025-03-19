@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Upload, X, ArrowLeft } from 'lucide-react';
 import UploadStep from './upload-steps/UploadStep';
 import EditStep from './upload-steps/EditStep';
 import VideoService from '@/services/video.service';
@@ -15,6 +16,9 @@ interface VideoUploadModalProps {
   onClose: () => void;
   onSuccess: (videoId: string) => void;
 }
+
+const VERIFICATION_MAX_ATTEMPTS = 10;
+const VERIFICATION_BASE_DELAY_MS = 1000;
 
 const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
@@ -51,24 +55,28 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     
     // Clear any existing intervals when component unmounts
     return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      
-      if (checkVideoExistsTimeoutRef.current) {
-        clearTimeout(checkVideoExistsTimeoutRef.current);
-        checkVideoExistsTimeoutRef.current = null;
-      }
+      clearAllTimers();
     };
   }, [isOpen]);
+
+  const clearAllTimers = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    
+    if (checkVideoExistsTimeoutRef.current) {
+      clearTimeout(checkVideoExistsTimeoutRef.current);
+      checkVideoExistsTimeoutRef.current = null;
+    }
+  };
 
   // Add effect to verify upload completion
   useEffect(() => {
     const verifyUpload = async () => {
       // Only run verification if we have a video ID, are not uploading, and progress is high enough
       if (uploadedVideoId && !isUploading && uploadProgress >= 95) {
-        console.log(`Verifying upload completion for video ID: ${uploadedVideoId}, attempt: ${verificationAttempts + 1}`);
+        console.log(`[VideoUploadModal] Verifying upload completion for video ID: ${uploadedVideoId}, attempt: ${verificationAttempts + 1}/${VERIFICATION_MAX_ATTEMPTS}`);
         
         try {
           // Clear any existing timeout
@@ -80,10 +88,10 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
           // Check if the video exists in the database
           const exists = await VideoService.checkVideoExists(uploadedVideoId);
           
-          console.log(`Video existence check result: ${exists ? 'Found' : 'Not found'}`);
+          console.log(`[VideoUploadModal] Video existence check result: ${exists ? 'Found' : 'Not found'}`);
           
           if (exists) {
-            console.log('Video upload verified successfully');
+            console.log('[VideoUploadModal] Video upload verified successfully');
             setUploadProgress(100);
             
             // Small delay to show 100% before closing
@@ -92,21 +100,27 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
               resetState();
               onClose();
             }, 1000);
+            return;
           } else {
             // Increment attempt counter
             const newAttemptCount = verificationAttempts + 1;
             setVerificationAttempts(newAttemptCount);
             
-            // If we've tried 5 times and still can't verify, show error
-            if (newAttemptCount >= 5) {
-              console.error(`Failed to verify video after ${newAttemptCount} attempts`);
+            // If we've tried maximum times and still can't verify, show error
+            if (newAttemptCount >= VERIFICATION_MAX_ATTEMPTS) {
+              console.error(`[VideoUploadModal] Failed to verify video after ${newAttemptCount} attempts`);
               setUploadError("Upload appeared to complete but the video couldn't be verified. Please try again.");
               setUploadProgress(0);
               setIsUploading(false);
+              toast({
+                title: "Upload Failed",
+                description: "Verification timeout. Please try again.",
+                variant: "destructive",
+              });
             } else {
-              // Try again after a delay (increasing delay with each attempt)
-              const delayMs = 2000 * Math.pow(2, newAttemptCount);
-              console.log(`Scheduling next verification attempt in ${delayMs}ms`);
+              // Try again after a delay (exponential backoff)
+              const delayMs = VERIFICATION_BASE_DELAY_MS * Math.pow(2, newAttemptCount);
+              console.log(`[VideoUploadModal] Scheduling next verification attempt in ${delayMs}ms`);
               
               checkVideoExistsTimeoutRef.current = window.setTimeout(() => {
                 verifyUpload();
@@ -114,10 +128,15 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
             }
           }
         } catch (error) {
-          console.error('Error verifying video upload:', error);
+          console.error('[VideoUploadModal] Error verifying video upload:', error);
           setUploadError("Error verifying video upload. Please try again.");
           setUploadProgress(0);
           setIsUploading(false);
+          toast({
+            title: "Upload Failed",
+            description: "Error verifying upload. Please try again.",
+            variant: "destructive",
+          });
         }
       }
     };
@@ -131,7 +150,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         checkVideoExistsTimeoutRef.current = null;
       }
     };
-  }, [uploadedVideoId, isUploading, uploadProgress, verificationAttempts, onSuccess, onClose]);
+  }, [uploadedVideoId, isUploading, uploadProgress, verificationAttempts, onSuccess, onClose, toast]);
 
   const resetState = () => {
     setStep(1);
@@ -148,15 +167,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setUploadedVideoId(null);
     setVerificationAttempts(0);
     
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-    
-    if (checkVideoExistsTimeoutRef.current) {
-      clearTimeout(checkVideoExistsTimeoutRef.current);
-      checkVideoExistsTimeoutRef.current = null;
-    }
+    clearAllTimers();
   };
 
   const handleClose = () => {
@@ -202,14 +213,14 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     // Use a ref to store the interval ID so we can clear it later
     progressIntervalRef.current = window.setInterval(() => {
       setUploadProgress(prev => {
-        // Cap progress at 85% during simulation
         if (prev >= 85) {
           clearInterval(progressIntervalRef.current!);
+          progressIntervalRef.current = null;
           return 85; // Hold at 85% until actual upload completes
         }
-        return Math.min(85, prev + (Math.random() * 5));
+        return prev + (Math.random() * 2); // Slower increment
       });
-    }, 800);
+    }, 1000);
   };
 
   const completeProgressSimulation = () => {
@@ -242,16 +253,16 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     startProgressSimulation();
     
     try {
-      console.log('Starting video upload process...', videoFile.name, videoFile.size);
+      console.log('[VideoUploadModal] Starting video upload process...', videoFile.name, videoFile.size);
       
       try {
-        console.log('Initializing storage buckets before upload...');
+        console.log('[VideoUploadModal] Initializing storage buckets before upload...');
         await UploadService.initBuckets();
       } catch (bucketError) {
-        console.warn('Failed to check storage buckets, continuing anyway:', bucketError);
+        console.warn('[VideoUploadModal] Failed to check storage buckets, continuing anyway:', bucketError);
       }
       
-      console.log('Calling VideoService.uploadVideo with:', { 
+      console.log('[VideoUploadModal] Calling VideoService.uploadVideo with:', { 
         videoFileSize: videoFile.size, 
         title, 
         description, 
@@ -271,12 +282,12 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       // Stop progress simulation and set to 95% to indicate verification phase
       completeProgressSimulation();
       
-      console.log('Video uploaded successfully, response:', uploadedVideo);
+      console.log('[VideoUploadModal] Video uploaded successfully, response:', uploadedVideo);
       
       // Store the uploaded video ID so we can verify it in the effect
       if (uploadedVideo && uploadedVideo.id) {
         setUploadedVideoId(uploadedVideo.id);
-        console.log('Upload successful with video ID:', uploadedVideo.id);
+        console.log('[VideoUploadModal] Upload successful with video ID:', uploadedVideo.id);
         
         toast({
           title: "Upload Processing",
@@ -287,12 +298,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
       }
       
     } catch (error: any) {
-      console.error('Error uploading video:', error);
+      console.error('[VideoUploadModal] Error uploading video:', error);
       
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
+      clearAllTimers();
       
       setUploadProgress(0);
       setIsUploading(false);
@@ -354,7 +362,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         {isUploading && (
           <div className="mt-4 px-4">
             <div className="flex justify-between text-sm mb-1">
-              <span>Uploading...</span>
+              <span>Uploading{uploadProgress >= 95 ? ' (Finalizing)' : '...'}</span>
               <span>{uploadProgress.toFixed(0)}%</span>
             </div>
             <Progress value={uploadProgress} className="h-2" />
