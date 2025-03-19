@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -10,11 +9,7 @@ export interface User {
 
 export type UserRole = 
   | "user" 
-  | "admin" 
-  | "seller" 
-  | "moderator" 
-  | "creator" 
-  | "streamer";
+  | "seller";
 
 export interface NotificationPreferences {
   battles: boolean;

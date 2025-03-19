@@ -9,6 +9,8 @@ import { supabase } from './integrations/supabase/client';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import { CartProvider } from './context/CartContext';
+import RegisterPage from './pages/RegisterPage';
+import SellerDashboardPage from './pages/SellerDashboardPage';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/seller-dashboard" element={<SellerDashboardPage />} />
               {/* Add more routes as needed */}
             </Routes>
           </Layout>

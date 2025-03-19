@@ -35,7 +35,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Define interface for AdminUser with correct types
 interface AdminUser {
   id: string;
   username: string;
@@ -49,7 +48,6 @@ interface AdminUser {
   created_at?: string;
 }
 
-// Separate AddUserForm component import to avoid circular dependency
 const AddUserForm = React.lazy(() => import('./AddUserForm'));
 
 const AdminUsers = () => {
@@ -59,20 +57,16 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Use Supabase query to fetch users from profiles table
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['adminUsers', page, search],
     queryFn: async () => {
       try {
-        // Start query from profiles table
         let query = supabase.from('profiles').select('*');
         
-        // Add search if provided
         if (search) {
           query = query.ilike('username', `%${search}%`);
         }
         
-        // Add pagination
         query = query.range((page - 1) * 10, page * 10 - 1);
         
         const { data: profiles, error, count } = await query;
@@ -82,16 +76,15 @@ const AdminUsers = () => {
           throw error;
         }
         
-        // Transform profiles to match AdminUser interface
         const users: AdminUser[] = profiles.map(profile => ({
           id: profile.id,
           username: profile.username,
           email: profile.email || 'No email available',
-          status: 'active', // Default status
+          status: 'active',
           role: profile.role || 'viewer',
           createdAt: profile.created_at,
-          videosCount: 0, // Default values for now
-          ordersCount: 0, // Default values for now
+          videosCount: 0,
+          ordersCount: 0,
           coins: profile.coins,
           created_at: profile.created_at
         }));
@@ -118,7 +111,6 @@ const AdminUsers = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ userId, status }: { userId: string, status: 'active' | 'suspended' }) => {
-      // In a real app, we would update the user status in the database
       console.log(`Updating user ${userId} status to ${status}`);
       return Promise.resolve({ success: true });
     },
@@ -141,7 +133,6 @@ const AdminUsers = () => {
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string, role: UserRole }) => {
       try {
-        // Update user role directly in the profiles table
         const { error } = await supabase
           .from('profiles')
           .update({ 
@@ -213,15 +204,11 @@ const AdminUsers = () => {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'admin':
-        return <Badge className="bg-purple-500 flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Admin</Badge>;
       case 'seller':
         return <Badge className="bg-blue-500 flex items-center gap-1"><ShoppingBag className="h-3 w-3" /> Seller</Badge>;
-      case 'streamer':
-        return <Badge className="bg-pink-500 flex items-center gap-1"><Video className="h-3 w-3" /> Streamer</Badge>;
-      case 'viewer':
+      case 'user':
       default:
-        return <Badge className="bg-gray-500">Viewer</Badge>;
+        return <Badge className="bg-gray-500">User</Badge>;
     }
   };
 
@@ -304,18 +291,15 @@ const AdminUsers = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Select 
-                          defaultValue={user.role || 'viewer'} 
+                          defaultValue={user.role || 'user'} 
                           onValueChange={(value) => handleRoleChange(user.id, value as UserRole)}
                         >
                           <SelectTrigger className="w-28">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
                             <SelectItem value="seller">Seller</SelectItem>
-                            <SelectItem value="streamer">Streamer</SelectItem>
-                            <SelectItem value="moderator">Moderator</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
 

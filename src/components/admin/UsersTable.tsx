@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -41,7 +40,6 @@ const UsersTable = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Get profiles with user data
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
@@ -87,7 +85,6 @@ const UsersTable = () => {
         throw new Error('Failed to update user role');
       }
 
-      // Update local state
       setUsers(prevUsers =>
         prevUsers.map(user =>
           user.id === userId ? { ...user, role: newRole } : user
@@ -126,7 +123,6 @@ const UsersTable = () => {
         throw new Error('Failed to delete user');
       }
 
-      // Update local state
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
 
       toast({
@@ -190,18 +186,15 @@ const UsersTable = () => {
                       <TableCell>{user.email || 'N/A'}</TableCell>
                       <TableCell>
                         <Select
-                          defaultValue={user.role || 'viewer'}
+                          defaultValue={user.role || 'user'}
                           onValueChange={(value) => handleUpdateRole(user.id, value as UserRole)}
                         >
                           <SelectTrigger className="w-32">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
                             <SelectItem value="seller">Seller</SelectItem>
-                            <SelectItem value="streamer">Streamer</SelectItem>
-                            <SelectItem value="moderator">Moderator</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

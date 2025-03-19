@@ -24,7 +24,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string(),
-  role: z.enum(['user', 'seller', 'streamer']).default('user')
+  role: z.enum(['user', 'seller']).default('user')
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -122,7 +122,6 @@ const RegisterPage = () => {
                 <SelectContent>
                   <SelectItem value="user">Regular User</SelectItem>
                   <SelectItem value="seller">Seller</SelectItem>
-                  <SelectItem value="streamer">Streamer</SelectItem>
                 </SelectContent>
               </Select>
               {errors.role && (
@@ -134,13 +133,6 @@ const RegisterPage = () => {
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
                 <p className="font-medium text-amber-800">Seller accounts require verification</p>
                 <p className="text-amber-700 mt-1">After registration, you'll need to provide additional information to verify your seller account.</p>
-              </div>
-            )}
-            
-            {selectedRole === 'streamer' && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
-                <p className="font-medium text-blue-800">Streamer benefits</p>
-                <p className="text-blue-700 mt-1">As a streamer, you'll be able to go live, participate in battles, and earn coins from your viewers.</p>
               </div>
             )}
           </CardContent>

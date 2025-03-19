@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -179,6 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
               username, 
               email, 
               roles: [role],
+              role: role,  // Add this to simplify role checks
               coins: 1000,
               followers: 0,
               following: 0
@@ -300,8 +302,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     addPaymentMethod,
     removePaymentMethod,
     requiresAuth: () => {},
-    isAdmin: () => user?.roles?.includes('admin') || false,
-    hasRole: (role) => user?.roles?.includes(role as UserRole) || false
+    isAdmin: () => false, // We no longer have admin role
+    hasRole: (role) => user?.roles?.includes(role as UserRole) || user?.role === role || false
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
