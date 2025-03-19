@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +52,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         video.currentTime = 1;
       };
       
-      video.addEventListener('timeupdate', function() {
+      const handleTimeUpdate = function(this: HTMLVideoElement) {
         // Only create the thumbnail once we've seeked to the desired time
         if (video.currentTime >= 1) {
           console.log("Video seeked to timestamp, creating thumbnail");
@@ -88,9 +87,11 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
           }
           
           // Remove the event listener once we've created the thumbnail
-          video.removeEventListener('timeupdate', arguments.callee);
+          video.removeEventListener('timeupdate', handleTimeUpdate);
         }
-      });
+      };
+      
+      video.addEventListener('timeupdate', handleTimeUpdate);
     }
   };
 

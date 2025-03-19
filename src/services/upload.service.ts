@@ -62,6 +62,30 @@ class UploadService {
       throw error;
     }
   }
+
+  /**
+   * Upload a virtual gift icon
+   */
+  async uploadIcon(file: File): Promise<string> {
+    try {
+      return await this.uploadFile(file, 'gift-icons');
+    } catch (error) {
+      console.error('Error uploading icon:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload audio file for virtual gifts
+   */
+  async uploadAudio(file: File): Promise<string> {
+    try {
+      return await this.uploadFile(file, 'gift-sounds');
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      throw error;
+    }
+  }
 }
 
 export default new UploadService();
