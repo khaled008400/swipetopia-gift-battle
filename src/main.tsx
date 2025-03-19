@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import './index.css';
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 
 const rootElement = document.getElementById("root");
 
@@ -28,7 +30,11 @@ try {
   root.render(
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <AuthProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>
   );
