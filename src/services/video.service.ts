@@ -51,5 +51,10 @@ export default {
   reportVideo: VideoService.reportVideo,
 
   // Check if a video exists
-  checkVideoExists: VideoService.checkVideoExists
+  checkVideoExists: VideoService.checkVideoExists,
+  
+  // Legacy method names (for backward compatibility)
+  fetchVideos: VideoService.fetchVideos,
+  fetchVideo: VideoService.fetchVideo,
+  fetchUserVideos: VideoService.fetchUserVideos
 };

@@ -20,9 +20,9 @@ const VideoService = {
   searchVideos: VideoFetchService.searchVideos.bind(VideoFetchService),
   
   // For backward compatibility
-  fetchVideo: VideoFetchService.fetchVideo.bind(VideoFetchService),
-  fetchVideos: VideoFetchService.fetchVideos.bind(VideoFetchService),
-  fetchUserVideos: VideoFetchService.fetchUserVideos.bind(VideoFetchService),
+  fetchVideo: VideoFetchService.getVideoById.bind(VideoFetchService),
+  fetchVideos: VideoFetchService.getVideos.bind(VideoFetchService),
+  fetchUserVideos: VideoFetchService.getUserVideos.bind(VideoFetchService),
   
   // Interaction methods
   updateVideo: VideoInteractionService.updateVideo.bind(VideoInteractionService),

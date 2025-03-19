@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const progressIntervalRef = useRef<number | null>(null);
+  const checkVideoExistsTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,22 +56,31 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
+      
+      if (checkVideoExistsTimeoutRef.current) {
+        clearTimeout(checkVideoExistsTimeoutRef.current);
+        checkVideoExistsTimeoutRef.current = null;
+      }
     };
   }, [isOpen]);
 
   // Add effect to verify upload completion
   useEffect(() => {
-    // Check if we've just completed an upload
     const verifyUpload = async () => {
+      // Only run verification if we have a video ID, are not uploading, and progress is high enough
       if (uploadedVideoId && !isUploading && uploadProgress >= 95) {
-        console.log('Verifying upload completion for video ID:', uploadedVideoId);
+        console.log(`Verifying upload completion for video ID: ${uploadedVideoId}, attempt: ${verificationAttempts + 1}`);
         
         try {
-          // Wait a bit to ensure database consistency
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Clear any existing timeout
+          if (checkVideoExistsTimeoutRef.current) {
+            clearTimeout(checkVideoExistsTimeoutRef.current);
+          }
           
           // Check if the video exists in the database
           const exists = await VideoService.checkVideoExists(uploadedVideoId);
+          
+          console.log(`Video existence check result: ${exists ? 'Found' : 'Not found'}`);
           
           if (exists) {
             console.log('Video upload verified successfully');
@@ -82,17 +93,24 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
               onClose();
             }, 1000);
           } else {
-            console.error('Video not found in database after upload');
-            setVerificationAttempts(prev => prev + 1);
+            // Increment attempt counter
+            const newAttemptCount = verificationAttempts + 1;
+            setVerificationAttempts(newAttemptCount);
             
             // If we've tried 5 times and still can't verify, show error
-            if (verificationAttempts >= 4) {
+            if (newAttemptCount >= 4) {
+              console.error(`Failed to verify video after ${newAttemptCount} attempts`);
               setUploadError("Upload appeared to complete but the video couldn't be verified. Please try again.");
               setUploadProgress(0);
               setIsUploading(false);
             } else {
-              // Try again after a short delay
-              setTimeout(() => verifyUpload(), 2000);
+              // Try again after a delay (increasing delay with each attempt)
+              const delayMs = 2000 * (newAttemptCount + 1);
+              console.log(`Scheduling next verification attempt in ${delayMs}ms`);
+              
+              checkVideoExistsTimeoutRef.current = window.setTimeout(() => {
+                verifyUpload();
+              }, delayMs);
             }
           }
         } catch (error) {
@@ -105,6 +123,13 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     };
     
     verifyUpload();
+    
+    // Clean up the timeout when component unmounts or dependencies change
+    return () => {
+      if (checkVideoExistsTimeoutRef.current) {
+        clearTimeout(checkVideoExistsTimeoutRef.current);
+      }
+    };
   }, [uploadedVideoId, isUploading, uploadProgress, verificationAttempts, onSuccess, onClose]);
 
   const resetState = () => {
@@ -125,6 +150,11 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
+    }
+    
+    if (checkVideoExistsTimeoutRef.current) {
+      clearTimeout(checkVideoExistsTimeoutRef.current);
+      checkVideoExistsTimeoutRef.current = null;
     }
   };
 
@@ -170,10 +200,12 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     // Use a ref to store the interval ID so we can clear it later
     progressIntervalRef.current = window.setInterval(() => {
       setUploadProgress(prev => {
+        // Cap progress at 85% during simulation
         if (prev >= 85) {
-          return prev; // Hold at 85% until actual upload completes
+          clearInterval(progressIntervalRef.current!);
+          return 85; // Hold at 85% until actual upload completes
         }
-        return prev + Math.random() * 5;
+        return Math.min(85, prev + (Math.random() * 5));
       });
     }, 800);
   };
@@ -202,6 +234,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setIsUploading(true);
     setUploadError(null);
     setVerificationAttempts(0);
+    setUploadedVideoId(null);
     
     // Start progress simulation
     startProgressSimulation();
@@ -223,9 +256,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         isPrivate: privacy === "private" 
       });
       
-      // Stop progress simulation and set to 95% to indicate server-side processing
-      completeProgressSimulation();
-      
+      // Upload the video (this will take time depending on file size)
       const uploadedVideo = await VideoService.uploadVideo(
         videoFile,
         title,
@@ -234,6 +265,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         privacy === "private",
         hashtags
       );
+      
+      // Stop progress simulation and set to 95% to indicate verification phase
+      completeProgressSimulation();
       
       console.log('Video uploaded successfully, response:', uploadedVideo);
       
