@@ -158,6 +158,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const userHasRole = (role: string): boolean => {
     return hasRole(user?.roles, role);
   };
+  
+  // Wrap the logout function to maintain the Promise<void> return type
+  const handleSignOut = async () => {
+    await logout();
+  };
 
   const value: AuthContextType = {
     user,
@@ -166,12 +171,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     isLoading,
     signIn: login,
     signUp: register,
-    signOut: logout,
+    signOut: handleSignOut,
     loading,
     error,
     login,
     register,
-    logout,
+    logout: handleSignOut,
     updateProfile,
     addPaymentMethod,
     removePaymentMethod,
