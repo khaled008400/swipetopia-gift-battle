@@ -132,7 +132,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
         
         <div className="pb-4">
           {step === 1 && (
-            <UploadStep onFileSelected={handleFileSelected} />
+            <UploadStep
+              onSelectFile={handleFileSelected}
+            />
           )}
           
           {step === 2 && (

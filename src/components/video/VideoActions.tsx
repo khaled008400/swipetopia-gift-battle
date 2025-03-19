@@ -48,7 +48,7 @@ const VideoActions = ({
   
   const handleAction = (action: () => void | undefined, actionName: string) => {
     if (action) {
-      requiresAuth(action, `/video/${videoId}`, actionName);
+      requiresAuth(action);
     }
   };
   
