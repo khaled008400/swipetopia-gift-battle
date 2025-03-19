@@ -61,6 +61,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   } = useAuthMethods();
 
   useEffect(() => {
+    console.log("Setting up auth state listener in AuthProvider");
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
@@ -68,12 +70,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         setSession(currentSession);
         
         if (currentSession?.user) {
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (profile) {
-            setUser(profile);
-            setIsAuthenticated(true);
+          try {
+            const profile = await fetchUserProfile(currentSession.user.id);
+            if (profile) {
+              console.log("Profile loaded in auth state change:", profile.username);
+              setUser(profile);
+              setIsAuthenticated(true);
+            } else {
+              console.log("No profile found for user in auth state change");
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+          } catch (err) {
+            console.error("Error fetching profile in auth state change:", err);
+            setUser(null);
+            setIsAuthenticated(false);
           }
         } else {
+          console.log("No session in auth state change, clearing user");
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -84,15 +98,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     const initializeAuth = async () => {
       try {
         setLoading(true);
+        console.log("Checking for existing session...");
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession?.user) {
+          console.log("Found existing session for user:", currentSession.user.id);
           setSession(currentSession);
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (profile) {
-            setUser(profile);
-            setIsAuthenticated(true);
+          
+          try {
+            const profile = await fetchUserProfile(currentSession.user.id);
+            if (profile) {
+              console.log("Profile loaded from existing session:", profile.username);
+              setUser(profile);
+              setIsAuthenticated(true);
+            } else {
+              console.log("No profile found for existing session user");
+            }
+          } catch (err) {
+            console.error("Error loading profile from existing session:", err);
           }
+        } else {
+          console.log("No existing session found");
         }
       } catch (err) {
         console.error("Error initializing auth:", err);
@@ -109,6 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     initializeAuth();
 
     return () => {
+      console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, []);
@@ -162,6 +189,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // Wrap the logout function to maintain the Promise<void> return type
   const handleSignOut = async () => {
     await logout();
+    setUser(null);
+    setSession(null);
+    setIsAuthenticated(false);
   };
 
   const value: AuthContextType = {

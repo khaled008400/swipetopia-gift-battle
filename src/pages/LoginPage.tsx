@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -17,6 +18,14 @@ const LoginPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const from = searchParams.get('from') || '/';
 
+  // If user is already authenticated, redirect them
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("User already authenticated, redirecting to:", from);
+      navigate(from);
+    }
+  }, [isAuthenticated, navigate, from]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,14 +33,19 @@ const LoginPage = () => {
     try {
       console.log("Attempting login with:", email);
       const result = await login(email, password);
-      console.log("Login successful:", result);
-
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
+      console.log("Login result:", result);
       
-      navigate(from);
+      if (!result.error) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        
+        console.log("Redirecting after successful login to:", from);
+        navigate(from);
+      } else {
+        throw result.error;
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

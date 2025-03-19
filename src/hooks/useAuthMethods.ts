@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -22,21 +21,16 @@ export const useAuthMethods = () => {
       
       if (error) {
         console.error("Supabase login error:", error);
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: error.message
-        });
         throw error;
       }
       
       console.log("Login successful:", data);
       
-      return { error: null };
+      return { data, error: null };
     } catch (err: any) {
       console.error("Login error:", err);
       setError(new Error(err.message));
-      return { error: err };
+      return { data: null, error: err };
     } finally {
       setIsLoading(false);
     }

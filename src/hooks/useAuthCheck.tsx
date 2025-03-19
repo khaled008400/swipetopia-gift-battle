@@ -8,24 +8,33 @@ import { Button } from "@/components/ui/button";
 export function useAuthCheck() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<() => void>(() => {});
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   const requiresAuth = (action: () => void, redirectUrl?: string) => {
-    if (isAuthenticated) {
+    console.log("requiresAuth called, authentication status:", isAuthenticated, "user:", user?.id);
+    
+    if (isAuthenticated && user) {
+      console.log("User is authenticated, executing action");
       action();
     } else {
+      console.log("User is not authenticated, showing dialog");
       setPendingAction(() => action);
       setShowAuthDialog(true);
     }
   };
 
   const handleLogin = () => {
+    console.log("Redirecting to login page");
     setShowAuthDialog(false);
-    navigate('/login');
+    
+    // Include the current URL as the return path
+    const returnPath = encodeURIComponent(window.location.pathname + window.location.search);
+    navigate(`/login?from=${returnPath}`);
   };
 
   const handleCancel = () => {
+    console.log("Auth dialog canceled");
     setShowAuthDialog(false);
     setPendingAction(() => {});
   };
