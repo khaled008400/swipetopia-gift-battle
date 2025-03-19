@@ -1,4 +1,3 @@
-
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -24,16 +23,6 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
   
   const handleCreateContent = async (type: string) => {
     onClose();
-    
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to create content",
-        variant: "destructive"
-      });
-      navigate('/login');
-      return;
-    }
     
     switch (type) {
       case 'video':

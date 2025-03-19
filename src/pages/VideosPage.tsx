@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, Upload } from 'lucide-react';
 import VideoUploadModal from '@/components/upload/VideoUploadModal';
@@ -14,12 +15,21 @@ import DatabaseDebug from '@/components/debug/DatabaseDebug';
 
 const VideosPage: React.FC = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
   const { requiresAuth, AuthDialog } = useAuthCheck();
+
+  // Check if there's an upload parameter in the URL to automatically open the upload modal
+  useEffect(() => {
+    const shouldOpenUpload = searchParams.get('upload') === 'true';
+    if (shouldOpenUpload) {
+      handleOpenUploadModal();
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchVideos();
