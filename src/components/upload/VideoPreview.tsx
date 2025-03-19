@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface VideoPreviewProps {
   src: string;
@@ -7,24 +7,21 @@ interface VideoPreviewProps {
 
 const VideoPreview = ({ src }: VideoPreviewProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   useEffect(() => {
-    if (videoElement) {
-      if (isPlaying) {
-        videoElement.play().catch(err => {
-          console.error("Error playing video:", err);
-          setIsPlaying(false);
-        });
-      } else {
-        videoElement.pause();
-      }
+    const video = videoRef.current;
+    if (!video) return;
+    
+    if (isPlaying) {
+      video.play().catch(err => {
+        console.error("Error playing video:", err);
+        setIsPlaying(false);
+      });
+    } else {
+      video.pause();
     }
-  }, [isPlaying, videoElement]);
-
-  const handleVideoRef = (el: HTMLVideoElement) => {
-    setVideoElement(el);
-  };
+  }, [isPlaying]);
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -33,7 +30,7 @@ const VideoPreview = ({ src }: VideoPreviewProps) => {
   return (
     <div className="relative aspect-[9/16] w-full bg-black rounded-lg overflow-hidden">
       <video 
-        ref={handleVideoRef}
+        ref={videoRef}
         src={src} 
         className="w-full h-full object-contain"
         onClick={togglePlay}

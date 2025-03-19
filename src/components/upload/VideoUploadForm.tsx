@@ -10,6 +10,7 @@ import VideoService from "@/services/video.service";
 import UploadService from "@/services/upload.service";
 import { Upload, X, Loader2, Users, Globe, Lock } from "lucide-react";
 import HashtagInput from "./HashtagInput";
+import VideoPreview from "./VideoPreview";
 
 interface VideoUploadFormProps {
   onClose: () => void;
@@ -20,6 +21,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -36,34 +38,48 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log("Selected video file:", file.name, file.type, file.size);
       setVideoFile(file);
+      
+      // Create URL for video preview
+      const videoURL = URL.createObjectURL(file);
+      setVideoPreviewUrl(videoURL);
       
       const video = document.createElement("video");
       video.preload = "metadata";
+      video.src = videoURL;
+      
       video.onloadedmetadata = () => {
         video.currentTime = 1;
       };
+      
       video.oncanplay = () => {
+        console.log("Video can play, creating thumbnail");
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext("2d");
-        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const thumbnailDataUrl = canvas.toDataURL("image/jpeg");
-        setThumbnail(thumbnailDataUrl);
-        
-        // Convert data URL to file
-        fetch(thumbnailDataUrl)
-          .then(res => res.blob())
-          .then(blob => {
-            const thumbnailFile = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
-            setThumbnailFile(thumbnailFile);
-          });
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const thumbnailDataUrl = canvas.toDataURL("image/jpeg");
+          setThumbnail(thumbnailDataUrl);
+          
+          // Convert data URL to file
+          fetch(thumbnailDataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+              const thumbnailFile = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
+              setThumbnailFile(thumbnailFile);
+              console.log("Thumbnail created:", thumbnailFile.size);
+            })
+            .catch(err => {
+              console.error("Error creating thumbnail file:", err);
+            });
+        }
         
         // Move to edit step
         setStep("edit");
       };
-      video.src = URL.createObjectURL(file);
     }
   };
 
@@ -102,6 +118,8 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       setIsUploading(true);
       setProgress(0);
       
+      console.log("Starting upload process");
+      
       // Upload progress simulation
       const progressInterval = setInterval(() => {
         setProgress(prev => {
@@ -113,11 +131,17 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         });
       }, 500);
       
+      console.log("Uploading video and thumbnail to storage");
+      
       // Upload video and thumbnail to Supabase storage
       const { videoUrl, thumbnailUrl } = await UploadService.uploadVideo(videoFile, thumbnailFile);
       
+      console.log("Files uploaded successfully:", { videoUrl, thumbnailUrl });
+      
       // Calculate privacy setting
       const isPrivate = privacy === "private";
+      
+      console.log("Saving video metadata to database");
       
       // Save video metadata to database
       const videoData = await VideoService.uploadVideo(
@@ -131,6 +155,8 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
       
       clearInterval(progressInterval);
       setProgress(100);
+      
+      console.log("Video upload complete:", videoData);
       
       toast({
         title: "Success",
@@ -160,6 +186,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
 
   const clearSelectedFile = () => {
     setVideoFile(null);
+    setVideoPreviewUrl(null);
     setThumbnail(null);
     setStep("upload");
     if (fileInputRef.current) {
@@ -331,15 +358,9 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
             </div>
             
             <div className="flex flex-col space-y-4">
-              <div className="aspect-[9/16] bg-black rounded-lg overflow-hidden">
-                {videoFile && (
-                  <video 
-                    src={URL.createObjectURL(videoFile)} 
-                    className="w-full h-full object-contain" 
-                    controls
-                  />
-                )}
-              </div>
+              {videoPreviewUrl && (
+                <VideoPreview src={videoPreviewUrl} />
+              )}
               
               <Button
                 type="button"
