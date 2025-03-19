@@ -1068,6 +1068,7 @@ export type Database = {
           hashtags: string[] | null
           id: string
           is_live: boolean | null
+          is_private: boolean | null
           likes_count: number | null
           shares_count: number | null
           thumbnail_url: string | null
@@ -1084,6 +1085,7 @@ export type Database = {
           hashtags?: string[] | null
           id?: string
           is_live?: boolean | null
+          is_private?: boolean | null
           likes_count?: number | null
           shares_count?: number | null
           thumbnail_url?: string | null
@@ -1100,6 +1102,7 @@ export type Database = {
           hashtags?: string[] | null
           id?: string
           is_live?: boolean | null
+          is_private?: boolean | null
           likes_count?: number | null
           shares_count?: number | null
           thumbnail_url?: string | null

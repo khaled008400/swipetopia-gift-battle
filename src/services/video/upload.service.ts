@@ -49,25 +49,21 @@ class VideoUploadService {
       
       console.log('Inserting with user ID:', user.id);
 
-      // First, let's inspect the table structure to handle schema variations
-      console.log('Checking video table schema...');
-      
       // Create a basic insert object with required fields
       const videoData = {
         title,
         description,
         video_url: videoUrl,
         thumbnail_url: thumbnailUrl || `${videoUrl}?preview`,
-        is_private: isPrivate,
+        is_private: isPrivate, // Now using the is_private column correctly
         user_id: user.id,
         hashtags,
         view_count: 0,
         likes_count: 0,
-        shares_count: 0
+        shares_count: 0,
+        comments_count: 0 // Explicitly including comments_count
       };
       
-      // Add a field for comment count - we'll use RETURNING to get the inserted row
-      // without specifying whether it's comment_count or comments_count
       console.log('Inserting video with data:', videoData);
       
       const { data: insertedVideo, error: insertError } = await supabase
