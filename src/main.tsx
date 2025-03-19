@@ -1,5 +1,7 @@
 
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import './index.css';
 
@@ -11,9 +13,25 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
+// Create a client for React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 // Wrap rendering in a try-catch for error handling
 try {
-  root.render(<App />);
+  root.render(
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
 } catch (error) {
   console.error("Error rendering application:", error);
   // Render a basic error state if the app fails to load
