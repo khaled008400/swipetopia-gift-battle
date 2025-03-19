@@ -37,7 +37,7 @@ const AuthCheck = ({
       });
       
       // First check if user is authenticated
-      if (!isAuthenticated) {
+      if (!isAuthenticated || !user) {
         // If not authenticated, redirect to login with a return path
         console.log("User is not authenticated, redirecting to login");
         const returnPath = window.location.pathname;
