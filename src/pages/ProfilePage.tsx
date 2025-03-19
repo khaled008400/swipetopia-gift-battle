@@ -155,7 +155,7 @@ const ProfilePage = () => {
         profile && (
           <>
             {console.log('ProfilePage: Rendering ProfileContent')}
-            <ProfileContent profile={profile} />
+            <ProfileContent profile={profile} isOwnProfile={isCurrentUserProfile} />
           </>
         )
       )}

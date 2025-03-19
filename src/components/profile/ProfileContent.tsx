@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFollower } from "@/hooks/useFollower";
 import { useUserVideos } from "@/hooks/useUserVideos";
-import { VideoCard } from "@/components/cards/VideoCard";
+import VideoCard from "@/components/cards/VideoCard"; // Fixed import
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserProfile } from '@/types/auth.types';
 import { useAuth } from '@/context/AuthContext';
@@ -30,18 +30,14 @@ const ProfileContent = ({ profile, isOwnProfile }: ProfileContentProps) => {
   const [activeTab, setActiveTab] = useState("videos");
   const { user, hasRole } = useAuth();
   
-  const { isFollowing, followUser, unfollowUser, followCount, followLoading } = useFollower(profile.id);
+  const { isFollowing, toggleFollow, loading: followLoading, followerCount } = useFollower(profile.id);
   const { videos, isLoading: videosLoading } = useUserVideos(profile.id);
-  const { followerCount, recentFollowers } = useFollowerRealtime(profile.id);
+  const { followerCount: realtimeFollowerCount, recentFollowers } = useFollowerRealtime(profile.id);
   
-  const userIsSeller = profile.roles?.includes('seller') || profile.role === 'seller';
+  const userIsSeller = profile.roles?.includes('seller');
   
   const handleFollow = async () => {
-    if (isFollowing) {
-      await unfollowUser();
-    } else {
-      await followUser();
-    }
+    await toggleFollow();
   };
   
   return (
@@ -59,7 +55,7 @@ const ProfileContent = ({ profile, isOwnProfile }: ProfileContentProps) => {
               <div className="mt-3 text-center">
                 <h2 className="text-xl font-bold">{profile.username}</h2>
                 
-                <RolesDisplay roles={profile.roles || [profile.role || 'user']} />
+                <RolesDisplay roles={profile.roles || ['user']} />
                 
                 {profile.bio && (
                   <p className="text-sm text-gray-400 mt-2">{profile.bio}</p>
@@ -77,17 +73,28 @@ const ProfileContent = ({ profile, isOwnProfile }: ProfileContentProps) => {
                 )}
               </div>
               
-              <ProfileStats 
-                followersCount={followerCount} 
-                followingCount={profile.following} 
-                videosCount={videos?.length || 0} 
-                className="mt-6"
-              />
+              <div className="flex space-x-6 mt-6">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-white">{followerCount || 0}</p>
+                  <p className="text-sm text-gray-400">Followers</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-white">{profile.following || 0}</p>
+                  <p className="text-sm text-gray-400">Following</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-white">{videos?.length || 0}</p>
+                  <p className="text-sm text-gray-400">Videos</p>
+                </div>
+              </div>
               
               {/* Show Wallet for own profile */}
               {isOwnProfile && (
                 <div className="mt-6 w-full">
-                  <WalletSection coins={profile.coins} />
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h3 className="font-medium mb-2">Wallet Balance</h3>
+                    <p className="text-2xl font-bold">{profile.coins || 0} coins</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -186,25 +193,89 @@ const ProfileContent = ({ profile, isOwnProfile }: ProfileContentProps) => {
           <TabsContent value="settings" className="mt-0">
             <div className="space-y-8">
               {/* Notification Preferences */}
-              <NotificationPreferences 
-                preferences={profile.notification_preferences}
-                onUpdate={(prefs) => {/* Handle update */}}
-              />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notification Preferences</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>Battle notifications</span>
+                      <input type="checkbox" defaultChecked={profile.notification_preferences?.battles} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Order notifications</span>
+                      <input type="checkbox" defaultChecked={profile.notification_preferences?.orders} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Message notifications</span>
+                      <input type="checkbox" defaultChecked={profile.notification_preferences?.messages} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Follower notifications</span>
+                      <input type="checkbox" defaultChecked={profile.notification_preferences?.followers} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               
               {/* Payment Methods Management */}
-              <PaymentMethods 
-                paymentMethods={profile.payment_methods || []}
-                onAdd={() => {/* Handle add */}}
-                onRemove={() => {/* Handle remove */}}
-              />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment Methods</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {profile.payment_methods && profile.payment_methods.length > 0 ? (
+                    <div className="space-y-4">
+                      {profile.payment_methods.map((method) => (
+                        <div key={method.id} className="flex items-center justify-between">
+                          <span>{method.name || method.type}</span>
+                          <Button variant="destructive" size="sm">Remove</Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No payment methods added yet</p>
+                  )}
+                  <Button className="mt-4">Add Payment Method</Button>
+                </CardContent>
+              </Card>
               
               {/* Seller or Streamer Additional Fields */}
-              {(hasRole && (hasRole('seller'))) && (
-                <StreamerFields 
-                  streamKey={profile.stream_key}
-                  shopName={profile.shop_name}
-                  onUpdate={() => {/* Handle update */}}
-                />
+              {hasRole && hasRole('seller') && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Seller Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="mb-2 font-medium">Stream Key</h4>
+                        <div className="flex">
+                          <input
+                            type="password"
+                            value={profile.stream_key || ''}
+                            readOnly
+                            className="flex-1 bg-gray-700 p-2 rounded-l"
+                          />
+                          <Button className="rounded-l-none">Show</Button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">This is your private streaming key. Do not share it.</p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="mb-2 font-medium">Shop Name</h4>
+                        <input
+                          type="text"
+                          value={profile.shop_name || ''}
+                          className="w-full bg-gray-700 p-2 rounded"
+                        />
+                      </div>
+                      
+                      <Button>Update Settings</Button>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </TabsContent>
