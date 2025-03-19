@@ -16,6 +16,8 @@ export const loginUser = async (email: string, password: string) => {
 
 export const signupUser = async (email: string, username: string, password: string, roles: UserRole[] = ["user"]) => {
   try {
+    console.log(`Starting signup process for ${email} with username ${username}`);
+    
     // First, check if username is already taken
     const { data: existingUsers, error: checkError } = await supabase
       .from('profiles')
@@ -65,6 +67,15 @@ export const signupUser = async (email: string, username: string, password: stri
       
       if (profileError) {
         console.error("Error creating profile:", profileError);
+        
+        // Additional debugging information
+        console.log("Attempted to create profile with:", {
+          id: data.user.id,
+          username,
+          email: data.user.email,
+          roles
+        });
+        
         throw profileError;
       }
       
@@ -101,7 +112,36 @@ export const getCurrentUser = async () => {
   if (error) throw error;
   
   if (user) {
+    // Try to fetch user profile
     const profile = await fetchUserProfile(user);
+    
+    // If profile doesn't exist, try to create it
+    if (!profile && user.user_metadata && user.user_metadata.username) {
+      console.log("Profile not found for existing user, attempting to create one");
+      
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username: user.user_metadata.username,
+            email: user.email,
+            roles: user.user_metadata.roles || ["user"],
+            avatar_url: `https://i.pravatar.cc/150?u=${user.user_metadata.username}`
+          });
+          
+        if (profileError) {
+          console.error("Error creating profile for existing user:", profileError);
+        } else {
+          console.log("Created profile for existing user:", user.id);
+          // Fetch the newly created profile
+          return { ...user, profile: await fetchUserProfile(user) };
+        }
+      } catch (err) {
+        console.error("Failed to create profile for existing user:", err);
+      }
+    }
+    
     return { ...user, profile };
   }
   
