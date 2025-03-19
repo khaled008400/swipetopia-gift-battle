@@ -12,7 +12,13 @@ class VideoUploadService {
     hashtags: string[] = []
   ) {
     try {
-      console.log('Starting video upload process in VideoUploadService...');
+      console.log('Starting video upload process in VideoUploadService...', {
+        fileName: videoFile.name,
+        fileSize: videoFile.size,
+        title,
+        isPrivate,
+        hashtagCount: hashtags.length
+      });
       
       // 1. Generate a unique filename
       const fileExt = videoFile.name.split('.').pop();
@@ -20,7 +26,7 @@ class VideoUploadService {
       const filePath = `videos/${fileName}`;
 
       // 2. Upload the video file to storage
-      console.log('Uploading video file to storage...');
+      console.log(`Uploading video file to storage: ${filePath}`);
       const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(filePath, videoFile, {
@@ -39,7 +45,7 @@ class VideoUploadService {
         .getPublicUrl(filePath);
 
       const videoUrl = publicUrlData.publicUrl;
-      console.log('Video uploaded, public URL:', videoUrl);
+      console.log('Video uploaded successfully, public URL:', videoUrl);
 
       // 4. Insert the video metadata into the videos table
       console.log('Inserting video metadata into database...');
@@ -64,7 +70,7 @@ class VideoUploadService {
         comments_count: 0
       };
       
-      console.log('Inserting video with data:', JSON.stringify(videoData));
+      console.log('Inserting video with data:', JSON.stringify(videoData, null, 2));
       
       // Insert the video data and return the inserted record
       const { data: insertedVideo, error: insertError } = await supabase

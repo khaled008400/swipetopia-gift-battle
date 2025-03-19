@@ -7,6 +7,32 @@ import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 
+// Set up global error handler for logging
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error);
+});
+
+// Set up unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+});
+
+// Enable more detailed console logging in development
+if (import.meta.env.DEV) {
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+  
+  console.log = function(...args) {
+    const timestamp = new Date().toISOString();
+    originalConsoleLog.apply(console, [`[${timestamp}] info:`, ...args]);
+  };
+  
+  console.error = function(...args) {
+    const timestamp = new Date().toISOString();
+    originalConsoleError.apply(console, [`[${timestamp}] error:`, ...args]);
+  };
+}
+
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
@@ -21,7 +47,15 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
+    mutations: {
+      onError: (error) => {
+        console.error('Mutation error:', error);
+      }
+    }
   },
 });
 
