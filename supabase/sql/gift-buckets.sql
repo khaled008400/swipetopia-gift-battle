@@ -21,7 +21,7 @@ CREATE POLICY "Authenticated users can upload gift icons"
 CREATE POLICY "Users can update their own gift icon files" 
   ON storage.objects FOR UPDATE 
   TO authenticated 
-  USING (bucket_id = 'gift-icons' AND auth.uid()::text = owner);
+  USING (bucket_id = 'gift-icons' AND auth.uid() = owner::uuid);
 
 -- Set up storage permissions for gift sounds
 CREATE POLICY "Gift sounds bucket is public for select" 
@@ -36,4 +36,4 @@ CREATE POLICY "Authenticated users can upload gift sounds"
 CREATE POLICY "Users can update their own gift sound files" 
   ON storage.objects FOR UPDATE 
   TO authenticated 
-  USING (bucket_id = 'gift-sounds' AND auth.uid()::text = owner);
+  USING (bucket_id = 'gift-sounds' AND auth.uid() = owner::uuid);

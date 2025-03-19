@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +52,7 @@ const VideoUploadForm = ({ onClose, onSuccess }: VideoUploadFormProps) => {
         video.currentTime = 1;
       };
       
-      // Fix the type issue by explicitly defining the function type
+      // Fix the type issue by explicitly typing the function with correct 'this' context
       const handleTimeUpdate = function(this: HTMLVideoElement) {
         // Only create the thumbnail once we've seeked to the desired time
         if (video.currentTime >= 1) {
