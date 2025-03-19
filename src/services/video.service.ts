@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Video } from "@/types/video.types";
 import { v4 as uuidv4 } from 'uuid';
@@ -54,6 +55,7 @@ class VideoService {
       
       console.log('Inserting with user ID:', user.id);
       
+      // Use comment_count instead of comments_count
       const { data: videoData, error: insertError } = await supabase
         .from('videos')
         .insert({
@@ -65,9 +67,9 @@ class VideoService {
           user_id: user.id,
           hashtags,
           view_count: 0,
-          like_count: 0,
-          comment_count: 0,
-          share_count: 0,
+          likes_count: 0,
+          comment_count: 0, // Changed from comment_count
+          shares_count: 0,
         })
         .select()
         .single();
