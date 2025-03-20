@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from './use-toast';
 
 export const useAuthMethods = () => {
   const [error, setError] = useState<Error | null>(null);
@@ -23,18 +24,31 @@ export const useAuthMethods = () => {
       if (supabaseError) {
         console.error("Supabase login error:", supabaseError);
         setError(supabaseError);
-        setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: supabaseError.message || "Invalid email or password"
+        });
         return { data: null, error: supabaseError };
       }
       
       console.log("Login successful:", data);
-      setIsLoading(false);
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!"
+      });
       return { data, error: null };
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err);
-      setIsLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Login Error",
+        description: err.message || "An unexpected error occurred"
+      });
       return { data: null, error: err };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,6 +85,18 @@ export const useAuthMethods = () => {
       // Create profile
       if (data.user) {
         try {
+          // Check if profile already exists first
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (existingProfile) {
+            console.log('Profile already exists for user:', data.user.id);
+            return { error: null };
+          }
+
           const newProfile = {
             id: data.user.id,
             username, 
@@ -96,6 +122,10 @@ export const useAuthMethods = () => {
         }
       }
 
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created successfully."
+      });
       return { error: null };
     } catch (err: any) {
       setError(new Error(err.message));

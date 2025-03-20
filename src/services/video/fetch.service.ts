@@ -12,6 +12,20 @@ class VideoFetchService {
         .single();
 
       if (error) throw error;
+      
+      if (data) {
+        // Get profile information separately
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .eq('id', data.user_id)
+          .single();
+          
+        if (!profileError && profile) {
+          return { ...data, profiles: profile };
+        }
+      }
+      
       return data;
     } catch (error) {
       console.error('Error in getVideoById:', error);
@@ -28,7 +42,7 @@ class VideoFetchService {
   async getForYouVideos(limit: number = 20) {
     try {
       console.log('Fetching For You videos...');
-      // Modified to not use the foreign key relationship that's causing issues
+      // Get videos first
       const { data, error } = await supabase
         .from('videos')
         .select('*')
@@ -39,6 +53,8 @@ class VideoFetchService {
         console.error('Error in getForYouVideos:', error);
         throw error;
       }
+
+      if (!data || data.length === 0) return [];
 
       // Fetch user profiles separately and combine the data
       const userIds = [...new Set(data.map(video => video.user_id))];
@@ -51,7 +67,7 @@ class VideoFetchService {
           
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);
-        } else {
+        } else if (profiles && profiles.length > 0) {
           // Create a map for quick lookups
           const profileMap = new Map(profiles.map(profile => [profile.id, profile]));
           
@@ -82,7 +98,24 @@ class VideoFetchService {
         .limit(limit);
 
       if (error) throw error;
-      return data;
+      
+      if (data && data.length > 0) {
+        // Get user profile for these videos
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .eq('id', userId)
+          .single();
+          
+        if (!profileError && profile) {
+          return data.map(video => ({
+            ...video,
+            profiles: profile
+          }));
+        }
+      }
+      
+      return data || [];
     } catch (error) {
       console.error('Error in getUserVideos:', error);
       throw error;
@@ -105,27 +138,75 @@ class VideoFetchService {
         .limit(limit);
 
       if (error) throw error;
-      return data;
+      
+      if (data && data.length > 0) {
+        await this.addProfilesToVideos(data);
+      }
+      
+      return data || [];
     } catch (error) {
       console.error('Error in getTrendingVideos:', error);
       throw error;
     }
   }
 
+  // Helper method to add profiles to videos
+  async addProfilesToVideos(videos: any[]) {
+    try {
+      // Get unique user IDs
+      const userIds = [...new Set(videos.map(video => video.user_id))];
+      
+      if (userIds.length === 0) return videos;
+      
+      // Fetch profiles for those users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+        
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return videos;
+      }
+      
+      if (!profiles || profiles.length === 0) return videos;
+      
+      // Create a map for quick profile lookups
+      const profileMap = new Map(profiles.map(profile => [profile.id, profile]));
+      
+      // Combine video and profile data
+      return videos.map(video => ({
+        ...video,
+        profiles: profileMap.get(video.user_id) || null
+      }));
+    } catch (error) {
+      console.error('Error adding profiles to videos:', error);
+      return videos;
+    }
+  }
+
   // Get all videos - for VideosPage
   async getVideos(limit: number = 50) {
     try {
-      // Instead of using foreign key relationship that doesn't exist,
-      // fetch videos first, then get related profiles separately
+      console.log('Fetching videos with limit:', limit);
+      // Fetch videos first
       const { data: videos, error } = await supabase
         .from('videos')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching videos:', error);
+        throw error;
+      }
       
-      if (!videos || videos.length === 0) return [];
+      if (!videos || videos.length === 0) {
+        console.log('No videos found');
+        return [];
+      }
+      
+      console.log(`Found ${videos.length} videos, fetching profiles...`);
       
       // Get unique user IDs
       const userIds = [...new Set(videos.map(video => video.user_id))];
@@ -142,6 +223,13 @@ class VideoFetchService {
         return videos;
       }
       
+      if (!profiles || profiles.length === 0) {
+        console.log('No profiles found for videos');
+        return videos;
+      }
+      
+      console.log(`Found ${profiles.length} profiles, combining data...`);
+      
       // Create a map for quick profile lookups
       const profileMap = new Map(profiles.map(profile => [profile.id, profile]));
       
@@ -151,6 +239,7 @@ class VideoFetchService {
         profiles: profileMap.get(video.user_id) || null
       }));
       
+      console.log('Finished preparing videos with profiles');
       return videosWithProfiles;
     } catch (error) {
       console.error('Error in getVideos:', error);
@@ -184,7 +273,7 @@ class VideoFetchService {
 
       if (error) throw error;
       
-      if (data.length === 0) return [];
+      if (!data || data.length === 0) return [];
       
       const videoIds = data.map(like => like.video_id);
       
@@ -195,7 +284,11 @@ class VideoFetchService {
         
       if (videosError) throw videosError;
       
-      return videos;
+      if (videos && videos.length > 0) {
+        await this.addProfilesToVideos(videos);
+      }
+      
+      return videos || [];
     } catch (error) {
       console.error('Error in getLikedVideos:', error);
       return [];
@@ -223,7 +316,7 @@ class VideoFetchService {
 
       if (error) throw error;
       
-      if (data.length === 0) return [];
+      if (!data || data.length === 0) return [];
       
       const videoIds = data.map(saved => saved.video_id);
       
@@ -234,7 +327,11 @@ class VideoFetchService {
         
       if (videosError) throw videosError;
       
-      return videos;
+      if (videos && videos.length > 0) {
+        await this.addProfilesToVideos(videos);
+      }
+      
+      return videos || [];
     } catch (error) {
       console.error('Error in getSavedVideos:', error);
       return [];
@@ -252,7 +349,12 @@ class VideoFetchService {
         .limit(limit);
 
       if (error) throw error;
-      return data;
+      
+      if (data && data.length > 0) {
+        await this.addProfilesToVideos(data);
+      }
+      
+      return data || [];
     } catch (error) {
       console.error('Error in searchVideos:', error);
       throw error;
