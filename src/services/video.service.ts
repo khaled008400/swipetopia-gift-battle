@@ -382,13 +382,14 @@ class VideoService {
       if (error) throw error;
 
       // Extract the videos from the joined data and filter out any nulls
-      // Properly transform to Video[] array
       const videos: Video[] = [];
       
       if (data) {
         for (const item of data) {
           if (item.videos) {
-            videos.push(item.videos as Video);
+            // Ensure item.videos is treated as a Video object, not an array
+            const videoData = item.videos as unknown;
+            videos.push(videoData as Video);
           }
         }
       }
@@ -424,13 +425,14 @@ class VideoService {
       if (error) throw error;
 
       // Extract the videos from the joined data and filter out any nulls
-      // Properly transform to Video[] array
       const videos: Video[] = [];
       
       if (data) {
         for (const item of data) {
           if (item.videos) {
-            videos.push(item.videos as Video);
+            // Ensure item.videos is treated as a Video object, not an array
+            const videoData = item.videos as unknown;
+            videos.push(videoData as Video);
           }
         }
       }
