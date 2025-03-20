@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
 export interface AdminLoginFormProps {
   onLoginSuccess?: () => void;
@@ -17,7 +17,6 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +35,14 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     try {
       console.log("AdminLoginForm: Attempting login with:", email);
       
-      const { error } = await login(email, password);
+      // Sign out any existing session first
+      await supabase.auth.signOut();
+      
+      // Attempt login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
       if (error) {
         console.error("AdminLoginForm: Login error:", error);
@@ -45,8 +51,8 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: error.message || "Invalid credentials",
           variant: "destructive",
         });
-      } else {
-        console.log("AdminLoginForm: Login successful");
+      } else if (data.user) {
+        console.log("AdminLoginForm: Login successful for:", data.user.id);
         toast({
           title: "Login successful",
           description: "Welcome back!",

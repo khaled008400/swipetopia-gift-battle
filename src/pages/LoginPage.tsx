@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -10,17 +11,19 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, login } = useAuth();
 
-  console.log("LoginPage rendering, auth status:", isAuthenticated);
-
-  // Redirect if already authenticated
+  // Check if user is already logged in
   useEffect(() => {
-    if (isAuthenticated) {
-      console.log("LoginPage: User is authenticated, navigating to videos feed");
-      navigate('/videos', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        console.log("User already logged in, redirecting to videos");
+        navigate('/videos');
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,26 +40,34 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      console.log("LoginPage: Login attempt with:", email);
+      console.log(`Attempting login with: ${email}`);
       
-      const { error } = await login(email, password);
+      // Sign out any existing session to prevent conflicts
+      await supabase.auth.signOut();
+      
+      // Attempt login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
       if (error) {
-        console.error("LoginPage: Login error:", error);
+        console.error("Login error:", error);
         toast({
           variant: "destructive",
           title: "Login Failed",
           description: error.message || "Incorrect email or password",
         });
-      } else {
+      } else if (data.user) {
+        console.log("Login successful for user:", data.user.id);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
-        console.log("LoginPage: Login successful");
+        navigate('/videos');
       }
     } catch (error: any) {
-      console.error("LoginPage: Login error:", error);
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",

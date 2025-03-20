@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,10 @@ import { Upload, X, ArrowLeft } from 'lucide-react';
 import UploadStep from './upload-steps/UploadStep';
 import EditStep from './upload-steps/EditStep';
 import VideoService from '@/services/video';
-import UploadService from '@/services/upload.service';
-import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-
+import { supabase } from '@/lib/supabase';
+import UploadService from '@/services/upload.service';
 interface VideoUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,10 +32,9 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedVideoId, setUploadedVideoId] = useState<string | null>(null);
   const [verificationAttempts, setVerificationAttempts] = useState(0);
-  const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast();
   const progressIntervalRef = useRef<number | null>(null);
   const checkVideoExistsTimeoutRef = useRef<number | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -233,12 +230,62 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     setUploadProgress(95);
   };
 
+  // Check authentication at component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      const isAuthenticated = !!data.session;
+      console.log('VideoUploadModal: Authentication check:', isAuthenticated);
+      
+      if (!isAuthenticated) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to upload videos",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    if (isOpen) {
+      checkAuth();
+      
+      // Initialize storage buckets
+      const initStorage = async () => {
+        try {
+          console.log('Initializing storage buckets on modal open...');
+          // We'll let the upload service handle this
+        } catch (error) {
+          console.warn('Failed to initialize storage buckets:', error);
+        }
+      };
+      
+      initStorage();
+    }
+    
+    // Clear any existing intervals when component unmounts
+    return () => {
+      clearAllTimers();
+    };
+  }, [isOpen, toast]);
+
   const handleUpload = async () => {
-    if (!videoFile || !title.trim() || !isAuthenticated) {
-      setUploadError("Please provide a title and ensure you're logged in.");
+    // Check if user is logged in first
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      setUploadError("You must be logged in to upload videos.");
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upload videos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!videoFile || !title.trim()) {
+      setUploadError("Please provide a title for your video.");
       toast({
         title: "Upload Error",
-        description: "Please provide a title and ensure you're logged in.",
+        description: "Please provide a title for your video.",
         variant: "destructive",
       });
       return;
@@ -254,20 +301,6 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
     
     try {
       console.log('[VideoUploadModal] Starting video upload process...', videoFile.name, videoFile.size);
-      
-      try {
-        console.log('[VideoUploadModal] Initializing storage buckets before upload...');
-        await UploadService.initBuckets();
-      } catch (bucketError) {
-        console.warn('[VideoUploadModal] Failed to check storage buckets, continuing anyway:', bucketError);
-      }
-      
-      console.log('[VideoUploadModal] Calling VideoService.uploadVideo with:', { 
-        videoFileSize: videoFile.size, 
-        title, 
-        description, 
-        isPrivate: privacy === "private" 
-      });
       
       // Upload the video (this will take time depending on file size)
       const uploadedVideo = await VideoService.uploadVideo(
@@ -353,8 +386,6 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
               onClose={handleClose}
               handleUpload={handleUpload}
               videoPreviewUrl={videoPreviewUrl}
-              isAuthenticated={isAuthenticated}
-              error={uploadError}
             />
           )}
         </div>
@@ -387,7 +418,7 @@ const VideoUploadModal: React.FC<VideoUploadModalProps> = ({ isOpen, onClose, on
             
             <Button 
               onClick={handleUpload} 
-              disabled={!title.trim() || isUploading || !isAuthenticated}
+              disabled={!title.trim() || isUploading}
             >
               <Upload className="mr-2 h-4 w-4" />
               Upload

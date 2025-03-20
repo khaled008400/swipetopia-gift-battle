@@ -19,18 +19,22 @@ const UploadStep: React.FC<UploadStepProps> = ({ onSelectFile }) => {
   const validateFile = (file: File): boolean => {
     setError(null);
     
+    console.log(`Validating file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+    
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+      const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024);
+      setError(`File is too large. Maximum size is ${maxSizeMB}MB, your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
       return false;
     }
     
     // Check file type
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError(`File type not supported. Please upload MP4, WebM, or MOV.`);
+      setError(`File type '${file.type}' not supported. Please upload MP4, WebM, or MOV.`);
       return false;
     }
     
+    console.log('File validation passed');
     return true;
   };
 
