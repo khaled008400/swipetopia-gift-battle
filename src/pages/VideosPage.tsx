@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
-import DatabaseDebug from '@/components/debug/DatabaseDebug';
 import VideoCard from '@/components/cards/VideoCard';
 
 const VideosPage: React.FC = () => {
@@ -20,7 +20,7 @@ const VideosPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { requiresAuth, AuthDialog } = useAuthCheck();
 
   useEffect(() => {
@@ -96,10 +96,6 @@ const VideosPage: React.FC = () => {
           <Upload className="mr-2 h-4 w-4" />
           Upload Video
         </Button>
-      </div>
-
-      <div className="mb-6">
-        <DatabaseDebug />
       </div>
 
       {isLoading ? (
