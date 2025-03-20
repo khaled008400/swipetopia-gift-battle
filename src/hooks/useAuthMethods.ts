@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types/auth.types';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -28,7 +28,6 @@ export const useAuthMethods = () => {
       if (signInError) {
         console.error("useAuthMethods: Login error:", signInError);
         setError(signInError);
-        setIsLoading(false);
         return { data: null, error: signInError };
       }
       
@@ -36,20 +35,19 @@ export const useAuthMethods = () => {
         const noUserError = new Error("Login successful but no user or session was returned");
         console.error("useAuthMethods: No user/session:", noUserError);
         setError(noUserError);
-        setIsLoading(false);
         return { data: null, error: noUserError };
       }
       
       console.log("useAuthMethods: Login successful, user ID:", data.user.id);
       console.log("useAuthMethods: Session acquired:", !!data.session);
       
-      setIsLoading(false);
       return { data, error: null };
     } catch (err: any) {
       console.error("useAuthMethods: Login error:", err);
       setError(err);
-      setIsLoading(false);
       return { data: null, error: err };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,7 +100,7 @@ export const useAuthMethods = () => {
             .from('profiles')
             .select('id')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
             
           if (existingProfile) {
             console.log('useAuthMethods: Profile already exists for user:', data.user.id);
@@ -114,6 +112,7 @@ export const useAuthMethods = () => {
             username, 
             email, 
             roles: [role],
+            role: role,
             coins: 1000,
             followers: 0,
             following: 0,

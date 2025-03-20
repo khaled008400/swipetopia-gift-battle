@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +12,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
   
   // Extract return URL from query params if available
   const from = new URLSearchParams(location.search).get('from') || '/videos';
@@ -51,11 +52,7 @@ const LoginPage = () => {
     try {
       console.log(`Attempting login with: ${email}`);
       
-      // Attempt login
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await login(email, password);
       
       if (error) {
         console.error("Login error:", error);
@@ -64,7 +61,7 @@ const LoginPage = () => {
           title: "Login Failed",
           description: error.message || "Incorrect email or password",
         });
-      } else if (data.user) {
+      } else if (data?.user) {
         console.log("Login successful for user:", data.user.id);
         toast({
           title: "Login Successful",

@@ -11,17 +11,24 @@ const TestUsersGenerator = () => {
 
   const createTestUser = async (email: string, password: string, username: string, roles: string[]) => {
     try {
-      // Clear any existing user with this email first (for testing purposes)
-      const { data: existingUsers } = await supabase
+      // Check if user already exists by email
+      const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('email', email);
+        .eq('email', email)
+        .maybeSingle();
         
-      if (existingUsers && existingUsers.length > 0) {
+      if (checkError) {
+        console.error(`Error checking for existing user ${email}:`, checkError);
+        return null;
+      }
+      
+      if (existingUsers) {
         console.log(`User with email ${email} already exists, skipping creation`);
-        return existingUsers[0].id;
+        return existingUsers.id;
       }
     
+      // Create the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -41,18 +48,7 @@ const TestUsersGenerator = () => {
       console.log(`Created ${username} user:`, data.user?.id);
       
       if (data.user) {
-        // Check if profile already exists to avoid duplicates
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .maybeSingle();
-          
-        if (existingProfile) {
-          console.log(`Profile already exists for ${username}`);
-          return data.user.id;
-        }
-        
+        // Create profile for the new user
         const { error: profileError } = await supabase.from('profiles').insert({
           id: data.user.id,
           username,
@@ -68,9 +64,11 @@ const TestUsersGenerator = () => {
         if (profileError) {
           console.error(`Failed to create profile for ${username}:`, profileError);
         }
+        
+        return data.user.id;
       }
       
-      return data.user?.id;
+      return null;
     } catch (err) {
       console.error(`Error creating user ${username}:`, err);
       return null;
@@ -80,6 +78,9 @@ const TestUsersGenerator = () => {
   const generateTestUsers = async () => {
     setIsGenerating(true);
     try {
+      // Temporarily sign out current user to avoid conflicts
+      await supabase.auth.signOut();
+      
       const users = [
         { email: 'admin@example.com', password: 'adminpassword', username: 'admin', roles: ['admin'] },
         { email: 'seller@example.com', password: 'sellerpassword', username: 'seller', roles: ['seller'] },

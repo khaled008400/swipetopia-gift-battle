@@ -28,13 +28,13 @@ const AuthCheck = ({
       isAuthenticated, 
       isLoading, 
       user: user?.id,
-      session: session?.user.id,
+      session: session?.user?.id,
       path: window.location.pathname
     });
     
     // Only perform the check when loading is complete
     if (!isLoading) {
-      const userIsSeller = hasRole ? hasRole('seller') : false;
+      const userIsSeller = hasRole('seller');
       
       // First check if user is authenticated
       if (!isAuthenticated || !user) {

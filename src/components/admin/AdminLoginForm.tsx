@@ -50,18 +50,44 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: error.message || "Invalid credentials",
           variant: "destructive",
         });
-      } else if (data.user) {
-        console.log("AdminLoginForm: Login successful for:", data.user.id);
+        return;
+      }
+      
+      if (!data.user) {
+        console.error("AdminLoginForm: No user returned");
         toast({
-          title: "Login successful",
-          description: "Welcome back!",
+          title: "Login failed",
+          description: "No user data returned. Please try again.",
+          variant: "destructive",
         });
-        
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          navigate('/videos');
-        }
+        return;
+      }
+      
+      console.log("AdminLoginForm: Login successful for:", data.user.id);
+      
+      // Check if user has admin role
+      const isAdmin = data.user.user_metadata?.roles?.includes('admin');
+      
+      if (!isAdmin) {
+        console.error("AdminLoginForm: User is not an admin");
+        await supabase.auth.signOut();
+        toast({
+          title: "Access denied",
+          description: "You do not have admin privileges",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate('/videos');
       }
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);

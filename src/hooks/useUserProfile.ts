@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '@/types/auth.types';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
@@ -10,7 +10,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error(`Error fetching profile for ${userId}:`, error);

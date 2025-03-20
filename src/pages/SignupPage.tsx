@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 const SignupPage = () => {
   const [username, setUsername] = useState('');
@@ -16,6 +16,7 @@ const SignupPage = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register } = useAuth();
   
   // Check if user is already logged in
   useEffect(() => {
@@ -60,37 +61,10 @@ const SignupPage = () => {
     try {
       console.log("Attempting to register with:", { email, username });
       
-      // First check if username already exists
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .limit(1);
+      const { error } = await register(email, username, password, 'user');
       
-      if (checkError) {
-        console.error("Error checking username:", checkError);
-        throw new Error(checkError.message);
-      }
-      
-      if (existingUsers && existingUsers.length > 0) {
-        console.error("Username already taken:", username);
-        throw new Error("Username is already taken");
-      }
-      
-      // Register the user
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username,
-            roles: ['user']
-          }
-        }
-      });
-      
-      if (signUpError) {
-        throw signUpError;
+      if (error) {
+        throw error;
       }
       
       toast({
@@ -98,11 +72,11 @@ const SignupPage = () => {
         description: "Your account was created successfully. You can now log in.",
       });
       navigate('/login');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
       toast({
         title: "Signup failed",
-        description: error instanceof Error ? error.message : "Failed to create account. Please try again.",
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive",
       });
     } finally {

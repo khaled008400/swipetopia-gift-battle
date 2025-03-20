@@ -245,9 +245,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     session,
     isAuthenticated,
     isLoading,
-    signIn,
-    signUp,
-    signOut,
+    signIn: async (email, password) => {
+      try {
+        const result = await login(email, password);
+        return { error: result.error };
+      } catch (err: any) {
+        return { error: err };
+      }
+    },
+    signUp: async (email, username, password, role = 'user') => {
+      try {
+        const result = await register(email, username, password, role);
+        return { error: result.error };
+      } catch (err: any) {
+        return { error: err };
+      }
+    },
+    signOut: async () => {
+      await logout();
+    },
     loading,
     error,
     login,
@@ -258,7 +274,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     removePaymentMethod: removePaymentMethodWrapper,
     requiresAuth: () => {},
     isAdmin: () => isAdmin(user?.roles),
-    hasRole: userHasRole
+    hasRole: (role) => hasRole(user?.roles, role)
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
