@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { Video } from '@/types/video.types';
 
@@ -381,10 +382,16 @@ class VideoService {
       if (error) throw error;
 
       // Extract the videos from the joined data and filter out any nulls
-      // Convert to the correct Video[] type
-      const videos: Video[] = data
-        ?.map(item => item.videos)
-        .filter(video => video !== null && video !== undefined) || [];
+      // Properly transform to Video[] array
+      const videos: Video[] = [];
+      
+      if (data) {
+        for (const item of data) {
+          if (item.videos) {
+            videos.push(item.videos as Video);
+          }
+        }
+      }
       
       return videos;
     } catch (error) {
@@ -417,10 +424,16 @@ class VideoService {
       if (error) throw error;
 
       // Extract the videos from the joined data and filter out any nulls
-      // Convert to the correct Video[] type
-      const videos: Video[] = data
-        ?.map(item => item.videos)
-        .filter(video => video !== null && video !== undefined) || [];
+      // Properly transform to Video[] array
+      const videos: Video[] = [];
+      
+      if (data) {
+        for (const item of data) {
+          if (item.videos) {
+            videos.push(item.videos as Video);
+          }
+        }
+      }
       
       return videos;
     } catch (error) {
