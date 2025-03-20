@@ -16,7 +16,6 @@ const LoginPage = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        console.log("Checking for existing session on LoginPage mount");
         const { data } = await supabase.auth.getSession();
         
         if (data.session) {
@@ -89,7 +88,7 @@ const LoginPage = () => {
           title: "Login Successful",
           description: "Welcome back!",
         });
-        // Navigation will be handled by the onAuthStateChange listener
+        navigate('/videos');
       }
     } catch (error: any) {
       console.error("Login error:", error);
