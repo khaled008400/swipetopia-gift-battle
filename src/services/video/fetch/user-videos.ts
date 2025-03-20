@@ -53,10 +53,12 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
     if (data) {
       for (const item of data) {
         if (item.videos) {
-          // Map profiles to user for backward compatibility
+          // TypeScript was treating item.videos as any[], but it's actually an object
+          // We need to explicitly cast it to any first, then access the profiles property
+          const videoWithProfiles = item.videos as any;
           const videoData = {
-            ...item.videos,
-            user: item.videos.profiles || {}
+            ...videoWithProfiles,
+            user: videoWithProfiles.profiles || {}
           };
           videos.push(videoData as Video);
         }
@@ -93,10 +95,12 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
     if (data) {
       for (const item of data) {
         if (item.videos) {
-          // Map profiles to user for backward compatibility
+          // TypeScript was treating item.videos as any[], but it's actually an object
+          // We need to explicitly cast it to any first, then access the profiles property
+          const videoWithProfiles = item.videos as any;
           const videoData = {
-            ...item.videos,
-            user: item.videos.profiles || {}
+            ...videoWithProfiles,
+            user: videoWithProfiles.profiles || {}
           };
           videos.push(videoData as Video);
         }
