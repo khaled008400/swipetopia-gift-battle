@@ -1,3 +1,4 @@
+
 import { supabase } from './base.service';
 
 class VideoFetchService {
@@ -114,14 +115,43 @@ class VideoFetchService {
   // Get all videos - for VideosPage
   async getVideos(limit: number = 50) {
     try {
-      const { data, error } = await supabase
+      // Instead of using foreign key relationship that doesn't exist,
+      // fetch videos first, then get related profiles separately
+      const { data: videos, error } = await supabase
         .from('videos')
-        .select('*, profiles(*)')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
-      return data;
+      
+      if (!videos || videos.length === 0) return [];
+      
+      // Get unique user IDs
+      const userIds = [...new Set(videos.map(video => video.user_id))];
+      
+      // Fetch profiles for those users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+        
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Return videos without profile data if profiles fetch fails
+        return videos;
+      }
+      
+      // Create a map for quick profile lookups
+      const profileMap = new Map(profiles.map(profile => [profile.id, profile]));
+      
+      // Combine video and profile data
+      const videosWithProfiles = videos.map(video => ({
+        ...video,
+        profiles: profileMap.get(video.user_id) || null
+      }));
+      
+      return videosWithProfiles;
     } catch (error) {
       console.error('Error in getVideos:', error);
       return [];
