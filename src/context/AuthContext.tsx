@@ -113,6 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
             console.error("Error loading profile from existing session:", err);
           }
         }
+      } catch (err) {
+        console.error("Error checking for existing session:", err);
       } finally {
         setLoading(false);
       }
@@ -179,6 +181,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   };
   
+  const signUp = async (email: string, username: string, password: string, role: UserRole = 'user') => {
+    try {
+      const result = await register(email, username, password, role);
+      return { error: result.error };
+    } catch (err: any) {
+      return { error: err };
+    }
+  };
+  
   const signOut = async (): Promise<void> => {
     await logout();
   };
@@ -194,7 +205,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     isAuthenticated,
     isLoading,
     signIn,
-    signUp: register,
+    signUp,
     signOut,
     loading,
     error,
