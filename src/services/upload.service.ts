@@ -10,7 +10,42 @@ class UploadService {
   async initBuckets() {
     try {
       console.log('Initializing storage buckets...');
-      await createStorageBucket();
+      
+      // Check if buckets exist first
+      const { data: buckets, error: checkError } = await supabase.storage.listBuckets();
+      
+      if (checkError) {
+        console.error('Error checking buckets:', checkError);
+        // Try to create them anyway
+      }
+      
+      // Create required buckets if they don't exist
+      const requiredBuckets = ['videos', 'thumbnails', 'gift-icons', 'gift-sounds'];
+      const existingBuckets = buckets?.map(b => b.name) || [];
+      
+      for (const bucketName of requiredBuckets) {
+        if (!existingBuckets.includes(bucketName)) {
+          console.log(`Creating bucket: ${bucketName}`);
+          try {
+            const { error } = await supabase.storage.createBucket(bucketName, {
+              public: true,
+              fileSizeLimit: bucketName === 'videos' ? 104857600 : 10485760
+            });
+            
+            if (error) {
+              console.error(`Error creating bucket ${bucketName}:`, error);
+            } else {
+              console.log(`Created bucket: ${bucketName}`);
+            }
+          } catch (bucketError) {
+            console.error(`Exception creating bucket ${bucketName}:`, bucketError);
+            // Continue anyway as the buckets might exist but the API call failed
+          }
+        } else {
+          console.log(`Bucket ${bucketName} already exists`);
+        }
+      }
+      
       console.log('Storage buckets initialized successfully');
       return true;
     } catch (error) {
@@ -33,43 +68,45 @@ class UploadService {
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `${fileName}`;
       
-      console.log(`Uploading file to ${bucketName}/${filePath}`);
+      console.log(`Uploading file (${file.size} bytes) to ${bucketName}/${filePath}`);
       
-      // Check if bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+      // Upload file to Supabase Storage with retry logic
+      let uploadAttempt = 0;
+      const maxAttempts = 3;
+      let uploadSuccess = false;
+      let data;
+      let error;
       
-      if (!bucketExists) {
-        console.log(`Bucket ${bucketName} not found in list, trying to create it directly...`);
-        try {
-          const { error } = await supabase.storage.createBucket(bucketName, {
-            public: true,
-            fileSizeLimit: bucketName === 'videos' ? 104857600 : 10485760
+      while (!uploadSuccess && uploadAttempt < maxAttempts) {
+        uploadAttempt++;
+        console.log(`Upload attempt ${uploadAttempt} of ${maxAttempts}...`);
+        
+        const uploadResult = await supabase.storage
+          .from(bucketName)
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
           });
+        
+        data = uploadResult.data;
+        error = uploadResult.error;
+        
+        if (error) {
+          console.error(`Error on upload attempt ${uploadAttempt}:`, error);
           
-          if (error) {
-            console.error('Error creating bucket directly:', error);
-          } else {
-            console.log(`Created bucket: ${bucketName} directly`);
+          if (uploadAttempt < maxAttempts) {
+            // Wait before retry (exponential backoff)
+            const delay = Math.pow(2, uploadAttempt) * 1000;
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
-        } catch (bucketError) {
-          console.error('Exception creating bucket directly:', bucketError);
-          // Continue anyway as the bucket might exist but the API call failed
+        } else {
+          uploadSuccess = true;
         }
       }
       
-      // Upload file to Supabase Storage
-      console.log('Starting file upload...', file.size, 'bytes');
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true // Changed to true to prevent upload errors on filename conflicts
-        });
-      
-      if (error) {
-        console.error('Error uploading file:', error);
-        throw error;
+      if (!uploadSuccess) {
+        throw error || new Error('Max upload attempts reached');
       }
       
       // Get public URL for the file

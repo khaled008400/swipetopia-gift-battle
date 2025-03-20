@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, ArrowLeft } from 'lucide-react';
 import UploadStep from './upload-steps/UploadStep';
 import EditStep from './upload-steps/EditStep';
-import VideoService from '@/services/video.service';
+import VideoService from '@/services/video';
 import UploadService from '@/services/upload.service';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
