@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '@/types/auth.types';
 import { supabase } from '@/lib/supabase';
 
@@ -35,30 +35,58 @@ export const useUserProfile = (userId: string | undefined) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getProfile = async () => {
-      if (!userId) {
-        setProfile(null);
-        setIsLoading(false);
-        return;
-      }
+  const refreshProfile = useCallback(async () => {
+    if (!userId) {
+      setProfile(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
 
-      try {
-        setIsLoading(true);
-        const fetchedProfile = await fetchUserProfile(userId);
-        setProfile(fetchedProfile);
-        setError(null);
-      } catch (err: any) {
-        console.error("Error in useUserProfile:", err);
-        setError(err.message || "Failed to load profile");
-        setProfile(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getProfile();
+    try {
+      setIsLoading(true);
+      setError(null);
+      const fetchedProfile = await fetchUserProfile(userId);
+      setProfile(fetchedProfile);
+    } catch (err: any) {
+      console.error("Error in refreshProfile:", err);
+      setError(err.message || "Failed to load profile");
+      setProfile(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, [userId]);
 
-  return { profile, isLoading, error };
+  const updateProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
+    if (!userId) {
+      setError("No user ID provided");
+      return false;
+    }
+
+    try {
+      setIsLoading(true);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+      
+      // Refresh the profile after update
+      await refreshProfile();
+      return true;
+    } catch (err: any) {
+      console.error("Error updating profile:", err);
+      setError(err.message || "Failed to update profile");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
+
+  return { profile, isLoading, error, refreshProfile, updateProfile };
 };
