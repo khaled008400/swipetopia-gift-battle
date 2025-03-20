@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types/auth.types';
@@ -38,6 +39,7 @@ export const useAuthMethods = () => {
       }
       
       console.log("useAuthMethods: Login successful, user ID:", data.user.id);
+      console.log("useAuthMethods: User metadata:", data.user.user_metadata);
       console.log("useAuthMethods: Session acquired:", !!data.session);
       
       return { data, error: null };

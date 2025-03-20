@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -22,7 +23,7 @@ const LoginPage = () => {
     console.log("LoginPage: Checking authentication status:", isAuthenticated);
     if (isAuthenticated) {
       console.log("User already logged in, redirecting to videos");
-      navigate('/videos');
+      navigate('/videos', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -54,13 +55,18 @@ const LoginPage = () => {
         });
       } else if (data?.user) {
         console.log("Login successful for user:", data.user.id);
+        console.log("User data:", data.user);
+        
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
+        
         // Navigate to the return URL or default to videos page
         console.log("Redirecting to:", from);
-        navigate(from);
+        
+        // Use replace: true to prevent back button from returning to login page
+        navigate(from, { replace: true });
       } else {
         // Handle case where there's no error but also no user data
         console.error("Login returned no user data");

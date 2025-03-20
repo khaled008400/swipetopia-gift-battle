@@ -69,7 +69,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         
         if (currentSession?.user) {
           try {
+            console.log("Fetching profile for user ID:", currentSession.user.id);
             const profile = await fetchUserProfile(currentSession.user.id);
+            
             if (profile) {
               console.log("Profile loaded in auth state change:", profile.username);
               setUser(profile);
@@ -106,13 +108,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           setSession(existingSession);
           
           try {
+            console.log("Found existing session for user:", existingSession.user.id);
             const profile = await fetchUserProfile(existingSession.user.id);
+            
             if (profile) {
               console.log("Profile loaded from existing session:", profile.username);
               setUser(profile);
               setIsAuthenticated(true);
             } else {
-              console.log("No profile found for existing session");
+              console.log("No profile found for existing session user");
               setUser(null);
               setIsAuthenticated(false);
             }
@@ -146,6 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const login = async (email: string, password: string) => {
     console.log("login called with:", email);
     setLoading(true);
+    
     try {
       const result = await authLogin(email, password);
       console.log("Login result:", result);
@@ -153,6 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       if (result.error) {
         setIsAuthenticated(false);
       } else if (result.data?.user) {
+        console.log("Login successful, setting authenticated state");
         setIsAuthenticated(true);
       }
       
