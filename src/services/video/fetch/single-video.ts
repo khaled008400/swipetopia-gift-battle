@@ -18,7 +18,12 @@ export async function getVideoById(id: string): Promise<Video | null> {
       // Map profiles to user for backward compatibility
       const video: Video = {
         ...data,
-        user: data.profiles || {}
+        user: {
+          id: data.profiles?.id,
+          username: data.profiles?.username || 'Unknown User',
+          avatar: data.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+          avatar_url: data.profiles?.avatar_url
+        }
       };
       return video;
     }

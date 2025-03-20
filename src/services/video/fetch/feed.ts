@@ -20,7 +20,12 @@ export async function getForYouVideos(): Promise<Video[]> {
     // Map profiles to user for backward compatibility
     return (data || []).map(video => ({
       ...video,
-      user: video.profiles || {}
+      user: {
+        id: video.profiles?.id,
+        username: video.profiles?.username || 'Unknown User',
+        avatar: video.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+        avatar_url: video.profiles?.avatar_url
+      }
     }));
   } catch (error) {
     handleFetchError("getForYouVideos", error);
@@ -41,7 +46,12 @@ export async function getTrendingVideos(): Promise<Video[]> {
     // Map profiles to user for backward compatibility
     return (data || []).map(video => ({
       ...video,
-      user: video.profiles || {}
+      user: {
+        id: video.profiles?.id,
+        username: video.profiles?.username || 'Unknown User',
+        avatar: video.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+        avatar_url: video.profiles?.avatar_url
+      }
     }));
   } catch (error) {
     handleFetchError("getTrendingVideos", error);
@@ -62,7 +72,12 @@ export async function getVideos(limit: number = 50): Promise<Video[]> {
     // Map profiles to user for backward compatibility
     return (data || []).map(video => ({
       ...video,
-      user: video.profiles || {}
+      user: {
+        id: video.profiles?.id,
+        username: video.profiles?.username || 'Unknown User',
+        avatar: video.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+        avatar_url: video.profiles?.avatar_url
+      }
     }));
   } catch (error) {
     handleFetchError("getVideos", error);
