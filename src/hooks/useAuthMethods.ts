@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -142,9 +141,13 @@ export const useAuthMethods = () => {
   };
 
   const logout = async (): Promise<void> => {
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error("Signout error:", error);
+        throw error;
+      }
       
       toast({
         title: "Logged Out",
@@ -158,6 +161,8 @@ export const useAuthMethods = () => {
         title: "Logout Error",
         description: "There was a problem signing out."
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

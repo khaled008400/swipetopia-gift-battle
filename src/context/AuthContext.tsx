@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
 import { useAuthMethods } from '@/hooks/useAuthMethods';
 import { hasRole, isAdmin } from '@/utils/roleUtils';
