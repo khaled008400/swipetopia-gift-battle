@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -69,7 +69,7 @@ const LoginPage = () => {
     try {
       console.log(`Attempting login with: ${email}`);
       
-      // Sign out any existing session first
+      // Sign out any existing session first to avoid conflicts
       await supabase.auth.signOut();
       
       // Attempt login

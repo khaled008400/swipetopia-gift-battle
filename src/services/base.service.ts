@@ -1,5 +1,6 @@
 
-import { supabase } from '@/lib/supabase';
+// Re-export the supabase client from our integrations
+import { supabase } from '@/integrations/supabase/client';
 
 // Get the currently authenticated user
 export const getAuthenticatedUser = async () => {

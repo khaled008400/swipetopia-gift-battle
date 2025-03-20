@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { UserProfile } from '@/types/auth.types';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
