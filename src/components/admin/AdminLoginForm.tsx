@@ -17,7 +17,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,17 +31,11 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       return;
     }
     
-    if (isLoading) {
-      console.log("AdminLoginForm: Login already in progress");
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
-      console.log("AdminLoginForm: Login with:", email);
+      console.log("AdminLoginForm: Attempting login with:", email);
       
-      // Use login method from AuthContext
       const { error } = await login(email, password);
       
       if (error) {
@@ -51,28 +45,19 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: error.message || "Invalid credentials",
           variant: "destructive",
         });
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("AdminLoginForm: Login successful");
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      // Give time for auth state to update
-      setTimeout(() => {
+      } else {
+        console.log("AdminLoginForm: Login successful");
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        
         if (onLoginSuccess) {
-          console.log("AdminLoginForm: Calling onLoginSuccess callback");
           onLoginSuccess();
         } else {
-          console.log("AdminLoginForm: Redirecting to /videos");
           navigate('/videos');
         }
-        setIsLoading(false);
-      }, 1000);
-      
+      }
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
       toast({
@@ -80,6 +65,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };

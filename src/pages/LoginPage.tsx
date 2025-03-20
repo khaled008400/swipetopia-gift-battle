@@ -10,17 +10,17 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, login, session } = useAuth();
+  const { isAuthenticated, login } = useAuth();
 
   console.log("LoginPage rendering, auth status:", isAuthenticated);
 
-  // Check if user is already authenticated on initial load or when auth status changes
+  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && session) {
+    if (isAuthenticated) {
       console.log("LoginPage: User is authenticated, navigating to videos feed");
       navigate('/videos', { replace: true });
     }
-  }, [isAuthenticated, navigate, session]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,17 +34,11 @@ const LoginPage = () => {
       return;
     }
     
-    if (loading) {
-      console.log("LoginPage: Login already in progress");
-      return;
-    }
-    
     setLoading(true);
 
     try {
       console.log("LoginPage: Login attempt with:", email);
       
-      // Use the login method from AuthContext
       const { error } = await login(email, password);
       
       if (error) {
@@ -54,20 +48,13 @@ const LoginPage = () => {
           title: "Login Failed",
           description: error.message || "Incorrect email or password",
         });
-        setLoading(false);
-        return;
+      } else {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        console.log("LoginPage: Login successful");
       }
-      
-      // Success toast
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      
-      console.log("LoginPage: Login successful");
-      
-      // Keep loading state active until redirect happens through useEffect
-      // This prevents multiple login attempts
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);
       toast({
@@ -75,6 +62,7 @@ const LoginPage = () => {
         title: "Login Failed",
         description: error.message || "An unexpected error occurred",
       });
+    } finally {
       setLoading(false);
     }
   };

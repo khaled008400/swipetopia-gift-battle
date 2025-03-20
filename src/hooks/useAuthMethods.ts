@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -18,28 +19,28 @@ export const useAuthMethods = () => {
       // Clear any existing session first to prevent conflicts
       await supabase.auth.signOut();
       
-      // Simple direct login with Supabase
-      const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
+      // Sign in with email and password
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (supabaseError) {
-        console.error("useAuthMethods: Login error:", supabaseError);
-        setError(supabaseError);
+      if (signInError) {
+        console.error("useAuthMethods: Login error:", signInError);
+        setError(signInError);
         setIsLoading(false);
-        return { data: null, error: supabaseError };
+        return { data: null, error: signInError };
       }
       
       if (!data.user || !data.session) {
-        const noSessionError = new Error("Login successful but no user or session was returned");
-        console.error("useAuthMethods: No user/session:", noSessionError);
-        setError(noSessionError);
+        const noUserError = new Error("Login successful but no user or session was returned");
+        console.error("useAuthMethods: No user/session:", noUserError);
+        setError(noUserError);
         setIsLoading(false);
-        return { data: null, error: noSessionError };
+        return { data: null, error: noUserError };
       }
       
-      console.log("useAuthMethods: Login successful, user data:", data.user.id);
+      console.log("useAuthMethods: Login successful, user ID:", data.user.id);
       console.log("useAuthMethods: Session acquired:", !!data.session);
       
       setIsLoading(false);
