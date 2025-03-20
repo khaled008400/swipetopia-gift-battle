@@ -14,7 +14,7 @@ export async function getUserVideos(userId: string): Promise<Video[]> {
 
     if (error) {
       console.error("Error fetching user videos:", error);
-      throw error;
+      return [];
     }
 
     console.log(`Found ${data?.length || 0} videos for user ${userId}`);
@@ -22,7 +22,7 @@ export async function getUserVideos(userId: string): Promise<Video[]> {
     // Transform data using the common mapper
     return (data || []).map(mapVideoData);
   } catch (error) {
-    handleFetchError(`getUserVideos for ${userId}`, error);
+    console.error(`Critical error in getUserVideos for ${userId}:`, error);
     return [];
   }
 }
@@ -31,7 +31,10 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
   try {
     console.log("Fetching liked videos...");
     const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-    if (!currentUserId) return [];
+    if (!currentUserId) {
+      console.log("No user ID provided for liked videos");
+      return [];
+    }
 
     const { data, error } = await supabase
       .from('likes')
@@ -43,7 +46,10 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
       `)
       .eq('user_id', currentUserId);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching liked videos:", error);
+      return [];
+    }
 
     console.log(`Found ${data?.length || 0} liked videos`);
     
@@ -60,7 +66,7 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
     
     return videos;
   } catch (error) {
-    handleFetchError("getLikedVideos", error);
+    console.error("Critical error in getLikedVideos:", error);
     return [];
   }
 }
@@ -69,7 +75,10 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
   try {
     console.log("Fetching saved videos...");
     const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-    if (!currentUserId) return [];
+    if (!currentUserId) {
+      console.log("No user ID provided for saved videos");
+      return [];
+    }
 
     const { data, error } = await supabase
       .from('saved_videos')
@@ -81,7 +90,10 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
       `)
       .eq('user_id', currentUserId);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching saved videos:", error);
+      return [];
+    }
 
     console.log(`Found ${data?.length || 0} saved videos`);
     
@@ -98,7 +110,7 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
     
     return videos;
   } catch (error) {
-    handleFetchError("getSavedVideos", error);
+    console.error("Critical error in getSavedVideos:", error);
     return [];
   }
 }

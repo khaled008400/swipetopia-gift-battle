@@ -12,7 +12,10 @@ export async function getVideoById(id: string): Promise<Video | null> {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error fetching video ${id}:`, error);
+      return null;
+    }
     
     // Process video data using common mapper
     if (data) {
@@ -23,7 +26,7 @@ export async function getVideoById(id: string): Promise<Video | null> {
     console.log(`No video found with ID: ${id}`);
     return null;
   } catch (error) {
-    handleFetchError("getVideoById", error);
+    console.error(`Critical error in getVideoById for ${id}:`, error);
     return null;
   }
 }

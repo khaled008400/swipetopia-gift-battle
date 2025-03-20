@@ -16,14 +16,17 @@ export async function searchVideos(query: string): Promise<Video[]> {
       .order('view_count', { ascending: false })
       .limit(20);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error searching videos:", error);
+      return [];
+    }
     
     console.log(`Search found ${data?.length || 0} videos`);
     
     // Transform data using the common mapper
     return (data || []).map(mapVideoData);
   } catch (error) {
-    handleFetchError("searchVideos", error);
+    console.error("Critical error in searchVideos:", error);
     return [];
   }
 }

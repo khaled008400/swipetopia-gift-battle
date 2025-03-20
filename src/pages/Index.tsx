@@ -6,13 +6,14 @@ import { Video } from '@/types/video.types';
 import VideoService from '@/services/video';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 const Index: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -21,15 +22,32 @@ const Index: React.FC = () => {
     const fetchVideos = async () => {
       try {
         setIsLoading(true);
-        console.log("Fetching videos for Index page");
-        const fetchedVideos = await VideoService.getForYouVideos();
-        console.log(`Fetched ${fetchedVideos.length} videos for Index page`);
+        console.log("Fetching videos for Index page (attempt " + (retryCount + 1) + ")");
+        
+        // First try to get For You videos
+        let fetchedVideos = await VideoService.getForYouVideos();
+        console.log(`Fetched ${fetchedVideos.length} videos for For You feed`);
+        
+        // If no videos are returned, try Trending videos as fallback
+        if (fetchedVideos.length === 0) {
+          console.log("No For You videos found, trying trending videos instead");
+          fetchedVideos = await VideoService.getTrendingVideos();
+          console.log(`Fetched ${fetchedVideos.length} trending videos as fallback`);
+        }
+        
+        // If still no videos, try getting any videos
+        if (fetchedVideos.length === 0) {
+          console.log("No trending videos found, trying any public videos");
+          fetchedVideos = await VideoService.getVideos(20);
+          console.log(`Fetched ${fetchedVideos.length} generic videos as last resort`);
+        }
         
         if (fetchedVideos.length > 0) {
+          console.log("Setting videos in state:", fetchedVideos.length);
           setVideos(fetchedVideos);
           setLoadError(null);
         } else {
-          console.log("No videos found in fetch");
+          console.log("No videos found in any feed");
           setLoadError("No videos found");
           toast({
             title: "No videos found",
@@ -51,7 +69,11 @@ const Index: React.FC = () => {
     };
 
     fetchVideos();
-  }, [toast]);
+  }, [toast, retryCount]);
+
+  const handleRefresh = () => {
+    setRetryCount(prev => prev + 1);
+  };
 
   const handleVideoView = async (videoId: string) => {
     try {
@@ -78,11 +100,12 @@ const Index: React.FC = () => {
   if (loadError || videos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-black text-white">
-        <p>{loadError || "No videos available"}</p>
+        <p className="mb-4 text-xl">{loadError || "No videos available"}</p>
         <button 
-          className="mt-4 px-4 py-2 bg-white text-black rounded"
-          onClick={() => window.location.reload()}
+          className="flex items-center px-4 py-2 bg-white text-black rounded hover:bg-gray-200 transition-colors"
+          onClick={handleRefresh}
         >
+          <RefreshCw className="mr-2 h-5 w-5" />
           Refresh
         </button>
       </div>
