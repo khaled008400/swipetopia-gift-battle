@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, Upload } from 'lucide-react';
 import VideoUploadModal from '@/components/upload/VideoUploadModal';
-import VideoService from '@/services/video.service';
+import VideoService from '@/services/video';
 import { Video } from '@/types/video.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +23,6 @@ const VideosPage: React.FC = () => {
   const { user } = useAuth();
   const { requiresAuth, AuthDialog } = useAuthCheck();
 
-  // Check if there's an upload parameter in the URL to automatically open the upload modal
   useEffect(() => {
     const shouldOpenUpload = searchParams.get('upload') === 'true';
     if (shouldOpenUpload) {
@@ -35,7 +33,6 @@ const VideosPage: React.FC = () => {
   useEffect(() => {
     fetchVideos();
 
-    // Set up realtime subscription for new videos
     const channel = supabase
       .channel('videos-changes')
       .on('postgres_changes', 
@@ -56,7 +53,6 @@ const VideosPage: React.FC = () => {
     try {
       setIsLoading(true);
       console.log('Fetching videos...');
-      // Pass explicit limit parameter (50 is the default as set in the service)
       const fetchedVideos = await VideoService.getVideos(50);
       console.log('Fetched videos:', fetchedVideos);
       setVideos(fetchedVideos);
@@ -102,7 +98,6 @@ const VideosPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Add debug component */}
       <div className="mb-6">
         <DatabaseDebug />
       </div>

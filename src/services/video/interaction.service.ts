@@ -1,187 +1,160 @@
+
 import { supabase, getAuthenticatedUser } from './base.service';
+import { Video } from '@/types/video.types';
 
 class VideoInteractionService {
-  // Update video metadata
-  async updateVideo(id: string, updates: any) {
+  // Increment view count for a video
+  async incrementViewCount(videoId: string): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('videos')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const { error } = await supabase.rpc('increment_view_count', {
+        video_id: videoId
+      });
 
       if (error) throw error;
-      return data;
     } catch (error) {
-      console.error('Error in updateVideo:', error);
-      throw error;
-    }
-  }
-
-  // Delete video
-  async deleteVideo(id: string) {
-    try {
-      const { error } = await supabase
-        .from('videos')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('Error in deleteVideo:', error);
+      console.error("Error incrementing view count:", error);
       throw error;
     }
   }
 
   // Like a video
-  async likeVideo(videoId: string) {
+  async likeVideo(videoId: string): Promise<void> {
     try {
-      // First get the current like count
-      const { data: video, error: getError } = await supabase
-        .from('videos')
-        .select('like_count')
-        .eq('id', videoId)
-        .single();
+      // First, insert into likes table
+      const { error: likesError } = await supabase
+        .from('likes')
+        .insert({ video_id: videoId, user_id: (await supabase.auth.getUser()).data.user?.id });
 
-      if (getError) throw getError;
+      if (likesError) throw likesError;
 
-      // Increment the like count
-      const { data, error: updateError } = await supabase
-        .from('videos')
-        .update({ like_count: (video.like_count || 0) + 1 })
-        .eq('id', videoId)
-        .select()
-        .single();
+      // Increment likes count
+      const { error: countError } = await supabase.rpc('increment_likes_count', {
+        video_id: videoId
+      });
 
-      if (updateError) throw updateError;
-      return data;
+      if (countError) throw countError;
     } catch (error) {
-      console.error('Error in likeVideo:', error);
+      console.error("Error liking video:", error);
       throw error;
     }
   }
 
   // Unlike a video
-  async unlikeVideo(videoId: string) {
+  async unlikeVideo(videoId: string): Promise<void> {
     try {
-      // First get the current like count
-      const { data: video, error: getError } = await supabase
-        .from('videos')
-        .select('like_count')
-        .eq('id', videoId)
-        .single();
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      
+      // Delete from likes table
+      const { error: likesError } = await supabase
+        .from('likes')
+        .delete()
+        .eq('video_id', videoId)
+        .eq('user_id', userId);
 
-      if (getError) throw getError;
+      if (likesError) throw likesError;
 
-      // Decrement the like count, but don't go below zero
-      const newLikeCount = Math.max(0, (video.like_count || 1) - 1);
+      // Decrement likes count
+      const { error: countError } = await supabase.rpc('decrement_likes_count', {
+        video_id: videoId
+      });
 
-      const { data, error: updateError } = await supabase
-        .from('videos')
-        .update({ like_count: newLikeCount })
-        .eq('id', videoId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-      return data;
+      if (countError) throw countError;
     } catch (error) {
-      console.error('Error in unlikeVideo:', error);
+      console.error("Error unliking video:", error);
       throw error;
     }
   }
 
-  // Save video to user's collection
-  async saveVideo(videoId: string) {
+  // Save a video
+  async saveVideo(videoId: string): Promise<void> {
     try {
-      const user = await getAuthenticatedUser();
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('saved_videos')
-        .insert({
-          video_id: videoId,
-          user_id: user.id
-        })
-        .select()
-        .single();
+        .insert({ video_id: videoId, user_id: (await supabase.auth.getUser()).data.user?.id });
 
       if (error) throw error;
-      return data;
     } catch (error) {
-      console.error('Error in saveVideo:', error);
+      console.error("Error saving video:", error);
       throw error;
     }
   }
 
-  // Remove video from user's collection
-  async unsaveVideo(videoId: string) {
+  // Unsave a video
+  async unsaveVideo(videoId: string): Promise<void> {
     try {
-      const user = await getAuthenticatedUser();
-
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      
       const { error } = await supabase
         .from('saved_videos')
         .delete()
-        .match({ video_id: videoId, user_id: user.id });
+        .eq('video_id', videoId)
+        .eq('user_id', userId);
 
       if (error) throw error;
-      return true;
     } catch (error) {
-      console.error('Error in unsaveVideo:', error);
+      console.error("Error unsaving video:", error);
       throw error;
     }
   }
 
-  // Increment view count
-  async incrementViewCount(videoId: string) {
+  // Check if a video is liked by the current user
+  async checkIfVideoLiked(videoId: string): Promise<boolean> {
     try {
-      // First get the current view count
-      const { data: video, error: getError } = await supabase
-        .from('videos')
-        .select('view_count')
-        .eq('id', videoId)
-        .single();
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) return false;
+      
+      const { data, error } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('video_id', videoId)
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (getError) throw getError;
-
-      // Increment the view count
-      const { data, error: updateError } = await supabase
-        .from('videos')
-        .update({ view_count: (video.view_count || 0) + 1 })
-        .eq('id', videoId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-      return data;
+      if (error) throw error;
+      return !!data;
     } catch (error) {
-      console.error('Error in incrementViewCount:', error);
-      // Don't throw error for view count issues
-      return null;
+      console.error("Error checking if video liked:", error);
+      return false;
     }
   }
 
-  // Report video - updated to handle both string reason and object with category/description
-  async reportVideo(videoId: string, report: string | { category: string, description: string }) {
+  // Check if a video is saved by the current user
+  async checkIfVideoSaved(videoId: string): Promise<boolean> {
+    try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) return false;
+      
+      const { data, error } = await supabase
+        .from('saved_videos')
+        .select('id')
+        .eq('video_id', videoId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      console.error("Error checking if video saved:", error);
+      return false;
+    }
+  }
+
+  // Report a video
+  async reportVideo(videoId: string, report: string | { category: string, description: string }): Promise<void> {
     try {
       const user = await getAuthenticatedUser();
-      
-      // Process the report data based on its type
-      let reportCategory: string;
-      let reportDescription: string;
-      
+
+      let reportCategory = 'other';
+      let reportDescription = '';
+
       if (typeof report === 'string') {
-        // Legacy format: just a reason string
-        reportCategory = 'other';
         reportDescription = report;
       } else {
-        // New format: object with category and description
         reportCategory = report.category;
         reportDescription = report.description;
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('video_reports')
         .insert({
           video_id: videoId,
@@ -189,17 +162,15 @@ class VideoInteractionService {
           report_category: reportCategory,
           report_description: reportDescription,
           status: 'pending'
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
-      return data;
     } catch (error) {
-      console.error('Error in reportVideo:', error);
+      console.error("Error reporting video:", error);
       throw error;
     }
   }
 }
 
+// Export a singleton instance
 export default new VideoInteractionService();

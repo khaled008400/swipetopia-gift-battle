@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Video } from "@/types/video.types";
-import VideoService from "@/services/video.service";
+import VideoService from "@/services/video";
 import { useAuth } from "@/context/AuthContext";
 
 export const useVideoInteractions = (

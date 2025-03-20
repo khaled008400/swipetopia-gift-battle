@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VideoFeed from '@/components/VideoFeed';
 import { Video } from '@/types/video.types';
-import VideoService from '@/services/video.service';
+import VideoService from '@/services/video';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';

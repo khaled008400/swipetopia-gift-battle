@@ -1,6 +1,6 @@
 
 import { useVideosHook } from "./useVideosHook";
-import VideoService from "@/services/video.service";
+import VideoService from "@/services/video";
 
 export const useLikedVideos = (userId: string) => {
   return useVideosHook(

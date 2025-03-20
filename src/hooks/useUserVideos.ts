@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Video } from "@/types/video.types";
-import VideoService from "@/services/video.service";
+import VideoService from "@/services/video";
 
 export const useUserVideos = (userId: string) => {
   const [videos, setVideos] = useState<Video[]>([]);

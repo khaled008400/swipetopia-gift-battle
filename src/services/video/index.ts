@@ -2,6 +2,7 @@
 import VideoUploadService from './upload.service';
 import VideoFetchService from './fetch.service';
 import VideoInteractionService from './interaction.service';
+import { Video } from '@/types/video.types';
 
 // Create the instance here, so we don't need to use bind
 const uploadServiceInstance = VideoUploadService;
@@ -53,11 +54,8 @@ const VideoService = {
     fetchServiceInstance.getUserVideos(userId),
   
   // Interaction methods
-  updateVideo: (videoId: string, data: any) => 
-    interactionServiceInstance.updateVideo(videoId, data),
-  
-  deleteVideo: (videoId: string) => 
-    interactionServiceInstance.deleteVideo(videoId),
+  incrementViewCount: (videoId: string) => 
+    interactionServiceInstance.incrementViewCount(videoId),
   
   likeVideo: (videoId: string) => 
     interactionServiceInstance.likeVideo(videoId),
@@ -71,8 +69,11 @@ const VideoService = {
   unsaveVideo: (videoId: string) => 
     interactionServiceInstance.unsaveVideo(videoId),
   
-  incrementViewCount: (videoId: string) => 
-    interactionServiceInstance.incrementViewCount(videoId),
+  checkIfVideoLiked: (videoId: string) => 
+    interactionServiceInstance.checkIfVideoLiked(videoId),
+  
+  checkIfVideoSaved: (videoId: string) => 
+    interactionServiceInstance.checkIfVideoSaved(videoId),
   
   reportVideo: (videoId: string, report: string | { category: string, description: string }) => 
     interactionServiceInstance.reportVideo(videoId, report),
