@@ -141,14 +141,13 @@ export const useAuthMethods = () => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out."
       });
-      return true;
     } catch (err: any) {
       setError(new Error(err.message));
       console.error("Logout error:", err);
@@ -157,7 +156,6 @@ export const useAuthMethods = () => {
         title: "Logout Error",
         description: "There was a problem signing out."
       });
-      return false;
     }
   };
 

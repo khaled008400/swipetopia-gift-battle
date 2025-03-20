@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -54,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const { 
     login: authLogin, 
     register, 
-    logout,
+    logout: authLogout,
     isLoading 
   } = useAuthMethods();
 
@@ -182,6 +183,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     await logout();
   };
   
+  // Correctly typed logout function
+  const logout = async (): Promise<void> => {
+    await authLogout();
+  };
+  
   const value: AuthContextType = {
     user,
     session,
@@ -194,9 +200,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     error,
     login,
     register,
-    logout: async (): Promise<void> => {
-      await logout();
-    },
+    logout,
     updateProfile,
     addPaymentMethod: addPaymentMethodWrapper,
     removePaymentMethod: removePaymentMethodWrapper,
