@@ -1,7 +1,7 @@
 
 import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
-import { videoWithUserSelect, handleFetchError } from './base';
+import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
 
 export async function getUserVideos(userId: string): Promise<Video[]> {
   console.log(`Fetching videos for user: ${userId}`);
@@ -19,16 +19,8 @@ export async function getUserVideos(userId: string): Promise<Video[]> {
 
     console.log(`Found ${data?.length || 0} videos for user ${userId}`);
     
-    // Transform data to match Video type expected by frontend
-    return (data || []).map(video => ({
-      ...video,
-      user: {
-        id: video.profiles?.id,
-        username: video.profiles?.username || 'Unknown User',
-        avatar: video.profiles?.avatar_url,
-        avatar_url: video.profiles?.avatar_url
-      }
-    }));
+    // Transform data using the common mapper
+    return (data || []).map(mapVideoData);
   } catch (error) {
     handleFetchError(`getUserVideos for ${userId}`, error);
     return [];
@@ -61,19 +53,7 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
     if (data) {
       for (const item of data) {
         if (item.videos) {
-          // Cast to any first to work with the data
-          const videoWithProfiles = item.videos as any;
-          // Create a properly structured video object
-          const videoData = {
-            ...videoWithProfiles,
-            user: {
-              id: videoWithProfiles.profiles?.id,
-              username: videoWithProfiles.profiles?.username || 'Unknown User',
-              avatar: videoWithProfiles.profiles?.avatar_url,
-              avatar_url: videoWithProfiles.profiles?.avatar_url
-            }
-          };
-          videos.push(videoData as Video);
+          videos.push(mapVideoData(item.videos));
         }
       }
     }
@@ -111,19 +91,7 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
     if (data) {
       for (const item of data) {
         if (item.videos) {
-          // Cast to any first to work with the data
-          const videoWithProfiles = item.videos as any;
-          // Create a properly structured video object
-          const videoData = {
-            ...videoWithProfiles,
-            user: {
-              id: videoWithProfiles.profiles?.id,
-              username: videoWithProfiles.profiles?.username || 'Unknown User',
-              avatar: videoWithProfiles.profiles?.avatar_url,
-              avatar_url: videoWithProfiles.profiles?.avatar_url
-            }
-          };
-          videos.push(videoData as Video);
+          videos.push(mapVideoData(item.videos));
         }
       }
     }

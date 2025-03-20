@@ -1,7 +1,7 @@
 
 import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
-import { videoWithUserSelect, handleFetchError } from './base';
+import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
 
 export async function searchVideos(query: string): Promise<Video[]> {
   if (!query.trim()) return [];
@@ -11,6 +11,7 @@ export async function searchVideos(query: string): Promise<Video[]> {
     const { data, error } = await supabase
       .from('videos')
       .select(videoWithUserSelect)
+      .eq('is_private', false) // Only fetch public videos
       .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
       .order('view_count', { ascending: false })
       .limit(20);
@@ -19,16 +20,8 @@ export async function searchVideos(query: string): Promise<Video[]> {
     
     console.log(`Search found ${data?.length || 0} videos`);
     
-    // Transform data to match Video type expected by frontend
-    return (data || []).map(video => ({
-      ...video,
-      user: {
-        id: video.profiles?.id,
-        username: video.profiles?.username || 'Unknown User',
-        avatar: video.profiles?.avatar_url,
-        avatar_url: video.profiles?.avatar_url
-      }
-    }));
+    // Transform data using the common mapper
+    return (data || []).map(mapVideoData);
   } catch (error) {
     handleFetchError("searchVideos", error);
     return [];

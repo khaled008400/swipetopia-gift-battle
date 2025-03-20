@@ -1,7 +1,7 @@
 
 import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
-import { videoWithUserSelect, handleFetchError } from './base';
+import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
 
 export async function getForYouVideos(): Promise<Video[]> {
   console.log("Fetching For You videos...");
@@ -9,6 +9,7 @@ export async function getForYouVideos(): Promise<Video[]> {
     const { data, error } = await supabase
       .from('videos')
       .select(videoWithUserSelect)
+      .eq('is_private', false) // Only fetch public videos
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -19,16 +20,8 @@ export async function getForYouVideos(): Promise<Video[]> {
 
     console.log(`Successfully fetched ${data?.length || 0} videos for For You feed`);
     
-    // Transform data to match Video type expected by frontend
-    return (data || []).map(video => ({
-      ...video,
-      user: {
-        id: video.profiles?.id,
-        username: video.profiles?.username || 'Unknown User',
-        avatar: video.profiles?.avatar_url,
-        avatar_url: video.profiles?.avatar_url
-      }
-    }));
+    // Transform data to match Video type expected by frontend using the common mapper
+    return (data || []).map(mapVideoData);
   } catch (error) {
     handleFetchError("getForYouVideos", error);
     return [];
@@ -41,6 +34,7 @@ export async function getTrendingVideos(): Promise<Video[]> {
     const { data, error } = await supabase
       .from('videos')
       .select(videoWithUserSelect)
+      .eq('is_private', false) // Only fetch public videos
       .order('view_count', { ascending: false })
       .limit(20);
 
@@ -48,16 +42,8 @@ export async function getTrendingVideos(): Promise<Video[]> {
     
     console.log(`Successfully fetched ${data?.length || 0} trending videos`);
     
-    // Transform data to match Video type expected by frontend
-    return (data || []).map(video => ({
-      ...video,
-      user: {
-        id: video.profiles?.id,
-        username: video.profiles?.username || 'Unknown User',
-        avatar: video.profiles?.avatar_url,
-        avatar_url: video.profiles?.avatar_url
-      }
-    }));
+    // Transform data using the common mapper
+    return (data || []).map(mapVideoData);
   } catch (error) {
     handleFetchError("getTrendingVideos", error);
     return [];
@@ -70,6 +56,7 @@ export async function getVideos(limit: number = 50): Promise<Video[]> {
     const { data, error } = await supabase
       .from('videos')
       .select(videoWithUserSelect)
+      .eq('is_private', false) // Only fetch public videos
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -77,16 +64,8 @@ export async function getVideos(limit: number = 50): Promise<Video[]> {
     
     console.log(`Successfully fetched ${data?.length || 0} videos`);
     
-    // Transform data to match Video type expected by frontend
-    return (data || []).map(video => ({
-      ...video,
-      user: {
-        id: video.profiles?.id,
-        username: video.profiles?.username || 'Unknown User',
-        avatar: video.profiles?.avatar_url,
-        avatar_url: video.profiles?.avatar_url
-      }
-    }));
+    // Transform data using the common mapper
+    return (data || []).map(mapVideoData);
   } catch (error) {
     handleFetchError("getVideos", error);
     return [];
