@@ -381,8 +381,12 @@ class VideoService {
       if (error) throw error;
 
       // Extract the videos from the joined data and filter out any nulls
-      const videos = data?.map(item => item.videos).filter(Boolean) || [];
-      return videos as Video[];
+      // Convert to the correct Video[] type
+      const videos: Video[] = data
+        ?.map(item => item.videos)
+        .filter(video => video !== null && video !== undefined) || [];
+      
+      return videos;
     } catch (error) {
       console.error("Error in getLikedVideos:", error);
       return [];
@@ -413,8 +417,12 @@ class VideoService {
       if (error) throw error;
 
       // Extract the videos from the joined data and filter out any nulls
-      const videos = data?.map(item => item.videos).filter(Boolean) || [];
-      return videos as Video[];
+      // Convert to the correct Video[] type
+      const videos: Video[] = data
+        ?.map(item => item.videos)
+        .filter(video => video !== null && video !== undefined) || [];
+      
+      return videos;
     } catch (error) {
       console.error("Error in getSavedVideos:", error);
       return [];
