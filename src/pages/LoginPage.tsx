@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,24 +13,29 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth(); // Get isAuthenticated from auth context
+  const { isAuthenticated, login } = useAuth();
 
   // Get the return path from URL query params
   const searchParams = new URLSearchParams(location.search);
   const from = searchParams.get('from') || '/';
+
+  // Check if user is already authenticated on initial load
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("LoginPage: Already authenticated on initial load, navigating to:", from);
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log("LoginPage: Direct login attempt with:", email);
+      console.log("LoginPage: Login attempt with:", email);
       
-      // Use Supabase directly to avoid any context issues
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Use the login method from AuthContext
+      const { error } = await login(email, password);
       
       if (error) {
         console.error("LoginPage: Login error:", error);
@@ -43,17 +48,13 @@ const LoginPage = () => {
         return;
       }
       
-      console.log("LoginPage: Login successful, auth data:", data);
-      
-      // Force session refresh
-      await supabase.auth.refreshSession();
-      
+      // Success toast
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
       
-      // Wait briefly then navigate directly
+      // Wait briefly then navigate
       setTimeout(() => {
         console.log("LoginPage: Navigating to:", from);
         navigate(from, { replace: true });
@@ -71,13 +72,7 @@ const LoginPage = () => {
     }
   };
 
-  // If already authenticated, navigate immediately
-  if (isAuthenticated) {
-    console.log("LoginPage: Already authenticated, navigating to:", from);
-    navigate(from, { replace: true });
-    return null;
-  }
-
+  // Render the login form
   return (
     <div className="flex min-h-screen bg-app-black flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">

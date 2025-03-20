@@ -14,7 +14,7 @@ export const useAuthMethods = () => {
     setError(null);
     
     try {
-      console.log(`useAuthMethods: Direct login attempt with: ${email}`);
+      console.log(`useAuthMethods: Login attempt with: ${email}`);
       
       // Sign in with password
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({

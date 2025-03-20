@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminLoginFormProps {
   onLoginSuccess?: () => void;
@@ -18,8 +17,8 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  // Simple direct login approach
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -35,13 +34,10 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     
     try {
-      console.log("AdminLoginForm: Direct login with:", email);
+      console.log("AdminLoginForm: Login with:", email);
       
-      // Use Supabase directly to avoid any context issues
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Use login method from AuthContext
+      const { error } = await login(email, password);
       
       if (error) {
         console.error("AdminLoginForm: Login error:", error);
@@ -54,14 +50,11 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         return;
       }
       
-      console.log("AdminLoginForm: Login successful:", data);
+      console.log("AdminLoginForm: Login successful");
       toast({
         title: "Login successful",
         description: "Welcome to the admin dashboard",
       });
-      
-      // Force session refresh
-      await supabase.auth.refreshSession();
       
       // Simple delay and direct navigation
       setTimeout(() => {
