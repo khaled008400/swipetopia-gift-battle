@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -20,18 +19,11 @@ const LoginPage = () => {
 
   // Check if user is already logged in
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        if (isAuthenticated) {
-          console.log("User already logged in, redirecting to videos");
-          navigate('/videos');
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-      }
-    };
-    
-    checkSession();
+    console.log("LoginPage: Checking authentication status:", isAuthenticated);
+    if (isAuthenticated) {
+      console.log("User already logged in, redirecting to videos");
+      navigate('/videos');
+    }
   }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +59,7 @@ const LoginPage = () => {
           description: "Welcome back!",
         });
         // Navigate to the return URL or default to videos page
+        console.log("Redirecting to:", from);
         navigate(from);
       } else {
         // Handle case where there's no error but also no user data

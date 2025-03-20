@@ -66,12 +66,16 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       }
       
       console.log("AdminLoginForm: Login successful for:", data.user.id);
+      console.log("AdminLoginForm: User metadata:", data.user.user_metadata);
       
       // Check if user has admin role
-      const isAdmin = data.user.user_metadata?.roles?.includes('admin');
+      const roles = data.user.user_metadata?.roles || [];
+      const isAdmin = Array.isArray(roles) 
+        ? roles.includes('admin')
+        : (typeof roles === 'string' && roles === 'admin');
       
       if (!isAdmin) {
-        console.error("AdminLoginForm: User is not an admin");
+        console.error("AdminLoginForm: User is not an admin, roles:", roles);
         await supabase.auth.signOut();
         toast({
           title: "Access denied",
