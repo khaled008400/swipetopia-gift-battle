@@ -53,14 +53,15 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       console.log("AdminLoginForm: Login successful");
       toast({
         title: "Login successful",
-        description: "Welcome to the admin dashboard",
+        description: "Welcome back!",
       });
       
       // Handle successful login
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
-        navigate('/admin', { replace: true });
+        // Default to videos page instead of admin dashboard
+        navigate('/videos', { replace: true });
       }
       
     } catch (err: any) {

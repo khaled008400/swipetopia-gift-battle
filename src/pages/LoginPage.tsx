@@ -14,9 +14,9 @@ const LoginPage = () => {
   const { toast } = useToast();
   const { isAuthenticated, login } = useAuth();
 
-  // Get the return path from URL query params
+  // Get the return path from URL query params or default to videos feed
   const searchParams = new URLSearchParams(location.search);
-  const from = searchParams.get('from') || '/';
+  const from = searchParams.get('from') || '/videos';
 
   // Check if user is already authenticated on initial load
   useEffect(() => {
