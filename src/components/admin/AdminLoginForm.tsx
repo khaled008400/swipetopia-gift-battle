@@ -54,16 +54,13 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Short delay to ensure state updates are processed
-      setTimeout(() => {
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          // Default navigation if no callback provided
-          navigate('/admin');
-        }
-        setIsLoading(false);
-      }, 500);
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        // Default navigation if no callback provided
+        navigate('/admin');
+      }
+      setIsLoading(false);
     } catch (err: any) {
       console.error("Login submission error:", err);
       toast({

@@ -33,19 +33,25 @@ const LoginPage = () => {
 
     try {
       console.log("Attempting login with:", email);
-      const { error } = await login(email, password);
+      const { data, error } = await login(email, password);
       
       if (error) {
         console.error("Login error:", error);
-        throw error;
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: error.message || "Incorrect email or password",
+        });
+        setLoading(false);
       } else {
+        console.log("Login successful, navigating to:", from);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
         
-        // No need to navigate here - the useEffect above will handle redirection
-        // once isAuthenticated becomes true
+        // Explicitly navigate after successful login
+        navigate(from);
       }
     } catch (error: any) {
       console.error("Login error in form submission:", error);
@@ -54,7 +60,6 @@ const LoginPage = () => {
         title: "Login Failed",
         description: error.message || "Incorrect email or password",
       });
-    } finally {
       setLoading(false);
     }
   };
