@@ -15,6 +15,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -28,6 +29,11 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Please enter both email and password",
         variant: "destructive",
       });
+      return;
+    }
+    
+    if (redirectInProgress) {
+      console.log("AdminLoginForm: Redirect already in progress, ignoring submission");
       return;
     }
     
@@ -56,8 +62,12 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome back!",
       });
       
+      // Prevent multiple redirects
+      setRedirectInProgress(true);
+      
       // Handle successful login - call callback if provided, otherwise redirect to videos
       if (onLoginSuccess) {
+        console.log("AdminLoginForm: Calling onLoginSuccess callback");
         onLoginSuccess();
       } else {
         console.log("AdminLoginForm: Redirecting to /videos");

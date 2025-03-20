@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -8,6 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -15,11 +17,13 @@ const LoginPage = () => {
 
   // Check if user is already authenticated on initial load
   useEffect(() => {
-    if (isAuthenticated) {
+    console.log("LoginPage: Authentication status check:", isAuthenticated);
+    if (isAuthenticated && !redirectInProgress) {
       console.log("LoginPage: Already authenticated, navigating to videos feed");
+      setRedirectInProgress(true); // Prevent multiple redirects
       navigate('/videos', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, redirectInProgress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +63,7 @@ const LoginPage = () => {
       });
       
       console.log("LoginPage: Login successful, redirecting to videos feed");
+      setRedirectInProgress(true); // Prevent multiple redirects
       // Navigate directly to videos feed
       navigate('/videos', { replace: true });
       
