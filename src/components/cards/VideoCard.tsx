@@ -12,6 +12,20 @@ export interface VideoCardProps {
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, onClickVideo }) => {
+  console.log('VideoCard rendering with video:', video);
+  
+  // Make sure we have the user data in the expected format
+  const username = video.profiles?.username || 
+                  video.user?.username || 
+                  'Unknown User';
+                  
+  const avatarUrl = video.profiles?.avatar_url || 
+                   video.user?.avatar_url || 
+                   video.user?.avatar || 
+                   '';
+  
+  console.log('Using username:', username, 'and avatar:', avatarUrl);
+
   const handleClick = () => {
     if (onClickVideo) {
       onClickVideo(video);
@@ -47,10 +61,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClickVideo }) => {
           
           <div className="mt-2 flex items-center space-x-2">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={video.user.avatar_url || video.user.avatar} alt={video.user.username} />
-              <AvatarFallback>{video.user.username[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarImage src={avatarUrl} alt={username} />
+              <AvatarFallback>{username[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
-            <span className="text-xs text-muted-foreground">{video.user.username}</span>
+            <span className="text-xs text-muted-foreground">{username}</span>
           </div>
           
           <div className="mt-2 flex text-xs text-muted-foreground space-x-3">

@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
 import DatabaseDebug from '@/components/debug/DatabaseDebug';
+import VideoCard from '@/components/cards/VideoCard';
 
 const VideosPage: React.FC = () => {
   const location = useLocation();
@@ -134,44 +135,6 @@ const VideosPage: React.FC = () => {
       />
       
       <AuthDialog />
-    </div>
-  );
-};
-
-const VideoCard = ({ video }: { video: Video }) => {
-  console.log('Rendering video card:', video);
-  return (
-    <div className="rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
-      <div className="aspect-[9/16] bg-black relative">
-        {video.thumbnail_url ? (
-          <img 
-            src={video.thumbnail_url} 
-            alt={video.title} 
-            className="w-full h-full object-cover"
-          />
-        ) : video.video_url ? (
-          <video 
-            src={video.video_url} 
-            className="w-full h-full object-cover" 
-            preload="metadata"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-900">
-            <span className="text-white">Video Preview</span>
-          </div>
-        )}
-        <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-          {video.view_count || 0} views
-        </div>
-      </div>
-      <div className="p-3">
-        <h3 className="font-medium text-sm line-clamp-1">{video.title}</h3>
-        <div className="flex items-center mt-2 text-xs text-gray-500">
-          <span>{video.profiles?.username || 'User'}</span>
-          <span className="mx-1">•</span>
-          <span>{new Date(video.created_at || '').toLocaleDateString()}</span>
-        </div>
-      </div>
     </div>
   );
 };
