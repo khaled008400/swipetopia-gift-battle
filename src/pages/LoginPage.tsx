@@ -23,7 +23,7 @@ const LoginPage = () => {
       setRedirectInProgress(true); // Prevent multiple redirects
       setTimeout(() => {
         navigate('/videos', { replace: true });
-      }, 100); // Small delay to allow state to update
+      }, 300); // Increased delay to allow state to update
     }
   }, [isAuthenticated, navigate, redirectInProgress]);
 
@@ -39,8 +39,8 @@ const LoginPage = () => {
       return;
     }
     
-    if (redirectInProgress) {
-      console.log("LoginPage: Redirect already in progress, ignoring submission");
+    if (redirectInProgress || loading) {
+      console.log("LoginPage: Redirect already in progress or loading, ignoring submission");
       return;
     }
     
@@ -72,10 +72,11 @@ const LoginPage = () => {
       console.log("LoginPage: Login successful, redirecting to videos feed");
       setRedirectInProgress(true); // Prevent multiple redirects
       
-      // Navigate directly to videos feed with a small delay to allow state updates
+      // Navigate directly to videos feed with a longer delay to allow state updates
       setTimeout(() => {
+        console.log("LoginPage: Executing navigation to /videos");
         navigate('/videos', { replace: true });
-      }, 100);
+      }, 500);
       
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);

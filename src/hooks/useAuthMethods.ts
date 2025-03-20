@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -31,11 +30,21 @@ export const useAuthMethods = () => {
       
       console.log("useAuthMethods: Login successful, user data:", data?.user?.id);
       
+      // Add extra delay to ensure session is completely processed
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       // Force refresh the session to ensure it's up to date
-      await supabase.auth.refreshSession();
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      console.log("useAuthMethods: Session refreshed, user exists:", !!refreshData.session);
       
       setIsLoading(false);
-      return { data, error: null };
+      
+      if (!refreshData.session) {
+        console.error("useAuthMethods: Session refresh failed");
+        return { data: null, error: new Error("Session refresh failed") };
+      }
+      
+      return { data: refreshData, error: null };
     } catch (err: any) {
       console.error("useAuthMethods: Login error:", err);
       setError(err);

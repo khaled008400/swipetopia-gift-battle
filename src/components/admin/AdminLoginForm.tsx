@@ -32,8 +32,8 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       return;
     }
     
-    if (redirectInProgress) {
-      console.log("AdminLoginForm: Redirect already in progress, ignoring submission");
+    if (redirectInProgress || isLoading) {
+      console.log("AdminLoginForm: Redirect already in progress or loading, ignoring submission");
       return;
     }
     
@@ -65,8 +65,9 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       // Prevent multiple redirects
       setRedirectInProgress(true);
       
-      // Handle successful login with delay to ensure state updates fully processed
+      // Handle successful login with increased delay to ensure state updates fully processed
       setTimeout(() => {
+        console.log("AdminLoginForm: Executing navigation callback");
         if (onLoginSuccess) {
           console.log("AdminLoginForm: Calling onLoginSuccess callback");
           onLoginSuccess();
@@ -74,7 +75,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           console.log("AdminLoginForm: Redirecting to /videos");
           navigate('/videos', { replace: true });
         }
-      }, 100);
+      }, 500);
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
