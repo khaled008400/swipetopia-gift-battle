@@ -56,8 +56,13 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome back!",
       });
       
-      // Handle successful login - always redirect to videos
-      navigate('/videos', { replace: true });
+      // Handle successful login - call callback if provided, otherwise redirect to videos
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        console.log("AdminLoginForm: Redirecting to /videos");
+        navigate('/videos', { replace: true });
+      }
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);

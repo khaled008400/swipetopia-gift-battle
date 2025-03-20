@@ -36,6 +36,8 @@ export const useAuthMethods = () => {
       setError(err);
       setIsLoading(false);
       return { data: null, error: err };
+    } finally {
+      setIsLoading(false); // Ensure loading state is reset even if there are uncaught errors
     }
   };
 
