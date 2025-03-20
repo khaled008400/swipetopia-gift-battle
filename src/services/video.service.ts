@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { Video } from '@/types/video.types';
 
@@ -239,7 +238,6 @@ class VideoService {
     }
   }
 
-  // Add missing methods that are causing TypeScript errors
   async uploadVideo(
     videoFile: File, 
     title: string, 
@@ -365,10 +363,10 @@ class VideoService {
       if (!currentUserId) return [];
 
       const { data, error } = await supabase
-        .from('video_likes')
+        .from('likes')
         .select(`
           video_id,
-          video:video_id (
+          videos:video_id (
             *,
             user:user_id (
               id,
@@ -382,8 +380,9 @@ class VideoService {
 
       if (error) throw error;
 
-      // Extract the videos from the joined data
-      return data?.map(item => item.video) || [];
+      // Extract the videos from the joined data and filter out any nulls
+      const videos = data?.map(item => item.videos).filter(Boolean) || [];
+      return videos as Video[];
     } catch (error) {
       console.error("Error in getLikedVideos:", error);
       return [];
@@ -399,7 +398,7 @@ class VideoService {
         .from('saved_videos')
         .select(`
           video_id,
-          video:video_id (
+          videos:video_id (
             *,
             user:user_id (
               id,
@@ -413,8 +412,9 @@ class VideoService {
 
       if (error) throw error;
 
-      // Extract the videos from the joined data
-      return data?.map(item => item.video) || [];
+      // Extract the videos from the joined data and filter out any nulls
+      const videos = data?.map(item => item.videos).filter(Boolean) || [];
+      return videos as Video[];
     } catch (error) {
       console.error("Error in getSavedVideos:", error);
       return [];
