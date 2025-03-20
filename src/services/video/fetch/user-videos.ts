@@ -18,7 +18,12 @@ export async function getUserVideos(userId: string): Promise<Video[]> {
     }
 
     console.log(`Found ${data?.length || 0} videos for user ${userId}`);
-    return data || [];
+    
+    // Map profiles to user for backward compatibility
+    return (data || []).map(video => ({
+      ...video,
+      user: video.profiles || {}
+    }));
   } catch (error) {
     handleFetchError(`getUserVideos for ${userId}`, error);
     throw error;
@@ -35,13 +40,7 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
       .select(`
         video_id,
         videos:video_id (
-          *,
-          user:user_id (
-            id,
-            username,
-            avatar_url,
-            avatar
-          )
+          ${videoWithUserSelect}
         )
       `)
       .eq('user_id', currentUserId);
@@ -54,8 +53,11 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
     if (data) {
       for (const item of data) {
         if (item.videos) {
-          // Ensure item.videos is treated as a Video object, not an array
-          const videoData = item.videos as unknown;
+          // Map profiles to user for backward compatibility
+          const videoData = {
+            ...item.videos,
+            user: item.videos.profiles || {}
+          };
           videos.push(videoData as Video);
         }
       }
@@ -78,13 +80,7 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
       .select(`
         video_id,
         videos:video_id (
-          *,
-          user:user_id (
-            id,
-            username,
-            avatar_url,
-            avatar
-          )
+          ${videoWithUserSelect}
         )
       `)
       .eq('user_id', currentUserId);
@@ -97,8 +93,11 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
     if (data) {
       for (const item of data) {
         if (item.videos) {
-          // Ensure item.videos is treated as a Video object, not an array
-          const videoData = item.videos as unknown;
+          // Map profiles to user for backward compatibility
+          const videoData = {
+            ...item.videos,
+            user: item.videos.profiles || {}
+          };
           videos.push(videoData as Video);
         }
       }

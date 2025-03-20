@@ -15,7 +15,12 @@ export async function searchVideos(query: string): Promise<Video[]> {
       .limit(20);
 
     if (error) throw error;
-    return data || [];
+    
+    // Map profiles to user for backward compatibility
+    return (data || []).map(video => ({
+      ...video,
+      user: video.profiles || {}
+    }));
   } catch (error) {
     handleFetchError("searchVideos", error);
     return [];

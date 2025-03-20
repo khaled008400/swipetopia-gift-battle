@@ -17,7 +17,11 @@ export async function getForYouVideos(): Promise<Video[]> {
       throw error;
     }
 
-    return data || [];
+    // Map profiles to user for backward compatibility
+    return (data || []).map(video => ({
+      ...video,
+      user: video.profiles || {}
+    }));
   } catch (error) {
     handleFetchError("getForYouVideos", error);
     throw error;
@@ -33,7 +37,12 @@ export async function getTrendingVideos(): Promise<Video[]> {
       .limit(20);
 
     if (error) throw error;
-    return data || [];
+    
+    // Map profiles to user for backward compatibility
+    return (data || []).map(video => ({
+      ...video,
+      user: video.profiles || {}
+    }));
   } catch (error) {
     handleFetchError("getTrendingVideos", error);
     throw error;
@@ -49,7 +58,12 @@ export async function getVideos(limit: number = 50): Promise<Video[]> {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    
+    // Map profiles to user for backward compatibility
+    return (data || []).map(video => ({
+      ...video,
+      user: video.profiles || {}
+    }));
   } catch (error) {
     handleFetchError("getVideos", error);
     return [];

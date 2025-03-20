@@ -12,7 +12,18 @@ export async function getVideoById(id: string): Promise<Video | null> {
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Remap data to match the Video type expected by the frontend
+    if (data) {
+      // Map profiles to user for backward compatibility
+      const video: Video = {
+        ...data,
+        user: data.profiles || {}
+      };
+      return video;
+    }
+    
+    return null;
   } catch (error) {
     handleFetchError("getVideoById", error);
     throw error;

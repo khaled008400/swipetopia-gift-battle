@@ -4,7 +4,7 @@ import { supabase } from '../base.service';
 // Common query parts
 export const videoWithUserSelect = `
   *,
-  user:user_id (
+  profiles:user_id (
     id,
     username,
     avatar_url,
