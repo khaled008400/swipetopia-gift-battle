@@ -35,35 +35,52 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     try {
       console.log("AdminLoginForm: Attempting login with:", email);
       
-      // Sign out any existing session first
+      // Sign out any existing session first to prevent conflicts
       await supabase.auth.signOut();
       
-      // Attempt login
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        console.error("AdminLoginForm: Login error:", error);
-        toast({
-          title: "Login failed",
-          description: error.message || "Invalid credentials",
-          variant: "destructive",
-        });
-      } else if (data.user) {
-        console.log("AdminLoginForm: Login successful for:", data.user.id);
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          navigate('/videos');
+      // Attempt login with a delay to ensure signOut completes
+      setTimeout(async () => {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          if (error) {
+            console.error("AdminLoginForm: Login error:", error);
+            toast({
+              title: "Login failed",
+              description: error.message || "Invalid credentials",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+          } else if (data.user) {
+            console.log("AdminLoginForm: Login successful for:", data.user.id);
+            toast({
+              title: "Login successful",
+              description: "Welcome back!",
+            });
+            
+            // Allow a moment for auth state to update
+            setTimeout(() => {
+              if (onLoginSuccess) {
+                onLoginSuccess();
+              } else {
+                navigate('/videos');
+              }
+              setIsLoading(false);
+            }, 500);
+          }
+        } catch (innerErr: any) {
+          console.error("AdminLoginForm: Login submission error:", innerErr);
+          toast({
+            title: "Login error",
+            description: innerErr.message || "An unexpected error occurred",
+            variant: "destructive",
+          });
+          setIsLoading(false);
         }
-      }
+      }, 100);
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
       toast({
@@ -71,7 +88,6 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

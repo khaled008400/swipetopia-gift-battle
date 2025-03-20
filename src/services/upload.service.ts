@@ -1,7 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { createStorageBucket } from '@/pages/api/create-storage-bucket';
 
 class UploadService {
   /**
@@ -63,6 +61,9 @@ class UploadService {
       // Initialize buckets first
       await this.initBuckets();
       
+      // Wait a moment to ensure bucket creation completes
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Create a unique file name to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
@@ -117,9 +118,9 @@ class UploadService {
       console.log('File uploaded successfully:', publicUrl);
       
       return publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in uploadFile:', error);
-      throw error;
+      throw new Error(`Upload failed: ${error.message || 'Unknown error'}`);
     }
   }
   
@@ -129,6 +130,12 @@ class UploadService {
   async uploadVideo(videoFile: File, thumbnailFile: File | null): Promise<{ videoUrl: string, thumbnailUrl: string | null }> {
     try {
       console.log('Starting video upload process...');
+      
+      // Check authentication first
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to upload videos');
+      }
       
       // Upload video file
       const videoUrl = await this.uploadFile(videoFile, 'videos');
@@ -143,9 +150,9 @@ class UploadService {
       }
       
       return { videoUrl, thumbnailUrl };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in uploadVideo:', error);
-      throw error;
+      throw new Error(`Video upload failed: ${error.message || 'Unknown error'}`);
     }
   }
 

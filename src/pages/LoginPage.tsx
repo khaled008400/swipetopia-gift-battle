@@ -15,14 +15,38 @@ const LoginPage = () => {
   // Check if user is already logged in
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        console.log("User already logged in, redirecting to videos");
-        navigate('/videos');
+      try {
+        console.log("Checking for existing session on LoginPage mount");
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          console.log("User already logged in, redirecting to videos");
+          navigate('/videos');
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
       }
     };
     
     checkSession();
+  }, [navigate]);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed in LoginPage:", event);
+        
+        if (session) {
+          console.log("Session detected in onAuthStateChange, redirecting to videos");
+          navigate('/videos');
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +66,7 @@ const LoginPage = () => {
     try {
       console.log(`Attempting login with: ${email}`);
       
-      // Sign out any existing session to prevent conflicts
+      // Sign out any existing session first
       await supabase.auth.signOut();
       
       // Attempt login
@@ -58,13 +82,14 @@ const LoginPage = () => {
           title: "Login Failed",
           description: error.message || "Incorrect email or password",
         });
+        setLoading(false);
       } else if (data.user) {
         console.log("Login successful for user:", data.user.id);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
-        navigate('/videos');
+        // Navigation will be handled by the onAuthStateChange listener
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -73,7 +98,6 @@ const LoginPage = () => {
         title: "Login Failed",
         description: error.message || "An unexpected error occurred",
       });
-    } finally {
       setLoading(false);
     }
   };

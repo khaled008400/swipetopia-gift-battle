@@ -116,6 +116,7 @@ const UploadStep: React.FC<UploadStepProps> = ({ onSelectFile }) => {
           <li>Is smaller than 100MB</li>
           <li>Is in MP4, WebM, or MOV format</li>
           <li>Has a stable internet connection</li>
+          <li>You are logged in to your account</li>
         </ul>
       </div>
     </div>
