@@ -8,12 +8,13 @@ import VideoCard from '@/components/cards/VideoCard';
 import { Loader2 } from 'lucide-react';
 
 interface ProfileContentProps {
-  user: UserProfile;
+  profile: UserProfile;
+  isOwnProfile?: boolean;
   activeTab?: string;
 }
 
-const ProfileContent: React.FC<ProfileContentProps> = ({ user, activeTab = 'videos' }) => {
-  const { videos, isLoading, error } = useUserVideos(user.id);
+const ProfileContent: React.FC<ProfileContentProps> = ({ profile, isOwnProfile = false, activeTab = 'videos' }) => {
+  const { videos, isLoading, error } = useUserVideos(profile.id);
   
   return (
     <Tabs defaultValue={activeTab} className="w-full mt-6">
