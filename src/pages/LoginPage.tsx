@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -9,8 +8,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loginAttempted, setLoginAttempted] = useState(false);
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -19,30 +17,9 @@ const LoginPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const from = searchParams.get('from') || '/';
 
-  // If user is already authenticated or becomes authenticated, redirect them
-  useEffect(() => {
-    console.log("LoginPage effect - Auth status:", { 
-      isAuthenticated, 
-      userId: user?.id, 
-      from,
-      loading,
-      loginAttempted
-    });
-    
-    if (isAuthenticated && user) {
-      console.log("User authenticated, redirecting to:", from);
-      
-      // Small delay to ensure auth state is stable
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 100);
-    }
-  }, [isAuthenticated, navigate, from, user, loading, loginAttempted]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setLoginAttempted(true);
 
     try {
       console.log("LoginPage: Attempting login with:", email);
@@ -65,17 +42,14 @@ const LoginPage = () => {
         description: "Welcome back!",
       });
       
-      // Navigation will be handled by the useEffect when auth state updates
-      console.log("LoginPage: Waiting for auth state to update...");
-      
-      // Fallback navigation in case auth state doesn't update
+      // Wait briefly for auth state to update then navigate
       setTimeout(() => {
-        if (loading) {
-          console.log("LoginPage: Fallback navigation triggered to:", from);
-          setLoading(false);
-          navigate(from, { replace: true });
-        }
-      }, 1000);
+        console.log("LoginPage: Auth state after login:", isAuthenticated);
+        console.log("LoginPage: Navigating to:", from);
+        navigate(from, { replace: true });
+        setLoading(false);
+      }, 500);
+      
     } catch (error: any) {
       console.error("LoginPage: Login error in form submission:", error);
       toast({
@@ -86,6 +60,13 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  // If already authenticated, navigate immediately
+  if (isAuthenticated) {
+    console.log("LoginPage: Already authenticated, navigating to:", from);
+    navigate(from, { replace: true });
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-app-black flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -116,6 +97,7 @@ const LoginPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-app-black border border-app-gray focus:ring-app-yellow focus:border-app-yellow block w-full pl-10 pr-3 py-2 sm:text-sm rounded-md"
                   placeholder="you@example.com"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -138,6 +120,7 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-app-black border border-app-gray focus:ring-app-yellow focus:border-app-yellow block w-full pl-10 pr-3 py-2 sm:text-sm rounded-md"
                   placeholder="••••••••"
+                  disabled={loading}
                 />
               </div>
             </div>

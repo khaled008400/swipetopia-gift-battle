@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -34,17 +33,10 @@ export const useAuthMethods = () => {
       
       console.log("useAuthMethods: Login successful, auth data:", data);
       
-      // Ensure the session is accessible in localStorage before proceeding
-      try {
-        const storedSession = localStorage.getItem('sb-ifeuccpukdosoxtufxzi-auth-token');
-        console.log("useAuthMethods: Session stored in localStorage:", !!storedSession);
-      } catch (e) {
-        console.error("useAuthMethods: Failed to check localStorage:", e);
-      }
+      // Force a refresh of the auth tokens to ensure they're properly stored
+      await supabase.auth.refreshSession();
       
-      // Wait a short time to ensure Supabase has fully processed the login
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      // Success notification
       toast({
         title: "Login Successful",
         description: "Welcome back!"
