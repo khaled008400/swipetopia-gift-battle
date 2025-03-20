@@ -30,8 +30,8 @@ const VideoService = {
   getTrendingVideos: () => 
     fetchServiceInstance.getTrendingVideos(),
   
-  getVideos: (params: any) => 
-    fetchServiceInstance.getVideos(params),
+  getVideos: (limit: number = 50) => 
+    fetchServiceInstance.getVideos(limit),
   
   getLikedVideos: (userId?: string) => 
     fetchServiceInstance.getLikedVideos(userId),

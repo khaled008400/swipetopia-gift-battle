@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import VideoService from '@/services/video.service';
 
 interface ReportVideoDialogProps {
@@ -31,6 +31,7 @@ export default function ReportVideoDialog({ videoId, open, onOpenChange }: Repor
 
     setIsSubmitting(true);
     try {
+      // Using the object format that matches the updated service method signature
       await VideoService.reportVideo(videoId, {
         category,
         description: reason
