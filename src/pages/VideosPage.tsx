@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -55,7 +54,7 @@ const VideosPage: React.FC = () => {
     try {
       setIsLoading(true);
       console.log('Fetching videos...');
-      const fetchedVideos = await VideoService.getVideos();
+      const fetchedVideos = await VideoService.getVideos(50);
       console.log('Fetched videos:', fetchedVideos);
       setVideos(fetchedVideos);
     } catch (error) {

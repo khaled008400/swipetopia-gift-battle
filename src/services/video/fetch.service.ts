@@ -1,4 +1,3 @@
-
 import { supabase } from './base.service';
 
 class VideoFetchService {
@@ -134,9 +133,19 @@ class VideoFetchService {
     return this.getVideos(limit);
   }
 
-  // Get liked videos
-  async getLikedVideos(userId: string, limit: number = 20) {
+  // Get liked videos - updated to handle optional userId
+  async getLikedVideos(userId?: string, limit: number = 20) {
     try {
+      // If no userId provided, attempt to get the current user's ID
+      if (!userId) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData?.user?.id) {
+          console.warn('No userId provided to getLikedVideos and no authenticated user');
+          return [];
+        }
+        userId = authData.user.id;
+      }
+      
       const { data, error } = await supabase
         .from('video_likes')
         .select('video_id')
@@ -163,9 +172,19 @@ class VideoFetchService {
     }
   }
 
-  // Get saved videos
-  async getSavedVideos(userId: string, limit: number = 20) {
+  // Get saved videos - updated to handle optional userId
+  async getSavedVideos(userId?: string, limit: number = 20) {
     try {
+      // If no userId provided, attempt to get the current user's ID
+      if (!userId) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData?.user?.id) {
+          console.warn('No userId provided to getSavedVideos and no authenticated user');
+          return [];
+        }
+        userId = authData.user.id;
+      }
+      
       const { data, error } = await supabase
         .from('saved_videos')
         .select('video_id')

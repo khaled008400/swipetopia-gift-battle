@@ -33,11 +33,11 @@ const VideoService = {
   getVideos: (params: any) => 
     fetchServiceInstance.getVideos(params),
   
-  getLikedVideos: () => 
-    fetchServiceInstance.getLikedVideos(),
+  getLikedVideos: (userId?: string) => 
+    fetchServiceInstance.getLikedVideos(userId),
   
-  getSavedVideos: () => 
-    fetchServiceInstance.getSavedVideos(),
+  getSavedVideos: (userId?: string) => 
+    fetchServiceInstance.getSavedVideos(userId),
   
   searchVideos: (query: string) => 
     fetchServiceInstance.searchVideos(query),
@@ -74,8 +74,8 @@ const VideoService = {
   incrementViewCount: (videoId: string) => 
     interactionServiceInstance.incrementViewCount(videoId),
   
-  reportVideo: (videoId: string, reason: string) => 
-    interactionServiceInstance.reportVideo(videoId, reason),
+  reportVideo: (videoId: string, report: string | { category: string, description: string }) => 
+    interactionServiceInstance.reportVideo(videoId, report),
 };
 
 export default VideoService;

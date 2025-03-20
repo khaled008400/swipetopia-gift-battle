@@ -1,4 +1,3 @@
-
 import { supabase, getAuthenticatedUser } from './base.service';
 
 class VideoInteractionService {
@@ -163,18 +162,32 @@ class VideoInteractionService {
     }
   }
 
-  // Report video
-  async reportVideo(videoId: string, report: { category: string, description: string }) {
+  // Report video - updated to handle both string reason and object with category/description
+  async reportVideo(videoId: string, report: string | { category: string, description: string }) {
     try {
       const user = await getAuthenticatedUser();
+      
+      // Process the report data based on its type
+      let reportCategory: string;
+      let reportDescription: string;
+      
+      if (typeof report === 'string') {
+        // Legacy format: just a reason string
+        reportCategory = 'other';
+        reportDescription = report;
+      } else {
+        // New format: object with category and description
+        reportCategory = report.category;
+        reportDescription = report.description;
+      }
 
       const { data, error } = await supabase
         .from('video_reports')
         .insert({
           video_id: videoId,
           user_id: user.id,
-          report_category: report.category,
-          report_description: report.description,
+          report_category: reportCategory,
+          report_description: reportDescription,
           status: 'pending'
         })
         .select()
