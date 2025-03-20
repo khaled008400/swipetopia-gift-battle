@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,16 @@ import {
   FileText,
   Languages,
   Smartphone,
-  LogOut
+  LogOut,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const SettingsPage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const [notificationSettings, setNotificationSettings] = useState({
     likes: true,
@@ -33,9 +35,37 @@ const SettingsPage = () => {
   
   const [darkMode, setDarkMode] = useState(true);
   
+  // Check authentication status and redirect if not logged in
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      console.log("User not authenticated, redirecting to login from settings page");
+      setIsRedirecting(true);
+      
+      // Add a small delay to avoid potential race conditions
+      const redirectTimer = setTimeout(() => {
+        navigate('/login');
+      }, 100);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+  
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out."
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "There was a problem signing out. Please try again."
+      });
+    }
   };
   
   const handleToggleNotification = (setting: keyof typeof notificationSettings) => {
@@ -59,6 +89,19 @@ const SettingsPage = () => {
     });
   };
   
+  // Show loading state if authentication check is in progress
+  if (isLoading || isRedirecting) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] bg-app-black">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-app-yellow" />
+          <p className="text-gray-400">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Only render settings page if authenticated
   return (
     <div className="min-h-[calc(100vh-64px)] bg-app-black p-4">
       <div className="flex items-center mb-6">

@@ -89,6 +89,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           setUser(null);
           setIsAuthenticated(false);
         }
+        
+        // Mark authentication check as complete
+        setLoading(false);
       }
     );
     

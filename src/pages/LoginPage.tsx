@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -10,7 +10,11 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Extract return URL from query params if available
+  const from = new URLSearchParams(location.search).get('from') || '/videos';
 
   // Check if user is already logged in
   useEffect(() => {
@@ -88,7 +92,8 @@ const LoginPage = () => {
           title: "Login Successful",
           description: "Welcome back!",
         });
-        navigate('/videos');
+        // Navigate to the return URL or default to videos page
+        navigate(from);
       }
     } catch (error: any) {
       console.error("Login error:", error);
