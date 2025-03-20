@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -23,7 +22,7 @@ const LoginPage = () => {
     console.log("LoginPage effect - Auth status:", { isAuthenticated, user, from });
     if (isAuthenticated && user) {
       console.log("User already authenticated, redirecting to:", from);
-      navigate(from);
+      navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from, user]);
 
@@ -32,11 +31,11 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      console.log("Attempting login with:", email);
+      console.log("LoginPage: Attempting login with:", email);
       const { data, error } = await login(email, password);
       
       if (error) {
-        console.error("Login error:", error);
+        console.error("LoginPage: Login error:", error);
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -44,17 +43,21 @@ const LoginPage = () => {
         });
         setLoading(false);
       } else {
-        console.log("Login successful, navigating to:", from);
+        console.log("LoginPage: Login successful, navigating to:", from);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
         
-        // Explicitly navigate after successful login
-        navigate(from);
+        // Force immediate navigation with replace to avoid history issues
+        console.log("LoginPage: Forcing navigation to:", from);
+        setTimeout(() => {
+          navigate(from, { replace: true });
+          setLoading(false);
+        }, 100);
       }
     } catch (error: any) {
-      console.error("Login error in form submission:", error);
+      console.error("LoginPage: Login error in form submission:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",

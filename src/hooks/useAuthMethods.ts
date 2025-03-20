@@ -14,7 +14,7 @@ export const useAuthMethods = () => {
     setError(null);
     
     try {
-      console.log(`Attempting to login with: ${email}`);
+      console.log(`useAuthMethods: Attempting to login with: ${email}`);
       
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email,
@@ -22,7 +22,7 @@ export const useAuthMethods = () => {
       });
       
       if (supabaseError) {
-        console.error("Supabase login error:", supabaseError);
+        console.error("useAuthMethods: Supabase login error:", supabaseError);
         setError(supabaseError);
         toast({
           variant: "destructive",
@@ -32,14 +32,18 @@ export const useAuthMethods = () => {
         return { data: null, error: supabaseError };
       }
       
-      console.log("Login successful:", data);
+      console.log("useAuthMethods: Login successful:", data);
+      
+      // Wait a short time to ensure Supabase has fully processed the login
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       toast({
         title: "Login Successful",
         description: "Welcome back!"
       });
       return { data, error: null };
     } catch (err: any) {
-      console.error("Login error:", err);
+      console.error("useAuthMethods: Login error:", err);
       setError(err);
       toast({
         variant: "destructive",

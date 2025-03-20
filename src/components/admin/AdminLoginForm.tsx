@@ -34,11 +34,11 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     
     try {
-      console.log("Attempting to login with:", email);
+      console.log("AdminLoginForm: Attempting to login with:", email);
       const { data, error } = await login(email, password);
       
       if (error) {
-        console.error("Login error:", error);
+        console.error("AdminLoginForm: Login error:", error);
         toast({
           title: "Login failed",
           description: error.message || "Invalid credentials",
@@ -48,26 +48,28 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         return;
       }
       
-      console.log("Login successful:", data);
+      console.log("AdminLoginForm: Login successful:", data);
       toast({
         title: "Login successful",
         description: "Welcome to the admin dashboard",
       });
       
+      // Force immediate navigation with no timeout
+      console.log("AdminLoginForm: Navigating to admin dashboard");
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
         // Default navigation if no callback provided
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       }
-      setIsLoading(false);
     } catch (err: any) {
-      console.error("Login submission error:", err);
+      console.error("AdminLoginForm: Login submission error:", err);
       toast({
         title: "Login error",
         description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
