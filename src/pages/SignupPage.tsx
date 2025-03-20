@@ -16,25 +16,15 @@ const SignupPage = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   
   // Check if user is already logged in
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        
-        if (data.session) {
-          console.log("User already logged in, redirecting to videos");
-          navigate('/videos');
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
+    if (isAuthenticated) {
+      console.log("User already logged in, redirecting to videos");
+      navigate('/videos');
+    }
+  }, [isAuthenticated, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

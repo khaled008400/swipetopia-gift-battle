@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -12,7 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   
   // Extract return URL from query params if available
   const from = new URLSearchParams(location.search).get('from') || '/videos';
@@ -21,9 +22,7 @@ const LoginPage = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        
-        if (data.session) {
+        if (isAuthenticated) {
           console.log("User already logged in, redirecting to videos");
           navigate('/videos');
         }
@@ -33,7 +32,7 @@ const LoginPage = () => {
     };
     
     checkSession();
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +68,14 @@ const LoginPage = () => {
         });
         // Navigate to the return URL or default to videos page
         navigate(from);
+      } else {
+        // Handle case where there's no error but also no user data
+        console.error("Login returned no user data");
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Authentication successful but no user data found.",
+        });
       }
     } catch (error: any) {
       console.error("Login error:", error);

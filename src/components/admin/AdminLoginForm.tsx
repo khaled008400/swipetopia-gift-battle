@@ -50,6 +50,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: error.message || "Invalid credentials",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
       
@@ -60,6 +61,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: "No user data returned. Please try again.",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
       
@@ -76,6 +78,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: "You do not have admin privileges",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
       
