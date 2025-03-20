@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,6 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginAttempted, setLoginAttempted] = useState(false);
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,18 +19,30 @@ const LoginPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const from = searchParams.get('from') || '/';
 
-  // If user is already authenticated, redirect them
+  // If user is already authenticated or becomes authenticated, redirect them
   useEffect(() => {
-    console.log("LoginPage effect - Auth status:", { isAuthenticated, user, from });
+    console.log("LoginPage effect - Auth status:", { 
+      isAuthenticated, 
+      userId: user?.id, 
+      from,
+      loading,
+      loginAttempted
+    });
+    
     if (isAuthenticated && user) {
-      console.log("User already authenticated, redirecting to:", from);
-      navigate(from, { replace: true });
+      console.log("User authenticated, redirecting to:", from);
+      
+      // Small delay to ensure auth state is stable
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 100);
     }
-  }, [isAuthenticated, navigate, from, user]);
+  }, [isAuthenticated, navigate, from, user, loading, loginAttempted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setLoginAttempted(true);
 
     try {
       console.log("LoginPage: Attempting login with:", email);
@@ -42,20 +56,26 @@ const LoginPage = () => {
           description: error.message || "Incorrect email or password",
         });
         setLoading(false);
-      } else {
-        console.log("LoginPage: Login successful, navigating to:", from);
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        });
-        
-        // Force immediate navigation with replace to avoid history issues
-        console.log("LoginPage: Forcing navigation to:", from);
-        setTimeout(() => {
-          navigate(from, { replace: true });
-          setLoading(false);
-        }, 100);
+        return;
       }
+      
+      console.log("LoginPage: Login successful, auth data:", data);
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
+      
+      // Navigation will be handled by the useEffect when auth state updates
+      console.log("LoginPage: Waiting for auth state to update...");
+      
+      // Fallback navigation in case auth state doesn't update
+      setTimeout(() => {
+        if (loading) {
+          console.log("LoginPage: Fallback navigation triggered to:", from);
+          setLoading(false);
+          navigate(from, { replace: true });
+        }
+      }, 1000);
     } catch (error: any) {
       console.error("LoginPage: Login error in form submission:", error);
       toast({
