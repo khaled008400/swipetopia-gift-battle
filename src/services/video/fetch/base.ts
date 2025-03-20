@@ -7,8 +7,7 @@ export const videoWithUserSelect = `
   profiles:user_id (
     id,
     username,
-    avatar_url,
-    avatar
+    avatar_url
   )
 `;
 
