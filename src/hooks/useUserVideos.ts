@@ -19,11 +19,11 @@ export const useUserVideos = (userId: string) => {
     console.log("useUserVideos: Fetching videos for user ID:", userId);
     try {
       setIsLoading(true);
+      setError(null);
       const fetchedVideos = await VideoService.getUserVideos(userId);
       console.log("useUserVideos: Fetched videos:", fetchedVideos?.length || 0);
       setVideos(fetchedVideos || []);
-      setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching videos in useUserVideos:", err);
       setError("Failed to load videos");
       // Return empty array on error to prevent UI crashes
@@ -35,7 +35,9 @@ export const useUserVideos = (userId: string) => {
 
   useEffect(() => {
     console.log("useUserVideos useEffect triggered for user ID:", userId);
-    fetchVideos();
+    if (userId) {
+      fetchVideos();
+    }
     
     // Add cleanup function
     return () => {

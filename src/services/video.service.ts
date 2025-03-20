@@ -1,60 +1,244 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import VideoService from './video/index';
+import { supabase } from '@/lib/supabase';
+import { Video } from '@/types/video.types';
 
-// Re-export all methods from the combined video service
-export default {
-  // Upload a video
-  uploadVideo: VideoService.uploadVideo,
+class VideoService {
+  async getForYouVideos(): Promise<Video[]> {
+    console.log("Fetching For You videos...");
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:user_id (
+            id,
+            username,
+            avatar_url,
+            avatar
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-  // Get all videos
-  getVideos: VideoService.getVideos,
-  
-  // Get videos for the For You feed
-  getForYouVideos: VideoService.getForYouVideos,
-  
-  // Get trending videos
-  getTrendingVideos: VideoService.getTrendingVideos,
+      if (error) {
+        console.error("Error fetching videos:", error);
+        throw error;
+      }
 
-  // Get a single video by id
-  getVideo: VideoService.getVideoById,
-  getVideoById: VideoService.getVideoById,
+      return data || [];
+    } catch (error) {
+      console.error("Error in getForYouVideos:", error);
+      throw error;
+    }
+  }
 
-  // Get videos by user id
-  getUserVideos: VideoService.getUserVideos,
-  
-  // Search videos
-  searchVideos: VideoService.searchVideos,
-  
-  // Get liked videos
-  getLikedVideos: VideoService.getLikedVideos,
-  
-  // Get saved videos
-  getSavedVideos: VideoService.getSavedVideos,
+  async getTrendingVideos(): Promise<Video[]> {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:user_id (
+            id,
+            username,
+            avatar_url,
+            avatar
+          )
+        `)
+        .order('view_count', { ascending: false })
+        .limit(20);
 
-  // Like a video
-  likeVideo: VideoService.likeVideo,
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error("Error in getTrendingVideos:", error);
+      throw error;
+    }
+  }
 
-  // Unlike a video
-  unlikeVideo: VideoService.unlikeVideo,
+  async getUserVideos(userId: string): Promise<Video[]> {
+    console.log(`Fetching videos for user: ${userId}`);
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:user_id (
+            id,
+            username,
+            avatar_url,
+            avatar
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-  // Save a video
-  saveVideo: VideoService.saveVideo,
+      if (error) {
+        console.error("Error fetching user videos:", error);
+        throw error;
+      }
 
-  // Unsave a video
-  unsaveVideo: VideoService.unsaveVideo,
-  
-  // Increment view count
-  incrementViewCount: VideoService.incrementViewCount,
-  
-  // Report a video
-  reportVideo: VideoService.reportVideo,
+      console.log(`Found ${data?.length || 0} videos for user ${userId}`);
+      return data || [];
+    } catch (error) {
+      console.error(`Error in getUserVideos for ${userId}:`, error);
+      throw error;
+    }
+  }
 
-  // Check if a video exists
-  checkVideoExists: VideoService.checkVideoExists,
-  
-  // Legacy method names (for backward compatibility)
-  fetchVideos: VideoService.fetchVideos,
-  fetchVideo: VideoService.fetchVideo,
-  fetchUserVideos: VideoService.fetchUserVideos
-};
+  async getVideoById(videoId: string): Promise<Video | null> {
+    try {
+      const { data, error } = await supabase
+        .from('videos')
+        .select(`
+          *,
+          user:user_id (
+            id,
+            username,
+            avatar_url,
+            avatar
+          )
+        `)
+        .eq('id', videoId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error in getVideoById:", error);
+      throw error;
+    }
+  }
+
+  async incrementViewCount(videoId: string): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('increment_view_count', {
+        video_id: videoId
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error incrementing view count:", error);
+      throw error;
+    }
+  }
+
+  async likeVideo(videoId: string): Promise<void> {
+    try {
+      // First, insert into likes table
+      const { error: likesError } = await supabase
+        .from('likes')
+        .insert({ video_id: videoId, user_id: (await supabase.auth.getUser()).data.user?.id });
+
+      if (likesError) throw likesError;
+
+      // Increment likes count
+      const { error: countError } = await supabase.rpc('increment_likes_count', {
+        video_id: videoId
+      });
+
+      if (countError) throw countError;
+    } catch (error) {
+      console.error("Error liking video:", error);
+      throw error;
+    }
+  }
+
+  async unlikeVideo(videoId: string): Promise<void> {
+    try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      
+      // Delete from likes table
+      const { error: likesError } = await supabase
+        .from('likes')
+        .delete()
+        .eq('video_id', videoId)
+        .eq('user_id', userId);
+
+      if (likesError) throw likesError;
+
+      // Decrement likes count
+      const { error: countError } = await supabase.rpc('decrement_likes_count', {
+        video_id: videoId
+      });
+
+      if (countError) throw countError;
+    } catch (error) {
+      console.error("Error unliking video:", error);
+      throw error;
+    }
+  }
+
+  async saveVideo(videoId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('saved_videos')
+        .insert({ video_id: videoId, user_id: (await supabase.auth.getUser()).data.user?.id });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error saving video:", error);
+      throw error;
+    }
+  }
+
+  async unsaveVideo(videoId: string): Promise<void> {
+    try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      
+      const { error } = await supabase
+        .from('saved_videos')
+        .delete()
+        .eq('video_id', videoId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error unsaving video:", error);
+      throw error;
+    }
+  }
+
+  async checkIfVideoLiked(videoId: string): Promise<boolean> {
+    try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) return false;
+      
+      const { data, error } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('video_id', videoId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      console.error("Error checking if video liked:", error);
+      return false;
+    }
+  }
+
+  async checkIfVideoSaved(videoId: string): Promise<boolean> {
+    try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) return false;
+      
+      const { data, error } = await supabase
+        .from('saved_videos')
+        .select('id')
+        .eq('video_id', videoId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      console.error("Error checking if video saved:", error);
+      return false;
+    }
+  }
+}
+
+// Export a singleton instance
+export default new VideoService();

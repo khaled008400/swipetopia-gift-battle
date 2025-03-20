@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -143,19 +144,22 @@ export const useAuthMethods = () => {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
+      console.log("Attempting to sign out user");
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         console.error("Signout error:", error);
         throw error;
       }
       
+      console.log("User signed out successfully");
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out."
       });
     } catch (err: any) {
-      setError(new Error(err.message));
       console.error("Logout error:", err);
+      setError(new Error(err.message));
       toast({
         variant: "destructive",
         title: "Logout Error",
