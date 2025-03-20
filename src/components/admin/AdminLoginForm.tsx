@@ -4,24 +4,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export interface AdminLoginFormProps {
   onLoginSuccess?: () => void;
 }
 
 const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username || !password) {
+    if (!email || !password) {
       toast({
         title: "Invalid input",
-        description: "Please enter both username and password",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -29,32 +33,58 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     
     setIsLoading(true);
     
-    // For demo purposes, we'll accept any login
-    // In a real app, you would validate credentials against an API
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      console.log("Attempting to login with:", email);
+      const { data, error } = await login(email, password);
       
-      // Always succeed in this demo
+      if (error) {
+        console.error("Login error:", error);
+        toast({
+          title: "Login failed",
+          description: error.message || "Invalid credentials",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Login successful:", data);
       toast({
         title: "Login successful",
         description: "Welcome to the admin dashboard",
       });
       
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      }
-    }, 1500);
+      // Short delay to ensure state updates are processed
+      setTimeout(() => {
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          // Default navigation if no callback provided
+          navigate('/admin');
+        }
+        setIsLoading(false);
+      }, 500);
+    } catch (err: any) {
+      console.error("Login submission error:", err);
+      toast({
+        title: "Login error",
+        description: err.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id="username"
-          placeholder="admin"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          id="email"
+          type="email"
+          placeholder="admin@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
       
