@@ -21,7 +21,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClickVideo }) => {
                   
   const avatarUrl = video.profiles?.avatar_url || 
                    video.user?.avatar_url || 
-                   video.user?.avatar || 
                    '';
   
   console.log('Using username:', username, 'and avatar:', avatarUrl);

@@ -28,7 +28,6 @@ export const mapVideoData = (videoData: any) => {
     user: {
       id: videoData.profiles?.id,
       username: videoData.profiles?.username || 'Unknown User',
-      avatar: videoData.profiles?.avatar_url,
       avatar_url: videoData.profiles?.avatar_url
     },
     // Ensure these fields are always present
