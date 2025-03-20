@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
-import { useToast } from './use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export const useAuthMethods = () => {
   const [error, setError] = useState<Error | null>(null);
@@ -143,7 +143,9 @@ export const useAuthMethods = () => {
 
   const logout = async (): Promise<void> => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out."
