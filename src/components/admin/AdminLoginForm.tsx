@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,15 +55,12 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Simple delay and direct navigation
-      setTimeout(() => {
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          navigate('/admin', { replace: true });
-        }
-        setIsLoading(false);
-      }, 1000);
+      // Handle successful login
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate('/admin', { replace: true });
+      }
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
@@ -73,6 +69,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };

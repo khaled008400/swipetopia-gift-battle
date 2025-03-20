@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
 const LoginPage = () => {
@@ -22,7 +20,7 @@ const LoginPage = () => {
   // Check if user is already authenticated on initial load
   useEffect(() => {
     if (isAuthenticated) {
-      console.log("LoginPage: Already authenticated on initial load, navigating to:", from);
+      console.log("LoginPage: Already authenticated, navigating to:", from);
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
@@ -54,12 +52,9 @@ const LoginPage = () => {
         description: "Welcome back!",
       });
       
-      // Wait briefly then navigate
-      setTimeout(() => {
-        console.log("LoginPage: Navigating to:", from);
-        navigate(from, { replace: true });
-        setLoading(false);
-      }, 1000);
+      // Navigate after successful login
+      console.log("LoginPage: Navigating to:", from);
+      navigate(from, { replace: true });
       
     } catch (error: any) {
       console.error("LoginPage: Login error in form submission:", error);
@@ -68,6 +63,7 @@ const LoginPage = () => {
         title: "Login Failed",
         description: error.message || "Incorrect email or password",
       });
+    } finally {
       setLoading(false);
     }
   };
