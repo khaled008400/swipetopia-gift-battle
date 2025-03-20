@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -32,43 +31,24 @@ export const useAuthMethods = () => {
         return { data: null, error: supabaseError };
       }
       
-      console.log("useAuthMethods: Login successful, user data:", data?.user?.id);
-      
-      // Add extra delay to ensure session is completely processed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force refresh the session to ensure it's up to date
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError) {
-        console.error("useAuthMethods: Session refresh error:", refreshError);
-        setError(refreshError);
+      if (!data.user || !data.session) {
+        const noSessionError = new Error("Login successful but no user or session was returned");
+        console.error("useAuthMethods: No user/session:", noSessionError);
+        setError(noSessionError);
         setIsLoading(false);
-        return { data: null, error: refreshError };
+        return { data: null, error: noSessionError };
       }
       
-      console.log("useAuthMethods: Session refreshed, user exists:", !!refreshData.session);
-      
-      if (!refreshData.session) {
-        console.error("useAuthMethods: Session refresh failed - no session returned");
-        setError(new Error("Authentication succeeded but session creation failed"));
-        setIsLoading(false);
-        return { data: null, error: new Error("Session refresh failed") };
-      }
-      
-      // Double-check that we actually have a valid session
-      const { data: sessionCheck } = await supabase.auth.getSession();
-      console.log("useAuthMethods: Final session check:", !!sessionCheck.session);
+      console.log("useAuthMethods: Login successful, user data:", data.user.id);
+      console.log("useAuthMethods: Session acquired:", !!data.session);
       
       setIsLoading(false);
-      return { data: refreshData, error: null };
+      return { data, error: null };
     } catch (err: any) {
       console.error("useAuthMethods: Login error:", err);
       setError(err);
       setIsLoading(false);
       return { data: null, error: err };
-    } finally {
-      setIsLoading(false); // Ensure loading state is reset even if there are uncaught errors
     }
   };
 

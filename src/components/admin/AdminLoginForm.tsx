@@ -15,8 +15,6 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectInProgress, setRedirectInProgress] = useState(false);
-  const [loginAttempted, setLoginAttempted] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
@@ -33,13 +31,12 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       return;
     }
     
-    if (redirectInProgress || isLoading) {
-      console.log("AdminLoginForm: Redirect already in progress or loading, ignoring submission");
+    if (isLoading) {
+      console.log("AdminLoginForm: Login already in progress");
       return;
     }
     
     setIsLoading(true);
-    setLoginAttempted(true);
     
     try {
       console.log("AdminLoginForm: Login with:", email);
@@ -64,19 +61,16 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome back!",
       });
       
-      // Prevent multiple redirects
-      setRedirectInProgress(true);
-      
-      // Handle successful login with increased delay to ensure state updates fully processed
+      // Give time for auth state to update
       setTimeout(() => {
-        console.log("AdminLoginForm: Executing navigation callback, isAuthenticated:", isAuthenticated);
         if (onLoginSuccess) {
           console.log("AdminLoginForm: Calling onLoginSuccess callback");
           onLoginSuccess();
         } else {
           console.log("AdminLoginForm: Redirecting to /videos");
-          navigate('/videos', { replace: true });
+          navigate('/videos');
         }
+        setIsLoading(false);
       }, 1000);
       
     } catch (err: any) {
