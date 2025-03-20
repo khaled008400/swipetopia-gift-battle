@@ -19,8 +19,19 @@ const Index: React.FC = () => {
     const fetchVideos = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching videos for Index page");
         const fetchedVideos = await VideoService.getForYouVideos();
-        setVideos(fetchedVideos);
+        console.log(`Fetched ${fetchedVideos.length} videos for Index page`);
+        
+        if (fetchedVideos.length > 0) {
+          setVideos(fetchedVideos);
+        } else {
+          toast({
+            title: "No videos found",
+            description: "There are no videos to display right now",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Error fetching videos:", error);
         toast({
@@ -50,13 +61,22 @@ const Index: React.FC = () => {
 
   return (
     <div className="h-full w-full bg-black">
-      {videos.length > 0 && (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+          <p className="text-white mt-4">Loading videos...</p>
+        </div>
+      ) : videos.length > 0 ? (
         <VideoFeed
           videos={videos}
           activeIndex={activeIndex}
           onVideoChange={handleVideoChange}
           onVideoView={handleVideoView}
         />
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full text-white">
+          <p>No videos available</p>
+        </div>
       )}
     </div>
   );

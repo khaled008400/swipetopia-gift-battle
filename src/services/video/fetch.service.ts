@@ -1,4 +1,3 @@
-
 import { supabase } from './base.service';
 
 class VideoFetchService {
@@ -22,7 +21,14 @@ class VideoFetchService {
           .single();
           
         if (!profileError && profile) {
-          return { ...data, profiles: profile };
+          return { 
+            ...data, 
+            user: {
+              id: profile.id,
+              username: profile.username,
+              avatar_url: profile.avatar_url
+            }
+          };
         }
       }
       
@@ -74,12 +80,26 @@ class VideoFetchService {
           // Add profile information to videos
           return data.map(video => ({
             ...video,
-            profiles: profileMap.get(video.user_id) || null
+            user: {
+              id: video.user_id,
+              username: profileMap.get(video.user_id)?.username || 'Unknown',
+              avatar_url: profileMap.get(video.user_id)?.avatar_url || '',
+              avatar: profileMap.get(video.user_id)?.avatar_url || '',
+            }
           }));
         }
       }
       
-      return data;
+      // Return videos with placeholder user data if profiles couldn't be fetched
+      return data.map(video => ({
+        ...video,
+        user: {
+          id: video.user_id,
+          username: 'Unknown',
+          avatar_url: '',
+          avatar: ''
+        }
+      }));
     } catch (error) {
       console.error('Error in getForYouVideos:', error);
       // Return empty array instead of throwing to avoid app crashes
@@ -90,6 +110,7 @@ class VideoFetchService {
   // Get videos for a specific user
   async getUserVideos(userId: string, limit: number = 20) {
     try {
+      console.log(`Fetching videos for user ID: ${userId}`);
       const { data, error } = await supabase
         .from('videos')
         .select('*')
@@ -99,26 +120,36 @@ class VideoFetchService {
 
       if (error) throw error;
       
-      if (data && data.length > 0) {
-        // Get user profile for these videos
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .eq('id', userId)
-          .single();
-          
-        if (!profileError && profile) {
-          return data.map(video => ({
-            ...video,
-            profiles: profile
-          }));
-        }
+      if (!data || data.length === 0) {
+        console.log(`No videos found for user ID: ${userId}`);
+        return [];
       }
       
-      return data || [];
+      console.log(`Found ${data.length} videos for user ID: ${userId}`);
+      
+      // Get user profile for these videos
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', userId)
+        .single();
+        
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      }
+      
+      return data.map(video => ({
+        ...video,
+        user: {
+          id: userId,
+          username: profile?.username || 'Unknown',
+          avatar_url: profile?.avatar_url || '',
+          avatar: profile?.avatar_url || '',
+        }
+      }));
     } catch (error) {
       console.error('Error in getUserVideos:', error);
-      throw error;
+      return [];
     }
   }
 

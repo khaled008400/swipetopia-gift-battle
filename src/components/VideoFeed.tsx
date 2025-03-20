@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import VideoPlayer from "./VideoPlayer";
@@ -35,22 +34,19 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize states when videos or user changes
+  useEffect(() => {
+    console.log("VideoFeed received videos:", videos?.length || 0);
+  }, [videos]);
+
   useEffect(() => {
     const initializeStates = () => {
-      // Set initial states based on video properties
       const newLikedVideos: Record<string, boolean> = {};
       const newSavedVideos: Record<string, boolean> = {};
       const newFollowedUsers: Record<string, boolean> = {};
 
       videos.forEach((video) => {
-        // Set liked status
         newLikedVideos[video.id] = video.is_liked || false;
-        
-        // Set saved status
         newSavedVideos[video.id] = video.is_saved || false;
-        
-        // Set follow status if user info exists
         if (video.user && video.user.isFollowing !== undefined) {
           newFollowedUsers[video.user_id] = video.user.isFollowing;
         }
@@ -64,7 +60,6 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     initializeStates();
   }, [videos, user]);
 
-  // Call onVideoView when active video changes
   useEffect(() => {
     if (onVideoView && videos.length > 0 && activeIndex >= 0 && activeIndex < videos.length) {
       onVideoView(videos[activeIndex].id);
@@ -86,13 +81,11 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
         await VideoService.likeVideo(videoId);
       }
       
-      // Update liked state
       setLikedVideos((prev) => ({
         ...prev,
         [videoId]: !isLiked,
       }));
       
-      // Show feedback to user
       toast({
         title: isLiked ? "Removed like" : "Video liked",
         description: isLiked ? "You've removed your like from this video" : "You've liked this video",
@@ -125,13 +118,11 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
         await VideoService.saveVideo(videoId);
       }
       
-      // Update saved state
       setSavedVideos((prev) => ({
         ...prev,
         [videoId]: !isSaved,
       }));
       
-      // Show feedback to user
       toast({
         title: isSaved ? "Removed from saved" : "Video saved",
         description: isSaved ? "Video removed from your saved collection" : "Video added to your saved collection",
@@ -167,16 +158,11 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     setIsLoading(true);
     try {
       const isFollowing = followedUsers[userId];
-      // Implement follow/unfollow API calls here
-      // For now we'll just toggle the state
-      
-      // Update followed state
       setFollowedUsers((prev) => ({
         ...prev,
         [userId]: !isFollowing,
       }));
       
-      // Show feedback to user
       toast({
         title: isFollowing ? "Unfollowed" : "Followed",
         description: isFollowing ? "You've unfollowed this user" : "You're now following this user",
@@ -194,7 +180,6 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     }
   };
 
-  // If no videos are provided, show a loading state
   if (!videos || videos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full">
@@ -232,7 +217,7 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
               allowDownloads: true,
               user: {
                 username: video.user?.username || "Unknown",
-                avatar: video.user?.avatar_url || "",
+                avatar: video.user?.avatar_url || video.user?.avatar || "",
                 isFollowing: followedUsers[video.user_id],
               },
             }}
