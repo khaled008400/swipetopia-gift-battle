@@ -23,7 +23,7 @@ const LoginPage = () => {
       setRedirectInProgress(true); // Prevent multiple redirects
       setTimeout(() => {
         navigate('/videos', { replace: true });
-      }, 300); // Increased delay to allow state to update
+      }, 800); // Increased delay to allow state to update
     }
   }, [isAuthenticated, navigate, redirectInProgress]);
 
@@ -76,7 +76,7 @@ const LoginPage = () => {
       setTimeout(() => {
         console.log("LoginPage: Executing navigation to /videos");
         navigate('/videos', { replace: true });
-      }, 500);
+      }, 800);
       
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);

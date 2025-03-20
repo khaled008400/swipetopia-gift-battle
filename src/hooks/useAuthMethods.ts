@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -31,7 +32,7 @@ export const useAuthMethods = () => {
       console.log("useAuthMethods: Login successful, user data:", data?.user?.id);
       
       // Add extra delay to ensure session is completely processed
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Force refresh the session to ensure it's up to date
       const { data: refreshData } = await supabase.auth.refreshSession();

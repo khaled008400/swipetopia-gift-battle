@@ -75,7 +75,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           console.log("AdminLoginForm: Redirecting to /videos");
           navigate('/videos', { replace: true });
         }
-      }, 500);
+      }, 800);
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
