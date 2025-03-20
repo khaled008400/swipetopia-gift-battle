@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
@@ -27,6 +28,16 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please enter both email and password"
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -52,18 +63,15 @@ const LoginPage = () => {
         description: "Welcome back!",
       });
       
-      // Navigate after successful login
-      console.log("LoginPage: Navigating to:", from);
-      navigate(from, { replace: true });
+      // Navigate is handled by the useEffect watching isAuthenticated
       
     } catch (error: any) {
-      console.error("LoginPage: Login error in form submission:", error);
+      console.error("LoginPage: Login error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Incorrect email or password",
+        description: error.message || "An unexpected error occurred",
       });
-    } finally {
       setLoading(false);
     }
   };

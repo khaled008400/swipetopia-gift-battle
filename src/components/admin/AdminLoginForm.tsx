@@ -46,6 +46,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
           description: error.message || "Invalid credentials",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
       
@@ -69,7 +70,6 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

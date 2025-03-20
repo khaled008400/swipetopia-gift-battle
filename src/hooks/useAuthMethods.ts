@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -13,42 +14,25 @@ export const useAuthMethods = () => {
     setError(null);
     
     try {
-      console.log(`useAuthMethods: Login attempt with: ${email}`);
+      console.log(`useAuthMethods: Attempting login with email: ${email}`);
       
-      // Sign in with password
+      // Use the direct Supabase signInWithPassword method
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (supabaseError) {
-        console.error("useAuthMethods: Supabase login error:", supabaseError);
+        console.error("useAuthMethods: Login error:", supabaseError);
         setError(supabaseError);
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: supabaseError.message || "Invalid email or password"
-        });
         return { data: null, error: supabaseError };
       }
       
-      console.log("useAuthMethods: Login successful, auth data:", data);
-      
-      // Success notification
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!"
-      });
-      
+      console.log("useAuthMethods: Login successful, user data:", data.user?.id);
       return { data, error: null };
     } catch (err: any) {
       console.error("useAuthMethods: Login error:", err);
       setError(err);
-      toast({
-        variant: "destructive",
-        title: "Login Error",
-        description: err.message || "An unexpected error occurred"
-      });
       return { data: null, error: err };
     } finally {
       setIsLoading(false);
