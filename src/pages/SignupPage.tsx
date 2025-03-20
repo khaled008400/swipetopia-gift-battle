@@ -1,22 +1,41 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const SignupPage = () => {
-  const [username, setUsername] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
   const { register, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          console.log("User already logged in, redirecting to videos");
+          navigate('/videos');
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +60,13 @@ const SignupPage = () => {
     
     setIsLoading(true);
     try {
-      await register(email, username, password);
+      console.log("Attempting to register with:", { email, username });
+      const result = await register(email, username, password);
+      
+      if (result.error) {
+        throw result.error;
+      }
+      
       toast({
         title: "Account created!",
         description: "Your account was created successfully. You can now log in.",

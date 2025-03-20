@@ -56,6 +56,8 @@ export const useAuthMethods = () => {
   const register = async (email: string, username: string, password: string, role: UserRole = 'user') => {
     setIsLoading(true);
     try {
+      console.log(`useAuthMethods: Attempting to register user with email: ${email}, username: ${username}`);
+      
       // First check if username already exists
       const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
@@ -63,9 +65,13 @@ export const useAuthMethods = () => {
         .eq('username', username)
         .limit(1);
       
-      if (checkError) throw new Error(checkError.message);
+      if (checkError) {
+        console.error("useAuthMethods: Error checking username:", checkError);
+        throw new Error(checkError.message);
+      }
       
       if (existingUsers && existingUsers.length > 0) {
+        console.error("useAuthMethods: Username already taken:", username);
         throw new Error("Username is already taken");
       }
       
@@ -81,7 +87,12 @@ export const useAuthMethods = () => {
         }
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("useAuthMethods: Registration error:", error);
+        throw new Error(error.message);
+      }
+
+      console.log("useAuthMethods: User registered successfully:", data?.user?.id);
 
       // Create profile
       if (data.user) {
@@ -94,7 +105,7 @@ export const useAuthMethods = () => {
             .single();
             
           if (existingProfile) {
-            console.log('Profile already exists for user:', data.user.id);
+            console.log('useAuthMethods: Profile already exists for user:', data.user.id);
             return { error: null };
           }
 
@@ -114,27 +125,27 @@ export const useAuthMethods = () => {
             .insert([newProfile]);
             
           if (profileError) {
-            console.error("Error creating profile during registration:", profileError);
+            console.error("useAuthMethods: Error creating profile during registration:", profileError);
           } else {
-            console.log("Profile created successfully during registration");
+            console.log("useAuthMethods: Profile created successfully during registration");
           }
         } catch (profileErr) {
-          console.error("Failed to create profile during registration:", profileErr);
+          console.error("useAuthMethods: Failed to create profile during registration:", profileErr);
         }
       }
 
       toast({
         title: "Registration Successful",
-        description: "Your account has been created successfully."
+        description: "Your account has been created successfully. Please log in."
       });
       return { error: null };
     } catch (err: any) {
+      console.error("useAuthMethods: Registration error:", err);
       setError(new Error(err.message));
-      console.error("Registration error:", err);
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: err.message
+        description: err.message || "Failed to create account"
       });
       return { error: err };
     } finally {
@@ -145,21 +156,21 @@ export const useAuthMethods = () => {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      console.log("Attempting to sign out user");
+      console.log("useAuthMethods: Attempting to sign out user");
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error("Signout error:", error);
+        console.error("useAuthMethods: Sign-out error:", error);
         throw error;
       }
       
-      console.log("User signed out successfully");
+      console.log("useAuthMethods: User signed out successfully");
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out."
       });
     } catch (err: any) {
-      console.error("Logout error:", err);
+      console.error("useAuthMethods: Logout error:", err);
       setError(new Error(err.message));
       toast({
         variant: "destructive",

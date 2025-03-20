@@ -4,29 +4,38 @@ import { UserRole } from "@/types/auth.types";
 
 export const loginUser = async (email: string, password: string) => {
   console.log(`Attempting to login user with email: ${email}`);
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
   
-  if (error) {
-    console.error("Login error:", error);
+  try {
+    // Clear existing session first to avoid conflicts
+    await supabase.auth.signOut();
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
+    
+    console.log("Login successful, checking/creating profile...");
+    
+    // Ensure profile exists after login
+    try {
+      if (data.user) {
+        await ensureProfileExists(data.user);
+      }
+    } catch (profileError) {
+      console.error("Profile check failed after login:", profileError);
+      // Continue with login despite profile issues
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Login failed:", error);
     throw error;
   }
-  
-  console.log("Login successful, checking/creating profile...");
-  
-  // Ensure profile exists after login
-  try {
-    if (data.user) {
-      await ensureProfileExists(data.user);
-    }
-  } catch (profileError) {
-    console.error("Profile check failed after login:", profileError);
-    // Continue with login despite profile issues
-  }
-  
-  return data;
 };
 
 export const signupUser = async (email: string, username: string, password: string, roles: UserRole[] = ["user"]) => {
@@ -133,23 +142,28 @@ const createProfile = async (userId: string, username: string, email: string, ro
 const ensureProfileExists = async (user: any) => {
   console.log(`Ensuring profile exists for user: ${user.id}`);
   
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+      
+    if (profile) {
+      console.log('Profile found for user:', user.id);
+      return profile;
+    }
     
-  if (profile) {
-    console.log('Profile found for user:', user.id);
-    return profile;
+    // If no profile, create one with data from user metadata
+    console.log('No profile found, creating one for user:', user.id);
+    const username = user.user_metadata?.username || user.email?.split('@')[0] || `user_${Math.floor(Math.random() * 10000)}`;
+    const roles = user.user_metadata?.roles || ["user"];
+    
+    return await createProfile(user.id, username, user.email, roles);
+  } catch (error) {
+    console.error('Error checking/creating profile:', error);
+    throw error;
   }
-  
-  // If no profile, create one with data from user metadata
-  console.log('No profile found, creating one for user:', user.id);
-  const username = user.user_metadata?.username || user.email?.split('@')[0] || `user_${Math.floor(Math.random() * 10000)}`;
-  const roles = user.user_metadata?.roles || ["user"];
-  
-  return await createProfile(user.id, username, user.email, roles);
 };
 
 export const logoutUser = async () => {

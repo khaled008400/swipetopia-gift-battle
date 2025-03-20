@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
@@ -110,13 +111,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
               console.log("Profile loaded from existing session:", profile.username);
               setUser(profile);
               setIsAuthenticated(true);
+            } else {
+              console.log("No profile found for existing session");
+              setUser(null);
+              setIsAuthenticated(false);
             }
           } catch (err) {
             console.error("Error loading profile from existing session:", err);
+            setUser(null);
+            setIsAuthenticated(false);
           }
+        } else {
+          console.log("No existing session found");
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (err) {
         console.error("Error checking for existing session:", err);
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -132,9 +145,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
   const login = async (email: string, password: string) => {
     console.log("login called with:", email);
-    const result = await authLogin(email, password);
-    console.log("Login result:", result);
-    return result;
+    setLoading(true);
+    try {
+      const result = await authLogin(email, password);
+      console.log("Login result:", result);
+      
+      if (result.error) {
+        setIsAuthenticated(false);
+      } else if (result.data?.user) {
+        setIsAuthenticated(true);
+      }
+      
+      setLoading(false);
+      return result;
+    } catch (err) {
+      console.error("Error during login:", err);
+      setIsAuthenticated(false);
+      setLoading(false);
+      return { data: null, error: err };
+    }
   };
   
   const updateProfile = async (updates: Partial<UserProfile>) => {
@@ -198,7 +227,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   
   // Correctly typed logout function
   const logout = async (): Promise<void> => {
-    await authLogout();
+    try {
+      setLoading(true);
+      await authLogout();
+      setUser(null);
+      setSession(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error during logout:", err);
+      setLoading(false);
+    }
   };
   
   const value: AuthContextType = {
