@@ -16,6 +16,9 @@ export const useAuthMethods = () => {
     try {
       console.log(`useAuthMethods: Attempting login with email: ${email}`);
       
+      // Clear any existing session first to prevent conflicts
+      await supabase.auth.signOut();
+      
       // Simple direct login with Supabase
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email,
@@ -32,19 +35,32 @@ export const useAuthMethods = () => {
       console.log("useAuthMethods: Login successful, user data:", data?.user?.id);
       
       // Add extra delay to ensure session is completely processed
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Force refresh the session to ensure it's up to date
-      const { data: refreshData } = await supabase.auth.refreshSession();
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error("useAuthMethods: Session refresh error:", refreshError);
+        setError(refreshError);
+        setIsLoading(false);
+        return { data: null, error: refreshError };
+      }
+      
       console.log("useAuthMethods: Session refreshed, user exists:", !!refreshData.session);
       
-      setIsLoading(false);
-      
       if (!refreshData.session) {
-        console.error("useAuthMethods: Session refresh failed");
+        console.error("useAuthMethods: Session refresh failed - no session returned");
+        setError(new Error("Authentication succeeded but session creation failed"));
+        setIsLoading(false);
         return { data: null, error: new Error("Session refresh failed") };
       }
       
+      // Double-check that we actually have a valid session
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      console.log("useAuthMethods: Final session check:", !!sessionCheck.session);
+      
+      setIsLoading(false);
       return { data: refreshData, error: null };
     } catch (err: any) {
       console.error("useAuthMethods: Login error:", err);

@@ -10,22 +10,34 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [redirectInProgress, setRedirectInProgress] = useState(false);
+  const [loginAttempted, setLoginAttempted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { isAuthenticated, login } = useAuth();
 
-  // Check if user is already authenticated on initial load
+  console.log("LoginPage rendering, auth status:", isAuthenticated, "redirect:", redirectInProgress);
+
+  // Check if user is already authenticated on initial load or when auth status changes
   useEffect(() => {
-    console.log("LoginPage: Authentication status check:", isAuthenticated);
+    console.log("LoginPage: Authentication status check:", isAuthenticated, "redirect:", redirectInProgress, "login attempted:", loginAttempted);
+    
+    // Only redirect if we're authenticated and either:
+    // 1. No login was attempted (we were already logged in), or
+    // 2. A login was attempted (we just logged in successfully)
     if (isAuthenticated && !redirectInProgress) {
-      console.log("LoginPage: Already authenticated, navigating to videos feed");
+      console.log("LoginPage: Authenticated, navigating to videos feed");
       setRedirectInProgress(true); // Prevent multiple redirects
-      setTimeout(() => {
+      
+      // Use a timeout to ensure all state updates have propagated
+      const redirectTimer = setTimeout(() => {
+        console.log("LoginPage: Executing redirect to /videos");
         navigate('/videos', { replace: true });
-      }, 800); // Increased delay to allow state to update
+      }, 1000);
+      
+      return () => clearTimeout(redirectTimer);
     }
-  }, [isAuthenticated, navigate, redirectInProgress]);
+  }, [isAuthenticated, navigate, redirectInProgress, loginAttempted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +57,7 @@ const LoginPage = () => {
     }
     
     setLoading(true);
+    setLoginAttempted(true);
 
     try {
       console.log("LoginPage: Login attempt with:", email);
@@ -69,14 +82,10 @@ const LoginPage = () => {
         description: "Welcome back!",
       });
       
-      console.log("LoginPage: Login successful, redirecting to videos feed");
-      setRedirectInProgress(true); // Prevent multiple redirects
+      console.log("LoginPage: Login successful, redirection will happen through useEffect");
       
-      // Navigate directly to videos feed with a longer delay to allow state updates
-      setTimeout(() => {
-        console.log("LoginPage: Executing navigation to /videos");
-        navigate('/videos', { replace: true });
-      }, 800);
+      // We don't navigate here directly - the useEffect will handle that
+      // This avoids race conditions with state updates
       
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);
