@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useCallback } from "react";
-import VideoService from "@/services/video.service";
 import { Video } from "@/types/video.types";
 
 type VideoFetchFunction = (userId: string) => Promise<Video[]>;
