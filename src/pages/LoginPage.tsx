@@ -21,7 +21,9 @@ const LoginPage = () => {
     if (isAuthenticated && !redirectInProgress) {
       console.log("LoginPage: Already authenticated, navigating to videos feed");
       setRedirectInProgress(true); // Prevent multiple redirects
-      navigate('/videos', { replace: true });
+      setTimeout(() => {
+        navigate('/videos', { replace: true });
+      }, 100); // Small delay to allow state to update
     }
   }, [isAuthenticated, navigate, redirectInProgress]);
 
@@ -34,6 +36,11 @@ const LoginPage = () => {
         title: "Missing Information",
         description: "Please enter both email and password"
       });
+      return;
+    }
+    
+    if (redirectInProgress) {
+      console.log("LoginPage: Redirect already in progress, ignoring submission");
       return;
     }
     
@@ -64,8 +71,11 @@ const LoginPage = () => {
       
       console.log("LoginPage: Login successful, redirecting to videos feed");
       setRedirectInProgress(true); // Prevent multiple redirects
-      // Navigate directly to videos feed
-      navigate('/videos', { replace: true });
+      
+      // Navigate directly to videos feed with a small delay to allow state updates
+      setTimeout(() => {
+        navigate('/videos', { replace: true });
+      }, 100);
       
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);

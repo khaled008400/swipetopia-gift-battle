@@ -65,14 +65,16 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       // Prevent multiple redirects
       setRedirectInProgress(true);
       
-      // Handle successful login - call callback if provided, otherwise redirect to videos
-      if (onLoginSuccess) {
-        console.log("AdminLoginForm: Calling onLoginSuccess callback");
-        onLoginSuccess();
-      } else {
-        console.log("AdminLoginForm: Redirecting to /videos");
-        navigate('/videos', { replace: true });
-      }
+      // Handle successful login with delay to ensure state updates fully processed
+      setTimeout(() => {
+        if (onLoginSuccess) {
+          console.log("AdminLoginForm: Calling onLoginSuccess callback");
+          onLoginSuccess();
+        } else {
+          console.log("AdminLoginForm: Redirecting to /videos");
+          navigate('/videos', { replace: true });
+        }
+      }, 100);
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
