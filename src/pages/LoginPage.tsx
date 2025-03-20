@@ -1,14 +1,14 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -22,8 +22,13 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      console.log("LoginPage: Attempting login with:", email);
-      const { data, error } = await login(email, password);
+      console.log("LoginPage: Direct login attempt with:", email);
+      
+      // Use Supabase directly to avoid any context issues
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
       if (error) {
         console.error("LoginPage: Login error:", error);
@@ -37,18 +42,21 @@ const LoginPage = () => {
       }
       
       console.log("LoginPage: Login successful, auth data:", data);
+      
+      // Force session refresh
+      await supabase.auth.refreshSession();
+      
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
       
-      // Wait briefly for auth state to update then navigate
+      // Wait briefly then navigate directly
       setTimeout(() => {
-        console.log("LoginPage: Auth state after login:", isAuthenticated);
         console.log("LoginPage: Navigating to:", from);
         navigate(from, { replace: true });
         setLoading(false);
-      }, 500);
+      }, 1000);
       
     } catch (error: any) {
       console.error("LoginPage: Login error in form submission:", error);

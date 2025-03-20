@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -13,8 +14,9 @@ export const useAuthMethods = () => {
     setError(null);
     
     try {
-      console.log(`useAuthMethods: Attempting to login with: ${email}`);
+      console.log(`useAuthMethods: Direct login attempt with: ${email}`);
       
+      // Sign in with password
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -33,7 +35,7 @@ export const useAuthMethods = () => {
       
       console.log("useAuthMethods: Login successful, auth data:", data);
       
-      // Force a refresh of the auth tokens to ensure they're properly stored
+      // Force token refresh to ensure they're properly stored
       await supabase.auth.refreshSession();
       
       // Success notification

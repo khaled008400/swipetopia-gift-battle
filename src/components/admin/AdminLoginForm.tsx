@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminLoginFormProps {
   onLoginSuccess?: () => void;
@@ -16,9 +17,9 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  // Simple direct login approach
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -34,8 +35,13 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     
     try {
-      console.log("AdminLoginForm: Attempting to login with:", email);
-      const { data, error } = await login(email, password);
+      console.log("AdminLoginForm: Direct login with:", email);
+      
+      // Use Supabase directly to avoid any context issues
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
       if (error) {
         console.error("AdminLoginForm: Login error:", error);
@@ -54,17 +60,18 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Handle successful login - wait briefly for auth state to update
+      // Force session refresh
+      await supabase.auth.refreshSession();
+      
+      // Simple delay and direct navigation
       setTimeout(() => {
-        console.log("AdminLoginForm: Auth state is now:", isAuthenticated);
-        
         if (onLoginSuccess) {
           onLoginSuccess();
         } else {
           navigate('/admin', { replace: true });
         }
         setIsLoading(false);
-      }, 500);
+      }, 1000);
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
