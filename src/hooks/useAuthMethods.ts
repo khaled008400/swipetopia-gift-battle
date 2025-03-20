@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth.types';
@@ -16,7 +15,7 @@ export const useAuthMethods = () => {
     try {
       console.log(`useAuthMethods: Attempting login with email: ${email}`);
       
-      // Use the direct Supabase signInWithPassword method
+      // Simple direct login with Supabase
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -25,17 +24,18 @@ export const useAuthMethods = () => {
       if (supabaseError) {
         console.error("useAuthMethods: Login error:", supabaseError);
         setError(supabaseError);
+        setIsLoading(false);
         return { data: null, error: supabaseError };
       }
       
-      console.log("useAuthMethods: Login successful, user data:", data.user?.id);
+      console.log("useAuthMethods: Login successful, user data:", data?.user?.id);
+      setIsLoading(false);
       return { data, error: null };
     } catch (err: any) {
       console.error("useAuthMethods: Login error:", err);
       setError(err);
-      return { data: null, error: err };
-    } finally {
       setIsLoading(false);
+      return { data: null, error: err };
     }
   };
 

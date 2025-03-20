@@ -63,7 +63,7 @@ const LoginPage = () => {
         description: "Welcome back!",
       });
       
-      // Navigate is handled by the useEffect watching isAuthenticated
+      // Navigation is handled by the useEffect watching isAuthenticated
       
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);
