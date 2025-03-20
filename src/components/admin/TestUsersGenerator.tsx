@@ -1,74 +1,105 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { createTestUsers } from '@/integrations/supabase/client';
-import { AlertCircle, Check, UserPlus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-const TestUsersGenerator: React.FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const TestUsersGenerator = () => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
-  const handleGenerateUsers = async () => {
-    setLoading(true);
-    setSuccess(false);
-    setError(null);
+  const createTestUser = async (email: string, password: string, username: string, roles: string[]) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          roles
+        }
+      }
+    });
     
+    if (error) {
+      console.error(`Failed to create ${username} user:`, error);
+      return null;
+    }
+    
+    console.log(`Created ${username} user:`, data.user?.id);
+    
+    if (data.user) {
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: data.user.id,
+        username,
+        email,
+        roles,
+        role: roles[0],
+        avatar_url: `https://i.pravatar.cc/150?u=${username}`
+      });
+      
+      if (profileError) {
+        console.error(`Failed to create profile for ${username}:`, profileError);
+      }
+    }
+    
+    return data.user?.id;
+  };
+
+  const generateTestUsers = async () => {
+    setIsGenerating(true);
     try {
-      await createTestUsers();
-      setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create test users');
+      const adminId = await createTestUser('admin@example.com', 'adminpassword', 'admin', ['admin']);
+      const sellerId = await createTestUser('seller@example.com', 'sellerpassword', 'seller', ['seller']);
+      const streamerId = await createTestUser('streamer@example.com', 'streamerpassword', 'streamer', ['streamer']);
+      
+      toast({
+        title: "Test Users Generated",
+        description: "Admin, seller and streamer test accounts created successfully.",
+      });
+      
+      return { adminId, sellerId, streamerId };
+    } catch (error) {
+      console.error('Error generating test users:', error);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Failed to create test users. See console for details.",
+      });
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
   return (
-    <div className="p-4 bg-slate-800 rounded-md">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h3 className="text-lg font-medium">Test Users Generator</h3>
-          <p className="text-sm text-muted-foreground">
-            Create sample users with different roles for testing
-          </p>
-        </div>
-        <Button 
-          onClick={handleGenerateUsers} 
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="animate-spin mr-2">⌛</span>
-          ) : (
-            <UserPlus className="mr-2 h-4 w-4" />
-          )}
-          Generate Test Users
-        </Button>
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <h3 className="text-lg font-medium mb-2">Test Users Generator</h3>
+      <p className="text-sm text-gray-500 mb-4">
+        Create test accounts with different roles for development purposes.
+      </p>
+      <Button 
+        onClick={generateTestUsers} 
+        disabled={isGenerating}
+        className="w-full"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating users...
+          </>
+        ) : (
+          "Generate Test Users"
+        )}
+      </Button>
+      <div className="mt-3 text-xs text-gray-500">
+        <p>This will create the following accounts:</p>
+        <ul className="list-disc pl-5 mt-1 space-y-1">
+          <li>admin@example.com (Admin role)</li>
+          <li>seller@example.com (Seller role)</li>
+          <li>streamer@example.com (Streamer role)</li>
+        </ul>
+        <p className="mt-2">All passwords are set to "[role]password"</p>
       </div>
-      
-      {success && (
-        <Alert className="bg-green-800 border-green-700">
-          <Check className="h-4 w-4 text-green-400" />
-          <AlertTitle>Success!</AlertTitle>
-          <AlertDescription>
-            Test users have been created with the following credentials:
-            <ul className="mt-2 list-disc list-inside">
-              <li>Admin: admin@example.com / adminpassword</li>
-              <li>Seller: seller@example.com / sellerpassword</li>
-              <li>Streamer: streamer@example.com / streamerpassword</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {error && (
-        <Alert className="bg-red-800 border-red-700">
-          <AlertCircle className="h-4 w-4 text-red-400" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 };
