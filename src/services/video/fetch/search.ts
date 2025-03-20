@@ -16,7 +16,7 @@ export async function searchVideos(query: string): Promise<Video[]> {
 
     if (error) throw error;
     
-    // Map profiles to user for backward compatibility
+    // Map profiles to user with proper field mapping
     return (data || []).map(video => ({
       ...video,
       user: {

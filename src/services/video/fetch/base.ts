@@ -1,7 +1,7 @@
 
 import { supabase } from '../base.service';
 
-// Common query parts
+// Common query parts - only use fields that actually exist in the profiles table
 export const videoWithUserSelect = `
   *,
   profiles:user_id (
