@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface AdminLoginFormProps {
   onLoginSuccess?: () => void;
@@ -33,6 +33,8 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     
     try {
+      console.log("AdminLoginForm: Attempting login with:", email);
+      
       // Sign out any existing session first to prevent conflicts
       await supabase.auth.signOut();
       

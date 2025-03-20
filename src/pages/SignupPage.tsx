@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const SignupPage = () => {
   const [username, setUsername] = useState('');
@@ -16,7 +15,6 @@ const SignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { register, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
   // Check if user is already logged in
@@ -61,10 +59,38 @@ const SignupPage = () => {
     setIsLoading(true);
     try {
       console.log("Attempting to register with:", { email, username });
-      const result = await register(email, username, password);
       
-      if (result.error) {
-        throw result.error;
+      // First check if username already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .limit(1);
+      
+      if (checkError) {
+        console.error("Error checking username:", checkError);
+        throw new Error(checkError.message);
+      }
+      
+      if (existingUsers && existingUsers.length > 0) {
+        console.error("Username already taken:", username);
+        throw new Error("Username is already taken");
+      }
+      
+      // Register the user
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+            roles: ['user']
+          }
+        }
+      });
+      
+      if (signUpError) {
+        throw signUpError;
       }
       
       toast({
@@ -103,7 +129,7 @@ const SignupPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             />
           </div>
           
@@ -118,7 +144,7 @@ const SignupPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             />
           </div>
           
@@ -133,7 +159,7 @@ const SignupPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             />
           </div>
           
@@ -148,16 +174,16 @@ const SignupPage = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="bg-app-gray-dark border-app-gray-light text-white"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             />
           </div>
           
           <Button 
             type="submit" 
             className="w-full bg-app-yellow text-app-black hover:bg-app-yellow-hover transition-all duration-300"
-            disabled={isLoading || authLoading}
+            disabled={isLoading}
           >
-            {isLoading || authLoading ? (
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...

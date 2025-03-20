@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole, AuthContextType } from '@/types/auth.types';
 import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
 import { useAuthMethods } from '@/hooks/useAuthMethods';
@@ -98,6 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     // THEN check for existing session
     const checkExistingSession = async () => {
       try {
+        console.log("Checking for existing session");
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", existingSession ? "Found session" : "No session");
         
