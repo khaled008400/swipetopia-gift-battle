@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth(); // Get isAuthenticated from auth context
 
   // Get the return path from URL query params
   const searchParams = new URLSearchParams(location.search);
