@@ -19,24 +19,25 @@ export async function getUserVideos(userId: string): Promise<Video[]> {
 
     console.log(`Found ${data?.length || 0} videos for user ${userId}`);
     
-    // Map profiles to user for backward compatibility with proper structure
+    // Transform data to match Video type expected by frontend
     return (data || []).map(video => ({
       ...video,
       user: {
         id: video.profiles?.id,
         username: video.profiles?.username || 'Unknown User',
-        avatar: video.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+        avatar: video.profiles?.avatar_url,
         avatar_url: video.profiles?.avatar_url
       }
     }));
   } catch (error) {
     handleFetchError(`getUserVideos for ${userId}`, error);
-    throw error;
+    return [];
   }
 }
 
 export async function getLikedVideos(userId?: string): Promise<Video[]> {
   try {
+    console.log("Fetching liked videos...");
     const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
     if (!currentUserId) return [];
 
@@ -52,6 +53,8 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
 
     if (error) throw error;
 
+    console.log(`Found ${data?.length || 0} liked videos`);
+    
     // Extract the videos from the joined data and filter out any nulls
     const videos: Video[] = [];
     
@@ -66,7 +69,7 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
             user: {
               id: videoWithProfiles.profiles?.id,
               username: videoWithProfiles.profiles?.username || 'Unknown User',
-              avatar: videoWithProfiles.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+              avatar: videoWithProfiles.profiles?.avatar_url,
               avatar_url: videoWithProfiles.profiles?.avatar_url
             }
           };
@@ -84,6 +87,7 @@ export async function getLikedVideos(userId?: string): Promise<Video[]> {
 
 export async function getSavedVideos(userId?: string): Promise<Video[]> {
   try {
+    console.log("Fetching saved videos...");
     const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
     if (!currentUserId) return [];
 
@@ -99,6 +103,8 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
 
     if (error) throw error;
 
+    console.log(`Found ${data?.length || 0} saved videos`);
+    
     // Extract the videos from the joined data and filter out any nulls
     const videos: Video[] = [];
     
@@ -113,7 +119,7 @@ export async function getSavedVideos(userId?: string): Promise<Video[]> {
             user: {
               id: videoWithProfiles.profiles?.id,
               username: videoWithProfiles.profiles?.username || 'Unknown User',
-              avatar: videoWithProfiles.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+              avatar: videoWithProfiles.profiles?.avatar_url,
               avatar_url: videoWithProfiles.profiles?.avatar_url
             }
           };

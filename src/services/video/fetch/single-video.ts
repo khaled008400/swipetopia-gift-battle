@@ -5,6 +5,7 @@ import { videoWithUserSelect, handleFetchError } from './base';
 
 export async function getVideoById(id: string): Promise<Video | null> {
   try {
+    console.log(`Fetching video with ID: ${id}`);
     const { data, error } = await supabase
       .from('videos')
       .select(videoWithUserSelect)
@@ -15,22 +16,23 @@ export async function getVideoById(id: string): Promise<Video | null> {
     
     // Remap data to match the Video type expected by the frontend
     if (data) {
-      // Map profiles to user for backward compatibility
+      console.log(`Successfully fetched video: ${id}`);
       const video: Video = {
         ...data,
         user: {
           id: data.profiles?.id,
           username: data.profiles?.username || 'Unknown User',
-          avatar: data.profiles?.avatar_url, // Map avatar_url to avatar for compatibility
+          avatar: data.profiles?.avatar_url,
           avatar_url: data.profiles?.avatar_url
         }
       };
       return video;
     }
     
+    console.log(`No video found with ID: ${id}`);
     return null;
   } catch (error) {
     handleFetchError("getVideoById", error);
-    throw error;
+    return null;
   }
 }
