@@ -14,9 +14,8 @@ const LoginPage = () => {
   const { toast } = useToast();
   const { isAuthenticated, login } = useAuth();
 
-  // Get the return path from URL query params or default to videos feed
-  const searchParams = new URLSearchParams(location.search);
-  const from = searchParams.get('from') || '/videos';
+  // Always navigate to videos feed after login
+  const from = '/videos';
 
   // Check if user is already authenticated on initial load
   useEffect(() => {
@@ -63,7 +62,8 @@ const LoginPage = () => {
         description: "Welcome back!",
       });
       
-      // Navigation is handled by the useEffect watching isAuthenticated
+      // Navigate directly to videos feed
+      navigate('/videos', { replace: true });
       
     } catch (error: any) {
       console.error("LoginPage: Login error:", error);

@@ -56,13 +56,8 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
         description: "Welcome back!",
       });
       
-      // Handle successful login
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      } else {
-        // Default to videos page instead of admin dashboard
-        navigate('/videos', { replace: true });
-      }
+      // Handle successful login - always redirect to videos
+      navigate('/videos', { replace: true });
       
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
