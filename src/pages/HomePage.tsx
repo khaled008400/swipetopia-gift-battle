@@ -17,6 +17,7 @@ const HomePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('trending'); // Default to trending as it's more reliable
   const [activeIndex, setActiveIndex] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -31,7 +32,9 @@ const HomePage = () => {
           fetchedVideos = await VideoService.getForYouVideos();
         } catch (err: any) {
           console.error("Error fetching For You videos:", err);
-          setError("Could not load For You videos. Try another feed.");
+          setError("Could not load For You videos. Trying another feed...");
+          // Automatically switch to trending if For You fails
+          setActiveTab('trending');
         }
       } else if (activeTab === 'trending') {
         fetchedVideos = await VideoService.getTrendingVideos();
@@ -43,12 +46,16 @@ const HomePage = () => {
       console.log("HomePage: Fetched videos:", fetchedVideos?.length || 0);
       
       // If current feed is empty, try another one
-      if (fetchedVideos.length === 0) {
+      if (fetchedVideos.length === 0 && retryCount < 2) {
+        setRetryCount(prev => prev + 1);
+        
         if (activeTab === 'for-you') {
           console.log("No videos in For You tab, trying trending");
           const trendingVideos = await VideoService.getTrendingVideos();
           if (trendingVideos.length > 0) {
             fetchedVideos = trendingVideos;
+            // Show toast to inform user
+            toast("Showing you trending videos instead");
           } else {
             const regularVideos = await VideoService.getVideos(10);
             fetchedVideos = regularVideos;
@@ -83,14 +90,20 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, retryCount]);
 
   useEffect(() => {
     fetchVideos();
   }, [fetchVideos]);
+  
+  // Reset retry count when changing tabs
+  useEffect(() => {
+    setRetryCount(0);
+  }, [activeTab]);
 
   const handleRefresh = () => {
     toast("Refreshing feed...");
+    setRetryCount(0);
     fetchVideos();
   };
 

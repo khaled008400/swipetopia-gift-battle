@@ -13,31 +13,35 @@ export interface VideoPlayerProps {
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
   src, 
   poster, 
-  autoPlay = false,
+  autoPlay = true, // Change default to true
   videoId,
   videoUrl,
-  isActive = true // Default to active for non-feed videos
+  isActive = true // Default to active
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [hasAttemptedPlay, setHasAttemptedPlay] = useState(false);
   const [playbackError, setPlaybackError] = useState<Error | null>(null);
   const [attemptCount, setAttemptCount] = useState(0);
+  const [isMuted, setIsMuted] = useState(true); // Start muted to help with autoplay
   
   // Use src as primary source, fall back to videoUrl if src is not provided
   const videoSource = src || videoUrl || '';
 
   // Try to play the video when it becomes active
   useEffect(() => {
-    if (!videoRef.current || !isActive) return;
+    if (!videoRef.current || !isActive || !videoSource) return;
     
     const playVideo = async () => {
-      if (attemptCount > 3) return; // Don't keep trying indefinitely
+      if (attemptCount > 5) return; // Don't keep trying indefinitely
       
       try {
-        // Set muted attribute to allow autoplay in most browsers
+        console.log(`Attempting to play video ${videoId || 'unknown'}, attempt ${attemptCount + 1}`);
+        
+        // Always set muted to help with autoplay (browser policies)
         videoRef.current.muted = true;
         videoRef.current.playsInline = true;
+        
         await videoRef.current.play();
         setIsPlaying(true);
         setPlaybackError(null);
@@ -47,17 +51,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setPlaybackError(error instanceof Error ? error : new Error('Unknown playback error'));
         setAttemptCount(count => count + 1);
         
-        // If first attempt failed, try again after a short delay
-        if (attemptCount < 2) {
+        // If first attempt failed, try again with delay and different settings
+        if (attemptCount < 3) {
           setTimeout(() => {
             if (videoRef.current) {
+              // Try with different attributes that might help with autoplay
+              videoRef.current.muted = true;
+              videoRef.current.playsInline = true;
               videoRef.current.load();
               setHasAttemptedPlay(false); // Reset to try again
             }
-          }, 1000);
+          }, 800);
         }
       } finally {
-        // Mark as attempted
         setHasAttemptedPlay(true);
       }
     };
@@ -91,6 +97,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     
     if (videoRef.current.paused) {
       videoRef.current.muted = false; // Unmute when user explicitly plays
+      setIsMuted(false);
       videoRef.current.play().catch(error => {
         console.error("Error playing video after click:", error);
         setPlaybackError(error instanceof Error ? error : new Error('Unknown playback error'));
@@ -102,10 +109,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
+  // Handle video errors
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error("Video error event:", e);
+    setPlaybackError(new Error("Video could not be loaded"));
+    setAttemptCount(prev => prev + 1);
+    
+    // Try to reload if we haven't tried too many times
+    if (attemptCount < 3 && videoRef.current) {
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+          setHasAttemptedPlay(false);
+        }
+      }, 1000);
+    }
+  };
+
   return (
     <div className="h-full w-full relative">
       {/* Show error UI when there's a playback error and we've tried multiple times */}
-      {playbackError && attemptCount > 2 && (
+      {playbackError && attemptCount > 3 && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
           <div className="text-center p-4">
             <p className="text-red-400 mb-2">Unable to play video</p>
@@ -133,9 +157,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         poster={poster}
         className="h-full w-full object-cover"
         loop
-        muted
+        muted={isMuted}
         playsInline
+        autoPlay={autoPlay}
+        preload="auto"
         onClick={handleVideoClick}
+        onError={handleVideoError}
       />
     </div>
   );
