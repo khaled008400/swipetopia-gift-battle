@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video';
 import { ChevronDown, RefreshCcw } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Video } from '@/types/video.types';
 import TrendingVideosSection from '@/components/TrendingVideosSection';
 import PopularLiveSection from '@/components/PopularLiveSection';
 import { Helmet } from 'react-helmet-async';
+import EmptyFeedState from '@/components/video/EmptyFeedState';
 
 const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -17,11 +18,7 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState('trending'); // Default to trending as it's more reliable
   const [activeIndex, setActiveIndex] = useState(0);
 
-  useEffect(() => {
-    fetchVideos();
-  }, [activeTab]);
-
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -32,43 +29,49 @@ const HomePage = () => {
       if (activeTab === 'for-you') {
         try {
           fetchedVideos = await VideoService.getForYouVideos();
-          if (fetchedVideos.length === 0) {
-            // If no videos returned in For You tab, switch to trending
-            console.log("No videos in For You tab, switching to trending");
-            setActiveTab('trending');
-            fetchedVideos = await VideoService.getTrendingVideos();
-          }
         } catch (err: any) {
           console.error("Error fetching For You videos:", err);
-          // If ForYou fails, use trending instead
-          setActiveTab('trending');
-          fetchedVideos = await VideoService.getTrendingVideos();
+          setError("Could not load For You videos. Try another feed.");
         }
       } else if (activeTab === 'trending') {
         fetchedVideos = await VideoService.getTrendingVideos();
-      } else if (activeTab === 'following') {
-        // For following tab, use regular videos as public users can't see followed content
-        fetchedVideos = await VideoService.getVideos(20);
       } else {
-        // Default fallback - get regular videos
+        // For following tab or fallback, use regular videos
         fetchedVideos = await VideoService.getVideos(20);
       }
       
-      console.log("HomePage: Fetched videos:", fetchedVideos.length);
+      console.log("HomePage: Fetched videos:", fetchedVideos?.length || 0);
       
+      // If current feed is empty, try another one
       if (fetchedVideos.length === 0) {
-        // If still no videos, try one more fallback to regular videos
-        fetchedVideos = await VideoService.getVideos(20);
+        if (activeTab === 'for-you') {
+          console.log("No videos in For You tab, trying trending");
+          const trendingVideos = await VideoService.getTrendingVideos();
+          if (trendingVideos.length > 0) {
+            fetchedVideos = trendingVideos;
+          } else {
+            const regularVideos = await VideoService.getVideos(10);
+            fetchedVideos = regularVideos;
+          }
+        } else if (activeTab === 'trending') {
+          console.log("No videos in Trending tab, trying regular videos");
+          fetchedVideos = await VideoService.getVideos(10);
+        }
       }
       
       setVideos(fetchedVideos);
+      
+      // If we still have no videos after all attempts, show error
+      if (fetchedVideos.length === 0) {
+        setError("No videos available at the moment. Please try again later.");
+      }
     } catch (err: any) {
       console.error("HomePage: Error fetching videos:", err);
-      setError(err.message || "Failed to load videos");
+      setError("Failed to load videos. Please check your connection and try again.");
       
       // Try to fetch regular videos as fallback
       try {
-        const regularVideos = await VideoService.getVideos(20);
+        const regularVideos = await VideoService.getVideos(10);
         if (regularVideos.length > 0) {
           console.log("HomePage: Using regular videos as fallback");
           setVideos(regularVideos);
@@ -80,7 +83,11 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
 
   const handleRefresh = () => {
     toast("Refreshing feed...");
@@ -137,18 +144,11 @@ const HomePage = () => {
         </div>
       </div>
 
-      <div className="pt-2 pb-16">
+      <div className="pt-2 pb-16 h-[calc(100vh-150px)]">
         {loading ? (
-          <div className="flex justify-center items-center h-[70vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-app-yellow"></div>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col justify-center items-center h-[70vh] px-4 text-center">
-            <p className="text-red-500 mb-4">{error}</p>
-            <Button onClick={handleRefresh} variant="outline" className="flex items-center">
-              <RefreshCcw className="mr-2 h-4 w-4" /> Try Again
-            </Button>
-          </div>
+          <EmptyFeedState isLoading={true} />
+        ) : error && videos.length === 0 ? (
+          <EmptyFeedState error={error} onRetry={handleRefresh} />
         ) : videos.length > 0 ? (
           <VideoFeed 
             videos={videos} 

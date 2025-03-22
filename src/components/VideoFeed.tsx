@@ -32,9 +32,18 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   const [viewedVideos, setViewedVideos] = useState<Record<string, boolean>>({});
   const { user, isAuthenticated } = useAuth();
   const { handleLike, handleSave, handleFollow } = useVideoFeedInteractions();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("VideoFeed received videos:", videos?.length || 0);
+    
+    if (videos === undefined) {
+      setError("Could not load videos");
+    } else if (videos.length === 0) {
+      setError(null); // Use the EmptyFeedState without error
+    } else {
+      setError(null);
+    }
   }, [videos]);
 
   useEffect(() => {
@@ -119,6 +128,10 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
       }));
     }
   };
+
+  if (error) {
+    return <EmptyFeedState error={error} />;
+  }
 
   if (!videos || videos.length === 0) {
     return <EmptyFeedState isLoading={videos === undefined} />;
