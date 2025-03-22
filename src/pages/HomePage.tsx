@@ -14,7 +14,7 @@ const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('for-you');
+  const [activeTab, setActiveTab] = useState('trending'); // Default to trending as it's more reliable
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -32,6 +32,12 @@ const HomePage = () => {
       if (activeTab === 'for-you') {
         try {
           fetchedVideos = await VideoService.getForYouVideos();
+          if (fetchedVideos.length === 0) {
+            // If no videos returned in For You tab, switch to trending
+            console.log("No videos in For You tab, switching to trending");
+            setActiveTab('trending');
+            fetchedVideos = await VideoService.getTrendingVideos();
+          }
         } catch (err: any) {
           console.error("Error fetching For You videos:", err);
           // If ForYou fails, use trending instead
@@ -40,12 +46,21 @@ const HomePage = () => {
         }
       } else if (activeTab === 'trending') {
         fetchedVideos = await VideoService.getTrendingVideos();
+      } else if (activeTab === 'following') {
+        // For following tab, use regular videos as public users can't see followed content
+        fetchedVideos = await VideoService.getVideos(20);
       } else {
         // Default fallback - get regular videos
         fetchedVideos = await VideoService.getVideos(20);
       }
       
-      console.log("HomePage: Fetched videos:", fetchedVideos);
+      console.log("HomePage: Fetched videos:", fetchedVideos.length);
+      
+      if (fetchedVideos.length === 0) {
+        // If still no videos, try one more fallback to regular videos
+        fetchedVideos = await VideoService.getVideos(20);
+      }
+      
       setVideos(fetchedVideos);
     } catch (err: any) {
       console.error("HomePage: Error fetching videos:", err);
@@ -140,6 +155,7 @@ const HomePage = () => {
             activeIndex={activeIndex}
             onVideoChange={setActiveIndex}
             onVideoView={handleVideoView}
+            isActive={true} // Ensure videos always play
           />
         ) : (
           <div className="flex flex-col gap-6 p-4">

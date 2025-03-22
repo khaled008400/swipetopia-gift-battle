@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import VideoPlayer from "./VideoPlayer";
@@ -29,16 +30,25 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
   const [savedVideos, setSavedVideos] = useState<Record<string, boolean>>({});
   const [followedUsers, setFollowedUsers] = useState<Record<string, boolean>>({});
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [viewedVideos, setViewedVideos] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     console.log("VideoFeed received videos:", videos?.length || 0);
   }, [videos]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      // For non-logged in users, reset all interaction states
+      setLikedVideos({});
+      setSavedVideos({});
+      setFollowedUsers({});
+      return;
+    }
+    
     const initializeStates = () => {
       const newLikedVideos: Record<string, boolean> = {};
       const newSavedVideos: Record<string, boolean> = {};
@@ -57,21 +67,43 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
       setFollowedUsers(newFollowedUsers);
     };
 
-    initializeStates();
-  }, [videos, user]);
+    if (isAuthenticated) {
+      initializeStates();
+    }
+  }, [videos, user, isAuthenticated]);
 
   useEffect(() => {
     if (onVideoView && videos.length > 0 && activeIndex >= 0 && activeIndex < videos.length) {
-      onVideoView(videos[activeIndex].id);
+      const videoId = videos[activeIndex].id;
+      
+      // Only count the view once per session
+      if (!viewedVideos[videoId]) {
+        onVideoView(videoId);
+        setViewedVideos(prev => ({
+          ...prev,
+          [videoId]: true
+        }));
+      }
     }
-  }, [activeIndex, videos, onVideoView]);
+  }, [activeIndex, videos, onVideoView, viewedVideos]);
+
+  const handleAuthRequiredAction = (action: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: `Please sign in to ${action} this video`,
+        duration: 3000,
+      });
+      // Optional: Can navigate to login page after delay
+      // setTimeout(() => navigate("/login"), 1500);
+      return false;
+    }
+    return true;
+  };
 
   const handleLike = async (videoId: string) => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
+    if (!handleAuthRequiredAction("like")) return;
+    
     setIsLoading(true);
     try {
       const isLiked = likedVideos[videoId];
@@ -104,11 +136,8 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   };
 
   const handleSave = async (videoId: string) => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
+    if (!handleAuthRequiredAction("save")) return;
+    
     setIsLoading(true);
     try {
       const isSaved = savedVideos[videoId];
@@ -141,12 +170,9 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   };
 
   const handleFollow = async (userId: string) => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    if (userId === user.id) {
+    if (!handleAuthRequiredAction("follow")) return;
+    
+    if (user && userId === user.id) {
       toast({
         title: "Can't follow yourself",
         description: "You cannot follow your own account",

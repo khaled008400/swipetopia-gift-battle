@@ -1,3 +1,4 @@
+
 import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
 import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
@@ -5,9 +6,9 @@ import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
 export async function getForYouVideos(): Promise<Video[]> {
   console.log("Fetching For You videos...");
   try {
-    // Add a timeout to make sure the request doesn't hang
+    // Reduce timeout to 5 seconds to prevent long waits
     const timeoutPromise = new Promise<{ data: null, error: Error }>((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), 10000)
+      setTimeout(() => reject(new Error('Request timeout')), 5000)
     );
     
     const fetchPromise = supabase
@@ -25,7 +26,7 @@ export async function getForYouVideos(): Promise<Video[]> {
 
     if (error) {
       console.error("Error fetching videos:", error);
-      return [];
+      throw error;
     }
 
     console.log(`Successfully fetched ${data?.length || 0} videos for For You feed`);
@@ -36,7 +37,7 @@ export async function getForYouVideos(): Promise<Video[]> {
     return mappedVideos;
   } catch (error) {
     console.error("Critical error in getForYouVideos:", error);
-    return [];
+    throw error; // Throw to allow the calling function to handle fallback
   }
 }
 
@@ -52,7 +53,7 @@ export async function getTrendingVideos(): Promise<Video[]> {
 
     if (error) {
       console.error("Error fetching trending videos:", error);
-      return [];
+      throw error;
     }
     
     console.log(`Successfully fetched ${data?.length || 0} trending videos`);
@@ -61,7 +62,7 @@ export async function getTrendingVideos(): Promise<Video[]> {
     return (data || []).map(mapVideoData);
   } catch (error) {
     console.error("Critical error in getTrendingVideos:", error);
-    return [];
+    throw error; // Throw to allow the calling function to handle fallback
   }
 }
 
@@ -77,7 +78,7 @@ export async function getVideos(limit: number = 50): Promise<Video[]> {
 
     if (error) {
       console.error("Error fetching videos:", error);
-      return [];
+      throw error;
     }
     
     console.log(`Successfully fetched ${data?.length || 0} videos`);
@@ -86,6 +87,6 @@ export async function getVideos(limit: number = 50): Promise<Video[]> {
     return (data || []).map(mapVideoData);
   } catch (error) {
     console.error("Critical error in getVideos:", error);
-    return [];
+    throw error; // Throw to allow the calling function to handle fallback
   }
 }
