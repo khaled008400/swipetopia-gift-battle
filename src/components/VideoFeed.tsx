@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import VideoPlayer from "./VideoPlayer";
-import VideoOverlay from "./video/VideoOverlay";
 import { Video } from "@/types/video.types";
 import { useAuth } from "@/context/AuthContext";
 import VideoService from "@/services/video";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { useVideoFeedInteractions } from "@/hooks/useVideoFeedInteractions";
+import VideoItem from "./video/VideoItem";
+import EmptyFeedState from "./video/EmptyFeedState";
+import ProgressIndicators from "./video/ProgressIndicators";
 
 interface VideoFeedProps {
   videos: Video[];
@@ -30,11 +29,9 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
   const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
   const [savedVideos, setSavedVideos] = useState<Record<string, boolean>>({});
   const [followedUsers, setFollowedUsers] = useState<Record<string, boolean>>({});
-  const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [viewedVideos, setViewedVideos] = useState<Record<string, boolean>>({});
+  const { user, isAuthenticated } = useAuth();
+  const { handleLike, handleSave, handleFollow } = useVideoFeedInteractions();
 
   useEffect(() => {
     console.log("VideoFeed received videos:", videos?.length || 0);
@@ -87,136 +84,50 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
     }
   }, [activeIndex, videos, onVideoView, viewedVideos]);
 
-  const handleAuthRequiredAction = (action: string) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Sign in required",
-        description: `Please sign in to ${action} this video`,
-        duration: 3000,
-      });
-      // Optional: Can navigate to login page after delay
-      // setTimeout(() => navigate("/login"), 1500);
-      return false;
-    }
-    return true;
-  };
-
-  const handleLike = async (videoId: string) => {
-    if (!handleAuthRequiredAction("like")) return;
+  const onVideoLike = async (videoId: string) => {
+    const isLiked = likedVideos[videoId] || false;
+    const result = await handleLike(videoId, isLiked);
     
-    setIsLoading(true);
-    try {
-      const isLiked = likedVideos[videoId];
-      if (isLiked) {
-        await VideoService.unlikeVideo(videoId);
-      } else {
-        await VideoService.likeVideo(videoId);
-      }
-      
-      setLikedVideos((prev) => ({
+    if (result !== undefined) {
+      setLikedVideos(prev => ({
         ...prev,
-        [videoId]: !isLiked,
+        [videoId]: result
       }));
-      
-      toast({
-        title: isLiked ? "Removed like" : "Video liked",
-        description: isLiked ? "You've removed your like from this video" : "You've liked this video",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error toggling like:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem with your action",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleSave = async (videoId: string) => {
-    if (!handleAuthRequiredAction("save")) return;
+  const onVideoSave = async (videoId: string) => {
+    const isSaved = savedVideos[videoId] || false;
+    const result = await handleSave(videoId, isSaved);
     
-    setIsLoading(true);
-    try {
-      const isSaved = savedVideos[videoId];
-      if (isSaved) {
-        await VideoService.unsaveVideo(videoId);
-      } else {
-        await VideoService.saveVideo(videoId);
-      }
-      
-      setSavedVideos((prev) => ({
+    if (result !== undefined) {
+      setSavedVideos(prev => ({
         ...prev,
-        [videoId]: !isSaved,
+        [videoId]: result
       }));
-      
-      toast({
-        title: isSaved ? "Removed from saved" : "Video saved",
-        description: isSaved ? "Video removed from your saved collection" : "Video added to your saved collection",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error toggling save:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem with your action",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleFollow = async (userId: string) => {
-    if (!handleAuthRequiredAction("follow")) return;
+  const onUserFollow = async (userId: string) => {
+    const isFollowing = followedUsers[userId] || false;
+    const result = await handleFollow(userId, isFollowing);
     
-    if (user && userId === user.id) {
-      toast({
-        title: "Can't follow yourself",
-        description: "You cannot follow your own account",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const isFollowing = followedUsers[userId];
-      setFollowedUsers((prev) => ({
+    if (result !== undefined) {
+      setFollowedUsers(prev => ({
         ...prev,
-        [userId]: !isFollowing,
+        [userId]: result
       }));
-      
-      toast({
-        title: isFollowing ? "Unfollowed" : "Followed",
-        description: isFollowing ? "You've unfollowed this user" : "You're now following this user",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error("Error toggling follow:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem with your action",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   if (!videos || videos.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full">
-        <Loader2 className="w-8 h-8 animate-spin mb-4" />
-        <p className="text-center text-gray-500">Loading videos...</p>
-      </div>
-    );
+    return <EmptyFeedState isLoading={videos === undefined} />;
   }
 
   return (
     <div className="relative h-full w-full">
+      <ProgressIndicators totalVideos={videos.length} activeIndex={activeIndex} />
+      
       {videos.map((video, index) => (
         <div
           key={video.id}
@@ -224,34 +135,14 @@ const VideoFeed: React.FC<VideoFeedProps> = ({
             index === activeIndex ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
         >
-          <VideoPlayer
-            src={video.video_url}
-            poster={video.thumbnail_url}
+          <VideoItem
+            video={video}
             isActive={index === activeIndex && isActive}
-            videoId={video.id}
-          />
-          <VideoOverlay
-            video={{
-              id: video.id,
-              description: video.description || "",
-              likes: video.likes_count || 0,
-              comments: video.comments_count || 0,
-              shares: video.shares_count || 0,
-              isLive: video.is_live,
-              isLiked: likedVideos[video.id],
-              isSaved: savedVideos[video.id],
-              allowDownloads: true,
-              user: {
-                username: video.user?.username || "Unknown",
-                avatar: video.user?.avatar_url || video.user?.avatar || "",
-                isFollowing: followedUsers[video.user_id],
-              },
-            }}
             isLiked={likedVideos[video.id] || false}
             isSaved={savedVideos[video.id] || false}
-            onLike={() => handleLike(video.id)}
-            onSave={() => handleSave(video.id)}
-            onFollow={() => handleFollow(video.user_id)}
+            onLike={() => onVideoLike(video.id)}
+            onSave={() => onVideoSave(video.id)}
+            onFollow={() => onUserFollow(video.user_id)}
           />
         </div>
       ))}

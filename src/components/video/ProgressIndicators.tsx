@@ -1,10 +1,15 @@
 
+import React from "react";
+
 interface ProgressIndicatorsProps {
   totalVideos: number;
   activeIndex: number;
 }
 
-const ProgressIndicators = ({ totalVideos, activeIndex }: ProgressIndicatorsProps) => {
+const ProgressIndicators: React.FC<ProgressIndicatorsProps> = ({ 
+  totalVideos, 
+  activeIndex 
+}) => {
   return (
     <div className="absolute top-4 left-0 right-0 z-20 flex justify-center gap-1">
       {Array.from({ length: totalVideos }).map((_, index) => (
