@@ -41,7 +41,7 @@ const AuthCheck = ({
         // If not authenticated, redirect to login with a return path
         console.log("User is not authenticated, redirecting to login");
         const returnPath = encodeURIComponent(window.location.pathname);
-        navigate(`/login?from=${returnPath}`);
+        navigate(`/login?from=${returnPath}`, { replace: true });
         setIsAuthorized(false);
         return;
       } 
@@ -52,7 +52,7 @@ const AuthCheck = ({
         
         if (!userIsSeller) {
           console.log("User is not a seller, redirecting to home");
-          navigate('/');
+          navigate('/', { replace: true });
           setIsAuthorized(false);
           return;
         } else {

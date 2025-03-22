@@ -94,7 +94,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onLoginSuccess }) => {
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
-        navigate('/videos');
+        navigate('/videos', { replace: true });
       }
     } catch (err: any) {
       console.error("AdminLoginForm: Login submission error:", err);
