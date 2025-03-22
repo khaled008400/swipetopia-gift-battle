@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import VideoFeed from '@/components/VideoFeed';
-import VideoService from '@/services/video.service';
+import VideoService from '@/services/video';
 import { ChevronDown, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ const HomePage = () => {
     setError(null);
     
     try {
-      console.log("Fetching videos for tab:", activeTab);
+      console.log("HomePage: Fetching videos for tab:", activeTab);
       let fetchedVideos: Video[] = [];
       
       if (activeTab === 'for-you') {
@@ -40,28 +41,26 @@ const HomePage = () => {
       } else if (activeTab === 'trending') {
         fetchedVideos = await VideoService.getTrendingVideos();
       } else {
-        // Default fallback
-        fetchedVideos = [];
+        // Default fallback - get regular videos
+        fetchedVideos = await VideoService.getVideos(20);
       }
       
-      console.log("Fetched videos:", fetchedVideos);
+      console.log("HomePage: Fetched videos:", fetchedVideos);
       setVideos(fetchedVideos);
     } catch (err: any) {
-      console.error("Error fetching videos:", err);
+      console.error("HomePage: Error fetching videos:", err);
       setError(err.message || "Failed to load videos");
       
-      // Try to use mock data if available in development
-      if (import.meta.env.DEV) {
-        try {
-          // Try to import mock data
-          const { videosMock } = await import('@/data/videosMock');
-          if (videosMock) {
-            console.log("Using mock data as fallback");
-            setVideos(videosMock);
-          }
-        } catch (e) {
-          console.error("No mock data available");
+      // Try to fetch regular videos as fallback
+      try {
+        const regularVideos = await VideoService.getVideos(20);
+        if (regularVideos.length > 0) {
+          console.log("HomePage: Using regular videos as fallback");
+          setVideos(regularVideos);
+          setError(null);
         }
+      } catch (fallbackErr) {
+        console.error("HomePage: Even fallback video fetch failed:", fallbackErr);
       }
     } finally {
       setLoading(false);
@@ -71,6 +70,15 @@ const HomePage = () => {
   const handleRefresh = () => {
     toast("Refreshing feed...");
     fetchVideos();
+  };
+
+  const handleVideoView = async (videoId: string) => {
+    try {
+      await VideoService.incrementViewCount(videoId);
+      console.log("View count incremented for video:", videoId);
+    } catch (error) {
+      console.error("Error incrementing view count:", error);
+    }
   };
 
   return (
@@ -131,6 +139,7 @@ const HomePage = () => {
             videos={videos} 
             activeIndex={activeIndex}
             onVideoChange={setActiveIndex}
+            onVideoView={handleVideoView}
           />
         ) : (
           <div className="flex flex-col gap-6 p-4">

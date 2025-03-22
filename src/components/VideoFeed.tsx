@@ -4,7 +4,7 @@ import VideoPlayer from "./VideoPlayer";
 import VideoOverlay from "./video/VideoOverlay";
 import { Video } from "@/types/video.types";
 import { useAuth } from "@/context/AuthContext";
-import VideoService from "@/services/video.service";
+import VideoService from "@/services/video";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 

@@ -1,4 +1,3 @@
-
 import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
 import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
@@ -30,7 +29,6 @@ export async function getForYouVideos(): Promise<Video[]> {
     }
 
     console.log(`Successfully fetched ${data?.length || 0} videos for For You feed`);
-    console.log("First video data:", data && data.length > 0 ? data[0] : "No videos found");
     
     // Transform data to match Video type expected by frontend using the common mapper
     const mappedVideos = (data || []).map(mapVideoData);
