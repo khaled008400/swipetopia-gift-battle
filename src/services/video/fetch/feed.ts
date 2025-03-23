@@ -3,7 +3,10 @@ import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
 import { videoWithUserSelect, mapVideoData } from './base';
 import { toast } from 'sonner';
-import { data as fallbackVideos } from '@/data/videosMock';
+import videosMock from '@/data/videosMock';
+
+// Correctly import the mock data
+const fallbackVideos = videosMock.videosMock || videosMock.default || videosMock;
 
 // Increase timeout values to prevent frequent timeouts
 const DEFAULT_LIMIT = 20;

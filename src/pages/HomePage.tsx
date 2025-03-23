@@ -9,7 +9,10 @@ import { Video } from '@/types/video.types';
 import ActiveStreamers from '@/components/live/ActiveStreamers';
 import { Helmet } from 'react-helmet-async';
 import EmptyFeedState from '@/components/video/EmptyFeedState';
-import { data as fallbackVideos } from '@/data/videosMock';
+import videosMock from '@/data/videosMock';
+
+// Correctly import the mock data
+const fallbackVideos = videosMock.videosMock || videosMock.default || videosMock;
 
 const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
