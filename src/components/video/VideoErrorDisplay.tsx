@@ -1,5 +1,6 @@
 
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface VideoErrorDisplayProps {
   isLive?: boolean;
@@ -46,13 +47,14 @@ const VideoErrorDisplay = ({
               : `${isLive ? "Live stream" : "Video"} could not be loaded. It may be unavailable or in an unsupported format.`)}
         </p>
         {onRetry && !isFormatError && (
-          <button 
+          <Button 
             onClick={onRetry}
-            className="bg-app-yellow text-app-black px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-90 transition-all flex items-center mx-auto"
+            variant="outline"
+            className="bg-app-yellow text-app-black hover:bg-app-yellow/90"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
-          </button>
+          </Button>
         )}
       </div>
     </div>

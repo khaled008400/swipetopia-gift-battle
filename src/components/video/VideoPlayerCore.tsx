@@ -1,6 +1,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import VideoErrorDisplay from "./VideoErrorDisplay";
+import { toast } from "sonner";
 
 interface VideoPlayerCoreProps {
   videoUrl: string;
@@ -50,20 +51,27 @@ const VideoPlayerCore = ({
       // Check specific error types
       if (videoRef.current?.error) {
         const errorCode = videoRef.current.error.code;
-        const errorMessage = videoRef.current.error.message;
+        const errorMessage = videoRef.current.error.message || '';
         console.error(`Video error code: ${errorCode}, message: ${errorMessage}`);
         
         // MEDIA_ERR_SRC_NOT_SUPPORTED = 4
         if (errorCode === 4) {
-          if (errorMessage?.includes("Failed to init decoder")) {
+          if (errorMessage.includes("Failed to init decoder")) {
             setIsFormatError(true);
+            toast("This video format is not supported by your browser", {
+              description: "Try a different video",
+              duration: 3000
+            });
           } else {
             setIsNotFound(true);
           }
+          setLoadError(true);
+          onVideoError();
+          return;
         }
         
         setLoadAttempts(prev => prev + 1);
-        if (loadAttempts >= 2 || errorCode === 4) {
+        if (loadAttempts >= 2) {
           setLoadError(true);
           onVideoError();
         }
@@ -99,6 +107,9 @@ const VideoPlayerCore = ({
       if (errorCode === 4) {
         if (errorMessage.includes("Failed to init decoder")) {
           setIsFormatError(true);
+          setLoadError(true);
+          onVideoError();
+          return;
         } else {
           setIsNotFound(true);
         }

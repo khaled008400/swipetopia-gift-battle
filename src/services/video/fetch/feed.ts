@@ -5,7 +5,7 @@ import { videoWithUserSelect, mapVideoData } from './base';
 import { toast } from 'sonner';
 import videosMock from '@/data/videosMock';
 
-// The mock videos are directly exported as an array
+// The mock videos are directly imported
 const fallbackVideos = videosMock;
 
 // Increase timeout values to prevent frequent timeouts
