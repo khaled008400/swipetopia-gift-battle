@@ -7,6 +7,7 @@ interface VideoErrorDisplayProps {
   onRetry?: () => void;
   notFound?: boolean;
   isLoading?: boolean;
+  isFormatError?: boolean;
 }
 
 const VideoErrorDisplay = ({ 
@@ -14,7 +15,8 @@ const VideoErrorDisplay = ({
   message, 
   onRetry, 
   notFound,
-  isLoading
+  isLoading,
+  isFormatError
 }: VideoErrorDisplayProps) => {
   if (isLoading) {
     return (
@@ -31,12 +33,19 @@ const VideoErrorDisplay = ({
           <AlertTriangle className="h-12 w-12 text-yellow-500" />
         </div>
         <p className="text-xl mb-2">
-          {notFound ? "Video not found" : "Video unavailable"}
+          {isFormatError 
+            ? "Unsupported video format" 
+            : notFound 
+              ? "Video not found" 
+              : "Video unavailable"}
         </p>
         <p className="text-sm text-gray-400 mb-4">
-          {message || `${isLive ? "Live stream" : "Video"} could not be loaded. It may be unavailable or in an unsupported format.`}
+          {message || 
+            (isFormatError 
+              ? "This video format cannot be played in your browser."
+              : `${isLive ? "Live stream" : "Video"} could not be loaded. It may be unavailable or in an unsupported format.`)}
         </p>
-        {onRetry && (
+        {onRetry && !isFormatError && (
           <button 
             onClick={onRetry}
             className="bg-app-yellow text-app-black px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-90 transition-all flex items-center mx-auto"

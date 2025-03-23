@@ -23,6 +23,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [hasAttemptedPlay, setHasAttemptedPlay] = useState(false);
   const [playbackError, setPlaybackError] = useState<Error | null>(null);
+  const [decoderError, setDecoderError] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
   const [isMuted, setIsMuted] = useState(true); // Start muted to help with autoplay
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +35,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useEffect(() => {
     setHasAttemptedPlay(false);
     setPlaybackError(null);
+    setDecoderError(false);
     setAttemptCount(0);
     setIsLoading(true);
     
@@ -48,7 +50,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!videoRef.current || !isActive || !videoSource) return;
     
     const playVideo = async () => {
-      if (attemptCount > 3) return; // Don't keep trying indefinitely
+      if (attemptCount > 3 || decoderError) return; // Don't keep trying if we have a decoder error
       
       try {
         console.log(`Attempting to play video ${videoId || 'unknown'}, attempt ${attemptCount + 1}`);
@@ -71,6 +73,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         console.error("Error playing video:", error);
         setPlaybackError(error instanceof Error ? error : new Error('Unknown playback error'));
         setAttemptCount(count => count + 1);
+        
+        // Check if we have a decoder error specifically
+        if (videoRef.current?.error?.code === 4) {
+          console.log("Decoder initialization failed, can't play this video format");
+          setDecoderError(true);
+          setIsLoading(false);
+          toast.error("This video format can't be played in your browser");
+          return;
+        }
         
         // If attempt failed and we haven't tried too many times
         if (attemptCount < 2) {
@@ -97,7 +108,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const timer = setTimeout(playVideo, 100);
       return () => clearTimeout(timer);
     }
-  }, [isActive, videoSource, videoId, hasAttemptedPlay, attemptCount]);
+  }, [isActive, videoSource, videoId, hasAttemptedPlay, attemptCount, decoderError]);
 
   // Pause when not active
   useEffect(() => {
@@ -132,12 +143,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const errorMessage = videoRef.current?.error?.message;
     console.error(`Video error code: ${errorCode}, message: ${errorMessage}`);
     
-    setPlaybackError(new Error(`Video could not be loaded (${errorCode})`));
+    // Special handling for decoder error (code 4)
+    if (errorCode === 4) {
+      setDecoderError(true);
+      setPlaybackError(new Error(`This video format cannot be played in your browser`));
+      toast.error("This video format is not supported");
+    } else {
+      setPlaybackError(new Error(`Video could not be loaded (${errorCode})`));
+    }
+    
     setAttemptCount(prev => prev + 1);
     setIsLoading(false);
     
-    // Try to reload if we haven't tried too many times
-    if (attemptCount < 2 && videoRef.current) {
+    // Only try to reload if it's not a decoder error
+    if (attemptCount < 2 && videoRef.current && errorCode !== 4) {
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.load();
@@ -163,28 +182,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       )}
       
       {/* Show error UI when there's a playback error and we've tried multiple times */}
-      {playbackError && attemptCount > 2 && (
+      {(playbackError && attemptCount > 2) || decoderError ? (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
           <div className="text-center p-4">
-            <p className="text-red-400 mb-2">Unable to play video</p>
-            <button 
-              className="bg-app-yellow text-black px-4 py-2 rounded-full text-sm"
-              onClick={() => {
-                setHasAttemptedPlay(false);
-                setPlaybackError(null);
-                setAttemptCount(0);
-                setIsLoading(true);
-                // Try again
-                if (videoRef.current) {
-                  videoRef.current.load();
-                }
-              }}
-            >
-              Try Again
-            </button>
+            <p className="text-red-400 mb-2">{decoderError ? "This video format is not supported" : "Unable to play video"}</p>
+            {!decoderError && (
+              <button 
+                className="bg-app-yellow text-black px-4 py-2 rounded-full text-sm"
+                onClick={() => {
+                  setHasAttemptedPlay(false);
+                  setPlaybackError(null);
+                  setAttemptCount(0);
+                  setIsLoading(true);
+                  // Try again
+                  if (videoRef.current) {
+                    videoRef.current.load();
+                  }
+                }}
+              >
+                Try Again
+              </button>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
       
       <video
         ref={videoRef}
