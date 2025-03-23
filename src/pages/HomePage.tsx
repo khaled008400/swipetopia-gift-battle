@@ -1,17 +1,14 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video';
-import { RefreshCcw, Upload, Plus } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Video } from '@/types/video.types';
 import ActiveStreamers from '@/components/live/ActiveStreamers';
 import { Helmet } from 'react-helmet-async';
 import EmptyFeedState from '@/components/video/EmptyFeedState';
-import VideoUploadModal from '@/components/upload/VideoUploadModal';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -22,18 +19,6 @@ const HomePage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
   const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-  const { requiresAuth, AuthDialog } = useAuthCheck();
-
-  // Check for upload param in URL
-  useEffect(() => {
-    const shouldOpenUpload = searchParams.get('upload') === 'true';
-    if (shouldOpenUpload) {
-      handleOpenUploadModal();
-    }
-  }, [searchParams]);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -132,23 +117,6 @@ const HomePage = () => {
     toast.info(`Viewing streamer's content`);
   };
 
-  const handleOpenUploadModal = () => {
-    requiresAuth(() => {
-      setIsUploadModalOpen(true);
-    });
-  };
-
-  const handleCloseUploadModal = () => {
-    setIsUploadModalOpen(false);
-  };
-
-  const handleVideoUploadSuccess = (videoId: string) => {
-    console.log('Video uploaded successfully, ID:', videoId);
-    fetchVideos();
-    
-    toast.success('Your video has been uploaded and will appear shortly');
-  };
-
   return (
     <div className="flex-1 relative">
       <Helmet>
@@ -190,7 +158,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      <div className="pt-2 pb-16 h-[calc(100vh-150px)] relative">
+      <div className="pt-2 pb-16 h-[calc(100vh-150px)]">
         {/* Add ActiveStreamers component at the top */}
         {activeTab === 'live' && (
           <ActiveStreamers 
@@ -222,25 +190,7 @@ const HomePage = () => {
             </div>
           </div>
         )}
-        
-        {/* Floating upload button (TikTok style) */}
-        <Button
-          onClick={handleOpenUploadModal}
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-app-yellow text-black shadow-lg flex items-center justify-center"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
       </div>
-
-      {/* Video upload modal */}
-      <VideoUploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={handleCloseUploadModal} 
-        onSuccess={handleVideoUploadSuccess}
-      />
-      
-      <AuthDialog />
     </div>
   );
 };

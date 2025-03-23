@@ -26,6 +26,7 @@ import SellerDashboardPage from '@/pages/SellerDashboardPage';
 import AdminPage from '@/pages/AdminPage';
 import AdminDashboardPage from '@/pages/AdminDashboardPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import VideosPage from '@/pages/VideosPage';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
             <Route path="streamer/:id" element={<StreamerProfilePage />} />
             <Route path="seller/:id" element={<SellerProfilePage />} />
             <Route path="seller/dashboard" element={<SellerDashboardPage />} />
+            <Route path="videos" element={<VideosPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route path="/admin" element={<AdminPage />} />

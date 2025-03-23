@@ -1,58 +1,58 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Video, Heart, User, Plus } from 'lucide-react';
+import { Link, useLocation } from "react-router-dom";
+import { Home, Plus, ShoppingBag, User, Settings, Search, ShoppingCart } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { Badge } from "@/components/ui/badge";
 
 const BottomNavigation = () => {
   const location = useLocation();
-  const path = location.pathname;
+  
+  // Get cart context and handle case where it might not be available
+  const cartContext = useCart();
+  // Use a default value if cart context is not available
+  const itemCount = cartContext?.itemCount || 0;
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
-  const handleCreateClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    // Dispatch custom event for Layout to listen to
-    window.dispatchEvent(new Event('toggle-create-menu'));
+  const handleCreateMenuClick = () => {
+    // Use a more direct approach to communicate with the Layout component
+    const event = new CustomEvent('toggle-create-menu');
+    window.dispatchEvent(event);
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-app-black border-t border-app-gray-dark p-2 flex justify-around items-center z-50">
-      <Link 
-        to="/" 
-        className={`flex flex-col items-center p-2 ${path === '/' ? 'text-app-yellow' : 'text-gray-400'}`}
-      >
-        <Home className="h-6 w-6" />
-        <span className="text-xs mt-1">Home</span>
+    <div className="fixed bottom-0 left-0 right-0 bg-app-black border-t border-app-gray-dark rounded-t-xl mx-0 h-16 flex items-center justify-between px-6 z-40 shadow-lg">
+      <Link to="/" className={`group nav-item ${isActive('/') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <Home className={`nav-icon h-5 w-5 ${isActive('/') ? 'text-app-yellow' : ''}`} />
       </Link>
-      
-      <Link 
-        to="/explore" 
-        className={`flex flex-col items-center p-2 ${path.includes('/explore') ? 'text-app-yellow' : 'text-gray-400'}`}
-      >
-        <Search className="h-6 w-6" />
-        <span className="text-xs mt-1">Discover</span>
+      <Link to="/explore" className={`group nav-item ${isActive('/explore') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <Search className={`nav-icon h-5 w-5 ${isActive('/explore') ? 'text-app-yellow' : ''}`} />
       </Link>
-      
-      <button
-        onClick={handleCreateClick}
-        className="rounded-full bg-app-yellow text-black w-12 h-12 flex items-center justify-center -mt-5 border-4 border-app-black"
+      <Link to="/shop" className={`group nav-item ${isActive('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <ShoppingCart className={`nav-icon h-5 w-5 ${isActive('/shop') ? 'text-app-yellow' : ''}`} />
+      </Link>
+      <button 
+        className="bg-app-yellow text-app-black rounded-full p-3 -mt-5 shadow-lg"
+        onClick={handleCreateMenuClick}
+        aria-label="Create content"
       >
         <Plus className="h-6 w-6" />
       </button>
-      
-      <Link 
-        to="/activity" 
-        className={`flex flex-col items-center p-2 ${path.includes('/activity') ? 'text-app-yellow' : 'text-gray-400'}`}
-      >
-        <Heart className="h-6 w-6" />
-        <span className="text-xs mt-1">Activity</span>
+      <Link to="/wallet" className={`group nav-item ${isActive('/wallet') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <ShoppingBag className={`nav-icon h-5 w-5 ${isActive('/wallet') ? 'text-app-yellow' : ''}`} />
+        {itemCount > 0 && !isActive('/wallet') && (
+          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-app-yellow text-app-black text-[10px]">
+            {itemCount > 9 ? '9+' : itemCount}
+          </Badge>
+        )}
       </Link>
-      
-      <Link 
-        to="/profile" 
-        className={`flex flex-col items-center p-2 ${path.includes('/profile') ? 'text-app-yellow' : 'text-gray-400'}`}
-      >
-        <User className="h-6 w-6" />
-        <span className="text-xs mt-1">Profile</span>
+      <Link to="/profile" className={`group nav-item ${isActive('/profile') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <User className={`nav-icon h-5 w-5 ${isActive('/profile') ? 'text-app-yellow' : ''}`} />
+      </Link>
+      <Link to="/settings" className={`group nav-item ${isActive('/settings') ? 'text-app-yellow' : 'text-gray-400'}`}>
+        <Settings className={`nav-icon h-5 w-5 ${isActive('/settings') ? 'text-app-yellow' : ''}`} />
       </Link>
     </div>
   );
