@@ -2,12 +2,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video';
-import { ChevronDown, RefreshCcw } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Video } from '@/types/video.types';
-import TrendingVideosSection from '@/components/TrendingVideosSection';
-import PopularLiveSection from '@/components/PopularLiveSection';
+import ActiveStreamers from '@/components/live/ActiveStreamers';
 import { Helmet } from 'react-helmet-async';
 import EmptyFeedState from '@/components/video/EmptyFeedState';
 
@@ -15,10 +14,11 @@ const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('trending'); // Default to trending as it's more reliable
+  const [activeTab, setActiveTab] = useState('for-you'); // Default to for-you
   const [activeIndex, setActiveIndex] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
+  const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -34,13 +34,14 @@ const HomePage = () => {
         } catch (err: any) {
           console.error("Error fetching For You videos:", err);
           setError("Could not load For You videos. Trying another feed...");
-          // Automatically switch to trending if For You fails
-          setActiveTab('trending');
-          toast.error("For You feed unavailable. Showing trending instead.");
-          return; // Return to trigger useEffect to fetch trending instead
+          // If For You fails, try regular videos
+          fetchedVideos = await VideoService.getVideos(20);
+          toast.info("Showing you regular videos instead");
         }
-      } else if (activeTab === 'trending') {
-        fetchedVideos = await VideoService.getTrendingVideos();
+      } else if (activeTab === 'live') {
+        // For the live tab, just show regular videos for now
+        // In a real app, this would filter for live videos
+        fetchedVideos = await VideoService.getVideos(20);
       } else {
         // For following tab or fallback, use regular videos
         fetchedVideos = await VideoService.getVideos(20);
@@ -53,12 +54,8 @@ const HomePage = () => {
         setRetryCount(prev => prev + 1);
         
         if (activeTab === 'for-you') {
-          console.log("No videos in For You tab, trying trending");
-          toast.info("Showing you trending videos instead");
-          setActiveTab('trending');
-          return; // Let the useEffect handle the new tab
-        } else if (activeTab === 'trending') {
-          console.log("No videos in Trending tab, trying regular videos");
+          console.log("No videos in For You tab, trying regular videos");
+          toast.info("Showing you regular videos instead");
           const regularVideos = await VideoService.getVideos(10);
           fetchedVideos = regularVideos;
         }
@@ -115,6 +112,11 @@ const HomePage = () => {
     }
   };
 
+  const handleStreamerSelect = (streamerId: string) => {
+    setSelectedStreamerId(streamerId);
+    toast.info(`Viewing streamer's content`);
+  };
+
   return (
     <div className="flex-1 relative">
       <Helmet>
@@ -135,13 +137,13 @@ const HomePage = () => {
           </button>
           <button
             className={`px-4 py-1 text-sm font-medium rounded-full ${
-              activeTab === 'trending'
+              activeTab === 'live'
                 ? 'bg-app-yellow text-app-black'
                 : 'text-gray-300 hover:bg-gray-800'
             }`}
-            onClick={() => setActiveTab('trending')}
+            onClick={() => setActiveTab('live')}
           >
-            Trending
+            Live
           </button>
           <button
             className={`px-4 py-1 text-sm font-medium rounded-full ${
@@ -157,6 +159,14 @@ const HomePage = () => {
       </div>
 
       <div className="pt-2 pb-16 h-[calc(100vh-150px)]">
+        {/* Add ActiveStreamers component at the top */}
+        {activeTab === 'live' && (
+          <ActiveStreamers 
+            onStreamerSelect={handleStreamerSelect}
+            selectedStreamerId={selectedStreamerId}
+          />
+        )}
+        
         {loading && !hasFetchedOnce ? (
           <EmptyFeedState isLoading={true} />
         ) : error && videos.length === 0 ? (
@@ -173,18 +183,10 @@ const HomePage = () => {
           <div className="flex flex-col gap-6 p-4">
             <div className="text-center py-8">
               <h3 className="text-xl font-semibold mb-2">No videos in this feed yet</h3>
-              <p className="text-gray-400 mb-4">Check out trending videos or popular live streams</p>
+              <p className="text-gray-400 mb-4">Try refreshing or check back later</p>
               <Button onClick={handleRefresh} variant="outline" className="flex items-center mx-auto">
                 <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
               </Button>
-            </div>
-            
-            <TrendingVideosSection videos={[]} />
-            <PopularLiveSection creators={[]} />
-            
-            <div className="text-center mt-4">
-              <ChevronDown className="h-6 w-6 mx-auto text-gray-400 animate-bounce" />
-              <p className="text-gray-400 text-sm">Try a different tab or check back later</p>
             </div>
           </div>
         )}

@@ -1,12 +1,12 @@
 
 import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
-import { videoWithUserSelect, handleFetchError, mapVideoData } from './base';
+import { videoWithUserSelect, mapVideoData } from './base';
 import { toast } from 'sonner';
 
 // Reduce timeout values to prevent long waiting periods
 const DEFAULT_LIMIT = 20;
-const DEFAULT_TIMEOUT_MS = 8000; // Reduced from 15s to 8s
+const DEFAULT_TIMEOUT_MS = 5000; // Reduced to 5s to fail faster
 const MAX_RETRY_ATTEMPTS = 2;
 
 // Flag to help detect offline/network issues
@@ -21,7 +21,7 @@ export async function getForYouVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
       setTimeout(() => reject(new Error('Request timeout')), DEFAULT_TIMEOUT_MS)
     );
     
-    // Main fetch promise with simpler query
+    // Simpler query to ensure it completes - only select necessary fields
     const fetchPromise = supabase
       .from('videos')
       .select(videoWithUserSelect)
@@ -71,68 +71,16 @@ export async function getForYouVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
   }
 }
 
-export async function getTrendingVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
-  if (consecutiveTimeouts >= MAX_RETRY_ATTEMPTS) {
-    console.log("Too many timeouts, skipping trending videos request");
-    return getVideos(limit);
-  }
-  
-  try {
-    console.log("Fetching Trending videos...");
-    
-    // Set a shorter timeout for this request
-    const timeoutPromise = new Promise<{ data: null, error: Error }>((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), DEFAULT_TIMEOUT_MS)
-    );
-    
-    // Simpler query to reduce likelihood of timeout
-    const fetchPromise = supabase
-      .from('videos')
-      .select(videoWithUserSelect)
-      .eq('is_private', false)
-      .order('view_count', { ascending: false })
-      .limit(limit);
-    
-    // Use Promise.race to implement timeout here too
-    const result = await Promise.race([
-      fetchPromise,
-      timeoutPromise
-    ]) as any;
-    
-    const { data, error } = result || {};
-
-    if (error) {
-      console.error("Error fetching trending videos:", error);
-      return await getVideos(limit);
-    }
-    
-    console.log(`Successfully fetched ${data?.length || 0} trending videos`);
-    consecutiveTimeouts = 0; // Reset on success
-    
-    return (data || []).map(mapVideoData);
-  } catch (error) {
-    console.error("Critical error in getTrendingVideos:", error);
-    
-    if (error instanceof Error && error.message === 'Request timeout') {
-      consecutiveTimeouts++;
-    }
-    
-    // Fall back to regular videos directly
-    console.log("Error in trending, trying regular videos");
-    return await getVideos(limit);
-  }
-}
-
 export async function getVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
   try {
     console.log(`Fetching videos with limit: ${limit}`);
     
-    // Set a timeout for this request too
+    // Set a timeout for this request too but shorter
     const timeoutPromise = new Promise<{ data: null, error: Error }>((_, reject) => 
       setTimeout(() => reject(new Error('Request timeout')), DEFAULT_TIMEOUT_MS)
     );
     
-    // Simpler query to ensure it completes
+    // Simpler query with fewer fields to ensure it completes
     const fetchPromise = supabase
       .from('videos')
       .select(videoWithUserSelect)
