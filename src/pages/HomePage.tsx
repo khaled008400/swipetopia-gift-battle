@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video';
@@ -147,10 +146,7 @@ const HomePage = () => {
     console.log('Video uploaded successfully, ID:', videoId);
     fetchVideos();
     
-    toast({
-      title: 'Success!',
-      description: 'Your video has been uploaded and will appear shortly',
-    });
+    toast.success('Your video has been uploaded and will appear shortly');
   };
 
   return (
