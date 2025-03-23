@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import VideoFeed from '@/components/VideoFeed';
 import VideoService from '@/services/video';
@@ -11,8 +10,8 @@ import { Helmet } from 'react-helmet-async';
 import EmptyFeedState from '@/components/video/EmptyFeedState';
 import videosMock from '@/data/videosMock';
 
-// Correctly import the mock data
-const fallbackVideos = videosMock.videosMock || videosMock.default || videosMock;
+// The mock videos are directly exported as an array
+const fallbackVideos = videosMock;
 
 const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
