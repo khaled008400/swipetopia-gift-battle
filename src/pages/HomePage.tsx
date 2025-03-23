@@ -18,6 +18,7 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState('trending'); // Default to trending as it's more reliable
   const [activeIndex, setActiveIndex] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
+  const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -35,6 +36,8 @@ const HomePage = () => {
           setError("Could not load For You videos. Trying another feed...");
           // Automatically switch to trending if For You fails
           setActiveTab('trending');
+          toast.error("For You feed unavailable. Showing trending instead.");
+          return; // Return to trigger useEffect to fetch trending instead
         }
       } else if (activeTab === 'trending') {
         fetchedVideos = await VideoService.getTrendingVideos();
@@ -51,22 +54,18 @@ const HomePage = () => {
         
         if (activeTab === 'for-you') {
           console.log("No videos in For You tab, trying trending");
-          const trendingVideos = await VideoService.getTrendingVideos();
-          if (trendingVideos.length > 0) {
-            fetchedVideos = trendingVideos;
-            // Show toast to inform user
-            toast("Showing you trending videos instead");
-          } else {
-            const regularVideos = await VideoService.getVideos(10);
-            fetchedVideos = regularVideos;
-          }
+          toast.info("Showing you trending videos instead");
+          setActiveTab('trending');
+          return; // Let the useEffect handle the new tab
         } else if (activeTab === 'trending') {
           console.log("No videos in Trending tab, trying regular videos");
-          fetchedVideos = await VideoService.getVideos(10);
+          const regularVideos = await VideoService.getVideos(10);
+          fetchedVideos = regularVideos;
         }
       }
       
       setVideos(fetchedVideos);
+      setHasFetchedOnce(true);
       
       // If we still have no videos after all attempts, show error
       if (fetchedVideos.length === 0) {
@@ -102,7 +101,7 @@ const HomePage = () => {
   }, [activeTab]);
 
   const handleRefresh = () => {
-    toast("Refreshing feed...");
+    toast.info("Refreshing feed...");
     setRetryCount(0);
     fetchVideos();
   };
@@ -158,7 +157,7 @@ const HomePage = () => {
       </div>
 
       <div className="pt-2 pb-16 h-[calc(100vh-150px)]">
-        {loading ? (
+        {loading && !hasFetchedOnce ? (
           <EmptyFeedState isLoading={true} />
         ) : error && videos.length === 0 ? (
           <EmptyFeedState error={error} onRetry={handleRefresh} />
@@ -185,7 +184,7 @@ const HomePage = () => {
             
             <div className="text-center mt-4">
               <ChevronDown className="h-6 w-6 mx-auto text-gray-400 animate-bounce" />
-              <p className="text-gray-400 text-sm">Scroll for more content</p>
+              <p className="text-gray-400 text-sm">Try a different tab or check back later</p>
             </div>
           </div>
         )}
