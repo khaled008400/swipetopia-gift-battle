@@ -3,17 +3,25 @@ import { Video } from '@/types/video.types';
 import { supabase } from '../base.service';
 import { videoWithUserSelect, mapVideoData } from './base';
 import { toast } from 'sonner';
+import { data as fallbackVideos } from '@/data/videosMock';
 
-// Reduce timeout values to prevent long waiting periods
+// Increase timeout values to prevent frequent timeouts
 const DEFAULT_LIMIT = 20;
-const DEFAULT_TIMEOUT_MS = 5000; // Reduced to 5s to fail faster
+const DEFAULT_TIMEOUT_MS = 15000; // Increased to 15s from 5s
 const MAX_RETRY_ATTEMPTS = 2;
 
 // Flag to help detect offline/network issues
 let consecutiveTimeouts = 0;
+let shouldUseMockData = false;
 
 export async function getForYouVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
   console.log("Fetching For You videos...");
+  
+  // If we've already determined we should use mock data, do it immediately
+  if (shouldUseMockData) {
+    console.log("Using mock data for For You videos due to previous timeouts");
+    return fallbackVideos;
+  }
   
   try {
     // Create a timeout promise that rejects after the specified time
@@ -59,11 +67,19 @@ export async function getForYouVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
       
       // After multiple timeouts, show toast notification about connection issues
       if (consecutiveTimeouts >= 2) {
-        toast.error("Network connection seems slow. Try again later.");
+        toast.error("Network connection seems slow. Using demo content instead.");
+        shouldUseMockData = true; // Use mock data for subsequent requests
+        return fallbackVideos;
       }
       
       // Try a simpler query
       return await getVideos(limit);
+    }
+    
+    // For persistent errors, use mock data
+    if (consecutiveTimeouts >= 2) {
+      shouldUseMockData = true;
+      return fallbackVideos;
     }
     
     // Return empty array to prevent UI crashes
@@ -75,7 +91,13 @@ export async function getVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
   try {
     console.log(`Fetching videos with limit: ${limit}`);
     
-    // Set a timeout for this request too but shorter
+    // If we've already determined we should use mock data, do it immediately
+    if (shouldUseMockData) {
+      console.log("Using mock data for videos due to previous timeouts");
+      return fallbackVideos;
+    }
+    
+    // Set a timeout for this request too
     const timeoutPromise = new Promise<{ data: null, error: Error }>((_, reject) => 
       setTimeout(() => reject(new Error('Request timeout')), DEFAULT_TIMEOUT_MS)
     );
@@ -96,7 +118,7 @@ export async function getVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
 
     if (error) {
       console.error("Error fetching videos:", error);
-      return []; // Return empty array instead of throwing
+      return fallbackVideos; // Return mock data instead of throwing
     }
     
     console.log(`Successfully fetched ${data?.length || 0} videos`);
@@ -110,10 +132,13 @@ export async function getVideos(limit = DEFAULT_LIMIT): Promise<Video[]> {
     if (error instanceof Error && error.message === 'Request timeout') {
       consecutiveTimeouts++;
       if (consecutiveTimeouts >= MAX_RETRY_ATTEMPTS) {
-        toast.error("Network issues detected. Check your connection.");
+        toast.error("Network issues detected. Using demo content instead.");
+        shouldUseMockData = true;
+        return fallbackVideos;
       }
     }
     
-    return []; // Return empty array instead of throwing
+    // Return mock data for better user experience
+    return fallbackVideos;
   }
 }

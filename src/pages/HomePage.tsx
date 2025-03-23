@@ -9,6 +9,7 @@ import { Video } from '@/types/video.types';
 import ActiveStreamers from '@/components/live/ActiveStreamers';
 import { Helmet } from 'react-helmet-async';
 import EmptyFeedState from '@/components/video/EmptyFeedState';
+import { data as fallbackVideos } from '@/data/videosMock';
 
 const HomePage = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -19,6 +20,7 @@ const HomePage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
   const [selectedStreamerId, setSelectedStreamerId] = useState<string | null>(null);
+  const [usedFallbackData, setUsedFallbackData] = useState(false);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
@@ -31,6 +33,9 @@ const HomePage = () => {
       if (activeTab === 'for-you') {
         try {
           fetchedVideos = await VideoService.getForYouVideos();
+          if (fetchedVideos.length > 0 && JSON.stringify(fetchedVideos) === JSON.stringify(fallbackVideos)) {
+            setUsedFallbackData(true);
+          }
         } catch (err: any) {
           console.error("Error fetching For You videos:", err);
           setError("Could not load For You videos. Trying another feed...");
@@ -49,15 +54,11 @@ const HomePage = () => {
       
       console.log("HomePage: Fetched videos:", fetchedVideos?.length || 0);
       
-      // If current feed is empty, try another one
-      if (fetchedVideos.length === 0 && retryCount < 2) {
-        setRetryCount(prev => prev + 1);
-        
-        if (activeTab === 'for-you') {
-          console.log("No videos in For You tab, trying regular videos");
-          toast.info("Showing you regular videos instead");
-          const regularVideos = await VideoService.getVideos(10);
-          fetchedVideos = regularVideos;
+      // If we got fallback data, show a toast to inform the user
+      if (fetchedVideos.length > 0 && JSON.stringify(fetchedVideos) === JSON.stringify(fallbackVideos)) {
+        if (!usedFallbackData) {
+          toast.info("Using demo content due to connection issues");
+          setUsedFallbackData(true);
         }
       }
       
@@ -72,21 +73,17 @@ const HomePage = () => {
       console.error("HomePage: Error fetching videos:", err);
       setError("Failed to load videos. Please check your connection and try again.");
       
-      // Try to fetch regular videos as fallback
-      try {
-        const regularVideos = await VideoService.getVideos(10);
-        if (regularVideos.length > 0) {
-          console.log("HomePage: Using regular videos as fallback");
-          setVideos(regularVideos);
-          setError(null);
-        }
-      } catch (fallbackErr) {
-        console.error("HomePage: Even fallback video fetch failed:", fallbackErr);
+      // Use fallback videos to ensure users always see content
+      if (!usedFallbackData) {
+        toast.info("Using demo content due to connection issues");
+        setVideos(fallbackVideos);
+        setUsedFallbackData(true);
+        setError(null);
       }
     } finally {
       setLoading(false);
     }
-  }, [activeTab, retryCount]);
+  }, [activeTab, retryCount, usedFallbackData]);
 
   useEffect(() => {
     fetchVideos();
@@ -100,6 +97,7 @@ const HomePage = () => {
   const handleRefresh = () => {
     toast.info("Refreshing feed...");
     setRetryCount(0);
+    setUsedFallbackData(false);
     fetchVideos();
   };
 
@@ -172,13 +170,27 @@ const HomePage = () => {
         ) : error && videos.length === 0 ? (
           <EmptyFeedState error={error} onRetry={handleRefresh} />
         ) : videos.length > 0 ? (
-          <VideoFeed 
-            videos={videos} 
-            activeIndex={activeIndex}
-            onVideoChange={setActiveIndex}
-            onVideoView={handleVideoView}
-            isActive={true} // Ensure videos always play
-          />
+          <>
+            {usedFallbackData && (
+              <div className="absolute top-2 right-2 z-20">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh} 
+                  className="bg-black/50 text-white border-yellow-500"
+                >
+                  <RefreshCcw className="mr-2 h-3 w-3" /> Try Online
+                </Button>
+              </div>
+            )}
+            <VideoFeed 
+              videos={videos} 
+              activeIndex={activeIndex}
+              onVideoChange={setActiveIndex}
+              onVideoView={handleVideoView}
+              isActive={true} // Ensure videos always play
+            />
+          </>
         ) : (
           <div className="flex flex-col gap-6 p-4">
             <div className="text-center py-8">
