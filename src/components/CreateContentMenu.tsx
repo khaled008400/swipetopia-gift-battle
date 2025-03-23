@@ -1,3 +1,4 @@
+
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { StreamService } from "@/services/streaming";
 import { useAuthCheck } from "@/hooks/useAuthCheck";
+import { useState } from "react";
+import VideoUploadModal from "@/components/upload/VideoUploadModal";
+import VideoService from "@/services/video";
 
 interface CreateContentMenuProps {
   isOpen: boolean;
@@ -20,6 +24,7 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const { requiresAuth, AuthDialog } = useAuthCheck();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
   const handleCreateContent = async (type: string) => {
     onClose();
@@ -27,9 +32,8 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
     switch (type) {
       case 'video':
         requiresAuth(() => {
-          console.log("Navigating to videos page with upload modal");
-          // Navigate directly to videos page with upload modal
-          navigate('/videos?upload=true');
+          console.log("Opening upload modal");
+          setIsUploadModalOpen(true);
         });
         break;
       case 'live':
@@ -81,66 +85,90 @@ const CreateContentMenu: React.FC<CreateContentMenuProps> = ({
     }
   };
   
+  const handleCloseUploadModal = () => {
+    setIsUploadModalOpen(false);
+  };
+
+  const handleVideoUploadSuccess = (videoId: string) => {
+    console.log('Video uploaded successfully, ID:', videoId);
+    
+    toast({
+      title: 'Success!',
+      description: 'Your video has been uploaded and will appear shortly',
+    });
+    
+    // Refresh the homepage to show the new video
+    window.location.href = '/';
+  };
+  
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="p-0 rounded-t-3xl">
-        <div className="py-6 px-4">
-          <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
-          
-          <h3 className="text-xl font-bold text-center mb-6">Create</h3>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <Button 
-              variant="outline" 
-              className="flex flex-col items-center justify-center h-24 border-2 border-dashed"
-              onClick={() => handleCreateContent('video')}
-            >
-              <Upload className="h-6 w-6 mb-2" />
-              <span>Upload Video</span>
-            </Button>
+    <>
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="p-0 rounded-t-3xl">
+          <div className="py-6 px-4">
+            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
             
-            <Button 
-              variant="outline" 
-              className="flex flex-col items-center justify-center h-24 border-2 border-dashed"
-              onClick={() => handleCreateContent('live')}
-            >
-              <Video className="h-6 w-6 mb-2" />
-              <span>Go Live</span>
-            </Button>
+            <h3 className="text-xl font-bold text-center mb-6">Create</h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center h-24 border-2 border-dashed"
+                onClick={() => handleCreateContent('video')}
+              >
+                <Upload className="h-6 w-6 mb-2" />
+                <span>Upload Video</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="flex flex-col items-center justify-center h-24 border-2 border-dashed"
+                onClick={() => handleCreateContent('live')}
+              >
+                <Video className="h-6 w-6 mb-2" />
+                <span>Go Live</span>
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <Button 
+                variant="ghost" 
+                className="flex flex-col items-center justify-center py-4"
+                onClick={() => handleCreateContent('shop')}
+              >
+                <Camera className="h-5 w-5 mb-2" />
+                <span className="text-xs">Shop</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                className="flex flex-col items-center justify-center py-4"
+                onClick={() => handleCreateContent('wallet')}
+              >
+                <Mic className="h-5 w-5 mb-2" />
+                <span className="text-xs">Wallet</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                className="flex flex-col items-center justify-center py-4"
+                onClick={() => handleCreateContent('post')}
+              >
+                <MessageSquareText className="h-5 w-5 mb-2" />
+                <span className="text-xs">Post</span>
+              </Button>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <Button 
-              variant="ghost" 
-              className="flex flex-col items-center justify-center py-4"
-              onClick={() => handleCreateContent('shop')}
-            >
-              <Camera className="h-5 w-5 mb-2" />
-              <span className="text-xs">Shop</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              className="flex flex-col items-center justify-center py-4"
-              onClick={() => handleCreateContent('wallet')}
-            >
-              <Mic className="h-5 w-5 mb-2" />
-              <span className="text-xs">Wallet</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              className="flex flex-col items-center justify-center py-4"
-              onClick={() => handleCreateContent('post')}
-            >
-              <MessageSquareText className="h-5 w-5 mb-2" />
-              <span className="text-xs">Post</span>
-            </Button>
-          </div>
-        </div>
-        <AuthDialog />
-      </SheetContent>
-    </Sheet>
+          <AuthDialog />
+        </SheetContent>
+      </Sheet>
+
+      <VideoUploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={handleCloseUploadModal} 
+        onSuccess={handleVideoUploadSuccess}
+      />
+    </>
   );
 };
 
