@@ -28,9 +28,6 @@ const VideoService = {
   getUserVideos: (userId: string) => 
     fetchServiceInstance.getUserVideos(userId),
   
-  getTrendingVideos: () => 
-    fetchServiceInstance.getTrendingVideos(),
-  
   getVideos: (limit: number = 50) => 
     fetchServiceInstance.getVideos(limit),
   
