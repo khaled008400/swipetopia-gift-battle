@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Video, Heart, User, Plus } from 'lucide-react';
+import { Home, Search, Video, Heart, User, Plus, ShoppingBag } from 'lucide-react';
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -30,6 +30,14 @@ const BottomNavigation = () => {
       >
         <Search className="h-6 w-6" />
         <span className="text-xs mt-1">Discover</span>
+      </Link>
+      
+      <Link 
+        to="/shop" 
+        className={`flex flex-col items-center p-2 ${path.includes('/shop') ? 'text-app-yellow' : 'text-gray-400'}`}
+      >
+        <ShoppingBag className="h-6 w-6" />
+        <span className="text-xs mt-1">Shop</span>
       </Link>
       
       <button
